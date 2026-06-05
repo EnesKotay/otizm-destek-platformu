@@ -1,0 +1,110 @@
+# ── Production Compose ────────────────────────────────────────────────────────
+# Kullanım:
+#   1. cp .env.example .env   → değerleri doldur
+#   2. docker compose -f docker-compose.prod.yml up -d --build
+#
+# Geliştirme için docker-compose.yml kullanılmaya devam eder.
+
+services:
+  postgres:
+    image: postgres:16.2-alpine
+    container_name: autism-platform-db
+    environment:
+      POSTGRES_DB: autism
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d autism"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: autism-platform-redis
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: autism-platform-backend
+    environment:
+      # Veritabanı
+      - DB_URL=jdbc:postgresql://postgres:5432/autism
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      # Redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # JWT & Şifreleme
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      # Admin bootstrap
+      - APP_BOOTSTRAP_ADMIN_EMAIL=${ADMIN_EMAIL}
+      - APP_BOOTSTRAP_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      # CORS — production domain
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      # Frontend URL (şifre sıfırlama e-postası için)
+      - FRONTEND_URL=${FRONTEND_URL}
+      # Mail / SMTP
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      # Web Push (VAPID)
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - VAPID_SUBJECT=${VAPID_SUBJECT}
+      # AI
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # Flyway
+      - SPRING_FLYWAY_ENABLED=true
+      - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
+      - SPRING_FLYWAY_BASELINE_VERSION=14
+      - JPA_DDL_AUTO=validate
+      # Dosya yükleme
+      - APP_UPLOAD_DIR=/app/uploads
+      - LOG_LEVEL=WARN
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health > /dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: autism-platform-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:

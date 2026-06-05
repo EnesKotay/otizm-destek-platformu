@@ -1,0 +1,23 @@
+# Gizli ortam dosyaları — ASLA commit'lenme
+.env
+.env.local
+.env.production
+.env.production.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Test / geçici
+test-*.mjs
+test-*.js
+out.json
+*.log
+status.txt
+current_files.txt
+build.log

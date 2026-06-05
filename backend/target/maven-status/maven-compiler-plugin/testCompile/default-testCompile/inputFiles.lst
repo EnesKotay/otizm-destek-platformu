@@ -1,0 +1,14 @@
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/config/RateLimitInterceptorTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/controller/AuthControllerIntegrationTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/controller/ChildControllerIntegrationTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/controller/WellbeingEntryControllerIntegrationTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/service/ABCEntryServiceTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/service/AdminServiceTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/service/AppointmentServiceTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/service/AuthServiceTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/service/ChildServiceTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/service/ForumServiceTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/service/MatchingServiceTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/service/MessagingServiceTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/service/SharedProgressServiceTest.java
+/Users/eneskotay/Development/Otizm/backend/src/test/java/com/autismsupport/platform/service/WellbeingEntryServiceTest.java

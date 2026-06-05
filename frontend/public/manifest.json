@@ -1,0 +1,65 @@
+{
+  "id": "/",
+  "short_name": "Otizm Destek",
+  "name": "Otizm Destek Platformu",
+  "description": "Ebeveynler ve uzmanlar için otizm spektrumunda gelişim takibi ve iletişim platformu.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/",
+  "scope": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "orientation": "portrait",
+  "lang": "tr",
+  "dir": "ltr",
+  "categories": ["health", "medical", "education"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Ana Sayfa",
+      "short_name": "Ana Sayfa",
+      "description": "Güncel özet ve hızlı erişim",
+      "url": "/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mesajlar",
+      "short_name": "Mesajlar",
+      "description": "Uzman ve ailelerle yazışmalar",
+      "url": "/mesajlar",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Takvim",
+      "short_name": "Takvim",
+      "description": "Seans ve etkinlik takvimi",
+      "url": "/takvim",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

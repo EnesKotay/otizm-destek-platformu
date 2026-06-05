@@ -1,0 +1,144 @@
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  --color-warm-50: #fff7ed;
+  --color-warm-100: #ffedd5;
+  --color-warm-200: #fed7aa;
+  --color-warm-300: #fdba74;
+  --color-warm-400: #fb923c;
+  --color-warm-500: #f97316;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+}
+
+body {
+  color-scheme: light;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  @apply bg-gray-50 text-gray-900 antialiased;
+}
+
+@media print {
+  /* Navigasyon ve aksiyonları gizle */
+  nav, aside, .print\:hidden, header, #chatbot-open-button { display: none !important; }
+  
+  /* Sayfa dolgu ve arka plan */
+  body { 
+    background: white !important; 
+    color: black !important;
+  }
+  * { 
+    print-color-adjust: exact; 
+    -webkit-print-color-adjust: exact; 
+  }
+  
+  /* Layout Sıfırlama: Sol Menü Boşluğunu Kaldırma */
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  
+  /* Konteyner ve Kartların Tam Genişliğe Yayılması */
+  .max-w-5xl, .max-w-6xl, .max-w-[92rem] {
+    max-width: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Kart kenarlıklarını ve arka planlarını baskı için optimize et */
+  .bg-white {
+    background-color: #ffffff !important;
+  }
+  .border {
+    border-color: #f1f5f9 !important;
+  }
+
+  /* Sayfa boşluklarını ve A4 standardını ayarla */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  /* Grafik alanlarını genişlet */
+  .recharts-responsive-container {
+    width: 100% !important;
+    height: auto !important;
+  }
+}
+
+/* ── Erişilebilirlik (Accessibility) utility classes ── */
+
+/* Büyük yazı modu: baz font büyüklüğünü artırır */
+.a11y-large-text {
+  font-size: 112.5%;
+}
+.a11y-large-text h1 { font-size: 2rem; }
+.a11y-large-text h2 { font-size: 1.6rem; }
+.a11y-large-text h3 { font-size: 1.3rem; }
+.a11y-large-text p, .a11y-large-text li, .a11y-large-text span, .a11y-large-text label {
+  font-size: 1.05rem;
+}
+.a11y-large-text button, .a11y-large-text input, .a11y-large-text select, .a11y-large-text textarea {
+  font-size: 1rem;
+  min-height: 2.75rem;
+}
+
+/* Animasyonları azalt: tüm CSS geçişlerini ve animasyonları devre dışı bırakır */
+.a11y-reduce-motion *,
+.a11y-reduce-motion *::before,
+.a11y-reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Sakin mod: renk doygunluğunu azaltır, göz yormayan bir görünüm sağlar */
+.a11y-calm body {
+  background-color: #f4f6f8 !important;
+}
+.a11y-calm .bg-gradient-to-r,
+.a11y-calm .bg-gradient-to-br,
+.a11y-calm .bg-gradient-to-b {
+  background-image: none !important;
+}
+.a11y-calm {
+  --color-primary-600: #4a7abf;
+  --color-primary-700: #3a6aaf;
+  filter: saturate(0.75);
+}
+.a11y-calm img {
+  filter: saturate(1.33);
+}
+
+/* Yüksek kontrast: metin ve arka plan arasındaki farkı artırır */
+.a11y-high-contrast {
+  filter: contrast(1.4);
+}
+.a11y-high-contrast body {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Klavye odaklama göstergesi: belirgin odak halkası */
+.a11y-keyboard-focus :focus-visible {
+  outline: 3px solid #2563eb !important;
+  outline-offset: 3px !important;
+  border-radius: 4px;
+}

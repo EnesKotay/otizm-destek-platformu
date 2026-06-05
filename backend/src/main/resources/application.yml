@@ -1,0 +1,117 @@
+spring:
+  application:
+    name: autism-support-platform
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/autism}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      keepalive-time: 60000
+      connection-test-query: SELECT 1
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        default_batch_fetch_size: 20
+        jdbc:
+          batch_size: 20
+          order_inserts: true
+          order_updates: true
+
+  flyway:
+    enabled: ${SPRING_FLYWAY_ENABLED:true}
+    baseline-on-migrate: ${SPRING_FLYWAY_BASELINE_ON_MIGRATE:true}
+    baseline-version: ${SPRING_FLYWAY_BASELINE_VERSION:14}
+    out-of-order: true
+    ignore-migration-patterns: "*:missing,*:ignored,*:future,*:pending"
+
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: ${PORT:8080}
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+
+gemini:
+  api:
+    key: ${GEMINI_API_KEY:}
+    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  upload:
+    dir: ${APP_UPLOAD_DIR:${UPLOAD_DIR:uploads}}
+  jwt:
+    secret: ${JWT_SECRET:YXV0aXNtc3VwcG9ydHBsYXRmb3Jtc2VjcmV0a2V5Zm9ybG9jYWxkZXZlbG9wbWVudDEyMzQ1Njc4}
+    access-token-expiration: ${JWT_ACCESS_EXP:900000}      # 15 minutes
+    refresh-token-expiration: ${JWT_REFRESH_EXP:604800000} # 7 days
+  encryption:
+    secret-key: ${ENCRYPTION_KEY:autism-support-local-dev-encryption-key-32b}
+  bootstrap:
+    admin-email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@autism.com}
+    admin-password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:Admin123!}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
+  push:
+    vapid-public-key: ${VAPID_PUBLIC_KEY:}
+    vapid-private-key: ${VAPID_PRIVATE_KEY:}
+    vapid-subject: ${VAPID_SUBJECT:mailto:admin@otizmdestek.com}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    com.autismsupport: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN

@@ -1,0 +1,467 @@
+package com.autismsupport.platform.service;
+
+import com.autismsupport.platform.dto.AdminStatsDto;
+import com.autismsupport.platform.dto.AuditLogDto;
+import com.autismsupport.platform.dto.MonthlyGrowthDto;
+import com.autismsupport.platform.dto.PlatformSettingsDto;
+import com.autismsupport.platform.dto.ReportDto;
+import com.autismsupport.platform.dto.UserDto;
+import com.autismsupport.platform.model.AuditLog;
+import com.autismsupport.platform.model.PlatformSettings;
+import com.autismsupport.platform.model.User;
+import com.autismsupport.platform.model.UserRole;
+import com.autismsupport.platform.repository.AuditLogRepository;
+import com.autismsupport.platform.repository.MessageRepository;
+import com.autismsupport.platform.repository.PlatformSettingsRepository;
+import com.autismsupport.platform.repository.ReportRepository;
+import com.autismsupport.platform.repository.UserRepository;
+import com.autismsupport.platform.repository.ForumPostRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class AdminService {
+
+    private final UserRepository userRepository;
+    private final ForumPostRepository forumPostRepository;
+    private final MessageRepository messageRepository;
+    private final ReportRepository reportRepository;
+    private final AuditLogRepository auditLogRepository;
+    private final PlatformSettingsRepository platformSettingsRepository;
+    private final NotificationService notificationService;
+    private final AuditLogService auditLogService;
+    private final EmailService emailService;
+
+    public AdminStatsDto getStats() {
+        return AdminStatsDto.builder()
+                .totalUsers(userRepository.count())
+                .totalExperts(userRepository.countByRoleAndVerifiedTrue(UserRole.EXPERT))
+                .pendingExperts(userRepository.countByRoleAndVerifiedFalse(UserRole.EXPERT))
+                .totalPosts(forumPostRepository.count())
+                .totalMessages(messageRepository.count())
+                .newUsersThisWeek(userRepository.countByCreatedAtAfter(LocalDateTime.now().minusDays(7)))
+                .pendingReports(reportRepository.countByStatus("PENDING"))
+                .build();
+    }
+
+    public List<MonthlyGrowthDto> getGrowthAnalytics(String period) {
+        if (period == null) period = "30d";
+        Locale tr = Locale.of("tr");
+        LocalDateTime now = LocalDateTime.now();
+
+        return switch (period) {
+            case "7d" -> buildDailyAnalytics(now.minusDays(7), now, 7,
+                    DateTimeFormatter.ofPattern("d MMM", tr), tr);
+            case "90d" -> buildWeeklyAnalytics(now.minusWeeks(13), now, 13,
+                    DateTimeFormatter.ofPattern("d MMM", tr), tr);
+            case "1y" -> buildMonthlyAnalytics(now.minusMonths(12), now, 12, tr);
+            default -> buildDailyAnalytics(now.minusDays(30), now, 30,
+                    DateTimeFormatter.ofPattern("d MMM", tr), tr);
+        };
+    }
+
+    private List<MonthlyGrowthDto> buildDailyAnalytics(LocalDateTime from, LocalDateTime to,
+                                                        int days, DateTimeFormatter fmt, Locale tr) {
+        List<Object[]> rows = userRepository.countByDay(from, to);
+        Map<LocalDate, Long> countsByDay = rows.stream().collect(
+                Collectors.toMap(
+                        r -> ((java.sql.Timestamp) r[0]).toLocalDateTime().toLocalDate(),
+                        r -> ((Number) r[1]).longValue()
+                ));
+        List<MonthlyGrowthDto> result = new ArrayList<>();
+        LocalDate today = to.toLocalDate();
+        for (int i = days - 1; i >= 0; i--) {
+            LocalDate day = today.minusDays(i);
+            long count = countsByDay.getOrDefault(day, 0L);
+            result.add(MonthlyGrowthDto.builder().name(day.format(fmt)).users(count).sessions(count).build());
+        }
+        return result;
+    }
+
+    private List<MonthlyGrowthDto> buildWeeklyAnalytics(LocalDateTime from, LocalDateTime to,
+                                                         int weeks, DateTimeFormatter fmt, Locale tr) {
+        List<Object[]> rows = userRepository.countByWeek(from, to);
+        Map<LocalDate, Long> countsByWeek = rows.stream().collect(
+                Collectors.toMap(
+                        r -> ((java.sql.Timestamp) r[0]).toLocalDateTime().toLocalDate(),
+                        r -> ((Number) r[1]).longValue()
+                ));
+        List<MonthlyGrowthDto> result = new ArrayList<>();
+        LocalDate today = to.toLocalDate();
+        for (int i = weeks; i >= 0; i--) {
+            LocalDate weekStart = today.minusWeeks(i).with(java.time.DayOfWeek.MONDAY);
+            long count = countsByWeek.getOrDefault(weekStart, 0L);
+            result.add(MonthlyGrowthDto.builder().name(weekStart.format(fmt)).users(count).sessions(count).build());
+        }
+        return result;
+    }
+
+    private List<MonthlyGrowthDto> buildMonthlyAnalytics(LocalDateTime from, LocalDateTime to,
+                                                          int months, Locale tr) {
+        List<Object[]> rows = userRepository.countByMonth(from, to);
+        Map<YearMonth, Long> countsByMonth = rows.stream().collect(
+                Collectors.toMap(
+                        r -> YearMonth.from(((java.sql.Timestamp) r[0]).toLocalDateTime()),
+                        r -> ((Number) r[1]).longValue()
+                ));
+        List<MonthlyGrowthDto> result = new ArrayList<>();
+        YearMonth current = YearMonth.from(from).plusMonths(1);
+        for (int i = 0; i < months; i++) {
+            long count = countsByMonth.getOrDefault(current, 0L);
+            String name = current.getMonth().getDisplayName(TextStyle.SHORT, tr);
+            name = name.substring(0, 1).toUpperCase(tr) + name.substring(1).toLowerCase(tr);
+            result.add(MonthlyGrowthDto.builder().name(name).users(count).sessions(count).build());
+            current = current.plusMonths(1);
+        }
+        return result;
+    }
+
+    public List<UserDto> getPendingExperts() {
+        return userRepository.findByRoleAndVerifiedFalseOrderByCreatedAtDesc(UserRole.EXPERT).stream()
+                .map(this::toUserDto)
+                .toList();
+    }
+
+    @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "experts", allEntries = true)
+    public UserDto approveExpert(UUID expertId, UUID adminId) {
+        User expert = userRepository.findById(expertId)
+                .orElseThrow(() -> new RuntimeException("Uzman bulunamadi"));
+        expert.setVerified(true);
+        userRepository.save(expert);
+
+        notificationService.createNotification(
+                expert.getId(),
+                "EXPERT_APPROVED",
+                "Uzman basvurunuz onaylandi",
+                "Artik platformda dogrulanmis uzman olarak gorunuyorsunuz. Profilinizi tamamlayip danisanlarinizla calismaya baslayabilirsiniz.",
+                "/"
+        );
+        emailService.sendExpertApprovalEmail(expert.getEmail(), expert.getFullName());
+        auditLogService.log(
+                userRepository.findById(adminId).orElse(null),
+                "EXPERT_APPROVED",
+                "USER",
+                expert.getId(),
+                Map.of("expertEmail", expert.getEmail())
+        );
+        return toUserDto(expert);
+    }
+
+    @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "experts", allEntries = true)
+    public UserDto rejectExpert(UUID expertId, UUID adminId) {
+        User expert = userRepository.findById(expertId)
+                .orElseThrow(() -> new RuntimeException("Uzman bulunamadi"));
+        expert.setRole(UserRole.PARENT);
+        expert.setVerified(false);
+        userRepository.save(expert);
+
+        notificationService.createNotification(
+                expert.getId(),
+                "EXPERT_REJECTED",
+                "Uzman basvurunuz reddedildi",
+                "Basvurunuz su an icin onaylanmadi. Bilgilerinizi guncelleyip tekrar basvurabilirsiniz.",
+                "/kayit/uzman"
+        );
+        emailService.sendExpertRejectionEmail(expert.getEmail(), expert.getFullName());
+        auditLogService.log(
+                userRepository.findById(adminId).orElse(null),
+                "EXPERT_REJECTED",
+                "USER",
+                expert.getId(),
+                Map.of("expertEmail", expert.getEmail())
+        );
+        return toUserDto(expert);
+    }
+
+    public List<ReportDto> getPendingReports() {
+        return reportRepository.findByStatusOrderByCreatedAtDesc("PENDING", org.springframework.data.domain.Pageable.ofSize(20))
+                .stream()
+                .map(report -> ReportDto.builder()
+                        .id(report.getId())
+                        .targetType(report.getTargetType())
+                        .targetId(report.getTargetId())
+                        .reason(report.getReason())
+                        .status(report.getStatus())
+                        .adminNote(report.getAdminNote())
+                        .createdAt(report.getCreatedAt())
+                        .reporter(UserDto.builder()
+                                .id(report.getReporter().getId())
+                                .fullName(report.getReporter().getFullName())
+                                .email(report.getReporter().getEmail())
+                                .build())
+                        .build())
+                .toList();
+    }
+
+    public Page<AuditLogDto> getAuditLogs(int page, int size, UUID userId, String action, String from, String to) {
+        LocalDateTime fromDt = (from != null && !from.isBlank()) ? LocalDate.parse(from).atStartOfDay() : null;
+        LocalDateTime toDt = (to != null && !to.isBlank()) ? LocalDate.parse(to).atTime(23, 59, 59) : null;
+        String actionFilter = (action != null && !action.isBlank()) ? action : null;
+
+        boolean hasFilters = userId != null || actionFilter != null || fromDt != null || toDt != null;
+        if (hasFilters) {
+            return auditLogRepository.findWithFilters(userId, actionFilter, fromDt, toDt, PageRequest.of(page, size))
+                    .map(this::toAuditLogDto);
+        }
+        return auditLogRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size))
+                .map(this::toAuditLogDto);
+    }
+
+    private AuditLogDto toAuditLogDto(AuditLog log) {
+        return AuditLogDto.builder()
+                .id(log.getId())
+                .userId(log.getUser() != null ? log.getUser().getId() : null)
+                .userFullName(log.getUser() != null ? log.getUser().getFullName() : null)
+                .userEmail(log.getUser() != null ? log.getUser().getEmail() : null)
+                .action(log.getAction())
+                .resourceType(log.getResourceType())
+                .resourceId(log.getResourceId())
+                .ipAddress(log.getIpAddress())
+                .details(log.getDetails())
+                .createdAt(log.getCreatedAt())
+                .build();
+    }
+
+    public Page<UserDto> getAllUsers(int page, int size, String query, String roleStr) {
+        UserRole role = null;
+        if (roleStr != null && !roleStr.isBlank() && !roleStr.equals("ALL")) {
+            try {
+                role = UserRole.valueOf(roleStr);
+            } catch (IllegalArgumentException ignored) {}
+        }
+        String q = (query != null && !query.isBlank()) ? query.trim() : null;
+        PageRequest pageable = PageRequest.of(page, size);
+        Page<User> users;
+        if (q != null) {
+            users = userRepository.searchForAdminByQuery(q, role, pageable);
+        } else if (role != null) {
+            users = userRepository.findAllByRoleOrderByCreatedAtDesc(role, pageable);
+        } else {
+            users = userRepository.findAllByOrderByCreatedAtDesc(pageable);
+        }
+        return users.map(this::toUserDto);
+    }
+
+    @Transactional
+    public UserDto toggleUserStatus(UUID userId, UUID adminId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Kullanici bulunamadi"));
+        if (user.getId().equals(adminId)) {
+            throw new RuntimeException("Kendinizi banlayamazsiniz");
+        }
+        user.setIsActive(!user.isActive());
+        userRepository.save(user);
+
+        String action = user.isActive() ? "USER_UNBANNED" : "USER_BANNED";
+        auditLogService.log(
+                userRepository.findById(adminId).orElse(null),
+                action,
+                "USER",
+                user.getId(),
+                Map.of("userEmail", user.getEmail(), "role", user.getRole().name())
+        );
+        return toUserDto(user);
+    }
+
+    @Transactional
+    public Map<String, Integer> bulkToggleUserStatus(List<UUID> userIds, UUID adminId) {
+        int updated = 0;
+        for (UUID id : userIds) {
+            if (id.equals(adminId)) continue;
+            userRepository.findById(id).ifPresent(user -> {
+                user.setIsActive(!user.isActive());
+                userRepository.save(user);
+            });
+            updated++;
+        }
+        return Map.of("updated", updated);
+    }
+
+    public String exportUsersAsCsv(String roleStr) {
+        UserRole role = null;
+        if (roleStr != null && !roleStr.isBlank() && !roleStr.equals("ALL")) {
+            try { role = UserRole.valueOf(roleStr); } catch (IllegalArgumentException ignored) {}
+        }
+        // Use Pageable to avoid loading all users into memory at once for large datasets
+        org.springframework.data.domain.Pageable largePage = org.springframework.data.domain.PageRequest.of(0, 10_000);
+        List<User> users = role != null
+                ? userRepository.findAllByRoleOrderByCreatedAtDesc(role, largePage).getContent()
+                : userRepository.findAllByOrderByCreatedAtDesc(largePage).getContent();
+
+        StringBuilder sb = new StringBuilder("ID,Ad Soyad,E-posta,Rol,Sehir,Kayit Tarihi,Aktif\n");
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        for (User u : users) {
+            sb.append(csvEscape(u.getId().toString())).append(',')
+              .append(csvEscape(u.getFullName())).append(',')
+              .append(csvEscape(u.getEmail())).append(',')
+              .append(csvEscape(u.getRole().name())).append(',')
+              .append(csvEscape(u.getCity() != null ? u.getCity() : "")).append(',')
+              .append(csvEscape(u.getCreatedAt().format(fmt))).append(',')
+              .append(u.isActive() ? "Evet" : "Hayir").append('\n');
+        }
+        return sb.toString();
+    }
+
+    private String csvEscape(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
+
+    public PlatformSettingsDto getPlatformSettings() {
+        PlatformSettings s = platformSettingsRepository.findById("global")
+                .orElse(new PlatformSettings());
+        return PlatformSettingsDto.builder()
+                .maintenanceMode(s.isMaintenanceMode())
+                .registrationsOpen(s.isRegistrationsOpen())
+                .aiEnabled(s.isAiEnabled())
+                .build();
+    }
+
+    @Transactional
+    public PlatformSettingsDto updatePlatformSettings(PlatformSettingsDto dto) {
+        PlatformSettings s = platformSettingsRepository.findById("global")
+                .orElse(PlatformSettings.builder().id("global").build());
+        if (dto.getMaintenanceMode() != null) s.setMaintenanceMode(dto.getMaintenanceMode());
+        if (dto.getRegistrationsOpen() != null) s.setRegistrationsOpen(dto.getRegistrationsOpen());
+        if (dto.getAiEnabled() != null) s.setAiEnabled(dto.getAiEnabled());
+        PlatformSettings saved = platformSettingsRepository.save(s);
+        return PlatformSettingsDto.builder()
+                .maintenanceMode(saved.isMaintenanceMode())
+                .registrationsOpen(saved.isRegistrationsOpen())
+                .aiEnabled(saved.isAiEnabled())
+                .build();
+    }
+
+    public Map<String, Object> triggerBackup(UUID adminId) {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("Yonetici bulunamadi"));
+        AuditLog auditEntry = AuditLog.builder()
+                .user(admin)
+                .action("BACKUP_TRIGGERED")
+                .resourceType("SYSTEM")
+                .details(Map.of("triggeredAt", timestamp, "type", "AUDIT_LOG", "adminEmail", admin.getEmail()))
+                .build();
+        auditLogRepository.save(auditEntry);
+        // Gerçek pg_dump entegrasyonu yapılmadığından bu işlem yalnızca
+        // audit kaydı oluşturur. Otomatik yedek için bir cron job veya
+        // pg_dump çağrısı eklenmesi gerekir.
+        return Map.of(
+                "status", "SIMULATED",
+                "timestamp", timestamp,
+                "type", "AUDIT_LOG",
+                "message", "Yedek talebi kaydedildi. Otomatik pg_dump entegrasyonu henuz yapilandirilmadi."
+        );
+    }
+
+    public Map<String, Object> getTokenStats() {
+        // Gemini API'si kullanım sayaçlarını dışa açmadığından bu değerler
+        // yerel veritabanı metriklerine dayalı kaba tahmindir.
+        long totalMessages = messageRepository.count();
+        long totalPosts = forumPostRepository.count();
+        long estimatedUsed = (totalMessages * 50L) + (totalPosts * 100L);
+        long budget = 5_000_000L;
+        long remaining = Math.max(0, budget - estimatedUsed);
+        double cost = estimatedUsed * 0.0000000035 * 1000;
+        return Map.of(
+                "used", estimatedUsed,
+                "budget", budget,
+                "remaining", remaining,
+                "cost", Math.round(cost * 100.0) / 100.0,
+                "estimated", true,
+                "updatedAt", LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
+        );
+    }
+
+    private UserDto toUserDto(User user) {
+        return UserDto.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .phone(user.getPhone())
+                .role(user.getRole().name())
+                .expertTitle(user.getExpertTitle())
+                .city(user.getCity())
+                .verified(user.isVerified())
+                .licenseVerified(user.isLicenseVerified())
+                .specializations(user.getSpecializations())
+                .kvkkConsent(user.isKvkkConsent())
+                .profileImageUrl(user.getProfileImageUrl())
+                .institution(user.getInstitution())
+                .licenseNumber(user.getLicenseNumber())
+                .bio(user.getBio())
+                .isActive(user.isActive())
+                .createdAt(user.getCreatedAt())
+                .build();
+    }
+
+    @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "experts", allEntries = true)
+    public UserDto verifyExpertLicense(UUID expertId, UUID adminId) {
+        User expert = userRepository.findById(expertId)
+                .orElseThrow(() -> new RuntimeException("Uzman bulunamadi"));
+        expert.setLicenseVerified(true);
+        expert.setLicenseVerifiedAt(java.time.LocalDateTime.now());
+        userRepository.save(expert);
+
+        notificationService.createNotification(
+                expert.getId(),
+                "LICENSE_VERIFIED",
+                "Lisansiniz dogrulandi",
+                "Lisans numaraniz platform yoneticisi tarafindan dogrulandi.",
+                "/ayarlar"
+        );
+        auditLogService.log(
+                userRepository.findById(adminId).orElse(null),
+                "LICENSE_VERIFIED",
+                "USER",
+                expert.getId(),
+                Map.of("licenseNumber", expert.getLicenseNumber() != null ? expert.getLicenseNumber() : "")
+        );
+        return toUserDto(expert);
+    }
+
+    @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "experts", allEntries = true)
+    public UserDto revokeExpertLicense(UUID expertId, UUID adminId) {
+        User expert = userRepository.findById(expertId)
+                .orElseThrow(() -> new RuntimeException("Uzman bulunamadi"));
+        expert.setLicenseVerified(false);
+        expert.setLicenseVerifiedAt(null);
+        userRepository.save(expert);
+
+        auditLogService.log(
+                userRepository.findById(adminId).orElse(null),
+                "LICENSE_VERIFICATION_REVOKED",
+                "USER",
+                expert.getId(),
+                Map.of("expertEmail", expert.getEmail())
+        );
+        return toUserDto(expert);
+    }
+}
