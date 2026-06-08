@@ -28,6 +28,7 @@ public class ForumCommentDto {
     private boolean upvotedByMe;
     private boolean downvotedByMe;
     private boolean expertApproved;
+    private boolean ownedByMe;
     private UserDto author;
     private LocalDateTime createdAt;
 }

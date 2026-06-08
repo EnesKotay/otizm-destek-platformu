@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface ForumCommentRepository extends JpaRepository<ForumComment, UUID> {
@@ -20,6 +21,8 @@ public interface ForumCommentRepository extends JpaRepository<ForumComment, UUID
 
     @EntityGraph(attributePaths = {"author", "parentComment"})
     Page<ForumComment> findByParentCommentIdOrderByCreatedAtAsc(UUID parentCommentId, Pageable pageable);
+
+    List<ForumComment> findByParentCommentId(UUID parentCommentId);
 
     long countByPostId(UUID postId);
 

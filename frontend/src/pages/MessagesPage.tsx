@@ -27,6 +27,17 @@ function normalizeTR(s: string) {
     .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u');
 }
 
+function getSenderColor(name: string) {
+  const colors = [
+    'text-red-600', 'text-orange-600', 'text-amber-600', 'text-emerald-600',
+    'text-teal-600', 'text-blue-600', 'text-indigo-600', 'text-violet-600',
+    'text-fuchsia-600', 'text-pink-600'
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
 function buildGroupTitle(conv: Conversation, myId?: string) {
   const names = conv.participants.filter(p => p.id !== myId)
     .map(p => p.fullName?.split(' ')[0]).filter(Boolean) as string[];
@@ -75,7 +86,8 @@ function getReadReceiptInfo(msg: Message, myId?: string) {
 }
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
-type ConvFilter = 'all' | 'unread' | 'archived';
+const MESSAGE_UNREAD_REFRESH_EVENT = 'message-unread-refresh';
+type ConvFilter = 'all' | 'unread' | 'groups' | 'experts' | 'archived';
 type ReadReceiptEvent = {
   type?: 'READ_RECEIPT';
   readBy?: string;
@@ -120,6 +132,10 @@ function playSoftPop() {
   }
 }
 
+function dispatchUnreadRefresh() {
+  window.dispatchEvent(new Event(MESSAGE_UNREAD_REFRESH_EVENT));
+}
+
 // ─── Bileşen ───────────────────────────────────────────────────────────────
 
 export function MessagesPage() {
@@ -150,9 +166,10 @@ export function MessagesPage() {
 
   // Gönderme
   const [newMessage, setNewMessage] = useState('');
-  const [pendingFile, setPendingFile] = useState<{ url: string; name: string; type: string } | null>(null);
-  const [fileUploading, setFileUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   // Reply
   const [replyTo, setReplyTo] = useState<Message | null>(null);
@@ -238,22 +255,31 @@ export function MessagesPage() {
 
   // ── Konuşmaları yükle ───────────────────────────────────────────────────────
 
+   
   const loadConversations = useCallback(async (silent = false) => {
     if (!silent) setConvLoading(true);
     try {
       const convs = await messagingService.getConversations();
       setConversations(convs);
       const convParam = searchParams.get('conv') ?? (location.state?.openConversationId as string | undefined);
-      if (convParam) {
-        const target = convs.find(c => c.id === convParam);
-        if (target) setSelectedConv(target);
-      }
+      setSelectedConv(current => {
+        const currentFresh = current ? convs.find(c => c.id === current.id) : null;
+        if (currentFresh) return currentFresh;
+
+        if (convParam) {
+          const target = convs.find(c => c.id === convParam);
+          if (target) return target;
+        }
+
+        return convs[0] ?? null;
+      });
     } catch {
       if (!silent) toast.error('Konuşmalar yüklenemedi.');
     } finally {
       if (!silent) setConvLoading(false);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // location.state referans kararlılığı için searchParams yeterli
 
   useEffect(() => {
     queueMicrotask(() => loadConversations());
@@ -367,7 +393,14 @@ export function MessagesPage() {
       .catch(() => toast.error('Mesajlar yüklenemedi.'))
       .finally(() => setMsgLoading(false));
 
-    messagingService.markAsRead(selectedConv.id).catch(() => {});
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setConversations(prev => prev.map(c =>
+      c.id === selectedConv.id ? { ...c, unreadCount: 0 } : c
+    ));
+    setSelectedConv(prev => prev ? { ...prev, unreadCount: 0 } : null);
+    messagingService.markAsRead(selectedConv.id)
+      .then(dispatchUnreadRefresh)
+      .catch(() => {});
 
     const msgTopic = `/topic/conversation/${selectedConv.id}`;
     const typingTopic = `/topic/conversation/${selectedConv.id}/typing`;
@@ -397,7 +430,11 @@ export function MessagesPage() {
           ? { ...c, lastMessage: incoming, lastMessageAt: incoming.sentAt, unreadCount: 0 }
           : c
       ));
-      messagingService.markAsRead(selectedConv.id).catch(() => {});
+      if (incoming.senderId !== user?.id) {
+        messagingService.markAsRead(selectedConv.id)
+          .then(dispatchUnreadRefresh)
+          .catch(() => {});
+      }
       setWsConnected(true);
       scrollToBottom(incoming.senderId === user?.id);
 
@@ -421,13 +458,13 @@ export function MessagesPage() {
       setMessages(prev => prev.map(m => m.id === updated.id ? updated : m));
     });
 
-    queueMicrotask(() => setWsConnected(isConnected()));
+    setWsConnected(isConnected());
     return () => {
       unsubscribe(msgTopic);
       unsubscribe(typingTopic);
       unsubscribe(reactionTopic);
     };
-  }, [selectedConv?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedConv?.id, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { scrollToBottom(); }, [messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -482,6 +519,7 @@ export function MessagesPage() {
           }).finally(() => setMsgLoading(false));
         });
       }
+      if (msgSearchTimeout.current) clearTimeout(msgSearchTimeout.current);
       return;
     }
 
@@ -549,40 +587,40 @@ export function MessagesPage() {
     return () => { if (addMemberTimeout.current) clearTimeout(addMemberTimeout.current); };
   }, [addMemberQuery, selectedConv?.participants]);
 
-  // ── Dosya yükleme ─────────────────────────────────────────────────────────
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { toast.error('Dosya 10 MB\'dan büyük olamaz.'); return; }
-    setFileUploading(true);
-    try {
-      const url = await uploadService.upload(file);
-      setPendingFile({ url, name: file.name, type: file.type });
-    } catch { toast.error('Dosya yüklenemedi.'); }
-    setFileUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
   };
 
-  // ── Mesaj gönder ─────────────────────────────────────────────────────────
-
   const handleSend = async () => {
-    if (!newMessage.trim() && !pendingFile) return;
+    if (!newMessage.trim() && !selectedFile) return;
     if (!selectedConv) return;
     const content = newMessage.trim();
-    const file = pendingFile;
     const replyToId = replyTo?.id;
     setNewMessage('');
-    setPendingFile(null);
     setReplyTo(null);
+    setIsUploading(true);
 
     try {
+      let fileAttachment;
+      if (selectedFile) {
+        const url = await uploadService.upload(selectedFile);
+        let type = 'DOCUMENT';
+        if (selectedFile.type.startsWith('image/')) type = 'IMAGE';
+        else if (selectedFile.type.startsWith('video/')) type = 'VIDEO';
+        fileAttachment = { fileUrl: url, fileName: selectedFile.name, fileType: type };
+        setSelectedFile(null);
+      }
+
       const msg = await messagingService.sendMessage(
         selectedConv.id, content,
-        file ? { fileUrl: file.url, fileName: file.name, fileType: file.type } : undefined,
+        fileAttachment,
         replyToId,
+        fileAttachment ? fileAttachment.fileType : undefined,
       );
       // Backend yine WebSocket broadcast yapıyor; bu ekleme aynı sekmede boş kalmayı önler.
+      processedMessageIds.current.add(msg.id);
       setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
       setConversations(prev => prev.map(c =>
         c.id === selectedConv.id ? { ...c, lastMessage: msg, lastMessageAt: msg.sentAt } : c
@@ -590,8 +628,9 @@ export function MessagesPage() {
       scrollToBottom(true);
     } catch {
       setNewMessage(content);
-      setPendingFile(file);
       toast.error('Mesaj gönderilemedi.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -601,13 +640,12 @@ export function MessagesPage() {
       const msg = await messagingService.sendMessage(
         selectedConv.id, label, undefined, undefined, 'PECS'
       );
-      if (!isConnected()) {
-        setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
-        setConversations(prev => prev.map(c =>
-          c.id === selectedConv.id ? { ...c, lastMessage: msg, lastMessageAt: msg.sentAt } : c
-        ));
-        scrollToBottom(true);
-      }
+      processedMessageIds.current.add(msg.id);
+      setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
+      setConversations(prev => prev.map(c =>
+        c.id === selectedConv.id ? { ...c, lastMessage: msg, lastMessageAt: msg.sentAt } : c
+      ));
+      scrollToBottom(true);
     } catch {
       toast.error('PECS kartı gönderilemedi.');
     }
@@ -747,10 +785,12 @@ export function MessagesPage() {
     .filter(c => {
       if (convFilter === 'unread') return c.unreadCount > 0 && !c.archived;
       if (convFilter === 'archived') return c.archived;
+      if (convFilter === 'groups') return c.type === 'GROUP' && !c.archived;
+      if (convFilter === 'experts') return c.type !== 'GROUP' && getOtherUser(c)?.role === 'EXPERT' && !c.archived;
       return !c.archived;
     })
     .filter(c => !convSearch.trim() || normalizeTR(getTitle(c)).includes(normalizeTR(convSearch)))
-    .sort((a, b) => (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? ''));
+    .sort((a, b) => (b.lastMessageAt ?? '') > (a.lastMessageAt ?? '') ? 1 : -1);
 
   const unreadCount = conversations.filter(c => c.unreadCount > 0 && !c.archived).length;
   const messageGroups = groupByDate(messages);
@@ -791,13 +831,13 @@ export function MessagesPage() {
                 className="w-full pl-8 pr-7 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-400 bg-gray-50" />
               {convSearch && <button onClick={() => setConvSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2"><X size={12} className="text-gray-400" /></button>}
             </div>
-            <div className="flex gap-1">
-              {([['all', 'Tümü'], ['unread', 'Okunmamış'], ['archived', 'Arşiv']] as [ConvFilter, string][]).map(([key, label]) => (
+            <div className="flex flex-wrap gap-1.5">
+              {([['all', 'Tümü'], ['unread', 'Okunmamış'], ['experts', 'Uzmanlar'], ['groups', 'Gruplar'], ['archived', 'Arşiv']] as [ConvFilter, string][]).map(([key, label]) => (
                 <button key={key} onClick={() => setConvFilter(key)}
-                  className={cn('flex-1 py-1 rounded-lg text-[10px] font-semibold transition-colors',
-                    convFilter === key ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200')}>
+                  className={cn('px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all shrink-0',
+                    convFilter === key ? 'bg-primary-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>
                   {label}
-                  {key === 'unread' && unreadCount > 0 && <span className="ml-0.5 opacity-80">({unreadCount})</span>}
+                  {key === 'unread' && unreadCount > 0 && <span className="ml-1 opacity-90">({unreadCount})</span>}
                 </button>
               ))}
             </div>
@@ -821,7 +861,7 @@ export function MessagesPage() {
                 <MessageCircle size={24} className="text-primary-400" />
               </div>
               <p className="text-sm font-semibold text-gray-600">
-                {convFilter === 'archived' ? 'Arşiv boş' : convFilter === 'unread' ? 'Okunmamış mesaj yok' : 'Konuşma bulunamadı'}
+                {convFilter === 'archived' ? 'Arşiv boş' : convFilter === 'unread' ? 'Okunmamış mesaj yok' : convFilter === 'groups' ? 'Henüz bir gruba dahil değilsiniz' : convFilter === 'experts' ? 'Uzmanlarla mesajınız yok' : 'Konuşma bulunamadı'}
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 {convFilter === 'archived' ? 'Arşivlenen konuşmalar burada görünür' : convFilter === 'all' ? 'Yeni bir konuşma başlatın' : ''}
@@ -1077,7 +1117,12 @@ export function MessagesPage() {
                                   <div className={cn('px-3.5 py-2.5 rounded-2xl',
                                     isMine ? 'bg-primary-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm')}>
                                     {!isMine && isGroup && (
-                                      <p className="text-[10px] font-bold text-primary-600 mb-0.5">{msg.senderName}</p>
+                                      <p className={cn("text-[11px] font-bold mb-0.5 flex items-center gap-1", getSenderColor(msg.senderName || ''))}>
+                                        {msg.senderName}
+                                        {(msg.senderRole === 'EXPERT' || selectedConv?.participants.find(p => p.id === msg.senderId)?.role === 'EXPERT') && (
+                                          <span className="text-[9px] bg-primary-100 text-primary-700 px-1 py-0.5 rounded flex items-center font-extrabold leading-none">UZMAN</span>
+                                        )}
+                                      </p>
                                     )}
 
                                     {/* Reply alıntı */}
@@ -1122,6 +1167,7 @@ export function MessagesPage() {
                                     )}
 
                                     <div className={cn('flex items-center justify-end gap-1 mt-0.5', isMine ? 'text-primary-200' : 'text-gray-400')}>
+                                      <span className="text-[9px] opacity-75 mr-0.5 truncate max-w-[100px]">{msg.senderName}</span>
                                       <span className="text-[10px]">{formatTime(msg.sentAt)}</span>
                                       {isMine && (readReceipt?.isRead
                                         ? (
@@ -1205,16 +1251,25 @@ export function MessagesPage() {
                   </div>
                 )}
 
-                {/* Dosya önizleme */}
-                {pendingFile && (
-                  <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2">
-                    {pendingFile.type.startsWith('image/') ? (
-                      <img src={pendingFile.url} alt={pendingFile.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
-                    ) : (
-                      <FileText size={18} className="text-indigo-500 shrink-0" />
-                    )}
-                    <span className="text-xs text-indigo-700 font-medium truncate flex-1">{pendingFile.name}</span>
-                    <button onClick={() => setPendingFile(null)} className="text-indigo-400 hover:text-red-500 shrink-0"><X size={13} /></button>
+                {/* Dosya Önizleme */}
+                {selectedFile && (
+                  <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+                    <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                      {selectedFile.type.startsWith('image/') ? (
+                        <img src={URL.createObjectURL(selectedFile)} alt="preview" className="w-full h-full object-cover rounded-lg" />
+                      ) : selectedFile.type.startsWith('video/') ? (
+                        <span className="text-indigo-600 text-xs font-bold">VİDEO</span>
+                      ) : (
+                        <Paperclip size={16} className="text-indigo-600" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-gray-700 truncate">{selectedFile.name}</p>
+                      <p className="text-[10px] text-gray-400">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    </div>
+                    <button onClick={() => setSelectedFile(null)} className="text-gray-400 hover:text-red-500 shrink-0 cursor-pointer">
+                      <X size={14} />
+                    </button>
                   </div>
                 )}
 
@@ -1249,13 +1304,11 @@ export function MessagesPage() {
                 )}
 
                 <div className="flex items-end gap-2">
-                  <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect}
-                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
-                  <button onClick={() => fileInputRef.current?.click()} disabled={fileUploading}
-                    className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:text-indigo-600 hover:border-indigo-300 transition-colors cursor-pointer shrink-0 self-end disabled:opacity-40" title="Dosya ekle">
-                    {fileUploading
-                      ? <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                      : <Paperclip size={15} />}
+                  <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
+                  <button onClick={() => fileInputRef.current?.click()}
+                    className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:text-indigo-600 hover:border-indigo-300 transition-colors cursor-pointer shrink-0 self-end"
+                    title="Dosya/Medya Ekle">
+                    <Paperclip size={18} />
                   </button>
                   <button onClick={() => setShowPecsPanel(v => !v)}
                     className={cn("p-2 rounded-xl border border-gray-200 text-gray-400 hover:text-indigo-600 hover:border-indigo-300 transition-colors cursor-pointer shrink-0 self-end", showPecsPanel && "bg-indigo-50 border-indigo-300 text-indigo-600")}
@@ -1268,9 +1321,9 @@ export function MessagesPage() {
                     placeholder="Mesaj yazın… (Enter: gönder, Shift+Enter: yeni satır)"
                     className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm resize-none overflow-hidden leading-5 bg-gray-50 focus:bg-white transition-colors"
                     style={{ minHeight: '44px', maxHeight: '120px' }} />
-                  <button onClick={handleSend} disabled={!newMessage.trim() && !pendingFile}
+                  <button onClick={handleSend} disabled={(!newMessage.trim() && !selectedFile) || isUploading}
                     className="p-2.5 rounded-xl bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-40 transition-colors cursor-pointer shrink-0 self-end">
-                    <Send size={16} />
+                    {isUploading ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />}
                   </button>
                 </div>
               </div>

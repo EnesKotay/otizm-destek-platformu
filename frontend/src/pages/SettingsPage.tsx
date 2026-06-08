@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   Bell,
+  Calendar,
   Camera,
   CheckCircle2,
+  ClipboardList,
+  Clock,
   Download,
   Eye,
   EyeOff,
+  FileText,
+  Globe,
   LayoutDashboard,
   Lock,
   Mail,
@@ -14,9 +19,12 @@ import {
   Shield,
   Smartphone,
   Trash2,
+  TrendingUp,
   Type,
   User,
+  Users,
   Wind,
+  X,
   ZapOff,
   Contrast,
   KeyRound,
@@ -33,7 +41,6 @@ import { toast } from '@/store/toastStore';
 import { uploadService } from '@/services/uploadService';
 import { userService } from '@/services/userService';
 import { cn } from '@/utils/cn';
-import { PageOnboarding } from '@/components/ui/PageOnboarding';
 
 const CITIES = [
   'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya', 'Ankara', 'Antalya', 'Ardahan', 'Artvin',
@@ -140,17 +147,26 @@ export function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const pushPermissionDenied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
 
   useEffect(() => {
     pushNotificationService.isSubscribed().then(setPushEnabled).catch(() => {});
   }, []);
 
   const handleTogglePush = async (value: boolean) => {
+    if (pushPermissionDenied) {
+      toast.error('Tarayıcı bildirim iznini engelledi. Adres çubuğundaki kilit ikonuna tıklayıp "Bildirimler → İzin Ver" seçin, sonra sayfayı yenileyin.');
+      return;
+    }
     setPushLoading(true);
     try {
       if (value) {
         const granted = await pushNotificationService.requestPermission();
-        if (!granted) { toast.error('Bildirim izni reddedildi.'); setPushLoading(false); return; }
+        if (!granted) {
+          toast.error('Bildirim izni verilmedi. Tarayıcı ayarlarından bu site için bildirimlere izin verin.');
+          setPushLoading(false);
+          return;
+        }
         const ok = await pushNotificationService.subscribe();
         if (ok) { setPushEnabled(true); toast.success('Push bildirimler açıldı.'); }
         else toast.error('Push bildirim aktif edilemedi.');
@@ -190,6 +206,20 @@ export function SettingsPage() {
   const [notifForum, setNotifForum] = useState(() => readPreference('notif_forum'));
   const [notifMatching, setNotifMatching] = useState(() => readPreference('notif_matching'));
   const [notifCalendar, setNotifCalendar] = useState(() => readPreference('notif_calendar'));
+  const [notifAppointmentRequest, setNotifAppointmentRequest] = useState(() => readPreference('notif_appointment_request'));
+  const [notifPatientConnection, setNotifPatientConnection] = useState(() => readPreference('notif_patient_connection'));
+  const [expertPublicProfile, setExpertPublicProfile] = useState(() => localStorage.getItem('expert-public-profile') !== 'false');
+
+  // Parent-specific state
+  const [notifExpertNote, setNotifExpertNote] = useState(() => readPreference('notif_expert_note'));
+  const [notifTaskAssigned, setNotifTaskAssigned] = useState(() => readPreference('notif_task_assigned'));
+  const [notifApptConfirm, setNotifApptConfirm] = useState(() => readPreference('notif_appt_confirm'));
+  const [apptPreferOnline, setApptPreferOnline] = useState(() => localStorage.getItem('appt_prefer_online') === 'true');
+  const [apptPreferWeekend, setApptPreferWeekend] = useState(() => localStorage.getItem('appt_prefer_weekend') === 'true');
+  const [apptReminder24h, setApptReminder24h] = useState(() => readPreference('appt_reminder_24h'));
+  const [privacyShowProfile, setPrivacyShowProfile] = useState(() => localStorage.getItem('privacy_show_profile') !== 'false');
+  const [privacyAllowMessages, setPrivacyAllowMessages] = useState(() => localStorage.getItem('privacy_allow_messages') !== 'false');
+  const [privacyShareProgress, setPrivacyShareProgress] = useState(() => localStorage.getItem('privacy_share_progress') !== 'false');
 
   const [sidebarCompact, setSidebarCompact] = useState(() => localStorage.getItem('sidebar-compact') === 'true');
   const [sidebarBadges, setSidebarBadges] = useState(() => localStorage.getItem('sidebar-show-badges') !== 'false');
@@ -206,6 +236,7 @@ export function SettingsPage() {
 
   const roleLabel = user?.role === 'ADMIN' ? 'Yönetici' : user?.role === 'EXPERT' ? 'Uzman' : 'Aile';
   const isExpert = user?.role === 'EXPERT';
+  const isParent = user?.role !== 'EXPERT' && user?.role !== 'ADMIN';
   const profileChanged = fullName !== (user?.fullName || '') || phone !== (user?.phone || '') || city !== (user?.city || '')
     || (isExpert && (bio !== (user?.bio || '') || institution !== (user?.institution || '') || licenseNumber !== (user?.licenseNumber || '') || expertTitle !== (user?.expertTitle || '')));
 
@@ -361,29 +392,6 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageOnboarding
-        pageId="settings"
-        title="Hesap Ayarları"
-        description="Profil bilgilerinizi, güvenlik tercihlerinizi ve bildirim ayarlarınızı bu sayfadan yönetebilirsiniz."
-        steps={[
-          {
-            icon: <User size={20} />,
-            title: "Profil Bilgileri",
-            description: "Adınızı, telefonunuzu ve şehir bilgilerinizi güncelleyin."
-          },
-          {
-            icon: <Bell size={20} />,
-            title: "Bildirimler",
-            description: "Hangi konularda e-posta veya uygulama içi bildirim almak istediğinizi seçin."
-          },
-          {
-            icon: <Shield size={20} />,
-            title: "Gizlilik ve Güvenlik",
-            description: "Şifrenizi değiştirin, verilerinizi indirin veya hesabınızı kalıcı olarak silin."
-          }
-        ]}
-      />
-
       <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm">
         <div className="grid gap-6 bg-gradient-to-r from-primary-50 via-white to-sky-50 px-5 py-6 sm:px-7 lg:grid-cols-[1fr_auto] lg:items-center">
           <div className="flex items-center gap-4">
@@ -424,11 +432,45 @@ export function SettingsPage() {
           <div className="min-w-[14rem] rounded-3xl bg-white/80 p-4 ring-1 ring-slate-100">
             <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-500">
               <span>Profil tamamlanma</span>
-              <span className="text-primary-700">{profileCompletion}%</span>
+              <span className={profileCompletion === 100 ? 'text-emerald-600' : 'text-primary-700'}>{profileCompletion}%</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${profileCompletion}%` }} />
+              <div
+                className={cn('h-full rounded-full transition-all', profileCompletion === 100 ? 'bg-emerald-500' : 'bg-primary-600')}
+                style={{ width: `${profileCompletion}%` }}
+              />
             </div>
+            {profileCompletion === 100 ? (
+              <p className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                <CheckCircle2 size={11} /> Profil eksiksiz!
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-1">
+                {(isExpert
+                  ? [
+                      { key: user?.fullName, label: 'Ad Soyad' },
+                      { key: user?.phone, label: 'Telefon' },
+                      { key: user?.city, label: 'Şehir' },
+                      { key: user?.profileImageUrl, label: 'Profil fotoğrafı' },
+                      { key: user?.bio, label: 'Biyografi' },
+                      { key: user?.institution, label: 'Kurum' },
+                      { key: user?.licenseNumber, label: 'Lisans No' },
+                      { key: user?.expertTitle, label: 'Unvan' },
+                    ]
+                  : [
+                      { key: user?.fullName, label: 'Ad Soyad' },
+                      { key: user?.phone, label: 'Telefon' },
+                      { key: user?.city, label: 'Şehir' },
+                      { key: user?.profileImageUrl, label: 'Profil fotoğrafı' },
+                    ]
+                ).filter(f => !f.key).slice(0, 3).map(f => (
+                  <li key={f.label} className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-slate-300 shrink-0" />
+                    {f.label} eksik
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </section>
@@ -447,6 +489,7 @@ export function SettingsPage() {
               </Button>
             </CardHeader>
 
+            <div className="px-5 pb-5 space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
               <Input label="Ad Soyad" value={fullName} onChange={(event) => setFullName(event.target.value)} />
               <Input label="E-posta" value={user?.email || ''} disabled />
@@ -468,7 +511,7 @@ export function SettingsPage() {
 
             {/* Uzman profil alanları */}
             {isExpert && (
-              <div className="mt-5 pt-5 border-t border-gray-100 space-y-4">
+              <div className="pt-5 border-t border-gray-100 space-y-4">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Uzman Profil Bilgileri</p>
                 <div className="grid gap-4 md:grid-cols-2">
                   <Input
@@ -490,19 +533,44 @@ export function SettingsPage() {
                     placeholder="Meslek belgesi numarası"
                   />
                 </div>
+                <div className="pt-3 border-t border-gray-100">
+                  <SettingRow
+                    icon={Globe}
+                    label="Profilim herkese açık"
+                    description="Aileler sizi uzman arama listesinde bulabilsin"
+                    checked={expertPublicProfile}
+                    onChange={(value) => {
+                      localStorage.setItem('expert-public-profile', String(value));
+                      setExpertPublicProfile(value);
+                      toast.success(value ? 'Profil herkese açık.' : 'Profil gizlendi.');
+                    }}
+                  />
+                </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm font-medium text-gray-700">Biyografi</label>
                   <textarea
                     value={bio}
                     onChange={e => setBio(e.target.value)}
                     rows={4}
+                    maxLength={500}
                     placeholder="Kendinizi tanıtın — uzmanlık alanlarınız, deneyimleriniz ve ailelere nasıl yardımcı olduğunuz..."
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                    className={cn(
+                      'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 resize-none',
+                      bio.length >= 500 ? 'border-red-300 focus:ring-red-400' : bio.length > 470 ? 'border-amber-300 focus:ring-amber-400' : 'border-gray-300 focus:ring-primary-500'
+                    )}
                   />
-                  <p className="text-xs text-gray-400">{bio.length}/500 karakter</p>
+                  <p className={cn(
+                    'text-xs',
+                    bio.length >= 500 ? 'text-red-500 font-semibold' : bio.length > 470 ? 'text-amber-500' : 'text-gray-400'
+                  )}>
+                    {bio.length}/500 karakter
+                    {bio.length >= 500 && ' — limite ulaşıldı!'}
+                    {bio.length > 470 && bio.length < 500 && ` — ${500 - bio.length} karakter kaldı`}
+                  </p>
                 </div>
               </div>
             )}
+            </div>
           </Card>
 
           <Card>
@@ -520,7 +588,7 @@ export function SettingsPage() {
             </CardHeader>
 
             {showPasswordForm ? (
-              <div className="space-y-4">
+              <div className="px-5 pb-5 space-y-4">
                 <div className="relative">
                   <Input
                     label="Mevcut Şifre"
@@ -550,19 +618,42 @@ export function SettingsPage() {
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-500">
                     <span>Şifre gücü</span>
-                    <span>{passwordScore < 3 ? 'Zayıf' : passwordScore < 5 ? 'İyi' : 'Güçlü'}</span>
+                    <span className={passwordScore < 3 ? 'text-red-500' : passwordScore < 5 ? 'text-amber-600' : 'text-emerald-600'}>
+                      {passwordScore < 3 ? 'Zayıf' : passwordScore < 5 ? 'İyi' : 'Güçlü'}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-5 gap-1">
+                  <div className="grid grid-cols-5 gap-1 mb-3">
                     {Array.from({ length: 5 }).map((_, index) => (
                       <span
                         key={index}
                         className={cn(
-                          'h-2 rounded-full',
-                          index < passwordScore ? 'bg-primary-600' : 'bg-slate-200'
+                          'h-2 rounded-full transition-colors',
+                          index < passwordScore
+                            ? passwordScore < 3 ? 'bg-red-400' : passwordScore < 5 ? 'bg-amber-400' : 'bg-emerald-500'
+                            : 'bg-slate-200'
                         )}
                       />
                     ))}
                   </div>
+                  {newPassword.length > 0 && (
+                    <ul className="space-y-1.5">
+                      {[
+                        { label: 'En az 8 karakter', pass: newPassword.length >= 8 },
+                        { label: 'Büyük harf (A-Z)', pass: /[A-ZÇĞİÖŞÜ]/.test(newPassword) },
+                        { label: 'Küçük harf (a-z)', pass: /[a-zçğıöşü]/.test(newPassword) },
+                        { label: 'Rakam (0-9)', pass: /\d/.test(newPassword) },
+                        { label: 'Özel karakter (!@#...)', pass: /[^A-Za-zÇĞİÖŞÜçğıöşü0-9]/.test(newPassword) },
+                      ].map(({ label, pass }) => (
+                        <li key={label} className={`flex items-center gap-1.5 text-xs ${pass ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          {pass
+                            ? <CheckCircle2 size={12} className="shrink-0" />
+                            : <X size={12} className="shrink-0" />
+                          }
+                          {label}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
@@ -584,7 +675,7 @@ export function SettingsPage() {
                 </div>
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="px-5 pb-5 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
                   <p className="text-sm font-semibold text-emerald-900">Oturum aktif</p>
                   <p className="mt-1 text-xs text-emerald-700">Hesabınız korumalı alanda çalışıyor.</p>
@@ -605,7 +696,7 @@ export function SettingsPage() {
                 </div>
               </CardTitle>
             </CardHeader>
-            <div className="space-y-3">
+            <div className="px-5 pb-5 space-y-3">
               <SettingRow
                 icon={Mail}
                 label="Yeni mesajlar"
@@ -634,8 +725,153 @@ export function SettingsPage() {
                 checked={notifCalendar}
                 onChange={(value) => handlePreference('notif_calendar', value, setNotifCalendar, value ? 'Takvim hatırlatıcıları açıldı.' : 'Takvim hatırlatıcıları kapatıldı.')}
               />
+              {isExpert && (
+                <>
+                  <div className="pt-1">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Uzman Bildirimleri</p>
+                  </div>
+                  <SettingRow
+                    icon={Calendar}
+                    label="Yeni randevu isteği"
+                    description="Aile size randevu talebi gönderdiğinde bildir"
+                    checked={notifAppointmentRequest}
+                    onChange={(value) => handlePreference('notif_appointment_request', value, setNotifAppointmentRequest, value ? 'Randevu bildirimleri açıldı.' : 'Randevu bildirimleri kapatıldı.')}
+                  />
+                  <SettingRow
+                    icon={Users}
+                    label="Yeni bağlantı isteği"
+                    description="Danışan bağlantı isteği geldiğinde bildir"
+                    checked={notifPatientConnection}
+                    onChange={(value) => handlePreference('notif_patient_connection', value, setNotifPatientConnection, value ? 'Bağlantı bildirimleri açıldı.' : 'Bağlantı bildirimleri kapatıldı.')}
+                  />
+                </>
+              )}
+              {isParent && (
+                <>
+                  <div className="pt-1">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Aile Bildirimleri</p>
+                  </div>
+                  <SettingRow
+                    icon={FileText}
+                    label="Uzman not gönderdi"
+                    description="Bağlı uzman çocuğunuz için not veya rapor eklediğinde bildir"
+                    checked={notifExpertNote}
+                    onChange={(value) => handlePreference('notif_expert_note', value, setNotifExpertNote, value ? 'Not bildirimleri açıldı.' : 'Not bildirimleri kapatıldı.')}
+                  />
+                  <SettingRow
+                    icon={ClipboardList}
+                    label="Yeni görev atandı"
+                    description="Uzman çocuğunuz için egzersiz veya görev atadığında bildir"
+                    checked={notifTaskAssigned}
+                    onChange={(value) => handlePreference('notif_task_assigned', value, setNotifTaskAssigned, value ? 'Görev bildirimleri açıldı.' : 'Görev bildirimleri kapatıldı.')}
+                  />
+                  <SettingRow
+                    icon={Calendar}
+                    label="Randevu onayı / iptali"
+                    description="Uzman randevunuzu onayladığında veya iptal ettiğinde bildir"
+                    checked={notifApptConfirm}
+                    onChange={(value) => handlePreference('notif_appt_confirm', value, setNotifApptConfirm, value ? 'Randevu bildirimleri açıldı.' : 'Randevu bildirimleri kapatıldı.')}
+                  />
+                </>
+              )}
             </div>
           </Card>
+
+          {isParent && (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Calendar size={20} aria-hidden="true" /> Randevu Tercihleri
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <div className="px-5 pb-5 space-y-3">
+                <div className="rounded-2xl bg-indigo-50 px-4 py-3 text-xs text-indigo-700 leading-relaxed">
+                  Bu tercihler kayıt altına alınır; uzmanlar randevu teklifi yaparken bu bilgileri görebilir.
+                </div>
+                <SettingRow
+                  icon={Smartphone}
+                  label="Online seans tercih ederim"
+                  description="Uzman önerisinde video görüşmeyi ön plana çıkarır"
+                  checked={apptPreferOnline}
+                  onChange={(value) => {
+                    localStorage.setItem('appt_prefer_online', String(value));
+                    setApptPreferOnline(value);
+                    toast.success(value ? 'Online tercih kaydedildi.' : 'Yüz yüze tercih kaydedildi.');
+                  }}
+                />
+                <SettingRow
+                  icon={Clock}
+                  label="Hafta sonu uygunluk"
+                  description="Cumartesi ve Pazar günleri müsait olduğumu belirtir"
+                  checked={apptPreferWeekend}
+                  onChange={(value) => {
+                    localStorage.setItem('appt_prefer_weekend', String(value));
+                    setApptPreferWeekend(value);
+                    toast.success(value ? 'Hafta sonu uygunluğu eklendi.' : 'Hafta sonu uygunluğu kaldırıldı.');
+                  }}
+                />
+                <SettingRow
+                  icon={Bell}
+                  label="24 saat önceden hatırlat"
+                  description="Randevudan bir gün önce hatırlatma bildirimi gönder"
+                  checked={apptReminder24h}
+                  onChange={(value) => handlePreference('appt_reminder_24h', value, setApptReminder24h, value ? 'Hatırlatma açıldı.' : 'Hatırlatma kapatıldı.')}
+                />
+              </div>
+            </Card>
+          )}
+
+          {isParent && (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Shield size={20} aria-hidden="true" /> Gizlilik Tercihleri
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <div className="px-5 pb-5 space-y-3">
+                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-600 leading-relaxed">
+                  Bu ayarlar yalnızca onaylı bağlantılarınız olan uzmanları etkiler.
+                </div>
+                <SettingRow
+                  icon={Eye}
+                  label="Profilim uzmanlara görünsün"
+                  description="Onaylı uzmanlar profil kartınızı ve çocuk bilgilerinizi görebilir"
+                  checked={privacyShowProfile}
+                  onChange={(value) => {
+                    localStorage.setItem('privacy_show_profile', String(value));
+                    setPrivacyShowProfile(value);
+                    toast.success(value ? 'Profil görünürlüğü açıldı.' : 'Profil görünürlüğü kapatıldı.');
+                  }}
+                />
+                <SettingRow
+                  icon={Mail}
+                  label="Doğrudan mesaj izni"
+                  description="Bağlı uzmanlar size uygulama içinden mesaj gönderebilir"
+                  checked={privacyAllowMessages}
+                  onChange={(value) => {
+                    localStorage.setItem('privacy_allow_messages', String(value));
+                    setPrivacyAllowMessages(value);
+                    toast.success(value ? 'Mesaj izni verildi.' : 'Mesaj izni kaldırıldı.');
+                  }}
+                />
+                <SettingRow
+                  icon={TrendingUp}
+                  label="Gelişim notları paylaşımı"
+                  description="Uzmanlar çocuğunuzun not ve ilerleme kayıtlarını görebilir"
+                  checked={privacyShareProgress}
+                  onChange={(value) => {
+                    localStorage.setItem('privacy_share_progress', String(value));
+                    setPrivacyShareProgress(value);
+                    toast.success(value ? 'Gelişim paylaşımı açıldı.' : 'Gelişim paylaşımı kapatıldı.');
+                  }}
+                />
+              </div>
+            </Card>
+          )}
         </div>
 
         <aside className="space-y-6">
@@ -647,7 +883,7 @@ export function SettingsPage() {
                 </div>
               </CardTitle>
             </CardHeader>
-            <div className="space-y-3">
+            <div className="px-5 pb-5 space-y-3">
               <SettingRow
                 icon={PanelLeftClose}
                 label="Kompakt yan menü"
@@ -679,9 +915,13 @@ export function SettingsPage() {
               <SettingRow
                 icon={Bell}
                 label="Push Bildirimler"
-                description="İlaç hatırlatmaları ve mesajlar için anlık bildirim"
+                description={
+                  pushPermissionDenied
+                    ? 'Tarayıcı engelledi — kilit ikonundan izin verin'
+                    : 'İlaç hatırlatmaları ve mesajlar için anlık bildirim'
+                }
                 checked={pushEnabled}
-                disabled={pushLoading || !pushNotificationService.isSupported()}
+                disabled={pushLoading || !pushNotificationService.isSupported() || pushPermissionDenied}
                 onChange={handleTogglePush}
               />
               <SettingRow
@@ -702,7 +942,7 @@ export function SettingsPage() {
                 </div>
               </CardTitle>
             </CardHeader>
-            <div className="space-y-3">
+            <div className="px-5 pb-5 space-y-3">
               <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
                 <User size={18} className="text-slate-400" aria-hidden="true" />
                 <div className="min-w-0">
@@ -735,7 +975,7 @@ export function SettingsPage() {
                 </div>
               </CardTitle>
             </CardHeader>
-            <div className="space-y-3">
+            <div className="px-5 pb-5 space-y-3">
               <div className="rounded-2xl bg-blue-50 px-4 py-3 text-xs text-blue-700 leading-relaxed">
                 Bu ayarlar anında uygulanır ve tarayıcıda kalıcı olarak saklanır.
               </div>

@@ -1,8 +1,9 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import {
   Plus, CheckCircle, Clock, GraduationCap, User, MessageSquare,
   Trash2, ChevronDown, ChevronUp, Pencil, AlertTriangle, Info,
   Calendar, TrendingUp, Eye, EyeOff, Shield, Printer,
+  Paperclip, X, Image as ImageIcon
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,11 +13,10 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useChildStore } from '@/store/childStore';
 import { useAuthStore } from '@/store/authStore';
 import { childService } from '@/services/childService';
-import { expertService } from '@/services/expertService';
 import { sharedProgressService } from '@/services/sharedProgressService';
+import { uploadService } from '@/services/uploadService';
 import { toast } from '@/store/toastStore';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
-import type { User as UserType } from '@/types';
 
 type NoteType = 'observation' | 'homework' | 'goal' | 'feedback' | 'general';
 type NoteStatus = 'open' | 'done' | 'in_progress';
@@ -119,6 +119,28 @@ const EMPTY_FORM = {
 };
 
 // ──────────────────────────────
+// Basit Markdown Parse
+// ──────────────────────────────
+function parseReplyContent(content: string) {
+  const parts = content.split(/(!?\[.*?\]\(.*?\))/g);
+  return parts.map((part, i) => {
+    const imgMatch = part.match(/^!\[(.*?)\]\((.*?)\)$/);
+    if (imgMatch) {
+      return <img key={i} src={imgMatch[2]} alt={imgMatch[1]} className="max-w-[200px] mt-2 rounded-xl object-cover border border-gray-200" />;
+    }
+    const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
+    if (linkMatch) {
+      return (
+        <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="flex w-fit items-center gap-1.5 px-3 py-1.5 mt-2 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-lg hover:bg-indigo-100 transition-colors">
+          <Paperclip size={13} /> {linkMatch[1]}
+        </a>
+      );
+    }
+    return <span key={i} className="whitespace-pre-wrap">{part}</span>;
+  });
+}
+
+// ──────────────────────────────
 // Mini Sparkline (SVG tabanlı)
 // ──────────────────────────────
 function Sparkline({ values, color = '#6366f1' }: { values: number[]; color?: string }) {
@@ -150,7 +172,7 @@ export function SharedProgressPage() {
   const { children, setChildren, selectedChild, setSelectedChild } = useChildStore();
   const selectedChildId = selectedChild?.id ?? '';
   const [notes, setNotes] = useState<ProgressNote[]>([]);
-  const [_experts, setExperts] = useState<UserType[]>([]);
+
   const [showModal, setShowModal] = useState(false);
   const [editingNote, setEditingNote] = useState<ProgressNote | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -158,6 +180,10 @@ export function SharedProgressPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [replyingId, setReplyingId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
+  const [replyFile, setReplyFile] = useState<File | null>(null);
+  const [isUploadingReply, setIsUploadingReply] = useState(false);
+  const replyFileInputRef = useRef<HTMLInputElement>(null);
+
   const [filterType, setFilterType] = useState<NoteType | ''>('');
   const [filterStatus, setFilterStatus] = useState<NoteStatus | ''>('');
   const [filterPriority, setFilterPriority] = useState<NotePriority | ''>('');
@@ -177,8 +203,11 @@ export function SharedProgressPage() {
   };
 
   useEffect(() => {
+     
     if (!children.length) childService.getAll().then(setChildren).catch(() => {});
-    expertService.getAll().then(setExperts).catch(() => {});
+     
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { if (!selectedChild && children.length) setSelectedChild(children[0]); }, [children, selectedChild, setSelectedChild]);
@@ -256,16 +285,24 @@ export function SharedProgressPage() {
   };
 
   const handleReply = async (noteId: string) => {
-    if (!replyContent.trim()) { toast.error('Yanıt boş bırakılamaz.'); return; }
+    if (!replyContent.trim() && !replyFile) { toast.error('Yanıt boş bırakılamaz.'); return; }
     const role = (user?.role === 'EXPERT' ? 'expert' : 'parent') as 'expert' | 'parent';
+    setIsUploadingReply(true);
     try {
+      let contentToSave = replyContent;
+      if (replyFile) {
+        const url = await uploadService.upload(replyFile);
+        const isImage = replyFile.type.startsWith('image/');
+        contentToSave += `\n\n${isImage ? '!' : ''}[Eklenen Dosya: ${replyFile.name}](${url})`;
+      }
+
       const updated = await sharedProgressService.addReply(noteId, {
-        fromRole: role, fromName: user?.fullName ?? 'Bilinmiyor', content: replyContent,
+        fromRole: role, fromName: user?.fullName ?? 'Bilinmiyor', content: contentToSave.trim(),
       });
       setNotes(prev => prev.map(n => n.id === noteId ? { ...n, replies: parseReplies(updated.replies) } : n));
-      setReplyingId(null); setReplyContent('');
+      setReplyingId(null); setReplyContent(''); setReplyFile(null);
       toast.success('Yanıt eklendi.');
-    } catch { toast.error('Yanıt eklenemedi.'); }
+    } catch { toast.error('Yanıt eklenemedi.'); } finally { setIsUploadingReply(false); }
   };
 
   const handleExpand = (id: string) => {
@@ -300,16 +337,19 @@ export function SharedProgressPage() {
 
   // This week panel
   const today = new Date().toISOString().split('T')[0];
+  // eslint-disable-next-line react-hooks/purity
   const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
   const thisWeekNotes = useMemo(() =>
     notes.filter(n => n.dueDate && n.dueDate >= today && n.dueDate <= weekEnd && n.status !== 'done')
       .sort((a, b) => (a.dueDate ?? '') > (b.dueDate ?? '') ? 1 : -1),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [notes]
   );
 
   // Sparkline: last 7 days completion count
   const sparkData = useMemo(() => {
     const days = Array.from({ length: 7 }, (_, i) => {
+      // eslint-disable-next-line react-hooks/purity
       const d = new Date(Date.now() - (6 - i) * 86400000).toISOString().split('T')[0];
       return notes.filter(n => n.completedAt?.startsWith(d)).length;
     });
@@ -674,7 +714,7 @@ export function SharedProgressPage() {
                                   </span>
                                   <span className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleDateString('tr-TR')}</span>
                                 </div>
-                                <p className="text-gray-700">{r.content}</p>
+                                <div className="text-gray-700">{parseReplyContent(r.content)}</div>
                               </div>
                             ))}
                           </div>
@@ -691,9 +731,26 @@ export function SharedProgressPage() {
                             <textarea value={replyContent} onChange={e => setReplyContent(e.target.value)}
                               rows={2} placeholder="Yanıtınız..."
                               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none resize-none" />
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => handleReply(note.id)}>Gönder</Button>
-                              <Button size="sm" variant="outline" onClick={() => setReplyingId(null)}>İptal</Button>
+                            {replyFile && (
+                              <div className="flex items-center gap-2 p-2 bg-indigo-50 border border-indigo-100 rounded-lg text-xs">
+                                <Paperclip size={12} className="text-indigo-600" />
+                                <span className="flex-1 truncate text-indigo-800">{replyFile.name}</span>
+                                <button onClick={() => setReplyFile(null)} className="text-indigo-400 hover:text-red-500 cursor-pointer"><X size={12} /></button>
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={() => handleReply(note.id)} disabled={isUploadingReply || (!replyContent.trim() && !replyFile)}>
+                                  {isUploadingReply ? 'Yükleniyor...' : 'Gönder'}
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => { setReplyingId(null); setReplyFile(null); }}>İptal</Button>
+                              </div>
+                              <div>
+                                <input type="file" className="hidden" ref={replyFileInputRef} onChange={e => { if (e.target.files?.length) setReplyFile(e.target.files[0]); }} />
+                                <button onClick={() => replyFileInputRef.current?.click()} className="text-gray-400 hover:text-indigo-600 p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer flex items-center gap-1 text-xs">
+                                  <Paperclip size={13} /> Medya Ekle
+                                </button>
+                              </div>
                             </div>
                           </div>
                         ) : (

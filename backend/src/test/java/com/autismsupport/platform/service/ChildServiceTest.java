@@ -65,7 +65,7 @@ class ChildServiceTest {
     @Test
     @DisplayName("getChildrenByParent: sadece o ebeveyne ait çocuklar döner")
     void getChildrenByParent_returnsOnlyOwnChildren() {
-        when(childRepository.findByParentId(parentId)).thenReturn(List.of(child));
+        when(childRepository.findByParentIdWithTags(parentId)).thenReturn(List.of(child));
 
         List<ChildDto> result = childService.getChildrenByParent(parentId);
 
@@ -77,7 +77,7 @@ class ChildServiceTest {
     @DisplayName("getChild: başka ebeveyne ait çocuğa erişim engellenir")
     void getChild_wrongParent_throwsException() {
         UUID otherParentId = UUID.randomUUID();
-        when(childRepository.findById(childId)).thenReturn(Optional.of(child));
+        when(childRepository.findByIdWithTags(childId)).thenReturn(Optional.of(child));
 
         assertThatThrownBy(() -> childService.getChild(childId, otherParentId))
                 .isInstanceOf(RuntimeException.class);
@@ -86,7 +86,7 @@ class ChildServiceTest {
     @Test
     @DisplayName("getChild: doğru ebeveyn kendi çocuğuna erişebilir")
     void getChild_correctParent_returnsChild() {
-        when(childRepository.findById(childId)).thenReturn(Optional.of(child));
+        when(childRepository.findByIdWithTags(childId)).thenReturn(Optional.of(child));
 
         ChildDto result = childService.getChild(childId, parentId);
 

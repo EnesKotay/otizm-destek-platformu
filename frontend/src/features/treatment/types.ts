@@ -21,6 +21,7 @@ export interface GoalGroup {
   icon: ReactNode;
   percent: number;
   items: GoalItem[];
+  templateItems: GoalItem[];
   tone: 'sky' | 'violet';
   summary: string;
 }
@@ -126,4 +127,5 @@ export interface TreatmentPageState {
   gameFeedback: Record<string, GameReflection>;
   gameSessions: GameSession[];
   goalProgressHistory: GoalProgressSnapshot[];
+  templateGoalToggles: Record<string, boolean>;
 }

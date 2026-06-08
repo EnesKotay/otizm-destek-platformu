@@ -178,8 +178,10 @@ export function GoalTokenPage() {
   const [logNote, setLogNote] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
 
+   
   useEffect(() => {
     if (!children.length) childService.getAll().then(setChildren).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -256,12 +258,14 @@ export function GoalTokenPage() {
   const completedGoals = goals.filter(g => !g.active);
   const displayGoals = activeTab === 'active' ? activeGoals : completedGoals;
 
+   
   const stats = useMemo(() => {
     const totalTokens = goals.reduce((s, g) => s + g.entries.filter(e => e.achieved).length, 0);
     const completedCount = completedGoals.length;
     const todayTokens = goals.reduce((s, g) => s + g.entries.filter(e => e.achieved && e.date === TODAY).length, 0);
     const bestStreak = goals.reduce((max, g) => Math.max(max, calcStreak(g.entries)), 0);
     return { totalTokens, completedCount, todayTokens, bestStreak };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goals]);
 
   return (

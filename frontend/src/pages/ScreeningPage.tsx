@@ -180,6 +180,7 @@ function EmotionGame({ onComplete }: ActivityGameProps) {
   useEffect(() => {
     const correct = EMOTIONS[current];
     const others = EMOTIONS.filter((_, i) => i !== current).sort(() => Math.random() - 0.5).slice(0, 3);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOptions(shuffleArray([correct, ...others]));
     setSelected(null);
   }, [current]);
@@ -425,10 +426,12 @@ export function ScreeningPage() {
 
   useEffect(() => {
     childService.getAll().then(c => { setChildren(c); if (c.length && !selectedChild) setSelectedChild(c[0]); }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setChildren]);
 
   useEffect(() => {
     if (!selectedChildId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPastResults([]);
       return;
     }
@@ -440,6 +443,7 @@ export function ScreeningPage() {
   }, [selectedChildId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActivityResults(readActivityResults(selectedChild?.privacySettings));
   }, [selectedChild]);
 

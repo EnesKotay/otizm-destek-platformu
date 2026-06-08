@@ -15,7 +15,17 @@ interface ChildState {
 export const useChildStore = create<ChildState>()((set) => ({
   children: [],
   selectedChild: null,
-  setChildren: (children) => set({ children }),
+  setChildren: (children) =>
+    set((state) => {
+      const selectedChild = state.selectedChild
+        ? children.find((child) => child.id === state.selectedChild?.id) ?? null
+        : null;
+
+      return {
+        children,
+        selectedChild: selectedChild ?? children[0] ?? null,
+      };
+    }),
   setSelectedChild: (child) => set({ selectedChild: child }),
   addChild: (child) => set((state) => ({ children: [...state.children, child] })),
   updateChild: (child) =>

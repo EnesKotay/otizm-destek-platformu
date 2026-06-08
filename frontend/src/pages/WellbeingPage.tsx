@@ -4,7 +4,6 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import { toast } from '@/store/toastStore';
 import { wellbeingService } from '@/services/wellbeingService';
@@ -117,6 +116,7 @@ export function WellbeingPage() {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingEntries(true);
     wellbeingService.getAll()
       .then(data => {
@@ -138,6 +138,7 @@ export function WellbeingPage() {
   }, [entries]);
 
   const weeklyAvg = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity
     const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString().split('T')[0];
     const recent = entries.filter(e => e.date >= weekAgo);
     if (!recent.length) return null;
@@ -447,6 +448,7 @@ export function WellbeingPage() {
               <XAxis dataKey="date" tick={{ fontSize: 9 }} />
               <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fontSize: 9 }} width={28} />
               <Tooltip
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(v: any) => [`${v}/100`, 'Refah Puanı']}
                 contentStyle={{ fontSize: 11, borderRadius: 8 }}
               />

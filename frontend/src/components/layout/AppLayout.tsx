@@ -1,12 +1,14 @@
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ChatBot } from '@/components/ChatBot';
-import { Search, Menu, X, Sparkles } from 'lucide-react';
+import { AlertTriangle, HelpCircle, Search, Menu, X, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
+import { prefetchCommonRoutes } from '@/utils/routePrefetch';
+import { pushNotificationService } from '@/services/pushNotificationService';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -17,19 +19,21 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
-// En çok ziyaret edilen sayfaların chunk'larını idle zamanda önceden yükle
-function prefetchCommonRoutes() {
-  const pages = [
-    () => import('@/pages/DashboardPage'),
-    () => import('@/pages/DailyTrackerPage'),
-    () => import('@/pages/ChildrenPage'),
-    () => import('@/pages/CalendarPage'),
-    () => import('@/pages/AppointmentPage'),
-    () => import('@/pages/AnalyticsPage'),
-    () => import('@/pages/RoutinesPage'),
-    () => import('@/pages/BehaviorJournalPage'),
-  ];
-  pages.forEach(load => load());
+const ROUTE_HELP: Array<{ match: string; title: string; steps: string[] }> = [
+  { match: '/gunluk-takip', title: 'Bugünün kaydını sakin sakin doldurun.', steps: ['Önce duygu durumunu seçin.', 'Sonra uyku bilgisini ekleyin.', 'İlaç varsa yalnızca alındı bilgisini işaretleyin.'] },
+  { match: '/cocuklarim', title: 'Burada çocuk profilini düzenlersiniz.', steps: ['Temel bilgileri ekleyin.', 'Güçlü yanları ve zorlanan alanları yazın.', 'Birden fazla çocuk varsa üstten seçim yapın.'] },
+  { match: '/randevular', title: 'Uzman görüşmelerinizi buradan takip edin.', steps: ['Uygun uzmanı veya saati seçin.', 'Bekleyen randevuları kontrol edin.', 'Görüşme öncesi notlarınızı hazırlayın.'] },
+  { match: '/mesajlar', title: 'Uzman ve aile mesajları burada.', steps: ['Okunmamış mesajları açın.', 'Kısa ve net cevap yazın.', 'Acil durumlarda zor an rehberini kullanın.'] },
+  { match: '/kriz-rehberi', title: 'Zor anlarda önce güvenlik ve sakinleşme.', steps: ['Ortamı sadeleştirin.', 'Kısa ve net cümleler kullanın.', 'Gerekirse acil durum kartına geçin.'] },
+  { match: '/acil-kart', title: 'Acil durumda paylaşılacak bilgileri hazır tutun.', steps: ['İletişim bilgilerini kontrol edin.', 'Duyusal hassasiyetleri yazın.', 'Paylaşım bağlantısını yalnızca gerektiğinde kullanın.'] },
+  { match: '/notlar', title: 'Kısa gözlem notları ekleyin.', steps: ['Bugün fark ettiğiniz bir şeyi yazın.', 'Kısa cümleler yeterli.', 'İsterseniz uzmanla paylaşılacak özete ekleyin.'] },
+  { match: '/tedavi', title: 'Günlük plan ve gelişim hedefleri burada.', steps: ['Bugünkü küçük adıma bakın.', 'Zor gelirse süreyi kısaltın.', 'Tamamlanan adımları işaretleyin.'] },
+  { match: '/yardim', title: 'Takıldığınız yerde buradan başlayın.', steps: ['Aradığınız konuyu seçin.', 'İlk adımı okuyun.', 'Gerekirse destek alanına geçin.'] },
+  { match: '/', title: 'Bugün neye ihtiyacınız varsa onu seçin.', steps: ['Bugünün kaydını girebilirsiniz.', 'Randevu ve mesajlara bakabilirsiniz.', 'Zor bir an varsa rehbere geçebilirsiniz.'] },
+];
+
+function getRouteHelp(pathname: string) {
+  return ROUTE_HELP.find((item) => item.match !== '/' && pathname.startsWith(item.match)) || ROUTE_HELP.find((item) => item.match === '/');
 }
 
 export function AppLayout() {
@@ -40,6 +44,8 @@ export function AppLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const routeHelp = useMemo(() => getRouteHelp(location.pathname), [location.pathname]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -59,6 +65,14 @@ export function AppLayout() {
     }
   };
 
+  // Push bildirim aboneliği — kullanıcı oturum açtıktan sonra otomatik kayıt
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (!pushNotificationService.isSupported()) return;
+    if (pushNotificationService.getPermission() === 'denied') return;
+    pushNotificationService.subscribe().catch(() => {});
+  }, [isAuthenticated]);
+
   useEffect(() => {
     // Tarayıcı boşta olduğunda chunk'ları önceden indir
     if ('requestIdleCallback' in window) {
@@ -68,6 +82,10 @@ export function AppLayout() {
       setTimeout(prefetchCommonRoutes, 2000);
     }
   }, []);
+
+  useEffect(() => {
+    setIsHelpOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleCompactChange = (event: Event) => {
@@ -154,9 +172,44 @@ export function AppLayout() {
                 <Search size={16} />
                 <span className="hidden sm:inline">Ara...</span>
               </Link>
+              {isAuthenticated && routeHelp && (
+                <button
+                  type="button"
+                  onClick={() => setIsHelpOpen((value) => !value)}
+                  className="flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm text-gray-500 transition-all hover:border-gray-100 hover:bg-white hover:text-gray-700 hover:shadow-sm dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                  aria-expanded={isHelpOpen}
+                >
+                  <HelpCircle size={16} />
+                  <span className="hidden sm:inline">Yardım</span>
+                </button>
+              )}
               {isAuthenticated && <NotificationBell />}
             </div>
           </div>
+          {isAuthenticated && isHelpOpen && routeHelp && (
+            <section className="mb-6 rounded-2xl border border-sky-100 bg-sky-50 p-4 shadow-sm print:hidden">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-900">{routeHelp.title}</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    {routeHelp.steps.map((step, index) => (
+                      <div key={step} className="rounded-xl bg-white/80 px-3 py-2 text-xs font-semibold leading-5 text-slate-600 ring-1 ring-sky-100">
+                        <span className="mr-1 text-sky-700">{index + 1}.</span>
+                        {step}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <Link
+                  to="/kriz-rehberi"
+                  className="hidden shrink-0 items-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 ring-1 ring-rose-100 transition-colors hover:bg-rose-100 sm:inline-flex"
+                >
+                  <AlertTriangle size={14} />
+                  Zor an
+                </Link>
+              </div>
+            </section>
+          )}
           <Suspense fallback={
             <div className="flex items-center justify-center min-h-[60vh]">
               <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />

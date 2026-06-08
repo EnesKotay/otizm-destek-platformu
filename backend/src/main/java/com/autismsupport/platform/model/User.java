@@ -98,6 +98,18 @@ public class User {
     @Builder.Default
     private List<Child> children = new ArrayList<>();
 
+    @OneToMany(mappedBy = "expert", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ExpertPatientConnection> expertConnections = new ArrayList<>();
+
+    @OneToMany(mappedBy = "expert", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ExpertTask> assignedTasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "expert", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Appointment> expertAppointments = new ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

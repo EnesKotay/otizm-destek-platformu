@@ -72,8 +72,8 @@ export function TreatmentTodayTab({
     if (!childId) return;
     try {
       const raw = localStorage.getItem(getStepsStorageKey(childId));
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCompletedSteps(new Set<string>(raw ? JSON.parse(raw) : []));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     } catch { setCompletedSteps(new Set<string>()); }
   }, [childId]);
 
@@ -108,29 +108,32 @@ export function TreatmentTodayTab({
     <div className="space-y-6">
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         {/* Left Column: Daily Flow Timeline */}
-        <div className="rounded-3xl border border-slate-200/50 bg-white p-6 shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300">
-          <div className="flex items-center justify-between gap-3">
+        <div className="group rounded-[2.5rem] border border-slate-200/50 bg-white/70 backdrop-blur-2xl p-7 sm:p-9 shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all duration-500 relative overflow-hidden">
+          {/* Subtle glowing background effect */}
+          <div className="absolute top-0 right-0 h-[500px] w-[500px] bg-gradient-to-br from-indigo-50/50 to-emerald-50/50 rounded-full blur-[100px] opacity-50 pointer-events-none group-hover:opacity-80 transition-opacity duration-700" />
+          
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-indigo-500 bg-indigo-50/60 px-2 py-0.5 rounded-md">
                 BUGÜNÜN ADIMLAR
               </span>
               <h3 className="mt-2 text-lg font-extrabold text-slate-800 leading-snug">Bugün çocuğunuzla neler yapabilirsiniz?</h3>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2.5">
               {streakDays >= 2 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700">
-                  <Flame size={10} className="text-amber-500" />
-                  {streakDays} günlük seri
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 px-3 py-1.5 text-[11px] font-black text-amber-700 shadow-sm transition-transform hover:scale-105">
+                  <Flame size={12} className="text-amber-500 animate-pulse" />
+                  {streakDays} GÜN SERİ
                 </span>
               )}
               {doneCount > 0 && (
-                <span className="rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 shadow-sm shadow-emerald-100/20">
-                  {doneCount}/{totalCount} yapıldı
+                <span className="inline-flex items-center rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/60 px-3 py-1.5 text-[11px] font-black text-emerald-700 shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-transform hover:scale-105">
+                  {doneCount}/{totalCount} YAPILDI
                 </span>
               )}
-              <Badge variant="info" className="px-2.5 py-0.5 text-[10px] font-bold">
-                {totalCount} adım
-              </Badge>
+              <span className="inline-flex items-center rounded-xl bg-slate-100 border border-slate-200 px-3 py-1.5 text-[11px] font-black text-slate-600 shadow-sm">
+                {totalCount} ADIM
+              </span>
             </div>
           </div>
 
@@ -263,9 +266,10 @@ export function TreatmentTodayTab({
             );
           })()}
           {/* Smart Suggestions */}
-          <div className="rounded-3xl border border-slate-200/50 bg-gradient-to-br from-indigo-50/80 via-slate-50/80 to-indigo-50/20 p-5 backdrop-blur-sm shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500 text-white shadow-sm shadow-indigo-200">
+          <div className="group/sug rounded-[2rem] border border-indigo-100/50 bg-gradient-to-br from-indigo-50/90 via-white to-purple-50/50 p-6 backdrop-blur-xl shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_40px_rgba(99,102,241,0.1)] transition-all duration-500 relative overflow-hidden">
+            <div className="absolute -right-10 -top-10 h-40 w-40 bg-indigo-400/20 rounded-full blur-3xl group-hover/sug:bg-indigo-400/30 transition-colors duration-500" />
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 transition-transform group-hover/sug:scale-110 group-hover/sug:rotate-6">
                 <Lightbulb size={15} className="animate-pulse" />
               </div>
               <p className="text-xs font-bold uppercase tracking-wider text-indigo-700">Bugün Dikkat Edilecekler</p>
@@ -282,11 +286,11 @@ export function TreatmentTodayTab({
           </div>
 
           {/* Expert Opinion speech-bubble card */}
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200/50 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300">
-            <div className="absolute -right-4 -top-4 text-slate-100/50">
-              <Quote size={80} strokeWidth={1} />
+          <div className="group/note relative overflow-hidden rounded-[2rem] border border-slate-200/60 bg-white/80 p-6 backdrop-blur-xl shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_40px_rgba(15,23,42,0.06)] transition-all duration-500">
+            <div className="absolute -right-6 -top-6 text-slate-100 transition-transform duration-500 group-hover/note:scale-110 group-hover/note:rotate-12 group-hover/note:text-slate-200/80">
+              <Quote size={100} strokeWidth={1} />
             </div>
-            <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Son Not / Uzman Gözlemi</p>
+            <p className="relative z-10 text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Son Not / Uzman Gözlemi</p>
             
             {latestNote ? (
               <div className="relative mt-4">
@@ -340,7 +344,7 @@ export function TreatmentTodayTab({
       {/* Bottom Grid: Weekly Progress & Micro Progress */}
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         {/* Weekly View Chart */}
-        <div className="rounded-3xl border border-slate-200/50 bg-white p-6 shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300">
+        <div className="group rounded-[2.5rem] border border-slate-200/60 bg-white/70 p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-slate-400">SON 7 GÜN</span>
@@ -361,7 +365,7 @@ export function TreatmentTodayTab({
         </div>
 
         {/* Micro Progress Bars */}
-        <div className="rounded-3xl border border-slate-200/50 bg-white p-6 shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300">
+        <div className="group rounded-[2.5rem] border border-slate-200/60 bg-white/70 p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
           <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-slate-400">GELİŞİM ALANLARI</span>
           <h3 className="mt-1 text-base font-extrabold text-slate-800">Her Alanda Neredeyiz?</h3>
           

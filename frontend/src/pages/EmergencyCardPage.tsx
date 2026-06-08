@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Save, Printer, ShieldAlert, Phone, Heart, AlertTriangle, CheckCircle, User } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/ui/EmptyState';
+
 import { useChildStore } from '@/store/childStore';
 import { childService } from '@/services/childService';
 import { emergencyCardService } from '@/services/emergencyCardService';
 import { toast } from '@/store/toastStore';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import QRCode from 'react-qr-code';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const QRCodeComp = (QRCode as any).default || QRCode;
 
 export interface EmergencyProfile {
@@ -98,6 +99,7 @@ export function EmergencyCardPage() {
 
   useEffect(() => {
     if (!children.length) childService.getAll().then(setChildren).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -203,19 +205,19 @@ export function EmergencyCardPage() {
   }
 
   const field = (label: string, value: string, setter: (v: string) => void, placeholder?: string, type = 'text') => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <div className="group">
+      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 group-focus-within:text-red-500 transition-colors">{label}</label>
       <input type={type} value={value} onChange={e => setter(e.target.value)}
         placeholder={placeholder}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300" />
+        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:bg-white focus:ring-4 focus:ring-red-400/10 focus:border-red-400 transition-all shadow-inner" />
     </div>
   );
 
   const textarea = (label: string, value: string, setter: (v: string) => void, placeholder?: string) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <div className="group flex flex-col">
+      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 group-focus-within:text-red-500 transition-colors">{label}</label>
       <textarea value={value} onChange={e => setter(e.target.value)} rows={3} placeholder={placeholder}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 resize-none" />
+        className="w-full flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:bg-white focus:ring-4 focus:ring-red-400/10 focus:border-red-400 transition-all shadow-inner resize-none" />
     </div>
   );
 
@@ -239,14 +241,15 @@ export function EmergencyCardPage() {
         ]}
       />
 
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Acil Durum Profil Kartı</h1>
-          <p className="text-gray-500 mt-1">Okul, bakıcı ve acil servis için yazdırılabilir kart</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap bg-white/80 backdrop-blur-xl p-6 sm:p-8 rounded-[32px] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-red-400/10 via-indigo-400/5 to-transparent rounded-bl-full pointer-events-none" />
+        <div className="relative z-10">
+          <h1 className="text-3xl font-black bg-gradient-to-r from-red-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Acil Durum Profil Kartı</h1>
+          <p className="text-slate-500 mt-2 font-medium">Okul, bakıcı ve acil servis için yazdırılabilir güvenli tıbbi kimlik</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handlePrint}><Printer size={15} className="mr-1" />Kartı Yazdır</Button>
-          <Button onClick={handleSave}><Save size={15} className="mr-1" />Kaydet</Button>
+        <div className="flex gap-3 relative z-10">
+          <Button variant="outline" onClick={handlePrint} className="rounded-xl font-bold bg-white hover:bg-slate-50 border-slate-200 shadow-sm hover:shadow transition-all"><Printer size={16} className="mr-2 text-indigo-500" />Kartı Yazdır</Button>
+          <Button onClick={handleSave} className="rounded-xl font-bold bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all active:scale-95"><Save size={16} className="mr-2" />Kaydet</Button>
         </div>
       </div>
 
@@ -255,7 +258,7 @@ export function EmergencyCardPage() {
         <div className="flex gap-2 flex-wrap">
           {children.map(c => (
             <button key={c.id} onClick={() => { setSelectedChild(c); setProfile(null); setSaved(false); }}
-              className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all cursor-pointer ${selectedChildId === c.id ? 'bg-red-600 text-white border-red-600' : 'bg-white border-gray-200 text-gray-600 hover:border-red-300'}`}>
+              className={`px-5 py-2.5 rounded-xl border text-sm font-bold transition-all cursor-pointer shadow-sm active:scale-95 ${selectedChildId === c.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-200' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600'}`}>
               {c.name}
             </button>
           ))}
@@ -263,101 +266,150 @@ export function EmergencyCardPage() {
       )}
 
       {saved && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-3 flex items-center gap-2">
-          <CheckCircle size={16} className="text-green-600 shrink-0" />
-          <p className="text-sm text-green-700">Kart kaydedildi. Son güncelleme: {new Date(profile.updatedAt).toLocaleDateString('tr-TR')}</p>
+        <div className="bg-emerald-50/80 backdrop-blur-sm border border-emerald-200/60 rounded-2xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+            <CheckCircle size={18} className="text-emerald-600" />
+          </div>
+          <p className="text-sm text-emerald-800 font-medium">Kart başarıyla kaydedildi. Son güncelleme: <strong className="font-extrabold">{new Date(profile.updatedAt).toLocaleDateString('tr-TR')}</strong></p>
         </div>
       )}
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Çocuk Bilgileri */}
-        <section className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="font-bold text-gray-900 flex items-center gap-2"><User size={16} className="text-red-500" />Çocuk Bilgileri</h2>
-          {field('Ad Soyad', profile.childName, v => set({ childName: v }))}
-          {field('Doğum Tarihi', profile.birthDate, v => set({ birthDate: v }), '', 'date')}
-          {field('Tanı', profile.diagnosisInfo, v => set({ diagnosisInfo: v }))}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kan Grubu</label>
-            <select value={profile.bloodType} onChange={e => set({ bloodType: e.target.value })}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none bg-white">
-              {BLOOD_TYPES.map(b => <option key={b} value={b}>{b || 'Seçin...'}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">İletişim Seviyesi</label>
-            <select value={profile.communicationLevel} onChange={e => set({ communicationLevel: e.target.value })}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none bg-white">
-              <option value="">Seçin...</option>
-              {COMM_LEVELS.map(l => <option key={l}>{l}</option>)}
-            </select>
-          </div>
-          {field('Konuşulan Dil(ler)', profile.languages, v => set({ languages: v }))}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Özel Durum Uyarıları</p>
-            {([
-              ['selfInjury', 'Öz-zarar davranışı olabilir'],
-              ['wandering', 'Kaçma / kaybolma riski var'],
-              ['nonVerbal', 'Sözel iletişim yoktur'],
-            ] as [keyof EmergencyProfile, string][]).map(([key, label]) => (
-              <label key={key} className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={profile[key] as boolean} onChange={e => set({ [key]: e.target.checked } as any)}
-                  className="w-4 h-4 text-red-600 rounded" />
-                <span className="text-sm text-gray-700">{label}</span>
-              </label>
-            ))}
+        <section className="bg-white/80 backdrop-blur-xl rounded-[28px] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all p-6 sm:p-8 space-y-5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-red-50/50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          <h2 className="text-lg font-black text-slate-900 flex items-center gap-2.5 relative z-10">
+            <div className="w-8 h-8 rounded-xl bg-red-100 text-red-500 flex items-center justify-center"><User size={16} /></div>
+            Çocuk Bilgileri
+          </h2>
+          
+          <div className="relative z-10 space-y-5">
+            {field('Ad Soyad', profile.childName, v => set({ childName: v }))}
+            {field('Doğum Tarihi', profile.birthDate, v => set({ birthDate: v }), '', 'date')}
+            {field('Tanı', profile.diagnosisInfo, v => set({ diagnosisInfo: v }))}
+            <div className="group">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 group-focus-within:text-red-500 transition-colors">Kan Grubu</label>
+              <select value={profile.bloodType} onChange={e => set({ bloodType: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:bg-white focus:ring-4 focus:ring-red-400/10 focus:border-red-400 transition-all shadow-inner appearance-none cursor-pointer">
+                {BLOOD_TYPES.map(b => <option key={b} value={b}>{b || 'Seçin...'}</option>)}
+              </select>
+            </div>
+            <div className="group">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 group-focus-within:text-red-500 transition-colors">İletişim Seviyesi</label>
+              <select value={profile.communicationLevel} onChange={e => set({ communicationLevel: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:bg-white focus:ring-4 focus:ring-red-400/10 focus:border-red-400 transition-all shadow-inner appearance-none cursor-pointer">
+                <option value="">Seçin...</option>
+                {COMM_LEVELS.map(l => <option key={l}>{l}</option>)}
+              </select>
+            </div>
+            {field('Konuşulan Dil(ler)', profile.languages, v => set({ languages: v }))}
+            <div className="space-y-3 pt-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Özel Durum Uyarıları</p>
+              <div className="space-y-2">
+                {([
+                  ['selfInjury', 'Öz-zarar davranışı olabilir'],
+                  ['wandering', 'Kaçma / kaybolma riski var'],
+                  ['nonVerbal', 'Sözel iletişim yoktur'],
+                ] as [keyof EmergencyProfile, string][]).map(([key, label]) => (
+                  <label key={key} className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:border-red-200 hover:bg-red-50/50 cursor-pointer transition-all">
+                    <span className="text-sm font-bold text-slate-700">{label}</span>
+                    <div className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner ${profile[key] ? 'bg-red-500' : 'bg-slate-300'}`}>
+                      <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ease-in-out ${profile[key] ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </div>
+                    <input type="checkbox" className="hidden" checked={profile[key] as boolean} onChange={e => set({ [key]: e.target.checked } as Partial<EmergencyProfile>)} />
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
         {/* Acil İletişim */}
-        <section className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="font-bold text-gray-900 flex items-center gap-2"><Phone size={16} className="text-blue-500" />Acil İletişim</h2>
-          <div className="bg-blue-50 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-blue-700 uppercase">1. Kişi</p>
-            {field('Ad Soyad', profile.contactName1, v => set({ contactName1: v }))}
-            {field('Telefon', profile.contactPhone1, v => set({ contactPhone1: v }), '', 'tel')}
-            {field('Yakınlık', profile.contactRelation1, v => set({ contactRelation1: v }), 'Örn: Anne')}
-          </div>
-          <div className="bg-indigo-50 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-indigo-700 uppercase">2. Kişi</p>
-            {field('Ad Soyad', profile.contactName2, v => set({ contactName2: v }))}
-            {field('Telefon', profile.contactPhone2, v => set({ contactPhone2: v }), '', 'tel')}
-            {field('Yakınlık', profile.contactRelation2, v => set({ contactRelation2: v }), 'Örn: Baba')}
-          </div>
-          <div className="bg-teal-50 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-teal-700 uppercase">Doktor / Hastane</p>
-            {field('Doktor Adı', profile.doctorName, v => set({ doctorName: v }))}
-            {field('Doktor Telefonu', profile.doctorPhone, v => set({ doctorPhone: v }), '', 'tel')}
-            {field('Hastane', profile.hospital, v => set({ hospital: v }))}
+        <section className="bg-white/80 backdrop-blur-xl rounded-[28px] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all p-6 sm:p-8 space-y-5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-50/50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          <h2 className="text-lg font-black text-slate-900 flex items-center gap-2.5 relative z-10">
+            <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-500 flex items-center justify-center"><Phone size={16} /></div>
+            Acil İletişim
+          </h2>
+          <div className="relative z-10 space-y-4">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-50/30 border border-blue-100 rounded-2xl p-5 space-y-4 shadow-sm">
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-5 h-5 rounded-md bg-blue-200/50 flex items-center justify-center text-blue-700">1</span> Birinci Kişi
+              </p>
+              <div className="space-y-4">
+                {field('Ad Soyad', profile.contactName1, v => set({ contactName1: v }))}
+                {field('Telefon', profile.contactPhone1, v => set({ contactPhone1: v }), '', 'tel')}
+                {field('Yakınlık', profile.contactRelation1, v => set({ contactRelation1: v }), 'Örn: Anne')}
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-indigo-50 to-indigo-50/30 border border-indigo-100 rounded-2xl p-5 space-y-4 shadow-sm">
+              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-5 h-5 rounded-md bg-indigo-200/50 flex items-center justify-center text-indigo-700">2</span> İkinci Kişi
+              </p>
+              <div className="space-y-4">
+                {field('Ad Soyad', profile.contactName2, v => set({ contactName2: v }))}
+                {field('Telefon', profile.contactPhone2, v => set({ contactPhone2: v }), '', 'tel')}
+                {field('Yakınlık', profile.contactRelation2, v => set({ contactRelation2: v }), 'Örn: Baba')}
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-teal-50 to-teal-50/30 border border-teal-100 rounded-2xl p-5 space-y-4 shadow-sm">
+              <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-5 h-5 rounded-md bg-teal-200/50 flex items-center justify-center text-teal-700">3</span> Doktor / Hastane
+              </p>
+              <div className="space-y-4">
+                {field('Doktor Adı', profile.doctorName, v => set({ doctorName: v }))}
+                {field('Doktor Telefonu', profile.doctorPhone, v => set({ doctorPhone: v }), '', 'tel')}
+                {field('Hastane', profile.hospital, v => set({ hospital: v }))}
+              </div>
+            </div>
           </div>
         </section>
 
         {/* Tıbbi Bilgiler */}
-        <section className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="font-bold text-gray-900 flex items-center gap-2"><Heart size={16} className="text-red-500" />Tıbbi Bilgiler</h2>
-          {textarea('Kullandığı İlaçlar', profile.medications, v => set({ medications: v }), 'İlaç adı - doz - saat (her satıra bir ilaç)')}
-          {textarea('Alerjiler', profile.allergies, v => set({ allergies: v }), 'Gıda, ilaç, madde alerjileri...')}
-          {textarea('Diğer Tıbbi Durumlar', profile.medicalConditions, v => set({ medicalConditions: v }), 'Epilepsi, kalp hastalığı vb.')}
+        <section className="bg-white/80 backdrop-blur-xl rounded-[28px] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all p-6 sm:p-8 flex flex-col relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-rose-50/50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          <h2 className="text-lg font-black text-slate-900 flex items-center gap-2.5 mb-5 relative z-10">
+            <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-500 flex items-center justify-center"><Heart size={16} /></div>
+            Tıbbi Bilgiler
+          </h2>
+          <div className="relative z-10 flex-1 space-y-5 flex flex-col">
+            {textarea('Kullandığı İlaçlar', profile.medications, v => set({ medications: v }), 'İlaç adı - doz - saat (her satıra bir ilaç)')}
+            {textarea('Alerjiler', profile.allergies, v => set({ allergies: v }), 'Gıda, ilaç, madde alerjileri...')}
+            {textarea('Diğer Tıbbi Durumlar', profile.medicalConditions, v => set({ medicalConditions: v }), 'Epilepsi, kalp hastalığı vb.')}
+          </div>
         </section>
 
         {/* Davranışsal Bilgiler */}
-        <section className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-          <h2 className="font-bold text-gray-900 flex items-center gap-2"><AlertTriangle size={16} className="text-orange-500" />Davranışsal Bilgiler</h2>
-          {textarea('Tetikleyiciler (kaçınılması gerekenler)', profile.triggersList, v => set({ triggersList: v }), 'Neler kriz çıkarır? Örn: ani gürültü, kalabalık...')}
-          {textarea('Sakinleştirme Stratejileri', profile.calmingStrategies, v => set({ calmingStrategies: v }), 'Ne işe yarar? Örn: sevdiği müzik, sıkıştırma, sessiz oda...')}
-          {textarea('Kesinlikle Yapılmaması Gerekenler', profile.avoidList, v => set({ avoidList: v }), 'Örn: bağırmayın, tutmayın, göz teması kurmaya zorlamayın...')}
-          {textarea('Özel Talimatlar', profile.specialInstructions, v => set({ specialInstructions: v }), 'Acil servis veya bakıcı için ek notlar...')}
+        <section className="bg-white/80 backdrop-blur-xl rounded-[28px] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all p-6 sm:p-8 flex flex-col relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-50/50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          <h2 className="text-lg font-black text-slate-900 flex items-center gap-2.5 mb-5 relative z-10">
+            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-500 flex items-center justify-center"><AlertTriangle size={16} /></div>
+            Davranışsal Bilgiler
+          </h2>
+          <div className="relative z-10 flex-1 space-y-5 flex flex-col">
+            {textarea('Tetikleyiciler (kaçınılması gerekenler)', profile.triggersList, v => set({ triggersList: v }), 'Neler kriz çıkarır? Örn: ani gürültü, kalabalık...')}
+            {textarea('Sakinleştirme Stratejileri', profile.calmingStrategies, v => set({ calmingStrategies: v }), 'Ne işe yarar? Örn: sevdiği müzik, sıkıştırma, sessiz oda...')}
+            {textarea('Kesinlikle Yapılmaması Gerekenler', profile.avoidList, v => set({ avoidList: v }), 'Örn: bağırmayın, tutmayın, göz teması kurmaya zorlamayın...')}
+            {textarea('Özel Talimatlar', profile.specialInstructions, v => set({ specialInstructions: v }), 'Acil servis veya bakıcı için ek notlar...')}
+          </div>
         </section>
 
         {/* QR Code */}
         {saved && (
-          <section className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4 lg:col-span-2 flex flex-col items-center text-center">
-            <h2 className="font-bold text-gray-900 flex items-center gap-2"><ShieldAlert size={16} className="text-indigo-500" />NFC / QR Halka Açık Acil Profil</h2>
-            <p className="text-sm text-gray-500 max-w-lg">Bu QR kodu taratarak, belirlediğiniz tıbbi bilgilerin bulunduğu halka açık profil sayfanıza ulaşabilirsiniz. Kodu yazdırıp bir bilekliğe veya çantaya yapıştırabilirsiniz.</p>
-            <div className="bg-white p-4 border rounded-2xl shadow-sm inline-block">
-              <QRCodeComp value={`${window.location.origin}/acil-profil/${selectedChildId}`} size={150} />
+          <section className="bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/80 rounded-[32px] border border-indigo-100 p-8 lg:col-span-2 flex flex-col items-center text-center shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-400 to-purple-500" />
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-indigo-50 mb-4">
+              <ShieldAlert size={24} className="text-indigo-600" />
             </div>
-            <a href={`/acil-profil/${selectedChildId}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-indigo-600 hover:underline">
-              Profili Tarayıcıda Görüntüle
+            <h2 className="text-xl font-black text-slate-900 mb-2">NFC / QR Halka Açık Acil Profil</h2>
+            <p className="text-sm font-semibold text-slate-500 max-w-lg mb-6 leading-relaxed">
+              Bu QR kodu taratarak, belirlediğiniz tıbbi bilgilerin bulunduğu halka açık profil sayfanıza ulaşabilirsiniz. Kodu yazdırıp bir bilekliğe, künyeye veya çantaya yapıştırabilirsiniz.
+            </p>
+            <div className="bg-white p-5 rounded-[24px] shadow-lg shadow-indigo-200/50 border border-indigo-50 mb-6 group hover:scale-105 transition-transform duration-300">
+              <QRCodeComp value={`${window.location.origin}/acil-profil/${selectedChildId}`} size={160} className="rounded-xl" />
+            </div>
+            <a href={`/acil-profil/${selectedChildId}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-extrabold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-700 px-5 py-2.5 rounded-xl transition-all border border-indigo-100">
+              Halka Açık Profili Görüntüle →
             </a>
           </section>
         )}
@@ -464,12 +516,3 @@ function PrintCard({ profile }: { profile: EmergencyProfile }) {
   );
 }
 
-function Section({ title, items, text }: { title: string; items?: string[]; text?: string }) {
-  if (!items?.length && !text) return null;
-  return (
-    <div>
-      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">{title}</p>
-      {items ? items.map((item, i) => <p key={i} className="text-sm text-gray-800">{item}</p>) : <p className="text-sm text-gray-800">{text}</p>}
-    </div>
-  );
-}

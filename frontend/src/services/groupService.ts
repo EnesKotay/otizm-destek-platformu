@@ -20,6 +20,9 @@ export const groupService = {
   leave: (id: string) =>
     api.post(`/groups/${id}/leave`),
 
+  banMember: (id: string, userId: string) =>
+    api.post(`/groups/${id}/members/${userId}/ban`),
+
   getMembers: (id: string) =>
     api.get<ApiResponse<User[]>>(`/groups/${id}/members`).then(r => r.data.data),
 

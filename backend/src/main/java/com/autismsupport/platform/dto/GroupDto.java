@@ -30,6 +30,7 @@ public class GroupDto {
     private boolean isMember;
     private UUID conversationId;
     private int expertCount;
+    private int unreadCount;
     private UUID createdByUserId;
     private LocalDateTime createdAt;
 }

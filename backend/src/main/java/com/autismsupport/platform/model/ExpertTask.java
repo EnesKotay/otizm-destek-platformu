@@ -50,9 +50,10 @@ public class ExpertTask {
     @Column(name = "due_date")
     private LocalDate dueDate;
 
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
     @Builder.Default
-    private String status = "PENDING";
+    private TaskStatus status = TaskStatus.PENDING;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

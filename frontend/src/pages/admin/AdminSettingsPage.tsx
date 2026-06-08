@@ -162,7 +162,7 @@ export function AdminSettingsPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSettings();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     fetchTokenStats();
   }, [loadSettings, fetchTokenStats]);
 

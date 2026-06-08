@@ -16,6 +16,7 @@ Thumbs.db
 # Test / geçici
 test-*.mjs
 test-*.js
+test_jwt.js
 out.json
 *.log
 status.txt

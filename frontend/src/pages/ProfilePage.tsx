@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { expertService } from '@/services/expertService';
+import { reportService } from '@/services/reportService';
 import { messagingService } from '@/services/messagingService';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import type { User as UserType } from '@/types';
+import type { ExpertReview } from '@/services/expertService';
 
 const SPECIALTY_COLORS: Record<string, string> = {
   'ABA': 'bg-blue-100 text-blue-700',
@@ -37,12 +39,12 @@ function StarDisplay({ value, count }: { value: number; count: number }) {
   return (
     <div className="flex items-center gap-1.5">
       {[1, 2, 3, 4, 5].map(i => (
-        <Star key={i} size={16}
+        <Star key={i} size={14}
           fill={value >= i ? '#f59e0b' : 'none'}
           className={value >= i ? 'text-amber-400' : 'text-gray-300'} />
       ))}
-      <span className="text-sm font-semibold text-gray-700">{value.toFixed(1)}</span>
-      <span className="text-xs text-gray-400">({count} değerlendirme)</span>
+      {count > 0 && <span className="text-sm font-semibold text-gray-700 ml-1">{value.toFixed(1)}</span>}
+      {count > 0 && <span className="text-xs text-gray-400">({count} değerlendirme)</span>}
     </div>
   );
 }
@@ -64,6 +66,7 @@ export function ProfilePage() {
   const [expert, setExpert] = useState<UserType | null>(null);
   const [articleCount, setArticleCount] = useState(0);
   const [avgRating, setAvgRating] = useState(0);
+  const [reviews, setReviews] = useState<ExpertReview[]>([]);
   const [reviewCount, setReviewCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [messaging, setMessaging] = useState(false);
@@ -77,7 +80,11 @@ export function ProfilePage() {
     if (!id) return;
     Promise.allSettled([
       expertService.getOne(id).then(res => { setExpert(res.expert); setArticleCount(res.articleCount); }),
-      expertService.getReviews(id).then(res => { setAvgRating(res.averageRating); setReviewCount(res.totalCount); }),
+      expertService.getReviews(id).then(res => { 
+        setAvgRating(res.averageRating); 
+        setReviewCount(res.totalCount); 
+        setReviews(res.reviews);
+      }),
     ]).finally(() => setLoading(false));
   }, [id]);
 
@@ -95,21 +102,16 @@ export function ProfilePage() {
     if (!reportReason) { toast.error('Lütfen bir neden seçin.'); return; }
     setReporting(true);
     try {
-      // Submit report — endpoint may vary; graceful fallback on failure
-      await fetch(`/api/reports/expert/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('accessToken') ?? ''}` },
-        body: JSON.stringify({ reason: reportReason, note: reportNote }),
-      });
+      await reportService.create('EXPERT', id ?? '', reportReason + (reportNote ? `\n${reportNote}` : ''));
       toast.success('Şikayetiniz iletildi. Moderasyon ekibimiz inceleyecek.');
       setShowReport(false);
       setReportReason('');
       setReportNote('');
     } catch {
-      toast.success('Şikayetiniz iletildi.');
-      setShowReport(false);
+      toast.error('Şikayet gönderilemedi. Lütfen tekrar deneyin.');
+    } finally {
+      setReporting(false);
     }
-    setReporting(false);
   };
 
   if (loading) {
@@ -348,6 +350,40 @@ export function ProfilePage() {
           >
             Şikayet et
           </button>
+        </div>
+      )}
+
+      {/* Reviews Section */}
+      {reviews.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+            <Star size={16} className="text-amber-500 fill-amber-500" /> Danışan Değerlendirmeleri
+          </h2>
+          <div className="space-y-4">
+            {reviews.map(review => (
+              <div key={review.id} className="flex items-start gap-3 pb-4 border-b border-gray-50 last:border-0 last:pb-0">
+                <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
+                  {review.reviewerImageUrl ? (
+                    <img src={review.reviewerImageUrl} alt={review.reviewerName} className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    <span className="text-indigo-600 font-bold text-sm">{review.reviewerName.charAt(0)}</span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-gray-800">{review.reviewerName}</p>
+                    <StarDisplay value={review.rating} count={0} />
+                  </div>
+                  {review.comment && (
+                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">{review.comment}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(review.createdAt).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

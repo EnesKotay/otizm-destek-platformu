@@ -26,6 +26,7 @@ export function AdminAnalyticsPage() {
   const [period, setPeriod] = useState<GrowthPeriod>('30d');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     Promise.all([
       adminService.getGrowthAnalytics(period).catch(() => []),

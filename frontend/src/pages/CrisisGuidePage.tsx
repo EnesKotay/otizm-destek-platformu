@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Volume2, Zap, Heart, Phone, ChevronDown, ChevronUp, Sparkles, Activity, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Volume2, Zap, Heart, Phone, ChevronDown, Sparkles, Activity, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
 
@@ -197,6 +197,7 @@ function CrisisCardItem({ card }: { card: CrisisCard }) {
 
 const playChime = (frequency: number) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
     const audioCtx = new AudioContextClass();
@@ -215,7 +216,7 @@ const playChime = (frequency: number) => {
 
     oscillator.start();
     oscillator.stop(audioCtx.currentTime + 1.2);
-  } catch (e) {
+  } catch {
     // Browsers block audio until first interaction
   }
 };
@@ -226,6 +227,7 @@ export function CrisisGuidePage() {
 
   useEffect(() => {
     if (breathingStep === 'idle') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTimeLeft(0);
       return;
     }

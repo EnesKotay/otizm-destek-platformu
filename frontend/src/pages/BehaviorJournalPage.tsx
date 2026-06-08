@@ -98,8 +98,10 @@ export function BehaviorJournalPage() {
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+   
   useEffect(() => {
     if (!children.length) childService.getAll().then(setChildren).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -217,8 +219,8 @@ export function BehaviorJournalPage() {
       byIntensity[e.intensity] = (byIntensity[e.intensity] ?? 0) + 1;
     });
     const topCat = Object.entries(byCategory).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    // eslint-disable-next-line react-hooks/purity
     const last7 = Object.entries(byDay)
+      // eslint-disable-next-line react-hooks/purity
       .filter(([d]) => d >= new Date(Date.now() - 7 * 864e5).toISOString().split('T')[0])
       .sort((a, b) => a[0].localeCompare(b[0]));
     const avgIntensity = entries.length ? (entries.reduce((s, e) => s + e.intensity, 0) / entries.length).toFixed(1) : '—';

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.*;
 class AppointmentServiceTest {
 
     @Mock AppointmentRepository appointmentRepository;
+    @Mock AppointmentStatusHistoryRepository historyRepository;
     @Mock UserRepository userRepository;
     @Mock ChildRepository childRepository;
     @Mock ExpertAvailabilityRepository availabilityRepository;
@@ -83,6 +85,7 @@ class AppointmentServiceTest {
 
         when(userRepository.findById(parentId)).thenReturn(Optional.of(parent));
         when(userRepository.findById(expertId)).thenReturn(Optional.of(expert));
+        when(userRepository.lockById(expertId)).thenReturn(Optional.of(expert));
         when(childRepository.findById(childId)).thenReturn(Optional.of(child));
         when(availabilityRepository.findByExpertIdAndDayOfWeek(eq(expertId), anyInt())).thenReturn(Optional.of(availability));
         
@@ -120,6 +123,7 @@ class AppointmentServiceTest {
 
         when(userRepository.findById(parentId)).thenReturn(Optional.of(parent));
         when(userRepository.findById(expertId)).thenReturn(Optional.of(expert));
+        when(userRepository.lockById(expertId)).thenReturn(Optional.of(expert));
         when(childRepository.findById(childId)).thenReturn(Optional.of(child));
         when(availabilityRepository.findByExpertIdAndDayOfWeek(eq(expertId), anyInt())).thenReturn(Optional.of(availability));
         
@@ -145,6 +149,31 @@ class AppointmentServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getStatus()).isEqualTo("PENDING");
         verify(appointmentRepository).save(any(Appointment.class));
+    }
+
+    @Test
+    @DisplayName("getRecurringGroup: seriyle ilgisi olmayan kullaniciya kapali")
+    void getRecurringGroup_unauthorizedUser_throwsAccessDenied() {
+        UUID groupId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+        Appointment appointment = Appointment.builder()
+                .id(UUID.randomUUID())
+                .parent(parent)
+                .expert(expert)
+                .child(child)
+                .appointmentDate(LocalDate.now().plusDays(1))
+                .appointmentTime(LocalTime.of(10, 0))
+                .duration(50)
+                .type("ONLINE")
+                .status("PENDING")
+                .recurringGroupId(groupId)
+                .build();
+
+        when(appointmentRepository.findByRecurringGroupId(groupId)).thenReturn(List.of(appointment));
+
+        assertThatThrownBy(() -> appointmentService.getRecurringGroup(groupId, otherUserId))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("randevu serisine");
     }
 
     @Test
@@ -186,5 +215,42 @@ class AppointmentServiceTest {
 
         verify(availabilityRepository, never()).deleteAll(any());
         verify(availabilityRepository, never()).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("completeAppointment: bagli takvim etkinligini de tamamlandi yapar")
+    void completeAppointment_updatesLinkedCalendarEventStatus() {
+        UUID appointmentId = UUID.randomUUID();
+        UUID calendarEventId = UUID.randomUUID();
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .parent(parent)
+                .expert(expert)
+                .child(child)
+                .appointmentDate(LocalDate.now())
+                .appointmentTime(LocalTime.of(10, 0))
+                .duration(50)
+                .status("CONFIRMED")
+                .type("ONLINE")
+                .calendarEventId(calendarEventId)
+                .build();
+        CalendarEvent calendarEvent = CalendarEvent.builder()
+                .id(calendarEventId)
+                .child(child)
+                .title("Randevu")
+                .eventType("TERAPI")
+                .startTime(LocalDate.now().atTime(10, 0))
+                .status("PLANNED")
+                .build();
+
+        when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(appointment));
+        when(calendarEventRepository.findById(calendarEventId)).thenReturn(Optional.of(calendarEvent));
+        when(appointmentRepository.save(any(Appointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AppointmentDto result = appointmentService.completeAppointment(appointmentId, expertId);
+
+        assertThat(result.getStatus()).isEqualTo("COMPLETED");
+        assertThat(calendarEvent.getStatus()).isEqualTo("COMPLETED");
+        verify(calendarEventRepository).save(calendarEvent);
     }
 }

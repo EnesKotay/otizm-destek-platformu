@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { ChevronDown, HeartHandshake, Info, LockKeyhole, LogOut, PanelLeftClose, PanelLeftOpen, PlusCircle, Search, Settings, Sparkles } from 'lucide-react';
+import { ChevronDown, HeartHandshake, LockKeyhole, LogOut, PlusCircle, Search, Settings, Sparkles } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { appointmentService } from '@/services/appointmentService';
 import { childService } from '@/services/childService';
@@ -9,6 +9,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { useAuthStore } from '@/store/authStore';
 import { useChildStore } from '@/store/childStore';
 import { cn } from '@/utils/cn';
+import { prefetchRoute } from '@/utils/routePrefetch';
 import { getNavGroups, isNavItemActive, type NavGroupConfig, type NavItemConfig } from './navConfig';
 import {
   filterCommandItems,
@@ -21,12 +22,14 @@ import {
 } from './navUtils';
 import type { SearchResult } from '@/types';
 
+const MESSAGE_UNREAD_REFRESH_EVENT = 'message-unread-refresh';
+
 function NavBadge({ value }: { value?: number | string }) {
   const label = getBadgeLabel(value);
   if (!label) return null;
 
   return (
-    <span className="ml-auto min-w-[1.25rem] rounded-full bg-gradient-to-r from-primary-600 to-indigo-600 px-2 py-0.5 text-center text-[9px] font-extrabold leading-4 text-white shadow-md shadow-primary-200/50 transition-all hover:scale-105">
+    <span className="ml-auto min-w-[1.15rem] rounded-full bg-primary-600 px-1.5 py-0.5 text-center text-[9px] font-extrabold leading-4 text-white">
       {label}
     </span>
   );
@@ -56,23 +59,23 @@ function NavItem({
     <>
       <span
         className={cn(
-          'absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full transition-all duration-300',
-          isActive ? 'bg-gradient-to-b from-primary-500 to-indigo-600 opacity-100 shadow-[0_0_8px_#4f46e5]' : 'opacity-0'
+          'absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full transition-all duration-200',
+          isActive ? 'bg-primary-600 opacity-100' : 'opacity-0'
         )}
       />
       <span
         className={cn(
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200',
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors duration-200',
           isActive
-            ? 'bg-gradient-to-br from-primary-500 to-indigo-600 text-white shadow-md shadow-primary-100/50'
+            ? 'bg-primary-600 text-white'
             : 'bg-transparent text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600'
         )}
       >
-        <Icon size={18} strokeWidth={isActive ? 2.25 : 1.8} aria-hidden="true" className={cn(isActive && "animate-pulse")} />
+        <Icon size={17} strokeWidth={isActive ? 2.2 : 1.8} aria-hidden="true" />
       </span>
       {!compact && (
-        <span className="min-w-0 flex-1 transition-all duration-200 group-hover:translate-x-0.5">
-          <span className={cn("block truncate transition-colors", isActive ? "font-bold text-primary-700" : "font-medium text-slate-500 group-hover:text-slate-800")}>{label}</span>
+        <span className="min-w-0 flex-1">
+          <span className={cn("block truncate transition-colors", isActive ? "font-bold text-primary-700" : "font-semibold text-slate-600 group-hover:text-slate-900")}>{label}</span>
           {description && showDescriptions && !reason && (
             <span className={cn(
               "mt-0.5 block text-[10px] font-medium leading-3 transition-colors",
@@ -100,7 +103,7 @@ function NavItem({
         title={compact ? `${title} (${disabledReason})` : undefined}
         aria-label={`${label} kapalı: ${disabledReason}`}
         className={cn(
-          'group relative flex w-full items-center gap-3 rounded-2xl bg-slate-50/50 px-3.5 py-2.5 text-left text-sm font-semibold text-slate-300 opacity-85 ring-1 ring-slate-100/70',
+          'group relative flex w-full items-center gap-3 rounded-xl bg-slate-50/60 px-3 py-2 text-left text-sm font-semibold text-slate-300 opacity-85 ring-1 ring-slate-100/70',
           compact && 'justify-center px-2',
           !compact && disabledAction && 'pr-2'
         )}
@@ -126,13 +129,15 @@ function NavItem({
       end={to === '/'}
       title={compact ? title : undefined}
       aria-label={title}
+      onFocus={() => prefetchRoute(to)}
+      onMouseEnter={() => prefetchRoute(to)}
       className={({ isActive }) =>
         cn(
-          'group relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-200',
+          'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-200',
           compact && 'justify-center px-2',
           isActive
-            ? 'bg-gradient-to-r from-primary-50/70 to-indigo-50/40 text-primary-700 shadow-[0_2px_8px_rgba(79,70,229,0.04)] ring-1 ring-primary-100/50'
-            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 hover:shadow-[0_2px_4px_rgba(0,0,0,0.01)]'
+            ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-100'
+            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
         )
       }
     >
@@ -143,6 +148,38 @@ function NavItem({
 
 function buildInitialOpenState(groups: NavGroupConfig[]) {
   return Object.fromEntries(groups.map((group) => [group.label, group.defaultOpen !== false]));
+}
+
+function buildSimpleParentGroups(groups: NavGroupConfig[]): NavGroupConfig[] {
+  const allItems = groups.flatMap((group) => group.items);
+  const byPath = (path: string) => allItems.find((item) => item.to === path);
+  const firstSteps = ['/', '/cocuklarim', '/gunluk-takip', '/randevular']
+    .map(byPath)
+    .filter(Boolean) as NavItemConfig[];
+  const community = ['/forum', '/bilgi-bankasi', '/uzmanlar']
+    .map(byPath)
+    .filter(Boolean) as NavItemConfig[];
+  const support = ['/mesajlar', '/kriz-rehberi', '/yardim']
+    .map(byPath)
+    .filter(Boolean) as NavItemConfig[];
+
+  return [
+    {
+      label: 'İlk Adımlar',
+      defaultOpen: true,
+      items: firstSteps,
+    },
+    {
+      label: 'Bilgi ve Topluluk',
+      defaultOpen: true,
+      items: community,
+    },
+    {
+      label: 'Destek',
+      defaultOpen: true,
+      items: support,
+    },
+  ].filter((group) => group.items.length > 0);
 }
 
 function getStoredOpenState(role: string, groups: NavGroupConfig[]) {
@@ -295,7 +332,13 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   const location = useLocation();
   const role = user?.role || 'PARENT';
   const navGroups = useMemo(() => getNavGroups(user?.role), [user?.role]);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => getStoredOpenState(role, navGroups));
+  const [simpleMode, setSimpleMode] = useState(() => localStorage.getItem('sidebar-simple-mode') !== 'false');
+  const displayNavGroups = useMemo(
+    () => (role === 'PARENT' && simpleMode ? buildSimpleParentGroups(navGroups) : navGroups),
+    [navGroups, role, simpleMode]
+  );
+  const storageRole = `${role}:${role === 'PARENT' && simpleMode ? 'simple' : 'full'}`;
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => getStoredOpenState(storageRole, displayNavGroups));
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [badges, setBadges] = useState<BadgeMap>({});
   const [hasChild, setHasChild] = useState(true);
@@ -305,6 +348,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   const [showDescriptions, setShowDescriptions] = useState(() => localStorage.getItem('sidebar-show-descriptions') !== 'false');
   const [rememberGroups, setRememberGroups] = useState(() => localStorage.getItem('sidebar-remember-groups') !== 'false');
   const context = { hasChild: user?.role !== 'PARENT' || !childrenLoaded || hasChild, isExpertVerified: Boolean(user?.verified) };
+  const effectiveShowDescriptions = showDescriptions;
 
   const isCompact = compact && !onClose;
   const currentPath = useRef(location.pathname);
@@ -318,12 +362,12 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setOpenGroups(getStoredOpenState(role, navGroups));
-  }, [role, navGroups]);
+    setOpenGroups(getStoredOpenState(storageRole, displayNavGroups));
+  }, [displayNavGroups, storageRole]);
 
   useEffect(() => {
-    if (rememberGroups) localStorage.setItem(`sidebar-open-groups:${role}`, JSON.stringify(openGroups));
-  }, [openGroups, rememberGroups, role]);
+    if (rememberGroups) localStorage.setItem(`sidebar-open-groups:${storageRole}`, JSON.stringify(openGroups));
+  }, [openGroups, rememberGroups, storageRole]);
 
   useEffect(() => {
     if (onClose) return; // Mobil drawer modunda compact event dispatch etme
@@ -361,9 +405,13 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   useEffect(() => {
     localStorage.setItem('sidebar-remember-groups', String(rememberGroups));
     if (!rememberGroups) {
-      queueMicrotask(() => setOpenGroups(buildInitialOpenState(navGroups)));
+      queueMicrotask(() => setOpenGroups(buildInitialOpenState(displayNavGroups)));
     }
-  }, [navGroups, rememberGroups]);
+  }, [displayNavGroups, rememberGroups]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebar-simple-mode', String(simpleMode));
+  }, [simpleMode]);
 
   useEffect(() => {
     if (user?.role !== 'PARENT') {
@@ -443,15 +491,24 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   }, [accessToken, setChildren, user?.role]);
 
   useEffect(() => {
-    const topic = `/user/queue/notifications`;
-    subscribe(topic, () => {
-      // Bildirim gelince mesaj unread sayısını sunucudan yenile
+    if (!accessToken) return;
+    const notificationTopic = `/user/queue/notifications`;
+    const conversationTopic = `/user/queue/conversation-update`;
+    const refreshMessageBadge = () => {
       messagingService.getUnreadCount()
-        .then(count => setBadges(prev => ({ ...prev, messages: count })))
+        .then(count => setBadges(prev => ({ ...prev, messages: count || undefined })))
         .catch(() => {});
-    });
-    return () => unsubscribe(topic);
-  }, [subscribe, unsubscribe]);
+    };
+
+    window.addEventListener(MESSAGE_UNREAD_REFRESH_EVENT, refreshMessageBadge);
+    subscribe(notificationTopic, refreshMessageBadge);
+    subscribe(conversationTopic, refreshMessageBadge);
+    return () => {
+      window.removeEventListener(MESSAGE_UNREAD_REFRESH_EVENT, refreshMessageBadge);
+      unsubscribe(notificationTopic);
+      unsubscribe(conversationTopic);
+    };
+  }, [accessToken, subscribe, unsubscribe]);
 
   const handleLogout = () => {
     logout();
@@ -463,10 +520,12 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   };
 
   const recommendedItems = useMemo(() => {
+    if (user?.role === 'PARENT' && simpleMode) return [];
+
     const allItems = navGroups.flatMap((group) => group.items);
     // Zaten açık grupta görünen path'ler — bunları duplike etme (badge olmadıkça)
     const openGroupPaths = new Set(
-      navGroups.filter((g) => g.defaultOpen !== false).flatMap((g) => g.items.map((i) => i.to))
+      displayNavGroups.filter((g) => g.defaultOpen !== false).flatMap((g) => g.items.map((i) => i.to))
     );
     const badgePaths = new Set<string>();
     if (badges.appointments) badgePaths.add('/randevular');
@@ -477,7 +536,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
       if (childrenLoaded && !hasChild) paths.push('/cocuklarim');
       if (badges.appointments) paths.push('/randevular');
       if (badges.messages) paths.push('/mesajlar');
-      paths.push(hasChild ? '/uzmanlar' : '/', '/bilgi-bankasi', '/tarama');
+      if (!simpleMode) paths.push(hasChild ? '/uzmanlar' : '/', '/bilgi-bankasi', '/tarama');
     } else if (user?.role === 'EXPERT') {
       if (badges.appointments) paths.push('/randevular');
       if (badges.messages) paths.push('/mesajlar');
@@ -492,9 +551,10 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
       .map((path) => allItems.find((item) => item.to === path))
       .filter(Boolean)
       .slice(0, 3) as NavItemConfig[];
-  }, [badges.appointments, badges.messages, childrenLoaded, hasChild, navGroups, user?.role]);
+  }, [badges.appointments, badges.messages, childrenLoaded, displayNavGroups, hasChild, navGroups, simpleMode, user?.role]);
 
   const childRequiredAction = { label: 'Çocuk ekle', to: '/cocuklarim' };
+  const showRecommendedItems = user?.role !== 'PARENT' && recommendedItems.length > 0;
 
   return (
     <aside className={cn(
@@ -503,10 +563,10 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
       isCompact ? 'w-20' : 'w-72',
       className
     )}>
-      <div className="border-b border-slate-100 px-5 py-4">
+      <div className="border-b border-slate-100 px-4 py-4">
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 via-primary-600 to-indigo-600 shadow-lg shadow-primary-200">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-600 shadow-sm">
               <HeartHandshake size={20} className="text-white" strokeWidth={2} />
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
@@ -522,16 +582,16 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
-          className="flex w-full items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3 text-sm font-medium text-slate-400 transition-all hover:bg-slate-100/40 hover:border-slate-200 hover:text-slate-600 hover:shadow-sm"
+          className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm font-medium text-slate-400 transition-all hover:border-slate-200 hover:bg-slate-100/70 hover:text-slate-600"
         >
           <Search size={18} aria-hidden="true" className="transition-transform group-hover:scale-105" />
-          {!isCompact && <span className="min-w-0 flex-1 truncate text-left font-medium">Ara veya hızlı geç...</span>}
+          {!isCompact && <span className="min-w-0 flex-1 truncate text-left font-medium">Ara...</span>}
           {!isCompact && <kbd className="rounded-md bg-white px-1.5 py-0.5 text-[9px] font-bold text-slate-300 ring-1 ring-slate-100/60 shadow-sm">⌘K</kbd>}
         </button>
       </div>
 
-      <nav className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
-        {recommendedItems.length > 0 && (
+      <nav className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+        {showRecommendedItems && (
           <div>
             <div className={cn(
               'mb-2 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-primary-600',
@@ -547,7 +607,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
                   item={item}
                   compact={isCompact}
                   showBadges={showBadges}
-                  showDescriptions={showDescriptions}
+                  showDescriptions={effectiveShowDescriptions}
                   disabledReason={getDisabledReason(item, context)}
                   disabledAction={item.requiresChild && !context.hasChild ? childRequiredAction : undefined}
                   badge={item.badgeKey ? badges[item.badgeKey] : undefined}
@@ -557,9 +617,9 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
           </div>
         )}
 
-        {navGroups.map((group) => {
+        {displayNavGroups.map((group) => {
           const isGroupActive = group.items.some((item) => isNavItemActive(location.pathname, item.to));
-          const isOpen = isGroupActive || (openGroups[group.label] ?? group.defaultOpen !== false);
+          const isOpen = openGroups[group.label] ?? (isGroupActive || group.defaultOpen !== false);
           const groupBadgeTotal = showBadges ? getGroupBadgeTotal(group, badges) : 0;
 
           return (
@@ -569,9 +629,10 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
                 onClick={() => toggleGroup(group.label)}
                 aria-expanded={isOpen}
                 className={cn(
-                  'mb-2 flex w-full items-center justify-between rounded-xl px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.2em] transition-colors',
+                  'mb-1 flex w-full items-center justify-between rounded-lg px-1.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] transition-colors',
+                  'focus:outline-none focus-visible:bg-slate-50',
                   isCompact && 'justify-center px-1',
-                  isGroupActive ? 'bg-primary-50/50 text-primary-600' : 'text-slate-400 hover:bg-slate-50/80 hover:text-slate-600'
+                  isGroupActive ? 'text-primary-600' : 'text-slate-400 hover:text-slate-600'
                 )}
               >
                 {!isCompact && <span>{group.label}</span>}
@@ -592,7 +653,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
                       item={item}
                       compact={isCompact}
                       showBadges={showBadges}
-                      showDescriptions={showDescriptions}
+                      showDescriptions={effectiveShowDescriptions}
                       disabledReason={getDisabledReason(item, context)}
                       disabledAction={item.requiresChild && !context.hasChild ? childRequiredAction : undefined}
                       badge={item.badgeKey ? badges[item.badgeKey] : undefined}
@@ -607,48 +668,27 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
 
       <div className="space-y-1 border-t border-slate-100 px-4 py-4">
         {user?.role !== 'ADMIN' && (
-          <NavItem item={{ to: '/settings', icon: Settings, label: 'Ayarlar', description: 'Profil ve görünüm tercihleri' }} compact={isCompact} showBadges={showBadges} showDescriptions={showDescriptions} />
+          <NavItem item={{ to: '/settings', icon: Settings, label: 'Ayarlar', description: 'Profil ve görünüm tercihleri' }} compact={isCompact} showBadges={showBadges} showDescriptions={effectiveShowDescriptions} />
         )}
 
-        {!onClose && (
-          <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-50 p-2">
-            <button
-              type="button"
-              onClick={() => setCompact((value) => !value)}
-              className="flex items-center justify-center rounded-xl bg-white px-2 py-2 text-slate-500 ring-1 ring-slate-100 hover:text-primary-600 cursor-pointer"
-              title={isCompact ? 'Geniş görünüm' : 'Yan çubuğu daralt'}
-            >
-              {isCompact ? <PanelLeftOpen size={16} aria-hidden="true" /> : <PanelLeftClose size={16} aria-hidden="true" />}
-              {!isCompact && <span className="ml-2 truncate text-xs font-semibold">Daralt</span>}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const nextValue = !showDescriptions;
-                setShowDescriptions(nextValue);
-                localStorage.setItem('sidebar-show-descriptions', String(nextValue));
-                window.dispatchEvent(new CustomEvent('sidebar-preference-change', { detail: { key: 'sidebar-show-descriptions', value: nextValue } }));
-              }}
-              aria-pressed={showDescriptions}
-              className={cn(
-                "flex items-center justify-center rounded-xl px-2 py-2 ring-1 cursor-pointer transition-colors",
-                showDescriptions
-                  ? "bg-primary-50 text-primary-600 ring-primary-100 hover:bg-primary-100"
-                  : "bg-white text-slate-400 ring-slate-100 hover:text-slate-600"
-              )}
-              title={showDescriptions ? 'Açıklamaları gizle' : 'Açıklamaları göster'}
-            >
-              <Info size={16} aria-hidden="true" />
-              {!isCompact && (
-                <span className="ml-2 truncate text-xs font-semibold">
-                  {showDescriptions ? 'Açıklama açık' : 'Açıklama kapalı'}
-                </span>
-              )}
-            </button>
-          </div>
+        {user?.role === 'PARENT' && !isCompact && (
+          <button
+            type="button"
+            onClick={() => setSimpleMode((value) => !value)}
+            aria-pressed={simpleMode}
+            className={cn(
+              'flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-[11px] font-bold transition-colors',
+              simpleMode
+                ? 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                : 'text-primary-600 hover:bg-primary-50'
+            )}
+          >
+            <span>{simpleMode ? 'Tüm araçları göster' : 'Sade moda geç'}</span>
+            <span>{simpleMode ? 'Aç' : 'Sade'}</span>
+          </button>
         )}
 
-        <div className="mt-2 flex items-center gap-3 rounded-2xl bg-gradient-to-br from-slate-50/90 to-slate-100/40 border border-slate-200/30 px-3.5 py-3 shadow-sm hover:shadow-md hover:border-slate-200/80 transition-all duration-200">
+        <div className="mt-2 flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 transition-colors hover:bg-slate-100/70">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-primary-500 to-indigo-600 ring-2 ring-primary-100/50">
             {user?.profileImageUrl ? (
               <img src={user.profileImageUrl} alt="Profil" className="h-full w-full object-cover" />

@@ -265,7 +265,7 @@ function loadSessions(): Session[] {
 }
 
 function saveSessions(sessions: Session[]) {
-  try { localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions.slice(0, MAX_SESSIONS))); } catch (_e) { /* ignore */ }
+  try { localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions.slice(0, MAX_SESSIONS))); } catch { /* ignore */ }
 }
 
 /* ─── Web Speech API ────────────────────────────────────── */
@@ -319,7 +319,7 @@ export function ChatBot() {
     if (!activeId || !sessions.find(s => s.id === activeId)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (sessions.length > 0) setActiveId(sessions[0].id);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       else { const f = makeSession(); setSessions([f]); setActiveId(f.id); }
     }
   }, []);

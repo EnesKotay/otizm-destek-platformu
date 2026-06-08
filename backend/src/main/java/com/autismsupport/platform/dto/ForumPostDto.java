@@ -35,6 +35,7 @@ public class ForumPostDto {
     private List<TagDto> tags;
     private Set<UUID> tagIds;
     private boolean likedByMe;
+    private boolean ownedByMe;
     private UserDto author;
     private LocalDateTime createdAt;
 }

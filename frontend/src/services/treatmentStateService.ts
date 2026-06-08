@@ -8,6 +8,7 @@ interface TreatmentStateDto {
   sensoryProfile: Record<string, unknown>;
   gameSessions: Array<Record<string, unknown>>;
   goalProgressHistory: Array<Record<string, unknown>>;
+  templateGoalToggles?: Record<string, boolean>;
 }
 
 function fromDto(dto: TreatmentStateDto): TreatmentPageState {
@@ -21,6 +22,7 @@ function fromDto(dto: TreatmentStateDto): TreatmentPageState {
     },
     gameSessions: (dto.gameSessions ?? []) as unknown as TreatmentPageState['gameSessions'],
     goalProgressHistory: (dto.goalProgressHistory ?? []) as unknown as TreatmentPageState['goalProgressHistory'],
+    templateGoalToggles: (dto.templateGoalToggles ?? {}) as Record<string, boolean>,
   };
 }
 

@@ -89,30 +89,9 @@ export function RoutinesPage() {
   const [stars, setStars] = useState<number>(() => Number(localStorage.getItem('routine_stars') || '0'));
   const [, setActiveConfetti] = useState(false);
 
-  interface Reward {
-    id: string;
-    title: string;
-    cost: number;
-    emoji: string;
-  }
-  const DEFAULT_REWARDS: Reward[] = [
-    { id: '1', title: 'Sakin Park Gezisi 🌳', cost: 10, emoji: '🏞️' },
-    { id: '2', title: 'Sevdiği Meyve Tabağı 🍓', cost: 5, emoji: '🍓' },
-    { id: '3', title: '15 Dakika Ekstra Oyun Süresi 🎮', cost: 15, emoji: '🎮' },
-    { id: '4', title: 'Sevdiği Dondurma 🍦', cost: 8, emoji: '🍦' }
-  ];
-  const [, setRewards] = useState<Reward[]>(() => {
-    try {
-      const raw = localStorage.getItem('routine_rewards');
-      return raw ? JSON.parse(raw) : DEFAULT_REWARDS;
-    } catch {
-      return DEFAULT_REWARDS;
-    }
-  });
 
-  const [, setNewRewardTitle] = useState('');
-  const [, setNewRewardCost] = useState(5);
-  const [, setNewRewardEmoji] = useState('🎁');
+
+
 
   const playChime = () => {
     try {
@@ -176,6 +155,7 @@ export function RoutinesPage() {
         if (c.length && !selectedChild) setSelectedChild(c[0]);
       })
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadRoutines = useCallback((childId: string) => {

@@ -24,12 +24,12 @@ public class PasswordResetService {
     private final EmailService emailService;
 
     @Transactional
-    public void requestReset(String email) {
+    public String requestReset(String email) {
         User user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
             // Don't reveal whether email exists
             log.info("Password reset requested for non-existent email: {}", email);
-            return;
+            return null;
         }
 
         tokenRepository.deleteByUserId(user.getId());
@@ -47,7 +47,11 @@ public class PasswordResetService {
 
         log.info("=== PASSWORD RESET TOKEN SENT ===");
         log.info("Email: {}", email);
+        log.info("Token: {}", token);
+        log.info("Link: http://localhost:5173/sifre-sifirla?token={}", token);
         log.info("===========================");
+
+        return token;
     }
 
     @Transactional

@@ -10,8 +10,8 @@ interface UpdateProfileData {
   institution?: string;
   licenseNumber?: string;
   expertTitle?: string;
-  latitude?: string;
-  longitude?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface ChangePasswordData {

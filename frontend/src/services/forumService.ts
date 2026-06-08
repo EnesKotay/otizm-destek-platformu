@@ -8,10 +8,12 @@ interface PageResponse<T> {
 }
 
 export const forumService = {
-  getPosts: (params: { type?: string; tagIds?: string[]; page?: number; size?: number } = {}) => {
+  getPosts: (params: { type?: string; tagIds?: string[]; q?: string; sort?: string; page?: number; size?: number } = {}) => {
     const searchParams = new URLSearchParams();
     if (params.type) searchParams.set('type', params.type);
     if (params.tagIds?.length) params.tagIds.forEach(id => searchParams.append('tagIds', id));
+    if (params.q) searchParams.set('q', params.q);
+    if (params.sort) searchParams.set('order', params.sort);
     searchParams.set('page', String(params.page || 0));
     searchParams.set('size', String(params.size || 20));
     return api.get<ApiResponse<PageResponse<ForumPost>>>(`/forum/posts?${searchParams}`)

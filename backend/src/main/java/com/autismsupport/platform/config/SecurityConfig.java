@@ -53,6 +53,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/upload/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forum").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forum/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()

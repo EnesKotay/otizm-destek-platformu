@@ -3,6 +3,7 @@ package com.autismsupport.platform.service;
 import com.autismsupport.platform.model.Appointment;
 import com.autismsupport.platform.model.AppointmentStatusHistory;
 import com.autismsupport.platform.model.ExpertTask;
+import com.autismsupport.platform.model.TaskStatus;
 import com.autismsupport.platform.repository.AppointmentRepository;
 import com.autismsupport.platform.repository.AppointmentStatusHistoryRepository;
 import com.autismsupport.platform.repository.ExpertTaskRepository;
@@ -24,6 +25,8 @@ import java.util.Locale;
 @Component
 @RequiredArgsConstructor
 public class AppointmentReminderScheduler {
+
+    private static final int DEFAULT_DURATION_MINUTES = 50;
 
     private final AppointmentRepository appointmentRepository;
     private final AppointmentStatusHistoryRepository historyRepository;
@@ -191,12 +194,14 @@ public class AppointmentReminderScheduler {
         List<Appointment> expired = appointmentRepository.findExpiredConfirmedAppointments(
                 now.toLocalDate(), now.toLocalTime());
         if (expired.isEmpty()) return;
+        int completedCount = 0;
         for (Appointment appt : expired) {
+            if (!hasAppointmentEnded(appt, now)) continue;
             appt.setStatus("COMPLETED");
             Appointment savedComplete = appointmentRepository.save(appt);
             historyRepository.save(AppointmentStatusHistory.builder()
                     .appointment(savedComplete).oldStatus("CONFIRMED").newStatus("COMPLETED")
-                    .note("Otomatik tamamlandi: randevu saati gecti").build());
+                    .note("Otomatik tamamlandi: randevu suresi doldu").build());
             if (appt.getParent() != null) {
                 notificationService.createNotification(
                         appt.getParent().getId(),
@@ -206,8 +211,20 @@ public class AppointmentReminderScheduler {
                         "/randevular"
                 );
             }
+            completedCount++;
         }
-        log.info("Suresi gecmis {} randevu otomatik olarak COMPLETED yapildi.", expired.size());
+        log.info("Suresi gecmis {} randevu otomatik olarak COMPLETED yapildi.", completedCount);
+    }
+
+    private boolean hasAppointmentEnded(Appointment appointment, LocalDateTime now) {
+        int duration = appointment.getDuration() != null && appointment.getDuration() > 0
+                ? appointment.getDuration()
+                : DEFAULT_DURATION_MINUTES;
+        LocalDateTime endTime = LocalDateTime.of(
+                appointment.getAppointmentDate(),
+                appointment.getAppointmentTime()
+        ).plusMinutes(duration);
+        return !endTime.isAfter(now);
     }
 
     /** Her pazartesi sabah 09:00'da — suresi gecmis gorevlerin hatirlatmasini gonderir. */
@@ -215,7 +232,7 @@ public class AppointmentReminderScheduler {
     @Scheduled(cron = "0 0 9 * * MON")
     public void sendOverdueTaskReminders() {
         log.info("Gecikmis gorev hatirlatmalari kontrol ediliyor...");
-        List<ExpertTask> overdueTasks = expertTaskRepository.findByDueDateBeforeAndStatusNot(LocalDate.now(), "COMPLETED");
+        List<ExpertTask> overdueTasks = expertTaskRepository.findByDueDateBeforeAndStatusNot(LocalDate.now(), TaskStatus.COMPLETED);
         for (ExpertTask task : overdueTasks) {
             notificationService.createNotification(
                     task.getParent().getId(),

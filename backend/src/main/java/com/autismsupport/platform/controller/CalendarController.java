@@ -38,9 +38,26 @@ public class CalendarController {
                 calendarService.getEventsByDateRange(childId, start, end, principal.getId())));
     }
 
+    // Ay bazlı sorgu — GET /api/calendar/child/{childId}/month/{year}/{month}
+    @GetMapping("/child/{childId}/month/{year}/{month}")
+    public ResponseEntity<ApiResponse<List<CalendarEventDto>>> getEventsByMonth(
+            @PathVariable UUID childId,
+            @PathVariable int year,
+            @PathVariable int month,
+            @CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(
+                calendarService.getEventsByMonth(childId, year, month, principal.getId())));
+    }
+
+    // Yaklaşan etkinlikler — isteğe bağlı limit parametresi
     @GetMapping("/upcoming")
-    public ResponseEntity<ApiResponse<List<CalendarEventDto>>> getUpcoming(@CurrentUser UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.success(calendarService.getUpcomingEvents(principal.getId())));
+    public ResponseEntity<ApiResponse<List<CalendarEventDto>>> getUpcoming(
+            @RequestParam(defaultValue = "0") int limit,
+            @CurrentUser UserPrincipal principal) {
+        List<CalendarEventDto> result = limit > 0
+                ? calendarService.getUpcomingLimited(principal.getId(), limit)
+                : calendarService.getUpcomingEvents(principal.getId());
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     @PostMapping
@@ -53,6 +70,16 @@ public class CalendarController {
     public ResponseEntity<ApiResponse<CalendarEventDto>> updateEvent(
             @PathVariable UUID id, @Valid @RequestBody CalendarEventDto dto, @CurrentUser UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.success("Etkinlik guncellendi", calendarService.updateEvent(id, dto, principal.getId())));
+    }
+
+    // Durum güncelleme — PATCH /api/calendar/{id}/status?status=COMPLETED
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<CalendarEventDto>> updateStatus(
+            @PathVariable UUID id,
+            @RequestParam String status,
+            @CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success("Durum guncellendi",
+                calendarService.updateStatus(id, status, principal.getId())));
     }
 
     @DeleteMapping("/{id}")

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Baby, Plus, Trash2, Edit, Search, X, ClipboardList, GraduationCap } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Baby, Plus, Trash2, Edit, Search, X, ClipboardList, GraduationCap, Bell, ShieldCheck } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -12,8 +12,10 @@ import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useChildStore } from '@/store/childStore';
 import { childService } from '@/services/childService';
+import { patientService } from '@/services/patientService';
 import { toast } from '@/store/toastStore';
-import type { Child } from '@/types';
+import { formatDateTime } from '@/utils/date';
+import type { Child, ExpertConnectionRequest } from '@/types';
 
 const GENDER_LABELS: Record<string, string> = { ERKEK: 'Erkek', KIZ: 'Kız' };
 
@@ -48,12 +50,15 @@ function parseTherapies(raw?: string): string[] {
 
 export function ChildrenPage() {
   const { children, setChildren, addChild, removeChild } = useChildStore();
-  const [initialLoading, setInitialLoading] = useState(true); // Fix 5: loading state
+  const { hash } = useLocation();
+  const requestsSectionRef = useRef<HTMLElement>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fieldError, setFieldError] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<Child | null>(null); // Fix 2: obje sakla
+  const [deleteTarget, setDeleteTarget] = useState<Child | null>(null);
   const [search, setSearch] = useState('');
+  const [connectionRequests, setConnectionRequests] = useState<ExpertConnectionRequest[]>([]);
   const [form, setForm] = useState({
     name: '', birthDate: '', diagnosisInfo: '', educationProgram: '', therapies: '', gender: '' as '' | 'ERKEK' | 'KIZ',
   });
@@ -63,7 +68,19 @@ export function ChildrenPage() {
       .then(setChildren)
       .catch(() => {})
       .finally(() => setInitialLoading(false));
+
+    patientService.getConnectionRequests()
+      .then(setConnectionRequests)
+      .catch(() => {});
   }, [setChildren]);
+
+  useEffect(() => {
+    if (hash === '#uzman-istekleri' && requestsSectionRef.current) {
+      setTimeout(() => {
+        requestsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+  }, [hash]);
 
   const handleCreate = async () => {
     if (!form.name.trim()) {
@@ -130,6 +147,67 @@ export function ChildrenPage() {
           <Plus size={18} className="mr-2" /> Profil Ekle
         </Button>
       </div>
+
+      <section id="uzman-istekleri" ref={requestsSectionRef} className="rounded-2xl border border-amber-200 bg-amber-50 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Bell size={20} className="text-amber-600" />
+          <h2 className="text-lg font-semibold text-amber-900">Gelen Uzman İstekleri</h2>
+          {connectionRequests.length > 0 && (
+            <span className="ml-auto bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {connectionRequests.length}
+            </span>
+          )}
+        </div>
+        {connectionRequests.length === 0 ? (
+          <div className="flex items-center gap-3 text-amber-700/60 py-1">
+            <ShieldCheck size={17} />
+            <p className="text-sm">Şu an bekleyen uzman erişim isteği yok.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {connectionRequests.map(req => (
+              <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-amber-100">
+                <div>
+                  <p className="font-semibold text-slate-900">
+                    <span className="text-indigo-600 font-bold">{req.expertName}</span>, çocuğunuz{' '}
+                    <span className="font-bold">{req.childName}</span> için profile erişim istiyor.
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">İstek Tarihi: {formatDateTime(req.createdAt)}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={async () => {
+                      try {
+                        await patientService.approveConnection(req.id);
+                        setConnectionRequests(prev => prev.filter(r => r.id !== req.id));
+                        toast.success('Uzman erişim isteği onaylandı.');
+                      } catch { toast.error('İşlem başarısız.'); }
+                    }}
+                  >
+                    Onayla
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-rose-600 border-rose-200 hover:bg-rose-50"
+                    onClick={async () => {
+                      try {
+                        await patientService.rejectConnection(req.id);
+                        setConnectionRequests(prev => prev.filter(r => r.id !== req.id));
+                        toast.success('Uzman erişim isteği reddedildi.');
+                      } catch { toast.error('İşlem başarısız.'); }
+                    }}
+                  >
+                    Reddet
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {!initialLoading && children.length > 0 && (
         <div className="relative max-w-sm">

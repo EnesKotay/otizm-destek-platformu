@@ -24,7 +24,11 @@ const schema = z.object({
   fullName: z.string().min(2, 'Ad soyad en az 2 karakter olmalıdır'),
   email: z.string().email('Geçerli bir e-posta adresi giriniz'),
   password: z.string().min(8, 'Şifre en az 8 karakter olmalıdır'),
+  confirmPassword: z.string().min(1, 'Şifre tekrarını giriniz'),
   kvkkConsent: z.boolean().refine(val => val, 'KVKK onayı zorunludur'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Şifreler eşleşmiyor',
+  path: ['confirmPassword'],
 });
 
 type FormData = z.infer<typeof schema>;
@@ -58,6 +62,7 @@ export function RegisterPage() {
     resolver: zodResolver(schema),
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchedPassword = watch('password', '');
   const strength = getPasswordStrength(watchedPassword || passwordValue);
 
@@ -268,6 +273,34 @@ export function RegisterPage() {
                     </span>
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* Şifre Tekrar */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre Tekrar</label>
+              <div className="relative">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                  <Lock size={18} />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Şifrenizi tekrar girin"
+                  className={`w-full pl-11 pr-10 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
+                    errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
+                  }`}
+                  {...register('confirmPassword')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="text-xs text-red-600 mt-1">{errors.confirmPassword.message}</p>
               )}
             </div>
 

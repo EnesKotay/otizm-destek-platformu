@@ -9,12 +9,10 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "calendar_events")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Table(name = "calendar_events", indexes = {
+        @Index(name = "idx_calendar_child_start", columnList = "child_id, start_time")
+})
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class CalendarEvent {
 
     @Id
@@ -43,9 +41,23 @@ public class CalendarEvent {
     @Column(name = "recurrence_rule")
     private String recurrenceRule;
 
-    @Column(name = "reminder_enabled")
+    // Etkinlik durumu: PLANNED / COMPLETED / CANCELLED
+    @Column(nullable = false, length = 20)
     @Builder.Default
-    private boolean reminderEnabled = true;
+    private String status = "PLANNED";
+
+    // Etkinlik konumu (klinik adı, adres vb.)
+    @Column(length = 255)
+    private String location;
+
+    // Etkinlikten kaç dakika önce hatırlatma (null = kapalı)
+    @Column(name = "reminder_minutes_before")
+    private Integer reminderMinutesBefore;
+
+    // Hatırlatma bildirimi gönderildi mi?
+    @Column(name = "reminder_sent", nullable = false)
+    @Builder.Default
+    private boolean reminderSent = false;
 
     @Column(name = "reminder_minutes_before")
     @Builder.Default

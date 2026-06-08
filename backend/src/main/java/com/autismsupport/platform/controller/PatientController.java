@@ -1,5 +1,6 @@
 package com.autismsupport.platform.controller;
 
+import com.autismsupport.platform.dto.AddPatientRequest;
 import com.autismsupport.platform.dto.ApiResponse;
 import com.autismsupport.platform.dto.ExpertTaskDto;
 import com.autismsupport.platform.dto.PatientSummaryDto;
@@ -8,6 +9,9 @@ import com.autismsupport.platform.security.UserPrincipal;
 import com.autismsupport.platform.service.PatientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,8 +29,12 @@ public class PatientController {
 
     @GetMapping
     @PreAuthorize("hasRole('EXPERT')")
-    public ResponseEntity<ApiResponse<List<PatientSummaryDto>>> getPatients(@CurrentUser UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.success(patientService.getPatients(principal.getId())));
+    public ResponseEntity<ApiResponse<Page<PatientSummaryDto>>> getPatients(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @CurrentUser UserPrincipal principal) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(ApiResponse.success(patientService.getPatients(principal.getId(), pageable)));
     }
 
     @GetMapping("/{childId}/tasks")
@@ -88,14 +96,65 @@ public class PatientController {
 
     @PostMapping("/add")
     @PreAuthorize("hasRole('EXPERT')")
-    public ResponseEntity<ApiResponse<PatientSummaryDto>> addPatient(
-            @RequestBody Map<String, String> body,
+    public ResponseEntity<ApiResponse<Void>> addPatient(
+            @Valid @RequestBody AddPatientRequest request,
             @CurrentUser UserPrincipal principal) {
-        String email = body.get("parentEmail");
-        UUID childId = UUID.fromString(body.get("childId"));
+        patientService.addPatientManually(principal.getId(), request.getParentEmail(), request.getChildId());
         return ResponseEntity.ok(ApiResponse.success(
-                "Danisan basariyla eklendi",
-                patientService.addPatientManually(principal.getId(), email, childId)
-        ));
+                "Erişim isteği gönderildi. Veli onayladığında listenizde görünecektir.", null));
+    }
+
+    @GetMapping("/connections/requests")
+    @PreAuthorize("hasRole('PARENT')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getConnectionRequests(@CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(patientService.getConnectionRequestsForParent(principal.getId())));
+    }
+
+    @GetMapping("/connections/active")
+    @PreAuthorize("hasRole('PARENT')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getActiveConnections(@CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(patientService.getActiveConnectionsForParent(principal.getId())));
+    }
+
+    @PostMapping("/connections/{id}/approve")
+    @PreAuthorize("hasRole('PARENT')")
+    public ResponseEntity<ApiResponse<Void>> approveConnection(
+            @PathVariable UUID id,
+            @CurrentUser UserPrincipal principal) {
+        patientService.approveConnection(principal.getId(), id);
+        return ResponseEntity.ok(ApiResponse.success("Uzman isteği onaylandı", null));
+    }
+
+    @PostMapping("/connections/{id}/reject")
+    @PreAuthorize("hasRole('PARENT')")
+    public ResponseEntity<ApiResponse<Void>> rejectConnection(
+            @PathVariable UUID id,
+            @CurrentUser UserPrincipal principal) {
+        patientService.rejectConnection(principal.getId(), id);
+        return ResponseEntity.ok(ApiResponse.success("Uzman isteği reddedildi", null));
+    }
+
+    @PostMapping("/connections/{id}/revoke")
+    @PreAuthorize("hasRole('PARENT')")
+    public ResponseEntity<ApiResponse<Void>> revokeConnection(
+            @PathVariable UUID id,
+            @CurrentUser UserPrincipal principal) {
+        patientService.revokeConnection(principal.getId(), id);
+        return ResponseEntity.ok(ApiResponse.success("Uzman erişimi kaldırıldı", null));
+    }
+
+    @GetMapping("/connections/sent-requests")
+    @PreAuthorize("hasRole('EXPERT')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getSentRequests(@CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(patientService.getSentConnectionRequestsForExpert(principal.getId())));
+    }
+
+    @PostMapping("/connections/{id}/cancel")
+    @PreAuthorize("hasRole('EXPERT')")
+    public ResponseEntity<ApiResponse<Void>> cancelRequest(
+            @PathVariable UUID id,
+            @CurrentUser UserPrincipal principal) {
+        patientService.cancelConnectionRequest(principal.getId(), id);
+        return ResponseEntity.ok(ApiResponse.success("İstek geri çekildi", null));
     }
 }

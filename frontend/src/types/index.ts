@@ -67,9 +67,12 @@ export interface CalendarEvent {
   startTime: string;
   endTime?: string;
   recurrenceRule?: string;
-  reminderEnabled: boolean;
+  status: 'PLANNED' | 'COMPLETED' | 'CANCELLED';
+  location?: string;
+  reminderMinutesBefore?: number | null;
   color?: string;
   childId: string;
+  childName?: string;
   createdAt: string;
 }
 
@@ -134,6 +137,7 @@ export interface Group {
   createdByUserId: string;
   isMember: boolean;
   conversationId?: string;
+  unreadCount?: number;
   createdAt: string;
 }
 
@@ -171,6 +175,7 @@ export interface ForumPost {
   tags?: Tag[];
   tagIds?: string[];
   likedByMe?: boolean;
+  ownedByMe?: boolean;
   anonymous?: boolean;
   author: User;
   createdAt: string;
@@ -188,6 +193,7 @@ export interface ForumComment {
   downvotedByMe?: boolean;
   anonymous?: boolean;
   expertApproved?: boolean;
+  ownedByMe?: boolean;
   author: User;
   createdAt: string;
 }
@@ -496,4 +502,14 @@ export interface TaskSubmission {
   expertReviewed: boolean;
   submittedAt: string;
   updatedAt: string;
+}
+
+export interface ExpertConnectionRequest {
+  id: string;
+  expertId: string;
+  expertName: string;
+  childId: string;
+  childName: string;
+  parentName?: string;
+  createdAt: string;
 }

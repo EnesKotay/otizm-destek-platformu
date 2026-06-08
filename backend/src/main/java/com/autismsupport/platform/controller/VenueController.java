@@ -8,6 +8,7 @@ import com.autismsupport.platform.security.UserPrincipal;
 import com.autismsupport.platform.service.VenueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class VenueController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Venue>> create(@RequestBody Venue venue, @CurrentUser UserPrincipal p) {
         return ResponseEntity.ok(ApiResponse.success(service.addVenue(venue)));
     }

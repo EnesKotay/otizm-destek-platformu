@@ -1,9 +1,10 @@
 import api from './api';
-import type { ApiResponse, ExpertStats, ExpertTask, PatientSummary, TaskSubmission } from '@/types';
+import type { ApiResponse, ExpertStats, ExpertTask, PatientSummary, TaskSubmission, ExpertConnectionRequest } from '@/types';
 
 export const patientService = {
   getPatients: () =>
-    api.get<ApiResponse<PatientSummary[]>>('/patients').then(r => r.data.data),
+    api.get<ApiResponse<{ content: PatientSummary[]; totalElements: number; totalPages: number }>>('/patients')
+      .then(r => r.data.data.content),
 
   getMyTasks: () =>
     api.get<ApiResponse<ExpertTask[]>>('/patients/my-tasks').then(r => r.data.data),
@@ -14,8 +15,8 @@ export const patientService = {
   assignTask: (childId: string, data: Partial<ExpertTask>) =>
     api.post<ApiResponse<ExpertTask>>(`/patients/${childId}/tasks`, data).then(r => r.data.data),
 
-  submitTask: (taskId: string, parentId: string, note?: string) =>
-    api.post<ApiResponse<unknown>>('/task-submissions', { taskId, parentId, parentNote: note }).then(r => r.data.data),
+  submitTask: (taskId: string, parentId: string, note?: string, evidenceUrl?: string) =>
+    api.post<ApiResponse<unknown>>('/task-submissions', { taskId, parentId, parentNote: note, evidenceUrl }).then(r => r.data.data),
 
   getTaskSubmissions: (taskId: string) =>
     api.get<ApiResponse<TaskSubmission[]>>(`/task-submissions/task/${taskId}`).then(r => r.data.data),
@@ -36,5 +37,26 @@ export const patientService = {
     api.get<ApiResponse<{ parentId: string; parentName: string; parentEmail: string; children: Array<{ id: string; name: string; diagnosis: string }> }>>('/patients/search-parent', { params: { email } }).then(r => r.data.data),
 
   addPatient: (parentEmail: string, childId: string) =>
-    api.post<ApiResponse<PatientSummary>>('/patients/add', { parentEmail, childId }).then(r => r.data.data),
+    api.post<ApiResponse<void>>('/patients/add', { parentEmail, childId }).then(r => r.data),
+
+  getConnectionRequests: () =>
+    api.get<ApiResponse<ExpertConnectionRequest[]>>('/patients/connections/requests').then(r => r.data.data),
+
+  getActiveConnections: () =>
+    api.get<ApiResponse<ExpertConnectionRequest[]>>('/patients/connections/active').then(r => r.data.data),
+
+  approveConnection: (id: string) =>
+    api.post<ApiResponse<void>>(`/patients/connections/${id}/approve`).then(r => r.data),
+
+  rejectConnection: (id: string) =>
+    api.post<ApiResponse<void>>(`/patients/connections/${id}/reject`).then(r => r.data),
+
+  revokeConnection: (id: string) =>
+    api.post<ApiResponse<void>>(`/patients/connections/${id}/revoke`).then(r => r.data),
+
+  getSentConnectionRequests: () =>
+    api.get<ApiResponse<ExpertConnectionRequest[]>>('/patients/connections/sent-requests').then(r => r.data.data),
+
+  cancelConnectionRequest: (id: string) =>
+    api.post<ApiResponse<void>>(`/patients/connections/${id}/cancel`).then(r => r.data),
 };

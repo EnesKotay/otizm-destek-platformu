@@ -20,6 +20,7 @@ export function createTreatmentState(params: {
   gameFeedback: Record<string, GameReflection>;
   gameSessions: GameSession[];
   goalProgressHistory: GoalProgressSnapshot[];
+  templateGoalToggles?: Record<string, boolean>;
 }): TreatmentPageState {
   return {
     customGoals: params.customGoals,
@@ -27,6 +28,7 @@ export function createTreatmentState(params: {
     gameFeedback: params.gameFeedback,
     gameSessions: params.gameSessions,
     goalProgressHistory: params.goalProgressHistory,
+    templateGoalToggles: params.templateGoalToggles || {},
   };
 }
 

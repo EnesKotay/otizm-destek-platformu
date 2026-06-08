@@ -68,7 +68,7 @@ export function AdminUsersPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(0);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setSelectedUserIds([]);
   }, [debouncedSearch, usersRole]);
 

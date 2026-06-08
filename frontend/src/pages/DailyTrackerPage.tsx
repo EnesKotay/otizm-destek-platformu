@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Pill, Smile, Moon, Plus, Check, X, Pencil, Trash2, ChevronDown, ChevronUp, Bell, AlertTriangle } from 'lucide-react';
+import { Pill, Smile, Moon, Plus, Check, Pencil, Trash2, ChevronDown, ChevronUp, Bell, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -8,7 +8,6 @@ import { TextArea } from '@/components/ui/TextArea';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import { useChildStore } from '@/store/childStore';
 import { childService } from '@/services/childService';
 import { medicationService } from '@/services/medicationService';
@@ -40,7 +39,7 @@ const FREQUENCIES = [
 const QUALITY_LABELS = ['', 'Çok Kötü', 'Kötü', 'Orta', 'İyi', 'Harika'];
 
 export function DailyTrackerPage() {
-  const [tab, setTab] = useState<'medication' | 'mood' | 'sleep'>('medication');
+  const [tab, setTab] = useState<'medication' | 'mood' | 'sleep'>('mood');
   const { children, setChildren, selectedChild, setSelectedChild } = useChildStore();
   const selectedChildId = selectedChild?.id ?? '';
 
@@ -72,6 +71,7 @@ export function DailyTrackerPage() {
 
   useEffect(() => {
     childService.getAll().then(c => { setChildren(c); if (c.length && !selectedChild) setSelectedChild(c[0]); }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -231,9 +231,9 @@ export function DailyTrackerPage() {
   };
 
   const TABS = [
-    { key: 'medication', icon: Pill,  label: 'İlaçlar' },
-    { key: 'mood',       icon: Smile, label: 'Ruh Hali' },
-    { key: 'sleep',      icon: Moon,  label: 'Uyku' },
+    { key: 'mood',       icon: Smile, label: '1. Duygu' },
+    { key: 'sleep',      icon: Moon,  label: '2. Uyku' },
+    { key: 'medication', icon: Pill,  label: '3. İlaç' },
   ] as const;
 
 
@@ -242,50 +242,103 @@ export function DailyTrackerPage() {
   const allMedsDone  = totalCount > 0 && takenCount >= totalCount;
   const moodDone     = !!todayMood;
   const sleepDone    = !!todaySleep;
-  const completedAll = allMedsDone && moodDone && sleepDone;
+  const completedAll = (totalCount === 0 || allMedsDone) && moodDone && sleepDone;
+  const dailySteps = [
+    {
+      key: 'mood',
+      icon: Smile,
+      title: 'Bugün nasıldı?',
+      detail: moodDone ? 'Duygu kaydedildi' : 'Önce tek bir duygu seçin',
+      done: moodDone,
+    },
+    {
+      key: 'sleep',
+      icon: Moon,
+      title: 'Uyku nasıldı?',
+      detail: sleepDone ? 'Uyku kaydedildi' : 'Dün geceyi kısaca girin',
+      done: sleepDone,
+    },
+    {
+      key: 'medication',
+      icon: Pill,
+      title: 'İlaç var mı?',
+      detail: totalCount === 0 ? 'İlaç yoksa bu adımı geçebilirsiniz' : allMedsDone ? 'İlaçlar tamam' : `${takenCount}/${totalCount} işaretlendi`,
+      done: allMedsDone || totalCount === 0,
+    },
+  ] as const;
+  const dailyProgress = Math.round((dailySteps.filter((step) => step.done).length / dailySteps.length) * 100);
+  const nextStep = dailySteps.find((step) => !step.done) ?? dailySteps[0];
+  const NextStepIcon = nextStep.icon;
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto px-4 py-6">
-      <PageOnboarding
-        pageId="daily-tracker"
-        title="Günlük Takip Sayfasına Hoş Geldiniz"
-        description="Çocuğunuzun günlük ilaç, ruh hali ve uyku kayıtlarını buradan yönetebilirsiniz."
-        steps={[
-          {
-            icon: <Pill size={20} />,
-            title: "İlaç Takibi",
-            description: "Günlük ilaç dozlarını kaydedin ve zamanı geldiğinde bildirim alın."
-          },
-          {
-            icon: <Smile size={20} />,
-            title: "Ruh Hali",
-            description: "Çocuğunuzun günlük ruh halini ve olası tetikleyicileri not edin."
-          },
-          {
-            icon: <Moon size={20} />,
-            title: "Uyku Düzeni",
-            description: "Uyku kalitesini ve gece uyanmalarını kaydederek desenleri keşfedin."
-          }
-        ]}
-      />
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="p-5 sm:p-6">
+            <p className="text-sm font-semibold text-slate-500">Bugünün kaydı</p>
+            <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Bugün nasıldı?</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
+              Hepsini doldurmak zorunda değilsiniz. Bir duygu seçmek bile bugünü anlamak için yeterli bir başlangıç.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => setTab(nextStep.key)}>
+                <NextStepIcon size={15} />
+                {completedAll ? 'Kayıtları gözden geçir' : 'Sıradaki adımı aç'}
+              </Button>
+              <Link
+                to="/kriz-rehberi"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-rose-100 bg-rose-50 px-3 text-sm font-bold text-rose-700 transition-colors hover:bg-rose-100"
+              >
+                <AlertTriangle size={15} />
+                Zor bir an
+              </Link>
+            </div>
+          </div>
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Günlük Takip</h1>
-          <p className="text-gray-500 mt-1">İlaç, ruh hali ve uyku takibi</p>
+          <div className="border-t border-slate-100 bg-slate-50/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Hazırlık</p>
+                <p className="mt-1 text-2xl font-bold text-slate-950">{dailyProgress}%</p>
+              </div>
+              <button
+                onClick={() => {
+                  if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                  }
+                }}
+                title="İlaç hatırlatmalarına izin ver"
+                className="shrink-0 p-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
+              >
+                <Bell size={18} />
+              </button>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+              <div className="h-full rounded-full bg-slate-800 transition-all" style={{ width: `${dailyProgress}%` }} />
+            </div>
+            <div className="mt-4 grid gap-2">
+              {dailySteps.map(({ key, icon: Icon, title, detail, done }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setTab(key)}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-left ring-1 transition-colors ${
+                    tab === key ? 'bg-white text-slate-950 ring-slate-200 shadow-sm' : 'bg-white/70 text-slate-600 ring-slate-100 hover:bg-white'
+                  }`}
+                >
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${done ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                    {done ? <Check size={17} /> : <Icon size={17} />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold">{title}</span>
+                    <span className="block truncate text-xs text-slate-500">{detail}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => {
-            if ('Notification' in window && Notification.permission === 'default') {
-              Notification.requestPermission();
-            }
-          }}
-          title="İlaç hatırlatmalarına izin ver"
-          className="shrink-0 p-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
-        >
-          <Bell size={18} />
-        </button>
-      </div>
+      </section>
 
       <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
         <AlertTriangle size={18} className="mt-0.5 shrink-0" />
@@ -321,10 +374,10 @@ export function DailyTrackerPage() {
       ) : (
         <>
           {/* Günlük özet şeridi */}
-          <div className={`rounded-xl border p-4 flex items-center gap-4 flex-wrap shadow-sm ${completedAll ? 'bg-slate-50 border-slate-300' : 'bg-white border-slate-200'}`}>
+          <div className={`rounded-xl border p-4 flex items-center gap-4 flex-wrap shadow-sm ${completedAll ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2">
-              <span className={`text-sm font-semibold ${completedAll ? 'text-slate-800' : 'text-slate-800'}`}>
-                {completedAll ? '🎉 Bugün tamamlandı!' : '📋 Bugünün özeti'}
+              <span className={`text-sm font-semibold ${completedAll ? 'text-emerald-800' : 'text-slate-800'}`}>
+                {completedAll ? 'Bugün için ana kayıtlar tamamlandı' : 'Bugünün kısa özeti'}
               </span>
             </div>
             <div className="flex items-center gap-3 flex-wrap ml-auto">

@@ -4,7 +4,7 @@ import {
   MessageCircle, X, Send, Loader2, ArrowRight, MoreVertical, Calendar,
   Edit, Trash2, Volume2, VolumeX, ShieldCheck, UserMinus, Ban
 } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
+
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { TextArea } from '@/components/ui/TextArea';
@@ -14,7 +14,6 @@ import { Badge } from '@/components/ui/Badge';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import { groupService } from '@/services/groupService';
 import { messagingService } from '@/services/messagingService';
-import { adminService } from '@/services/adminService';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useAuthStore } from '@/store/authStore';
 import type { Group, Message, GroupMeeting, User } from '@/types';
@@ -106,12 +105,15 @@ function GroupChatPanel({ chatState, onClose }: { chatState: ChatState; onClose:
     setSending(true);
     setText('');
     try {
-      // Sadece WS üzerinden gönder — backend /topic/conversation/{id}'ye broadcast yapar,
-      // WS subscription'ı mesajı alır ve UI'ya ekler. Çift kayıt olmaz.
-      send(`/app/chat/${conversationId}`, { content });
+      const saved = await messagingService.sendMessage(conversationId, content);
+      setMessages(prev => prev.some(m => m.id === saved.id) ? prev : [...prev, saved]);
     } catch {
-      toast.error('Mesaj gönderilemedi.');
-      setText(content);
+      try {
+        send(`/app/chat/${conversationId}`, { content });
+      } catch {
+        toast.error('Mesaj gönderilemedi.');
+        setText(content);
+      }
     }
     setSending(false);
   };
@@ -131,6 +133,7 @@ function GroupChatPanel({ chatState, onClose }: { chatState: ChatState; onClose:
           <p className="text-xs font-medium text-primary-50 flex items-center gap-1.5 mt-1 opacity-90">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
             {group.memberCount} üye
+            {group.unreadCount ? ` · ${group.unreadCount} yeni` : ''}
           </p>
         </div>
         <div className="flex items-center gap-2 relative z-10">
@@ -694,7 +697,12 @@ function GroupCard({
 
         <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
           {group.isMember && onChat && (
-            <Button size="sm" variant={isChatOpen ? 'primary' : 'outline'} onClick={() => onChat(group.id)} loading={openingChatId === group.id} className={`rounded-xl transition-all flex-1 sm:flex-none justify-center shadow-sm hover:shadow-md ${!isChatOpen ? 'hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200' : 'shadow-primary-200 shadow-md'}`}>
+            <Button size="sm" variant={isChatOpen ? 'primary' : 'outline'} onClick={() => onChat(group.id)} loading={openingChatId === group.id} className={`relative rounded-xl transition-all flex-1 sm:flex-none justify-center shadow-sm hover:shadow-md ${!isChatOpen ? 'hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200' : 'shadow-primary-200 shadow-md'}`}>
+              {!!group.unreadCount && !isChatOpen && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white shadow-sm">
+                  {group.unreadCount > 9 ? '9+' : group.unreadCount}
+                </span>
+              )}
               {isChatOpen ? <><X size={14} className="mr-1.5" /> Kapat</> : <><MessageCircle size={14} className="mr-1.5" /> Sohbet</>}
             </Button>
           )}
@@ -723,9 +731,12 @@ function GroupDetailsModal({ group, currentUser, onClose }: { group: Group, curr
   const [members, setMembers] = useState<User[]>([]);
   const [meetings, setMeetings] = useState<GroupMeeting[]>([]);
   const [loading, setLoading] = useState(false);
+  const [meetingForm, setMeetingForm] = useState({ title: '', description: '', meetingUrl: '', startTime: '', endTime: '' });
+  const [creatingMeeting, setCreatingMeeting] = useState(false);
 
   const isCreatorOrAdmin = group.createdByUserId === currentUser?.id || currentUser?.role === 'ADMIN';
 
+   
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -744,6 +755,7 @@ function GroupDetailsModal({ group, currentUser, onClose }: { group: Group, curr
       }
     };
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, group.id]);
 
   const handleKickMember = async (userId: string, userName: string) => {
@@ -758,15 +770,46 @@ function GroupDetailsModal({ group, currentUser, onClose }: { group: Group, curr
     }
   };
 
-  const handleBanUser = async (userId: string, userName: string, isActive: boolean) => {
-    const action = isActive ? 'yasaklamak' : 'yasağını kaldırmak';
-    if (!window.confirm(`${userName} isimli kullanıcının ${action} istediğinize emin misiniz?`)) return;
+  const handleBanUser = async (userId: string, userName: string) => {
+    if (!window.confirm(`${userName} isimli kullanıcıyı bu gruptan yasaklamak istediğinize emin misiniz?`)) return;
     try {
-      await adminService.toggleUserStatus(userId);
-      setMembers(prev => prev.map(m => m.id === userId ? { ...m, isActive: !isActive } : m));
-      toast.success(`Kullanıcı durumu güncellendi.`);
+      await groupService.banMember(group.id, userId);
+      setMembers(prev => prev.filter(m => m.id !== userId));
+      toast.success('Kullanıcı gruptan yasaklandı.');
     } catch {
-      toast.error('Kullanıcı durumu güncellenemedi.');
+      toast.error('Kullanıcı gruptan yasaklanamadı.');
+    }
+  };
+
+  const handleCreateMeeting = async () => {
+    if (!meetingForm.title.trim() || !meetingForm.startTime) return;
+    setCreatingMeeting(true);
+    try {
+      const meeting = await groupService.createMeeting(group.id, {
+        title: meetingForm.title.trim(),
+        description: meetingForm.description.trim() || undefined,
+        meetingUrl: meetingForm.meetingUrl.trim() || undefined,
+        startTime: meetingForm.startTime,
+        endTime: meetingForm.endTime || undefined,
+      });
+      setMeetings(prev => [...prev, meeting].sort((a, b) => a.startTime.localeCompare(b.startTime)));
+      setMeetingForm({ title: '', description: '', meetingUrl: '', startTime: '', endTime: '' });
+      toast.success('Toplantı planlandı.');
+    } catch {
+      toast.error('Toplantı planlanamadı.');
+    } finally {
+      setCreatingMeeting(false);
+    }
+  };
+
+  const handleDeleteMeeting = async (meetingId: string) => {
+    if (!window.confirm('Bu toplantıyı iptal etmek istediğinize emin misiniz?')) return;
+    try {
+      await groupService.deleteMeeting(group.id, meetingId);
+      setMeetings(prev => prev.filter(m => m.id !== meetingId));
+      toast.success('Toplantı iptal edildi.');
+    } catch {
+      toast.error('Toplantı iptal edilemedi.');
     }
   };
 
@@ -826,8 +869,8 @@ function GroupDetailsModal({ group, currentUser, onClose }: { group: Group, curr
                         <button onClick={() => handleKickMember(member.id, member.fullName)} className="p-1.5 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors" title="Gruptan Çıkar">
                           <UserMinus size={16} />
                         </button>
-                        {currentUser?.role === 'ADMIN' && (
-                           <button onClick={() => handleBanUser(member.id, member.fullName, member.isActive !== false)} className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors" title={member.isActive !== false ? "Kullanıcıyı Yasakla (Ban)" : "Yasağı Kaldır"}>
+                        {(currentUser?.role === 'ADMIN' || group.createdByUserId === currentUser?.id) && (
+                           <button onClick={() => handleBanUser(member.id, member.fullName)} className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors" title="Bu gruptan yasakla">
                              <Ban size={16} />
                            </button>
                         )}
@@ -842,7 +885,50 @@ function GroupDetailsModal({ group, currentUser, onClose }: { group: Group, curr
 
         {activeTab === 'meetings' && (
           <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-            <p className="text-sm text-gray-500 mb-4">Toplantılar şu anda geliştirme aşamasındadır.</p>
+            {isCreatorOrAdmin && (
+              <div className="rounded-2xl border border-primary-100 bg-primary-50/50 p-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Input label="Başlık *" value={meetingForm.title} onChange={e => setMeetingForm(f => ({ ...f, title: e.target.value }))} placeholder="Aile buluşması" />
+                  <Input label="Link" value={meetingForm.meetingUrl} onChange={e => setMeetingForm(f => ({ ...f, meetingUrl: e.target.value }))} placeholder="https://..." />
+                  <Input label="Başlangıç *" type="datetime-local" value={meetingForm.startTime} onChange={e => setMeetingForm(f => ({ ...f, startTime: e.target.value }))} />
+                  <Input label="Bitiş" type="datetime-local" value={meetingForm.endTime} onChange={e => setMeetingForm(f => ({ ...f, endTime: e.target.value }))} />
+                </div>
+                <TextArea label="Açıklama" value={meetingForm.description} onChange={e => setMeetingForm(f => ({ ...f, description: e.target.value }))} rows={2} className="mt-3" />
+                <Button className="mt-3 w-full" onClick={handleCreateMeeting} loading={creatingMeeting} disabled={!meetingForm.title.trim() || !meetingForm.startTime}>
+                  <Calendar size={16} className="mr-2" /> Toplantı Planla
+                </Button>
+              </div>
+            )}
+            {loading ? (
+              <div className="flex justify-center py-8"><Loader2 size={24} className="animate-spin text-primary-400" /></div>
+            ) : meetings.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">Henüz toplantı planlanmamış.</p>
+            ) : (
+              meetings.map(meeting => (
+                <div key={meeting.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-gray-900">{meeting.title}</p>
+                      <p className="mt-1 text-xs font-medium text-primary-600">
+                        {new Date(meeting.startTime).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' })}
+                        {meeting.endTime ? ` - ${new Date(meeting.endTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}` : ''}
+                      </p>
+                    </div>
+                    {isCreatorOrAdmin && (
+                      <button onClick={() => handleDeleteMeeting(meeting.id)} className="rounded-lg p-2 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Toplantıyı iptal et">
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                  </div>
+                  {meeting.description && <p className="mt-2 text-sm text-gray-600">{meeting.description}</p>}
+                  {meeting.meetingUrl && (
+                    <a href={meeting.meetingUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-600 hover:bg-blue-100">
+                      Toplantıya Katıl <ArrowRight size={13} />
+                    </a>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>

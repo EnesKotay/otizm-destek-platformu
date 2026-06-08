@@ -408,6 +408,13 @@ public class MessagingService {
                     .user(user)
                     .build());
         }
+        messagingTemplate.convertAndSend(
+                "/topic/conversation/" + conversationId,
+                Map.of(
+                        "type", "READ_RECEIPT",
+                        "readBy", userId.toString()
+                )
+        );
     }
 
     public long getTotalUnreadCount(UUID userId) {

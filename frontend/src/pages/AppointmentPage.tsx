@@ -155,7 +155,7 @@ export function AppointmentPage() {
   const [ratingLoading, setRatingLoading] = useState(false);
 
   // patients panel (expert)
-  const [activeMainTab, setActiveMainTab] = useState<'calendar' | 'patients'>('calendar');
+
   const [patients, setPatients] = useState<Record<string, unknown>[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
 
@@ -217,25 +217,32 @@ export function AppointmentPage() {
         appointmentService.getExpertAvailability(expertId),
         appointmentService.getExpertBookedTimes(expertId, date, duration)
       ]);
+       
       setExpertAvailability(avail || []);
+       
       setBookedTimes(booked || []);
+       
       setBookTime('');
     } catch { toast.error('Uzmanın müsait saatleri yüklenemedi.'); }
     finally { setLoadingSlots(false); }
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!isExpert && bookExpertId && selectedDate) loadAvailableSlots(bookExpertId, selectedDate, bookDuration);
   }, [bookExpertId, selectedDate, bookDuration, isExpert, loadAvailableSlots]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!bookExpertId) { setSelectedExpertProfile(null); return; }
     const fromList = experts.find(e => e.id === bookExpertId);
+     
     if (fromList) { setSelectedExpertProfile(fromList); return; }
     expertService.getOne(bookExpertId).then(data => setSelectedExpertProfile(data.expert)).catch(() => {});
   }, [bookExpertId, experts]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBookingCalendarMonth(new Date(selectedDate + 'T12:00:00'));
   }, [selectedDate]);
 
@@ -281,6 +288,7 @@ export function AppointmentPage() {
 
     loadRescheduleSlots();
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rescheduleTarget?.id, rescheduleDate, rescheduleDuration]);
 
   const todayStr = toDateInputValue(new Date());
@@ -345,8 +353,10 @@ export function AppointmentPage() {
   // İstatistikler
   const stats = useMemo(() => {
     const todayStr = toDateInputValue(new Date());
-    const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
-    const weekStr = weekStart.toISOString().split('T')[0];
+    const weekStart = new Date();
+    const dayOfWeek = jsDateToIsoDow(weekStart);
+    weekStart.setDate(weekStart.getDate() - dayOfWeek + 1);
+    const weekStr = toDateInputValue(weekStart);
     const monthStr = todayStr.slice(0, 7);
     return {
       today:     appointments.filter(a => a.date === todayStr && a.status !== 'CANCELLED' && a.status !== 'BLOCKED').length,
@@ -385,7 +395,6 @@ export function AppointmentPage() {
   }, [appointments, filterStatus, apptSearch]);
 
   const selectedDateForDisplay = new Date(selectedDate + 'T12:00:00');
-  const selectedDateLabel = selectedDateForDisplay.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
   const selectedDateWeekday = selectedDateForDisplay.toLocaleDateString('tr-TR', { weekday: 'long' });
   const bookingCalendarYear = bookingCalendarMonth.getFullYear();
   const bookingCalendarMonthIndex = bookingCalendarMonth.getMonth();
@@ -808,6 +817,7 @@ export function AppointmentPage() {
         isBlockedByAppt,
       };
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isExpert, dayAvailability, dayAppointments, dayBlockedAppts, selectedDate]);
 
   const filterLabels: Record<ApptFilterStatus, string> = {
@@ -2481,15 +2491,7 @@ function AppointmentCard({ appt, isExpert, completingId, deletingId, compact = f
                   <Button size="sm" onClick={() => onSessionNotes(appt)} className="bg-blue-600 hover:bg-blue-700 text-xs">
                     <ClipboardCheck size={12} className="mr-1" /> Seans Notu
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => onReschedule(appt)} className="text-xs">
-                    Yeniden Planla
-                  </Button>
                 </>
-              )}
-              {appt.status === 'CANCELLED' && (
-                <Button variant="outline" size="sm" onClick={() => onReschedule(appt)} className="text-xs">
-                  Yeniden Planla
-                </Button>
               )}
             </>
           )}
@@ -2511,11 +2513,6 @@ function AppointmentCard({ appt, isExpert, completingId, deletingId, compact = f
               {appt.status === 'COMPLETED' && !appt.rating && onRate && (
                 <Button size="sm" onClick={() => onRate(appt)} className="bg-amber-500 hover:bg-amber-600 text-xs">
                   <Star size={12} className="mr-1" /> Değerlendir
-                </Button>
-              )}
-              {(appt.status === 'COMPLETED' || appt.status === 'CANCELLED') && (
-                <Button variant="outline" size="sm" onClick={() => onReschedule(appt)} className="text-xs">
-                  Yeniden Planla
                 </Button>
               )}
             </>
@@ -2546,5 +2543,4 @@ function AppointmentCard({ appt, isExpert, completingId, deletingId, compact = f
     </div>
   );
 }
-
 

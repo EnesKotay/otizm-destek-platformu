@@ -58,6 +58,18 @@ public class UserController {
             user.setCity(body.getCity());
         if (body.getProfileImageUrl() != null)
             user.setProfileImageUrl(body.getProfileImageUrl());
+        if (body.getBio() != null)
+            user.setBio(body.getBio());
+        if (body.getInstitution() != null)
+            user.setInstitution(body.getInstitution());
+        if (body.getLicenseNumber() != null)
+            user.setLicenseNumber(body.getLicenseNumber());
+        if (body.getExpertTitle() != null)
+            user.setExpertTitle(body.getExpertTitle());
+        if (body.getLatitude() != null)
+            user.setLatitude(body.getLatitude());
+        if (body.getLongitude() != null)
+            user.setLongitude(body.getLongitude());
 
         user = userRepository.save(user);
         return ResponseEntity.ok(ApiResponse.success("Profil guncellendi", toUserDto(user)));
@@ -105,8 +117,14 @@ public class UserController {
                 .role(user.getRole().name())
                 .expertTitle(user.getExpertTitle())
                 .city(user.getCity())
+                .bio(user.getBio())
+                .institution(user.getInstitution())
+                .licenseNumber(user.getLicenseNumber())
+                .licenseVerified(user.isLicenseVerified())
+                .specializations(user.getSpecializations())
                 .verified(user.isVerified())
                 .kvkkConsent(user.isKvkkConsent())
+                .isActive(user.isActive())
                 .profileImageUrl(user.getProfileImageUrl())
                 .createdAt(user.getCreatedAt())
                 .build();

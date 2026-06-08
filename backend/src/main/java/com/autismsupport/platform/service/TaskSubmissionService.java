@@ -2,6 +2,7 @@ package com.autismsupport.platform.service;
 
 import com.autismsupport.platform.dto.TaskSubmissionDto;
 import com.autismsupport.platform.model.ExpertTask;
+import com.autismsupport.platform.model.TaskStatus;
 import com.autismsupport.platform.model.TaskSubmission;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.repository.ExpertTaskRepository;
@@ -54,7 +55,7 @@ public class TaskSubmissionService {
 
         submission = taskSubmissionRepository.save(submission);
 
-        task.setStatus("COMPLETED");
+        task.setStatus(TaskStatus.COMPLETED);
         expertTaskRepository.save(task);
 
         // Uzmana bildirim gonder

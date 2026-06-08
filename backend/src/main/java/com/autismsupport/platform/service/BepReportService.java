@@ -22,6 +22,7 @@ public class BepReportService {
     private final ChildRepository childRepository;
     private final UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public List<BepReportDto> getByChild(UUID childId, UUID userId) {
         getChild(childId);
         return bepReportRepository.findByChildIdOrderBySharedAtDesc(childId).stream()

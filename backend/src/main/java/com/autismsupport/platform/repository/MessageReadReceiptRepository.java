@@ -34,6 +34,7 @@ public interface MessageReadReceiptRepository extends JpaRepository<MessageReadR
             JOIN m.conversation c
             JOIN c.participants p
             WHERE p.id = :userId
+              AND :userId NOT MEMBER OF c.archivedBy
               AND m.sender.id <> :userId
               AND NOT EXISTS (
                   SELECT r.id FROM MessageReadReceipt r

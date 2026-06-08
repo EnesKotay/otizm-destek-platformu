@@ -47,10 +47,13 @@ services:
       - SPRING_FLYWAY_ENABLED=true
       - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
       - SPRING_FLYWAY_BASELINE_VERSION=14
-      - JPA_DDL_AUTO=${JPA_DDL_AUTO:-update}
+      - JPA_DDL_AUTO=${JPA_DDL_AUTO:-none}
       - APP_UPLOAD_DIR=/app/uploads
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:admin@otizmdestek.com}
       - APP_BOOTSTRAP_ADMIN_EMAIL=${ADMIN_EMAIL:-admin@autism.com}
       - APP_BOOTSTRAP_ADMIN_PASSWORD=${ADMIN_PASSWORD:-Admin123!}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173}
@@ -86,6 +89,7 @@ services:
       - VITE_WS_URL=http://localhost:8080/ws
       - VITE_VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
       - BACKEND_URL=http://backend:8080
+      - VITE_VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
       - DOCKER=true
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true

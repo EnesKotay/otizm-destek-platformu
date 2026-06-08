@@ -4,6 +4,9 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+
+import java.util.Arrays;
 
 @Slf4j
 @Configuration
@@ -26,6 +29,12 @@ public class StartupSecurityCheck {
 
     @Value("${app.encryption.secret-key:}")
     private String encryptionKey;
+
+    private final Environment environment;
+
+    public StartupSecurityCheck(Environment environment) {
+        this.environment = environment;
+    }
 
     @PostConstruct
     void check() {
@@ -54,6 +63,14 @@ public class StartupSecurityCheck {
 
         if (hasWarning) {
             log.warn("Yukaridaki guvensiz varsayilan degerler .env dosyaniza veya ortam degiskenleri araciligiyla degistirilmeli.");
+            if (isProductionProfile()) {
+                throw new IllegalStateException("Uretim ortaminda varsayilan guvenlik degerleriyle uygulama baslatilamaz.");
+            }
         }
+    }
+
+    private boolean isProductionProfile() {
+        return Arrays.stream(environment.getActiveProfiles())
+                .anyMatch(profile -> "prod".equalsIgnoreCase(profile) || "production".equalsIgnoreCase(profile));
     }
 }

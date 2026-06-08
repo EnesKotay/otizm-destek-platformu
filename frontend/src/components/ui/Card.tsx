@@ -6,6 +6,7 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ({ className, hover: _hover, ...props }, ref) => (
     <div
       ref={ref}
@@ -19,7 +20,7 @@ Card.displayName = 'Card';
 
 export const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('p-5', className)} {...props} />
+    <div ref={ref} className={cn('flex items-center justify-between gap-3 p-5', className)} {...props} />
   )
 );
 

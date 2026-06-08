@@ -22,7 +22,9 @@ public class EmergencyCard {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "jsonb")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @org.hibernate.annotations.ColumnTransformer(write = "?::jsonb")
     private String data;
 
     @UpdateTimestamp

@@ -4,7 +4,7 @@ import type { ApiResponse, Conversation, Message } from '@/types';
 export const messagingService = {
   // ── Konuşma Listesi ──────────────────────────────────────────────────────────
   getConversations: (params?: { search?: string; archived?: boolean }) => {
-    const cleanParams = params ? Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined)) : undefined;
+    const cleanParams = params ? Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined)) : undefined;
     return api.get<ApiResponse<Conversation[]>>('/messages/conversations', Object.keys(cleanParams || {}).length > 0 ? { params: cleanParams } : undefined).then(r => r.data.data);
   },
 

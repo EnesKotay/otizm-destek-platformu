@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
 import {
   BookOpen, Plus, MessageSquare, Heart, ArrowLeft, Check, ChevronUp,
   ChevronDown, HelpCircle, Lightbulb, Award, Filter, X, EyeOff,
-  ShieldCheck, Tag as TagIcon, Flag, Pencil, Trash2, Reply
+  ShieldCheck, Tag as TagIcon, Flag, Pencil, Trash2, Reply, Search, Users
 } from 'lucide-react';
 import { Card, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -24,6 +24,7 @@ import type { WeeklyTopic } from '@/components/WeeklyTopicWidget';
 import type { ForumPost, ForumComment, Tag, PostPrivacySettings } from '@/types';
 import { toast } from '@/store/toastStore';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
+import { htmlToPlainText, sanitizeHtml } from '@/utils/sanitizeHtml';
 type TabType = 'DENEYIM' | 'QUESTION' | 'TAVSIYE' | 'BASARI_HIKAYESI';
 
 const TABS: { key: TabType; label: string; icon: React.ReactNode }[] = [
@@ -66,6 +67,7 @@ function emptyForm(postType: string) {
 export function ForumPage() {
   const user = useAuthStore(s => s.user);
   const location = useLocation();
+  const navigate = useNavigate();
   const openPostId = (location.state as { openPostId?: string } | null)?.openPostId;
   const [activeTab, setActiveTab] = useState<TabType>('DENEYIM');
   const [posts, setPosts] = useState<ForumPost[]>([]);
@@ -78,6 +80,9 @@ export function ForumPage() {
   const [allTags, setAllTags] = useState<Record<string, Tag[]>>({});
   const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(new Set());
   const [showTagFilter, setShowTagFilter] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [sortMode, setSortMode] = useState<'new' | 'hot' | 'unanswered' | 'expert'>('new');
 
   const [form, setForm] = useState(emptyForm('DENEYIM'));
 
@@ -130,6 +135,8 @@ export function ForumPage() {
       const data = await forumService.getPosts({
         type: activeTab,
         tagIds: selectedTagIds.size > 0 ? Array.from(selectedTagIds) : undefined,
+        q: appliedSearch || undefined,
+        sort: sortMode,
         page: 0,
       });
       setPosts(data.content);
@@ -141,7 +148,7 @@ export function ForumPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, selectedTagIds]);
+  }, [activeTab, appliedSearch, selectedTagIds, sortMode]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadPosts(); }, [loadPosts]);
@@ -154,6 +161,8 @@ export function ForumPage() {
       const data = await forumService.getPosts({
         type: activeTab,
         tagIds: selectedTagIds.size > 0 ? Array.from(selectedTagIds) : undefined,
+        q: appliedSearch || undefined,
+        sort: sortMode,
         page: nextPage,
       });
       setPosts(prev => [...prev, ...data.content]);
@@ -163,7 +172,7 @@ export function ForumPage() {
       setLoadError(error instanceof Error ? error.message : 'Daha fazla gönderi yüklenemedi.');
     }
     setLoadingMore(false);
-  }, [activeTab, loadingMore, page, selectedTagIds]);
+  }, [activeTab, appliedSearch, loadingMore, page, selectedTagIds, sortMode]);
 
   useEffect(() => {
     if (inView && page < totalPages - 1 && !loadingMore) {
@@ -206,9 +215,11 @@ export function ForumPage() {
     setEditLoading(true);
     try {
       const updated = await forumService.updatePost(editingPost.id, { title: editForm.title, content: editForm.content });
-      setSelectedPost(updated);
+      if (selectedPost?.id === updated.id) {
+        setSelectedPost(updated);
+      }
+      setPosts(prev => prev.map(p => p.id === updated.id ? updated : p));
       setEditingPost(null);
-      loadPosts();
       toast.success('Gönderi güncellendi.');
     } catch { toast.error('Gönderi güncellenemedi.'); }
     setEditLoading(false);
@@ -217,8 +228,10 @@ export function ForumPage() {
   const handleDeletePost = async (postId: string) => {
     try {
       await forumService.deletePost(postId);
-      setSelectedPost(null);
-      loadPosts();
+      if (selectedPost?.id === postId) {
+        setSelectedPost(null);
+      }
+      setPosts(prev => prev.filter(p => p.id !== postId));
       toast.success('Gönderi silindi.');
     } catch { toast.error('Gönderi silinemedi.'); }
     setDeletePostId(null);
@@ -231,6 +244,7 @@ export function ForumPage() {
       setComments(prev => [...prev, comment]);
       setNewComment('');
       setSelectedPost(prev => prev ? { ...prev, commentCount: prev.commentCount + 1 } : null);
+      setPosts(prev => prev.map(p => p.id === selectedPost.id ? { ...p, commentCount: p.commentCount + 1 } : p));
       toast.success('Yorum eklendi.');
     } catch { toast.error('Yorum eklenemedi.'); }
   };
@@ -243,6 +257,7 @@ export function ForumPage() {
       setReplyContent('');
       setReplyingTo(null);
       setSelectedPost(prev => prev ? { ...prev, commentCount: prev.commentCount + 1 } : null);
+      setPosts(prev => prev.map(p => p.id === selectedPost.id ? { ...p, commentCount: p.commentCount + 1 } : p));
       toast.success('Yanıt eklendi.');
     } catch { toast.error('Yanıt eklenemedi.'); }
   };
@@ -250,11 +265,11 @@ export function ForumPage() {
   const handleVotePost = async (postId: string, value: number) => {
     try {
       await forumService.toggleVote({ targetType: 'POST', targetId: postId, voteValue: value });
+      const updated = await forumService.getPost(postId);
       if (selectedPost?.id === postId) {
-        const updated = await forumService.getPost(postId);
         setSelectedPost(updated);
       }
-      loadPosts();
+      setPosts(prev => prev.map(p => p.id === postId ? updated : p));
     } catch { /* ignore */ }
   };
 
@@ -273,6 +288,7 @@ export function ForumPage() {
     try {
       const updated = await forumService.acceptAnswer(selectedPost.id, commentId);
       setSelectedPost(updated);
+      setPosts(prev => prev.map(p => p.id === updated.id ? updated : p));
       const data = await forumService.getComments(selectedPost.id);
       setComments(data.content);
       toast.success('En iyi cevap işaretlendi.');
@@ -295,6 +311,7 @@ export function ForumPage() {
       await forumService.deleteComment(selectedPost.id, commentId);
       setComments(prev => prev.filter(c => c.id !== commentId));
       setSelectedPost(p => p ? { ...p, commentCount: Math.max(0, (p.commentCount ?? 1) - 1) } : p);
+      setPosts(prev => prev.map(p => p.id === selectedPost.id ? { ...p, commentCount: Math.max(0, (p.commentCount ?? 1) - 1) } : p));
       setDeleteCommentId(null);
       toast.success('Yorum silindi.');
     } catch { toast.error('Yorum silinemedi.'); }
@@ -318,13 +335,38 @@ export function ForumPage() {
     });
   };
 
+  const openCreatePost = (postType: TabType = activeTab, overrides: Partial<ReturnType<typeof emptyForm>> = {}) => {
+    setActiveTab(postType);
+    setForm({ ...emptyForm(postType), ...overrides });
+    setShowModal(true);
+  };
+
+  const openAnonymousShare = () => {
+    openCreatePost(activeTab, {
+      anonymous: true,
+      privacySettings: {
+        ...defaultPrivacy,
+        showRealName: false,
+        showDiagnosis: false,
+      },
+    });
+  };
+
   const handleJoinWeeklyTopic = (topic: WeeklyTopic) => {
-    setForm(prev => ({
-      ...prev,
+    setActiveTab('DENEYIM');
+    setForm({
+      ...emptyForm('DENEYIM'),
       title: topic.title,
       postType: 'DENEYIM',
-    }));
+    });
     setShowModal(true);
+  };
+
+  const communityStats = {
+    unansweredQuestions: posts.filter(post => post.postType === 'QUESTION' && !post.answered).length,
+    answeredQuestions: posts.filter(post => post.postType === 'QUESTION' && post.answered).length,
+    anonymousPosts: posts.filter(post => post.anonymous).length,
+    activeTags: new Set(posts.flatMap(post => post.tags?.map(tag => tag.id) ?? [])).size,
   };
 
   // Group comments: top-level and replies
@@ -338,7 +380,7 @@ export function ForumPage() {
 
   // Post detail view
   if (selectedPost) {
-    const isAuthor = user?.id === selectedPost.author?.id;
+    const isAuthor = !!selectedPost.ownedByMe || user?.id === selectedPost.author?.id;
     const isQuestion = selectedPost.postType === 'QUESTION';
 
     return (
@@ -411,7 +453,7 @@ export function ForumPage() {
               </div>
             )}
 
-            <div className="mt-5 rounded-2xl bg-slate-50/70 px-5 py-4 text-[15px] leading-7 text-slate-700 ring-1 ring-inset ring-slate-100 [&_p]:mb-3 [&_p:last-child]:mb-0" dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
+            <div className="mt-5 rounded-2xl bg-slate-50/70 px-5 py-4 text-[15px] leading-7 text-slate-700 ring-1 ring-inset ring-slate-100 [&_p]:mb-3 [&_p:last-child]:mb-0" dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedPost.content) }} />
           </div>
 
           <div className="flex items-center gap-3 border-t border-slate-100 bg-white px-6 py-4 text-sm font-semibold text-slate-500">
@@ -532,7 +574,7 @@ export function ForumPage() {
                       >
                         <Flag size={12} />
                       </button>
-                      {!comment.anonymous && user?.id === comment.author?.id && (
+                      {(comment.ownedByMe || (!comment.anonymous && user?.id === comment.author?.id)) && (
                         <>
                           <button
                             onClick={() => { setEditingComment(comment); setEditCommentContent(comment.content); setReplyingTo(null); }}
@@ -598,15 +640,50 @@ export function ForumPage() {
                         <p className="text-xs font-bold text-slate-900">{reply.anonymous ? 'Anonim' : reply.author?.fullName}</p>
                         <span className="text-[10px] font-medium text-slate-400">{formatRelative(reply.createdAt)}</span>
                       </div>
-                      <p className="mt-1 text-xs leading-5 text-slate-700">{reply.content}</p>
+                      {editingComment?.id === reply.id ? (
+                        <div className="mt-2 flex gap-2">
+                          <input
+                            type="text"
+                            value={editCommentContent}
+                            onChange={e => setEditCommentContent(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') handleSaveEditComment(); if (e.key === 'Escape') setEditingComment(null); }}
+                            className="min-w-0 flex-1 rounded-lg border border-indigo-300 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                            autoFocus
+                          />
+                          <button onClick={handleSaveEditComment} className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">Kaydet</button>
+                          <button onClick={() => setEditingComment(null)} className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-500 hover:bg-gray-50">İptal</button>
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-xs leading-5 text-slate-700">{reply.content}</p>
+                      )}
                     </div>
-                    <button
-                      onClick={() => setReportModal({ open: true, targetType: 'COMMENT', targetId: reply.id })}
-                      className="p-1 text-gray-300 hover:text-red-400 cursor-pointer"
-                      title="Şikayet Et"
-                    >
-                      <Flag size={11} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setReportModal({ open: true, targetType: 'COMMENT', targetId: reply.id })}
+                        className="p-1 text-gray-300 hover:text-red-400 cursor-pointer"
+                        title="Şikayet Et"
+                      >
+                        <Flag size={11} />
+                      </button>
+                      {reply.ownedByMe && editingComment?.id !== reply.id && (
+                        <>
+                          <button
+                            onClick={() => { setEditingComment(reply); setEditCommentContent(reply.content); }}
+                            className="p-1 text-gray-300 hover:text-indigo-500 cursor-pointer"
+                            title="Düzenle"
+                          >
+                            <Pencil size={11} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteCommentId(reply.id)}
+                            className="p-1 text-gray-300 hover:text-red-500 cursor-pointer"
+                            title="Sil"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -679,7 +756,7 @@ export function ForumPage() {
           <h1 className="text-2xl font-bold text-gray-900">Topluluk</h1>
           <p className="text-gray-500 mt-1">Deneyimlerinizi paylaşın, sorular sorun</p>
         </div>
-        <Button onClick={() => { setForm(emptyForm(activeTab)); setShowModal(true); }}>
+        <Button onClick={() => openCreatePost(activeTab)}>
           <Plus size={18} className="mr-2" />
           {activeTab === 'QUESTION' ? 'Soru Sor' : 'Gönderi Paylaş'}
         </Button>
@@ -699,6 +776,152 @@ export function ForumPage() {
 
       {/* Haftanın Konusu */}
       <WeeklyTopicWidget variant="forum" onJoin={handleJoinWeeklyTopic} />
+
+      <div className="grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
+        <Card className="overflow-hidden border-slate-200">
+          <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-primary-600">Topluluğa giriş</p>
+                <h2 className="mt-1 text-lg font-black text-slate-950">Sadece akış değil, doğru kapıdan başlama alanı</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-center sm:flex">
+                <div className="rounded-xl border border-white bg-white px-3 py-2 shadow-sm">
+                  <p className="text-base font-black text-slate-900">{communityStats.unansweredQuestions}</p>
+                  <p className="text-[11px] font-semibold text-slate-500">Cevap bekleyen</p>
+                </div>
+                <div className="rounded-xl border border-white bg-white px-3 py-2 shadow-sm">
+                  <p className="text-base font-black text-slate-900">{communityStats.answeredQuestions}</p>
+                  <p className="text-[11px] font-semibold text-slate-500">Yanıtlanmış</p>
+                </div>
+                <div className="rounded-xl border border-white bg-white px-3 py-2 shadow-sm">
+                  <p className="text-base font-black text-slate-900">{communityStats.anonymousPosts}</p>
+                  <p className="text-[11px] font-semibold text-slate-500">Anonim</p>
+                </div>
+                <div className="rounded-xl border border-white bg-white px-3 py-2 shadow-sm">
+                  <p className="text-base font-black text-slate-900">{communityStats.activeTags}</p>
+                  <p className="text-[11px] font-semibold text-slate-500">Aktif etiket</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-3 p-4 md:grid-cols-2">
+            <button
+              onClick={() => openCreatePost('QUESTION')}
+              className="group flex min-h-28 items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-left transition-all hover:border-blue-200 hover:bg-blue-50"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm">
+                <HelpCircle size={18} />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">Uzman cevaplı sorular</p>
+                <p className="mt-1 text-sm leading-5 text-slate-600">Sorunuzu Soru-Cevap alanına taşıyın; cevaplar oy, kabul ve uzman onayıyla öne çıkar.</p>
+              </div>
+            </button>
+            <button
+              onClick={openAnonymousShare}
+              className="group flex min-h-28 items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4 text-left transition-all hover:border-emerald-200 hover:bg-emerald-50"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
+                <EyeOff size={18} />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">Güvenli anonim paylaşım</p>
+                <p className="mt-1 text-sm leading-5 text-slate-600">Ad, tanı detayı ve eşleştirme görünürlüğünü paylaşmadan önce seçin.</p>
+              </div>
+            </button>
+            <button
+              onClick={() => navigate('/benzer-aileler')}
+              className="group flex min-h-28 items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/70 p-4 text-left transition-all hover:border-violet-200 hover:bg-violet-50"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
+                <Users size={18} />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">Benzer aile önerileri</p>
+                <p className="mt-1 text-sm leading-5 text-slate-600">Etiketler ve yaş aralığı üzerinden benzer süreçteki ailelerle kontrollü tanışın.</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setSortMode('expert')}
+              className="group flex min-h-28 items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/70 p-4 text-left transition-all hover:border-amber-200 hover:bg-amber-50"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
+                <ShieldCheck size={18} />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">Güven ve moderasyon akışı</p>
+                <p className="mt-1 text-sm leading-5 text-slate-600">Şikayet edilen içerikler incelemeye düşer; uzmanlı ve onaylı katkıları öne alın.</p>
+              </div>
+            </button>
+          </div>
+        </Card>
+
+        <Card className="border-slate-200 p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600">
+              <Flag size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-black text-slate-900">Raporlama/moderasyon</p>
+              <p className="text-xs font-medium text-slate-500">Kırılgan paylaşımlar için görünür güven hattı</p>
+            </div>
+          </div>
+          <div className="mt-5 space-y-3">
+            {[
+              ['1', 'İçerik işaretlenir', 'Gönderi veya yorumdan şikayet oluşturulur.'],
+              ['2', 'Ekip inceler', 'Uygunsuz içerik ve kişisel veri riski kontrol edilir.'],
+              ['3', 'Aksiyon alınır', 'Gerekirse içerik kaldırılır ya da kullanıcı bilgilendirilir.'],
+            ].map(([step, title, description]) => (
+              <div key={step} className="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-black text-slate-700 shadow-sm">{step}</span>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">{title}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-slate-500">{description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm md:flex-row md:items-center">
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+          <Search size={16} className="shrink-0 text-slate-400" />
+          <input
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') setAppliedSearch(searchInput.trim());
+              if (e.key === 'Escape') { setSearchInput(''); setAppliedSearch(''); }
+            }}
+            placeholder="Toplulukta ara..."
+            className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+          />
+          {appliedSearch && (
+            <button onClick={() => { setSearchInput(''); setAppliedSearch(''); }} className="text-slate-400 hover:text-slate-600">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <Button variant="outline" onClick={() => setAppliedSearch(searchInput.trim())} className="md:w-auto">Ara</Button>
+        <div className="flex gap-1 rounded-xl bg-slate-100 p-1">
+          {[
+            ['new', 'Yeni'],
+            ['hot', 'Sıcak'],
+            ['unanswered', 'Cevapsız'],
+            ['expert', 'Uzmanlı'],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setSortMode(key as typeof sortMode)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${sortMode === key ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
@@ -794,7 +1017,7 @@ export function ForumPage() {
           icon={<BookOpen size={32} />}
           title="Henüz gönderi yok"
           description={activeTab === 'QUESTION' ? 'İlk soruyu sorarak tartışmayı başlatın' : 'Toplulukla bir deneyiminizi paylaşarak başlayın'}
-          action={<Button onClick={() => { setForm(emptyForm(activeTab)); setShowModal(true); }}>
+          action={<Button onClick={() => openCreatePost(activeTab)}>
             {activeTab === 'QUESTION' ? 'İlk Soruyu Sor' : 'İlk Gönderiyi Paylaş'}
           </Button>}
         />
@@ -817,7 +1040,7 @@ export function ForumPage() {
                     {post.postType === 'QUESTION' && post.answered && <Badge variant="success" className="py-0 px-1.5 text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">Cevaplanmış</Badge>}
                   </div>
                   <h3 className="text-[17px] font-bold text-slate-900 leading-snug">{post.title}</h3>
-                  <div className="text-[15px] text-slate-600 mt-1.5 line-clamp-3 leading-relaxed" dangerouslySetInnerHTML={{ __html: post.content.replace(/<[^>]+>/g, ' ') }} />
+                  <p className="text-[15px] text-slate-600 mt-1.5 line-clamp-3 leading-relaxed">{htmlToPlainText(post.content)}</p>
 
                   {post.tags && post.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-3">
@@ -849,7 +1072,7 @@ export function ForumPage() {
                       <MessageSquare size={16} strokeWidth={2.5} /> 
                       {post.commentCount > 0 ? post.commentCount : 'Yorum Yap'}
                     </button>
-                    {user && user.id !== post.author?.id ? (
+                    {user && !post.ownedByMe && user.id !== post.author?.id ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -860,7 +1083,7 @@ export function ForumPage() {
                       >
                         <Flag size={14} /> Şikayet
                       </button>
-                    ) : user && user.id === post.author?.id ? (
+                    ) : user && (post.ownedByMe || user.id === post.author?.id) ? (
                       <div className="ml-auto flex items-center gap-3">
                         <button
                           onClick={(e) => {

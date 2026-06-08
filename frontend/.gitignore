@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Vitest geçici dosyalar
+vitest.config.ts.timestamp-*.mjs
+test-qr.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

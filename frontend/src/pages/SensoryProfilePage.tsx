@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Save, Printer, Info, CheckCircle, ChevronDown, ChevronUp, Copy, Mail } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useChildStore } from '@/store/childStore';
@@ -74,12 +73,6 @@ interface DomainProfile {
   notes: string;
 }
 
-interface SensoryProfile {
-  childId: string;
-  updatedAt: string;
-  domains: Record<string, DomainProfile>;
-}
-
 
 function emptyDomain(): DomainProfile {
   return { sensitivity: '', selectedTriggers: [], customTriggers: '', selectedAccommodations: [], customAccommodations: '', notes: '' };
@@ -101,6 +94,7 @@ export function SensoryProfilePage() {
 
   useEffect(() => {
     if (!children.length) childService.getAll().then(setChildren).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

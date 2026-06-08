@@ -2,7 +2,9 @@ package com.autismsupport.platform.repository;
 
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.model.UserRole;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,6 +15,10 @@ import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM User u WHERE u.id = :id")
+    Optional<User> lockById(@Param("id") UUID id);
 
     boolean existsByEmail(String email);
 
@@ -67,6 +73,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             SELECT u
             FROM User u
             WHERE LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%'))
+               OR LOWER(u.email) LIKE LOWER(CONCAT('%', :q, '%'))
                OR LOWER(COALESCE(u.expertTitle, '')) LIKE LOWER(CONCAT('%', :q, '%'))
             ORDER BY u.verified DESC, u.createdAt DESC
             """)
@@ -92,16 +99,16 @@ public interface UserRepository extends JpaRepository<User, UUID> {
               AND u.latitude IS NOT NULL
               AND u.longitude IS NOT NULL
               AND (u.matching_enabled IS NULL OR u.matching_enabled = true)
-              AND (6371 * acos(LEAST(1.0,
+              AND (6371 * acos(GREATEST(-1.0, LEAST(1.0,
                     cos(radians(:lat)) * cos(radians(CAST(u.latitude AS float8)))
                     * cos(radians(CAST(u.longitude AS float8)) - radians(:lon))
                     + sin(radians(:lat)) * sin(radians(CAST(u.latitude AS float8)))
-                  ))) <= :maxKm
-            ORDER BY (6371 * acos(LEAST(1.0,
+                  )))) <= :maxKm
+            ORDER BY (6371 * acos(GREATEST(-1.0, LEAST(1.0,
                     cos(radians(:lat)) * cos(radians(CAST(u.latitude AS float8)))
                     * cos(radians(CAST(u.longitude AS float8)) - radians(:lon))
                     + sin(radians(:lat)) * sin(radians(CAST(u.latitude AS float8)))
-                  ))) ASC
+                  )))) ASC
             LIMIT 50
             """)
     List<User> findNearbyMatchingParents(@Param("userId") String userId,

@@ -69,6 +69,7 @@ export function readTreatmentPageState(source?: Record<string, unknown>): Treatm
     gameFeedback,
     gameSessions: migratedSessions,
     goalProgressHistory,
+    templateGoalToggles: (treatmentPage?.templateGoalToggles as Record<string, boolean> | undefined) || {},
   };
 }
 
@@ -267,56 +268,56 @@ function detectFocusAreas(therapies: string[], notes: DevelopmentNote[]): FocusA
 function buildGoalGroups(focusAreas: FocusArea[]): GoalGroup[] {
   return focusAreas.map((focusArea) => {
     if (focusArea.key === 'communication') {
-      const items: GoalItem[] = [
-        { label: 'İstek cümleleri kurma', status: 'done' },
-        { label: 'Selamlama kelimeleri', status: 'done' },
-        { label: '2 kelimeli cümle', status: 'active' },
+      const templateItems: GoalItem[] = [
+        { label: 'İstek cümleleri kurma', status: 'upcoming' },
+        { label: 'Selamlama kelimeleri', status: 'upcoming' },
+        { label: '2 kelimeli cümle', status: 'upcoming' },
         { label: 'Soru sormayı öğrenme', status: 'upcoming' },
       ];
-
       return {
         key: 'communication',
         title: 'İletişim hedefleri',
         icon: <MessageSquareText size={22} aria-hidden="true" />,
-        percent: percentFromItems(items),
-        items,
+        percent: percentFromItems(templateItems),
+        items: templateItems,
+        templateItems,
         tone: 'sky',
         summary: 'PECS, seçim kartları ve istek oyunları aynı hedefi destekler.',
       };
     }
 
     if (focusArea.key === 'social') {
-      const items: GoalItem[] = [
-        { label: 'Göz teması kurma', status: 'done' },
-        { label: 'Paylaşma becerileri', status: 'done' },
-        { label: 'Sıra bekleme', status: 'active' },
+      const templateItems: GoalItem[] = [
+        { label: 'Göz teması kurma', status: 'upcoming' },
+        { label: 'Paylaşma becerileri', status: 'upcoming' },
+        { label: 'Sıra bekleme', status: 'upcoming' },
         { label: 'Grup oyununa katılım', status: 'upcoming' },
       ];
-
       return {
         key: 'social',
         title: 'Sosyal Beceriler',
         icon: <Hand size={22} aria-hidden="true" />,
-        percent: percentFromItems(items),
-        items,
+        percent: percentFromItems(templateItems),
+        items: templateItems,
+        templateItems,
         tone: 'violet',
         summary: 'Sosyal hikâyeler ve sıra alma oyunlarıyla desteklenir.',
       };
     }
 
-    const items: GoalItem[] = [
-      { label: 'Ses geçişlerinde sakin kalma', status: 'done' },
-      { label: 'Duyusal mola isteme', status: 'done' },
-      { label: 'Basınçlı aktiviteye yönelme', status: 'active' },
+    const templateItems: GoalItem[] = [
+      { label: 'Ses geçişlerinde sakin kalma', status: 'upcoming' },
+      { label: 'Duyusal mola isteme', status: 'upcoming' },
+      { label: 'Basınçlı aktiviteye yönelme', status: 'upcoming' },
       { label: 'Uyaran toleransını uzatma', status: 'upcoming' },
     ];
-
     return {
       key: 'sensory',
       title: 'Duyusal düzenleme',
       icon: <Sparkles size={22} aria-hidden="true" />,
-      percent: percentFromItems(items),
-      items,
+      percent: percentFromItems(templateItems),
+      items: templateItems,
+      templateItems,
       tone: 'sky',
       summary: 'Duyusal mola, profil ve sakinleşme oyunlarıyla birlikte çalışır.',
     };

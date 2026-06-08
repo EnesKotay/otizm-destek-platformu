@@ -29,9 +29,20 @@ export function AdminOverviewPage() {
   const [recentLogs, setRecentLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // System Health States
-  const [dbResponseTime, setDbResponseTime] = useState(8);
-  const [activeSockets, setActiveSockets] = useState(42);
+  // System Health — gerçek API metrikleri
+  const [cpuUsage, setCpuUsage] = useState<number | null>(null);
+  const [heapUsedMb, setHeapUsedMb] = useState<number | null>(null);
+  const [uptimeMs, setUptimeMs] = useState<number | null>(null);
+
+  const fetchMetrics = () => {
+    adminService.getSystemMetrics()
+      .then(m => {
+        setCpuUsage(Math.round(m.cpuUsage * 100));
+        setHeapUsedMb(Math.round(m.heapUsedMb));
+        setUptimeMs(m.uptimeMs);
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -44,12 +55,8 @@ export function AdminOverviewPage() {
     ])
       .finally(() => setLoading(false));
 
-    // Simulated real-time variance in metrics
-    const interval = setInterval(() => {
-      setDbResponseTime(prev => Math.max(4, Math.min(20, prev + Math.floor(Math.random() * 5) - 2)));
-      setActiveSockets(prev => Math.max(30, Math.min(60, prev + Math.floor(Math.random() * 3) - 1)));
-    }, 5000);
-
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 30_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -82,10 +89,30 @@ export function AdminOverviewPage() {
     }
   };
 
+  const uptimeHours = uptimeMs !== null ? Math.floor(uptimeMs / 3_600_000) : null;
+
   const systemStatus = [
-    { name: 'API Sunucusu', value: 'Çalışıyor', icon: Activity, color: 'text-emerald-500', detail: 'Uptime: 99.98%' },
-    { name: 'Veritabanı Hızı', value: `${dbResponseTime} ms`, icon: Database, color: 'text-indigo-500', detail: 'Bağlantı aktif' },
-    { name: 'Canlı Soketler', value: `${activeSockets} Aktif`, icon: Wifi, color: 'text-cyan-500', detail: 'WebSocket kanalları' },
+    {
+      name: 'API Sunucusu',
+      value: uptimeHours !== null ? `${uptimeHours} sa` : 'Çalışıyor',
+      icon: Activity,
+      color: 'text-emerald-500',
+      detail: uptimeHours !== null ? `${uptimeHours}h uptime` : 'Uptime bilgisi yükleniyor',
+    },
+    {
+      name: 'CPU Kullanımı',
+      value: cpuUsage !== null ? `%${cpuUsage}` : '—',
+      icon: Database,
+      color: cpuUsage !== null && cpuUsage > 80 ? 'text-rose-500' : 'text-indigo-500',
+      detail: cpuUsage !== null && cpuUsage > 80 ? 'Yüksek yük!' : 'Normal düzey',
+    },
+    {
+      name: 'Bellek (Heap)',
+      value: heapUsedMb !== null ? `${heapUsedMb} MB` : '—',
+      icon: Wifi,
+      color: 'text-cyan-500',
+      detail: 'JVM heap kullanımı',
+    },
     { name: 'Yapay Zeka (AI)', value: 'Aktif', icon: Cpu, color: 'text-purple-500', detail: 'AutiBot Hazır' },
   ];
 

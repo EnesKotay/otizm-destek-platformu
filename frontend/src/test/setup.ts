@@ -20,21 +20,21 @@ const localStorageMock = (() => {
     clear: () => { store = {}; },
   };
 })();
-if (typeof window !== 'undefined') {
-  Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+const globalTarget = typeof window !== 'undefined' ? window : globalThis;
 
-  // matchMedia mock
-  Object.defineProperty(window, 'matchMedia', {
-    value: vi.fn().mockImplementation((q: string) => ({
-      matches: false, media: q, onchange: null,
-      addListener: vi.fn(), removeListener: vi.fn(),
-      addEventListener: vi.fn(), removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })),
-  });
-}
+Object.defineProperty(globalTarget, 'localStorage', { value: localStorageMock });
+
+// matchMedia mock
+Object.defineProperty(globalTarget, 'matchMedia', {
+  value: vi.fn().mockImplementation((q: string) => ({
+    matches: false, media: q, onchange: null,
+    addListener: vi.fn(), removeListener: vi.fn(),
+    addEventListener: vi.fn(), removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
 
 // ResizeObserver mock
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
+(globalTarget as any).ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn(),
 }));

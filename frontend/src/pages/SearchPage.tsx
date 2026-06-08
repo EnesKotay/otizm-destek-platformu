@@ -94,7 +94,7 @@ export function SearchPage() {
     if (q) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setQuery(q);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       doSearch({ q, type: activeFilter || undefined, sort: sortBy });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

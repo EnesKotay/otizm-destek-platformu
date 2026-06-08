@@ -25,6 +25,8 @@ public class GroupService {
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final GroupMeetingRepository meetingRepository;
+    private final MessageReadReceiptRepository readReceiptRepository;
+    private final GroupBanRepository groupBanRepository;
 
     @Transactional(readOnly = true)
     public List<GroupDto> getMyGroups(UUID userId) {
@@ -86,6 +88,9 @@ public class GroupService {
                 .orElseThrow(() -> new ResourceNotFoundException("Grup bulunamadı"));
         if (memberRepository.existsByGroupIdAndUserId(groupId, userId)) {
             throw new ValidationException("Zaten bu grubun üyesisiniz");
+        }
+        if (groupBanRepository.existsByGroupIdAndUserId(groupId, userId)) {
+            throw new UnauthorizedException("Bu gruba katılımınız sınırlandırılmış");
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
@@ -189,6 +194,7 @@ public class GroupService {
     public List<UserDto> getGroupMembers(UUID groupId, UUID currentUserId) {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Grup bulunamadı"));
+        assertGroupMemberOrAdmin(group, currentUserId);
 
         return group.getMembers().stream()
                 .map(m -> {
@@ -214,9 +220,9 @@ public class GroupService {
     }
 
     public List<GroupMeetingDto> getMeetings(UUID groupId, UUID currentUserId) {
-        if (!groupRepository.existsById(groupId)) {
-            throw new ResourceNotFoundException("Grup bulunamadı");
-        }
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Grup bulunamadı"));
+        assertGroupMemberOrAdmin(group, currentUserId);
         return meetingRepository.findByGroupIdOrderByStartTimeAsc(groupId).stream()
                 .map(this::toMeetingDto)
                 .toList();
@@ -274,6 +280,39 @@ public class GroupService {
         meetingRepository.delete(meeting);
     }
 
+    @Transactional
+    public void banMember(UUID groupId, UUID targetUserId, UUID requesterId, String requesterRole) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Grup bulunamadı"));
+        if (group.getCreatedBy().getId().equals(targetUserId)) {
+            throw new ValidationException("Grup kurucusu banlanamaz");
+        }
+        boolean isCreator = group.getCreatedBy().getId().equals(requesterId);
+        boolean isAdmin = "ADMIN".equals(requesterRole);
+        if (!isCreator && !isAdmin) {
+            throw new UnauthorizedException("Bu kullanıcıyı gruptan yasaklama yetkiniz yok");
+        }
+        User target = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
+        User requester = userRepository.findById(requesterId).orElse(null);
+
+        groupBanRepository.findByGroupIdAndUserId(groupId, targetUserId).orElseGet(() ->
+                groupBanRepository.save(GroupBan.builder()
+                        .group(group)
+                        .user(target)
+                        .bannedBy(requester)
+                        .reason("Grup yöneticisi tarafından yasaklandı")
+                        .build())
+        );
+
+        memberRepository.findByGroupIdAndUserId(groupId, targetUserId).ifPresent(memberRepository::delete);
+        group.getMembers().removeIf(m -> m.getUser().getId().equals(targetUserId));
+        if (group.getConversation() != null) {
+            group.getConversation().getParticipants().removeIf(u -> u.getId().equals(targetUserId));
+            conversationRepository.save(group.getConversation());
+        }
+    }
+
     private String normalizeSearch(String value) {
         return value == null ? "" : value.trim();
     }
@@ -322,7 +361,20 @@ public class GroupService {
                 .createdByUserId(group.getCreatedBy().getId())
                 .isMember(isMember)
                 .conversationId(group.getConversation() != null ? group.getConversation().getId() : null)
+                .unreadCount(group.getConversation() != null && isMember
+                        ? (int) readReceiptRepository.countUnreadMessages(group.getConversation().getId(), currentUserId)
+                        : 0)
                 .createdAt(group.getCreatedAt())
                 .build();
+    }
+
+    private void assertGroupMemberOrAdmin(Group group, UUID currentUserId) {
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
+        boolean isMember = group.getMembers().stream()
+                .anyMatch(member -> member.getUser().getId().equals(currentUserId));
+        if (!isMember && user.getRole() != UserRole.ADMIN) {
+            throw new UnauthorizedException("Bu grup bilgilerine erişim yetkiniz yok");
+        }
     }
 }

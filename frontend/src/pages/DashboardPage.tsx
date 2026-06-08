@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState, type ElementType } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, AlertTriangle, ArrowRight, Award, Baby, BarChart2, Bell, Brain, Calendar, CheckCircle, ChevronDown, ChevronUp, ClipboardList, Clock, FileText, GraduationCap, Heart, MessageCircle, Pill, Plus, Settings, ShieldCheck, Sparkles, Target, Timer, TrendingUp, UserPlus, Users, XCircle } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, Award, Baby, BarChart2, Bell, Brain, Calendar, CalendarCheck, CheckCircle, ClipboardList, Clock, FileText, GraduationCap, Heart, MessageCircle, Pill, Plus, Search, Settings, ShieldCheck, Sparkles, Target, Timer, TrendingUp, UserPlus, Users, XCircle } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import { SkeletonStatCard, SkeletonCard } from '@/components/ui/Skeleton';
-import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import { WeeklyTopicWidget } from '@/components/WeeklyTopicWidget';
 import { useAuthStore } from '@/store/authStore';
 import { useChildStore } from '@/store/childStore';
@@ -22,14 +21,15 @@ import { medicationService } from '@/services/medicationService';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { toast } from '@/store/toastStore';
 import { formatDateTime } from '@/utils/date';
-import type { AdminStats, AppointmentRecord, CalendarEvent, DevelopmentNote, ExpertStats, ExpertTask, Medication, MoodEntry, Milestone, PatientSummary, Report } from '@/types';
+import type { AdminStats, AppointmentRecord, CalendarEvent, DevelopmentNote, ExpertStats, ExpertTask, Medication, MoodEntry, Milestone, PatientSummary, Report, ExpertConnectionRequest } from '@/types';
 
 // Fix: parse gerçek adı — "Dr. Kemal Aydın" → "Kemal"
 const HONORIFICS = new Set(['Dr.', 'Prof.', 'Av.', 'Doç.', 'Op.', 'Uzm.', 'Yrd.', 'Fzt.']);
 function getFirstName(fullName?: string): string {
   if (!fullName) return '';
   const parts = fullName.split(' ').filter(Boolean);
-  return parts.find(p => !HONORIFICS.has(p)) || parts[0] || '';
+  const name = parts.find(p => !HONORIFICS.has(p)) || parts[0] || '';
+  return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 // Fix: UTC yerine yerel tarih karşılaştırması
@@ -186,6 +186,44 @@ function getPendingMedicationSlots(medications: Medication[]): number {
   }, 0);
 }
 
+function getTaskPriority(task: ExpertTask): 'high' | 'medium' | 'low' {
+  if (!task.dueDate) return 'low';
+  const diffDays = Math.ceil((new Date(task.dueDate).getTime() - Date.now()) / 86400000);
+  if (diffDays < 0) return 'high';
+  if (diffDays <= 3) return 'medium';
+  return 'low';
+}
+
+function getDaysSinceSession(lastSession?: string): number | null {
+  if (!lastSession) return null;
+  return Math.floor((Date.now() - new Date(lastSession).getTime()) / 86400000);
+}
+
+function ProfileRing({ pct }: { pct: number }) {
+  const r = 16;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+  return (
+    <div className="flex items-center gap-1.5 shrink-0">
+      <svg width="40" height="40" viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r={r} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="3.5" />
+        <circle
+          cx="20" cy="20" r={r} fill="none"
+          stroke={pct === 100 ? '#34d399' : '#a78bfa'}
+          strokeWidth="3.5"
+          strokeDasharray={`${dash} ${circ}`}
+          strokeLinecap="round"
+          transform="rotate(-90 20 20)"
+        />
+        <text x="20" y="24" textAnchor="middle" fontSize="9" fontWeight="700" fill="white">
+          {pct}%
+        </text>
+      </svg>
+      <span className="text-xs text-indigo-200 font-medium">Profil</span>
+    </div>
+  );
+}
+
 export function DashboardPage() {
   const { user } = useAuthStore();
   const { children, selectedChild, setChildren, setSelectedChild } = useChildStore();
@@ -199,6 +237,8 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [todayMood, setTodayMood] = useState<MoodEntry | null>(null);
   const [todayMeds, setTodayMeds] = useState<Medication[]>([]);
+  const [connectionRequests, setConnectionRequests] = useState<ExpertConnectionRequest[]>([]);
+  const [activeConnections, setActiveConnections] = useState<ExpertConnectionRequest[]>([]);
   // Expert-specific stats
   const [expertAppointments, setExpertAppointments] = useState<AppointmentRecord[]>([]);
   const [todayAppointmentCount, setTodayAppointmentCount] = useState(0);
@@ -208,9 +248,10 @@ export function DashboardPage() {
   const [myTasks, setMyTasks] = useState<ExpertTask[]>([]);
   const [expertStats, setExpertStats] = useState<ExpertStats | null>(null);
   const [actioningId, setActioningId] = useState<string | null>(null);
-  const [quickNote, setQuickNote] = useState({ open: false, patientId: '', content: '' });
+  const [quickNote, setQuickNote] = useState({ patientId: '', content: '' });
   const [savingNote, setSavingNote] = useState(false);
   const [hasAvailability, setHasAvailability] = useState(false);
+  const [patientSearch, setPatientSearch] = useState('');
   
   // Admin-specific stats
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
@@ -278,6 +319,8 @@ export function DashboardPage() {
           });
           setUpcomingAppointments(upcoming.length);
         }),
+        patientService.getConnectionRequests().then(setConnectionRequests),
+        patientService.getActiveConnections().then(setActiveConnections),
       ]).finally(() => setLoading(false));
     }
   }, [selectedChild, setChildren, setSelectedChild, user?.role]);
@@ -337,11 +380,60 @@ export function DashboardPage() {
     : [];
   const activeChildTherapies = splitTherapies(activeChild?.therapies);
   const dashboardTodayPlan = buildDashboardTodayPlan(activeChildTherapies, recentNotes, activeChildEvents.length, todayMood, todayMeds);
-  const firstName = user?.fullName?.split(' ')[0];
+  const firstName = getFirstName(user?.fullName);
+  const activeChildAge = getAgeLabel(activeChild?.birthDate);
   const primaryActions = [
-    { to: '/tedavi', label: 'Günlük plan', icon: Activity },
-    { to: '/notlar', label: 'Not ekle', icon: Plus },
-    { to: '/calendar', label: 'Takvim', icon: Calendar },
+    {
+      to: activeChild ? '/gunluk-takip' : '/cocuklarim',
+      label: activeChild ? 'Bugünün kaydını gir' : 'Çocuğumu ekle',
+      detail: activeChild ? 'Duygu, uyku ve ilaç bilgisini kısaca işaretleyin.' : 'Bir kez profil oluşturun, site size göre sadeleşsin.',
+      icon: activeChild ? Heart : Baby,
+      tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+    },
+    {
+      to: activeChild ? '/randevular' : '/uzmanlar',
+      label: activeChild ? 'Randevulara bak' : 'Uzman bul',
+      detail: 'Görüşme, mesaj ve uzman desteğine buradan ulaşın.',
+      icon: CalendarCheck,
+      tone: 'bg-blue-50 text-blue-700 ring-blue-100',
+    },
+    {
+      to: '/kriz-rehberi',
+      label: 'Zor bir an yaşıyorum',
+      detail: 'Sakinleşme adımlarını ve acil bilgileri hızlıca açın.',
+      icon: AlertTriangle,
+      tone: 'bg-rose-50 text-rose-700 ring-rose-100',
+    },
+  ];
+  const quickCaptureActions = [
+    {
+      to: '/gunluk-takip',
+      label: 'Bugünün kaydı',
+      detail: todayMood ? 'Bugün kaydedildi' : 'Duygu, uyku, ilaç',
+      icon: Heart,
+      tone: 'bg-rose-50 text-rose-700 ring-rose-100',
+    },
+    {
+      to: '/davranis-gunlugu',
+      label: 'Davranış notu',
+      detail: 'Davranış gözlemi',
+      icon: AlertTriangle,
+      tone: 'bg-amber-50 text-amber-700 ring-amber-100',
+    },
+    {
+      to: '/notlar',
+      label: 'Gözlem notu',
+      detail: recentNotes.length ? `${recentNotes.length} son not` : 'Kısa not ekle',
+      icon: FileText,
+      tone: 'bg-sky-50 text-sky-700 ring-sky-100',
+    },
+    {
+      to: '/takvim',
+      label: 'Plan ekle',
+      detail: activeChildEvents.length ? `${activeChildEvents.length} yaklaşan` : 'Randevu ve etkinlik',
+      icon: Calendar,
+      tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+    },
   ];
   const parentStartSteps = [
     {
@@ -384,7 +476,6 @@ export function DashboardPage() {
     { to: '/mesajlar', label: 'Okunmamış Mesaj', value: unreadMessagesCount, icon: MessageCircle, iconClass: 'bg-orange-50 text-orange-600' },
     { to: '/cocuklarim', label: 'Bu Hafta Hedef', value: thisWeekMilestones, icon: Award, iconClass: 'bg-yellow-50 text-yellow-600' },
   ];
-  const activeChildAge = getAgeLabel(activeChild?.birthDate);
   const moodMeta = getMoodMeta(todayMood);
   const pendingMedicationSlots = getPendingMedicationSlots(todayMeds);
   const nextEvent = activeChildEvents[0];
@@ -413,7 +504,7 @@ export function DashboardPage() {
       <div className="space-y-8 animate-in fade-in duration-500">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            {greeting}, {user?.fullName?.split(' ')[0]}
+            {greeting}, {getFirstName(user?.fullName)}
           </h1>
           <p className="text-gray-500 mt-2 text-lg">Platform yönetim merkezine hoş geldiniz. İşte bugünkü güncel durum.</p>
         </div>
@@ -565,12 +656,12 @@ export function DashboardPage() {
                     <ArrowRight size={14} />
                   </div>
                 </Link>
-                <button onClick={() => toast.info('Sistem ayarları yapım aşamasında.')} className="w-full flex items-center justify-between p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors group text-left">
-                  <span className="text-sm font-semibold text-gray-700">Sistem Ayarları</span>
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400">
+                <Link to="/settings" className="w-full flex items-center justify-between p-4 rounded-2xl bg-gray-50 hover:bg-indigo-50 hover:text-indigo-700 transition-colors group text-left">
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-700">Sistem Ayarları</span>
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-indigo-600">
                     <Settings size={14} />
                   </div>
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -589,6 +680,9 @@ export function DashboardPage() {
     const profilePct = getProfileCompleteness(user);
     const pendingTasks = myTasks.filter(t => t.status === 'PENDING').slice(0, 5);
     const recentPatients = [...patients].sort((a, b) => (b.lastSession || '').localeCompare(a.lastSession || '')).slice(0, 4);
+    const filteredPatients = patientSearch.trim()
+      ? patients.filter(p => normalizeText(p.name).includes(normalizeText(patientSearch))).slice(0, 6)
+      : recentPatients;
     const nextAppointment = [...expertAppointments]
       .filter(a => a.date >= todayStr && a.status !== 'CANCELLED')
       .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))[0];
@@ -713,7 +807,7 @@ export function DashboardPage() {
       try {
         await noteService.create({ childId: p.childId, title: 'Uzman notu', content: quickNote.content });
         toast.success('Not kaydedildi');
-        setQuickNote({ open: false, patientId: '', content: '' });
+        setQuickNote({ patientId: '', content: '' });
       } catch { toast.error('Not kaydedilemedi'); }
       finally { setSavingNote(false); }
     };
@@ -739,7 +833,7 @@ export function DashboardPage() {
                   {user?.verified ? 'Onaylı Uzman' : 'Onay Bekliyor'}
                 </Badge>
                 {hasAvailability && <Badge className="bg-white/10 text-indigo-100 border-none">Saatler Tanımlı</Badge>}
-                {profilePct < 100 && <Badge className="bg-white/10 text-slate-200 border-none">Profil %{profilePct}</Badge>}
+                <ProfileRing pct={profilePct} />
               </div>
               <h1 className="mt-5 text-3xl font-bold tracking-tight text-white">
                 {greeting}, {user?.expertTitle || 'Uzman'} {expertFirstName}
@@ -763,7 +857,7 @@ export function DashboardPage() {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => setQuickNote(q => ({ ...q, open: true }))}
+                  onClick={() => document.getElementById('quick-note-textarea')?.focus()}
                   className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-white/10"
                 >
                   <FileText size={18} />
@@ -1003,49 +1097,71 @@ export function DashboardPage() {
         )}
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* #1 Today's appointments with approve/reject on pending */}
+          {/* Today's appointments — timeline */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-900 mb-5 flex items-center gap-2">
               <Activity size={18} className="text-teal-500" /> Bugünün Randevuları
+              {todayAppointments.length > 0 && (
+                <span className="ml-auto text-xs font-normal text-gray-400">{todayAppointments.length} randevu</span>
+              )}
             </h3>
-            <div className="space-y-2 flex-1">
-              {todayAppointments.slice(0, 5).map(a => (
-                <div key={a.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
-                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0 text-sm font-bold text-blue-600">
-                    {a.childName?.charAt(0) ?? '?'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{a.childName}</p>
-                    <p className="text-xs text-gray-500">{a.time} · {a.type === 'ONLINE' ? 'Online' : 'Yüz Yüze'}</p>
-                  </div>
-                  {a.status === 'PENDING' ? (
-                    <div className="flex gap-1 shrink-0">
-                      <button
-                        onClick={() => handleConfirm(a.id)}
-                        disabled={actioningId === a.id}
-                        className="w-8 h-8 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 flex items-center justify-center transition-colors disabled:opacity-50"
-                        title="Onayla"
-                      >
-                        <CheckCircle size={15} />
-                      </button>
-                      <button
-                        onClick={() => handleCancel(a.id)}
-                        disabled={actioningId === a.id}
-                        className="w-8 h-8 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 flex items-center justify-center transition-colors disabled:opacity-50"
-                        title="İptal"
-                      >
-                        <XCircle size={15} />
-                      </button>
-                    </div>
-                  ) : (
-                    <Badge variant={a.status === 'CONFIRMED' ? 'success' : 'default'}>
-                      {a.status === 'CONFIRMED' ? 'Onaylı' : a.status === 'COMPLETED' ? 'Tamamlandı' : a.status}
-                    </Badge>
-                  )}
-                </div>
-              ))}
-              {todayAppointments.length === 0 && (
+            <div className="flex-1">
+              {todayAppointments.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-6">Bugün randevu bulunmuyor</p>
+              ) : (
+                <div className="relative pl-16">
+                  <div className="absolute left-[38px] top-3 bottom-3 w-px bg-gray-100" />
+                  <div className="space-y-4">
+                    {todayAppointments.slice(0, 6).map(a => {
+                      const now = new Date();
+                      const [h, m] = a.time.split(':').map(Number);
+                      const apptTime = new Date(); apptTime.setHours(h, m, 0, 0);
+                      const isPast = apptTime < now && a.status !== 'PENDING';
+                      const isCurrent = !isPast && Math.abs(apptTime.getTime() - now.getTime()) < 3600000;
+                      return (
+                        <div key={a.id} className="relative flex items-start gap-3">
+                          <span className={`absolute -left-16 text-[11px] font-bold tabular-nums pt-1.5 w-12 text-right ${isPast ? 'text-gray-300' : 'text-gray-500'}`}>
+                            {a.time}
+                          </span>
+                          <div className={`absolute -left-[26px] mt-1.5 w-4 h-4 rounded-full border-2 shrink-0 ${
+                            isPast ? 'bg-gray-100 border-gray-200' :
+                            isCurrent ? 'bg-teal-500 border-teal-200 ring-2 ring-teal-100' :
+                            'bg-white border-indigo-400'
+                          }`} />
+                          <div className={`flex-1 flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                            isPast ? 'bg-gray-50 opacity-60' :
+                            isCurrent ? 'bg-teal-50 ring-1 ring-teal-100' :
+                            'bg-slate-50'
+                          }`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${isPast ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-600'}`}>
+                              {a.childName?.charAt(0) ?? '?'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{a.childName}</p>
+                              <p className="text-xs text-gray-500">{a.type === 'ONLINE' ? 'Online' : 'Yüz Yüze'} · {a.duration} dk</p>
+                            </div>
+                            {a.status === 'PENDING' ? (
+                              <div className="flex gap-1 shrink-0">
+                                <button onClick={() => handleConfirm(a.id)} disabled={actioningId === a.id}
+                                  className="w-7 h-7 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 flex items-center justify-center transition-colors disabled:opacity-50" title="Onayla">
+                                  <CheckCircle size={14} />
+                                </button>
+                                <button onClick={() => handleCancel(a.id)} disabled={actioningId === a.id}
+                                  className="w-7 h-7 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 flex items-center justify-center transition-colors disabled:opacity-50" title="İptal">
+                                  <XCircle size={14} />
+                                </button>
+                              </div>
+                            ) : (
+                              <Badge variant={a.status === 'CONFIRMED' ? 'success' : 'default'} className="shrink-0">
+                                {a.status === 'CONFIRMED' ? 'Onaylı' : a.status === 'COMPLETED' ? 'Tamamlandı' : a.status}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
             <Link to="/randevular" className="mt-4 text-sm text-indigo-600 font-medium text-center hover:underline">
@@ -1089,92 +1205,114 @@ export function DashboardPage() {
               </div>
             )}
 
-            {/* #4 Quick note */}
+            {/* Quick note — always visible */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <button
-                type="button"
-                onClick={() => setQuickNote(q => ({ ...q, open: !q.open }))}
-                className="w-full flex items-center justify-between font-semibold text-gray-900"
-              >
-                <span className="flex items-center gap-2">
-                  <FileText size={16} className="text-indigo-500" /> Hızlı Not Ekle
-                </span>
-                {quickNote.open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
-              {quickNote.open && (
-                <div className="mt-3 space-y-2">
-                  <select
-                    value={quickNote.patientId}
-                    onChange={e => setQuickNote(q => ({ ...q, patientId: e.target.value }))}
-                    disabled={patients.length === 0}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
-                  >
-                    <option value="">{patients.length === 0 ? 'Henüz danışan yok' : 'Danışan seçin'}</option>
-                    {patients.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                  <textarea
-                    rows={3}
-                    value={quickNote.content}
-                    onChange={e => setQuickNote(q => ({ ...q, content: e.target.value }))}
-                    disabled={patients.length === 0}
-                    placeholder={patients.length === 0 ? 'Not eklemek için önce danışan gerekiyor.' : 'Not içeriği...'}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
-                  />
-                  {patients.length === 0 && (
-                    <Link to="/patients" className="block rounded-lg bg-indigo-50 px-3 py-2 text-center text-xs font-semibold text-indigo-700 hover:bg-indigo-100">
-                      Danışanlar sayfasına git
-                    </Link>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleSaveNote}
-                    disabled={savingNote || patients.length === 0 || !quickNote.patientId || !quickNote.content.trim()}
-                    className="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
-                  >
-                    {savingNote ? 'Kaydediliyor...' : 'Kaydet'}
-                  </button>
-                </div>
-              )}
+              <p className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <FileText size={16} className="text-indigo-500" /> Hızlı Not Ekle
+              </p>
+              <div className="space-y-2">
+                <select
+                  value={quickNote.patientId}
+                  onChange={e => setQuickNote(q => ({ ...q, patientId: e.target.value }))}
+                  disabled={patients.length === 0}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                >
+                  <option value="">{patients.length === 0 ? 'Henüz danışan yok' : 'Danışan seçin'}</option>
+                  {patients.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <textarea
+                  id="quick-note-textarea"
+                  rows={3}
+                  value={quickNote.content}
+                  onChange={e => setQuickNote(q => ({ ...q, content: e.target.value }))}
+                  disabled={patients.length === 0}
+                  placeholder={patients.length === 0 ? 'Not eklemek için önce danışan gerekiyor.' : 'Not içeriği...'}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                />
+                {patients.length === 0 && (
+                  <Link to="/patients" className="block rounded-lg bg-indigo-50 px-3 py-2 text-center text-xs font-semibold text-indigo-700 hover:bg-indigo-100">
+                    Danışanlar sayfasına git
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSaveNote}
+                  disabled={savingNote || patients.length === 0 || !quickNote.patientId || !quickNote.content.trim()}
+                  className="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {savingNote ? 'Kaydediliyor...' : 'Kaydet'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* #5 Patient activity feed */}
+          {/* Patient activity feed with search + alarm */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Users size={16} className="text-emerald-500" /> Son Danışan Aktivitesi
-            </h3>
-            {recentPatients.length === 0 ? (
+            <div className="flex items-center gap-2 mb-3">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Users size={16} className="text-emerald-500" /> Danışanlar
+              </h3>
+              <div className="ml-auto relative">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={patientSearch}
+                  onChange={e => setPatientSearch(e.target.value)}
+                  placeholder="Ara..."
+                  className="pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 w-28"
+                />
+              </div>
+            </div>
+            {patients.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-6">Henüz danışan yok</p>
+            ) : filteredPatients.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">Eşleşen danışan bulunamadı</p>
             ) : (
-              <div className="space-y-2">
-                {recentPatients.map(p => (
-                  <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-sm font-bold text-emerald-700">
-                      {p.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
-                      <p className="text-xs text-gray-500">
-                        Son seans: {p.lastSession ? new Date(p.lastSession).toLocaleDateString('tr-TR') : 'Yok'} · {p.tasksCompleted}/{p.totalTasks} görev
-                      </p>
-                    </div>
-                    <div className="shrink-0 flex flex-col items-end gap-0.5">
-                      <div className="h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-emerald-500 rounded-full"
-                          style={{ width: `${p.totalTasks > 0 ? Math.round((p.tasksCompleted / p.totalTasks) * 100) : 0}%` }}
-                        />
+              <div className="space-y-2 flex-1">
+                {filteredPatients.map(p => {
+                  const daysSince = getDaysSinceSession(p.lastSession);
+                  const isInactive = daysSince !== null && daysSince >= 14;
+                  const isOverdue = daysSince !== null && daysSince >= 30;
+                  const pct = p.totalTasks > 0 ? Math.round((p.tasksCompleted / p.totalTasks) * 100) : 0;
+                  return (
+                    <div key={p.id} className={`flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors ${isOverdue ? 'ring-1 ring-red-100 bg-red-50/30' : isInactive ? 'ring-1 ring-amber-100 bg-amber-50/20' : ''}`}>
+                      <div className="relative shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-700">
+                          {p.name.charAt(0)}
+                        </div>
+                        {isOverdue && (
+                          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                            <AlertTriangle size={9} className="text-white" />
+                          </span>
+                        )}
+                        {!isOverdue && isInactive && (
+                          <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
+                            <Clock size={9} className="text-white" />
+                          </span>
+                        )}
                       </div>
-                      <span className="text-[10px] text-gray-400">
-                        {p.totalTasks > 0 ? Math.round((p.tasksCompleted / p.totalTasks) * 100) : 0}%
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
+                        <p className={`text-xs ${isOverdue ? 'text-red-500' : isInactive ? 'text-amber-600' : 'text-gray-500'}`}>
+                          {daysSince === null ? 'Seans yok' : daysSince === 0 ? 'Bugün' : `${daysSince} gün önce`} · {p.tasksCompleted}/{p.totalTasks} görev
+                        </p>
+                      </div>
+                      <div className="shrink-0 flex flex-col items-end gap-0.5">
+                        <div className="h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-blue-500' : 'bg-gray-400'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-gray-400">{pct}%</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             <Link to="/patients" className="mt-4 text-sm text-indigo-600 font-medium text-center hover:underline">
@@ -1189,7 +1327,7 @@ export function DashboardPage() {
               <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <BarChart2 size={16} className="text-blue-500" /> Bu Ay İstatistikler
               </h3>
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-3 gap-3 mb-3">
                 <div className="text-center">
                   <p className="text-xl font-bold text-green-600">{expertStats?.completedThisMonth ?? '—'}</p>
                   <p className="text-xs text-gray-500">Tamamlanan</p>
@@ -1204,7 +1342,27 @@ export function DashboardPage() {
                 </div>
               </div>
 
-              {/* #9 Mini analytics chart */}
+              {expertStats && expertStats.totalThisMonth > 0 && (() => {
+                const rate = Math.round((expertStats.completedThisMonth / expertStats.totalThisMonth) * 100);
+                return (
+                  <div className={`flex items-center gap-3 mb-3 p-2.5 rounded-xl ring-1 ${rate >= 80 ? 'bg-green-50 ring-green-100' : rate >= 50 ? 'bg-blue-50 ring-blue-100' : 'bg-amber-50 ring-amber-100'}`}>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-xs font-semibold ${rate >= 80 ? 'text-green-700' : rate >= 50 ? 'text-blue-700' : 'text-amber-700'}`}>Tamamlanma Oranı</span>
+                        <span className={`text-sm font-bold ${rate >= 80 ? 'text-green-700' : rate >= 50 ? 'text-blue-700' : 'text-amber-700'}`}>%{rate}</span>
+                      </div>
+                      <div className="h-1.5 bg-white/70 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${rate >= 80 ? 'bg-green-500' : rate >= 50 ? 'bg-blue-500' : 'bg-amber-500'}`}
+                          style={{ width: `${rate}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Mini analytics chart */}
               {expertStats && expertStats.monthlyData.length > 0 && (
                 <div>
                   <p className="text-xs text-gray-400 mb-2">Son 6 ay tamamlanan seans</p>
@@ -1241,19 +1399,30 @@ export function DashboardPage() {
                 <p className="text-sm text-gray-400 text-center py-3">Bekleyen görev yok</p>
               ) : (
                 <div className="space-y-2">
-                  {pendingTasks.map(t => (
-                    <div key={t.id} className="flex items-start gap-2 p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
-                      <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <ClipboardList size={13} className="text-violet-600" />
+                  {pendingTasks.map(t => {
+                    const priority = getTaskPriority(t);
+                    const priorityMeta = {
+                      high: { label: 'Acil', cls: 'bg-red-100 text-red-700', iconCls: 'bg-red-100', iconColor: 'text-red-600', rowCls: 'ring-1 ring-red-100 bg-red-50/40' },
+                      medium: { label: '3 gün', cls: 'bg-amber-100 text-amber-700', iconCls: 'bg-amber-100', iconColor: 'text-amber-600', rowCls: '' },
+                      low: { label: 'Normal', cls: 'bg-gray-100 text-gray-500', iconCls: 'bg-violet-100', iconColor: 'text-violet-600', rowCls: '' },
+                    }[priority];
+                    return (
+                      <div key={t.id} className={`flex items-start gap-2 p-2.5 rounded-xl hover:bg-gray-50 transition-colors ${priorityMeta.rowCls}`}>
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${priorityMeta.iconCls}`}>
+                          <ClipboardList size={13} className={priorityMeta.iconColor} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{t.title}</p>
+                          {t.dueDate && (
+                            <p className="text-xs text-gray-400">Bitiş: {new Date(t.dueDate).toLocaleDateString('tr-TR')}</p>
+                          )}
+                        </div>
+                        <span className={`shrink-0 self-center text-[10px] font-bold px-1.5 py-0.5 rounded-full ${priorityMeta.cls}`}>
+                          {priorityMeta.label}
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{t.title}</p>
-                        {t.dueDate && (
-                          <p className="text-xs text-gray-400">Bitiş: {new Date(t.dueDate).toLocaleDateString('tr-TR')}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
               <Link to="/patients" className="mt-3 text-xs text-indigo-600 font-medium hover:underline block text-center">
@@ -1268,401 +1437,327 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-5 pb-8">
-      <PageOnboarding
-        pageId="dashboard"
-        title="Gösterge Paneline Hoş Geldiniz"
-        description="Çocuğunuzun günlük özetini buradan takip edebilirsiniz."
-        steps={[
-          {
-            icon: <Activity size={20} />,
-            title: "Günlük Plan",
-            description: "Her gün yapmanız önerilen aktiviteleri görün."
-          },
-          {
-            icon: <Calendar size={20} />,
-            title: "Yaklaşan Etkinlikler",
-            description: "Randevu ve planlanmış etkinliklerinizi takip edin."
-          },
-          {
-            icon: <Brain size={20} />,
-            title: "Duygu Durumu",
-            description: "Çocuğunuzun o günkü duygu durumunu ve buna uygun tavsiyeleri görün."
-          }
-        ]}
-      />
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid gap-0 lg:grid-cols-[1.25fr_0.75fr]">
-          <div className="p-5 sm:p-6">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{greeting}</p>
-                <h1 className="mt-1 text-2xl font-semibold text-slate-950 sm:text-3xl">
-                  {firstName ? `${firstName}, bugün sade bir akışla ilerleyelim` : 'Bugün sade bir akışla ilerleyelim'}
-                </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                  {activeChild
-                    ? `${activeChild.name} için ${planTotalMinutes} dakikalık destek akışı, duygu durumu ve yaklaşan işler hazır.`
-                    : 'İlk çocuk profilini eklediğinizde günlük planınız burada görünecek.'}
-                </p>
-                {children.length > 1 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {children.map(c => (
-                      <button
-                        key={c.id}
-                        onClick={() => setSelectedChild(c)}
-                        className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${activeChild?.id === c.id ? 'bg-primary-600 text-white border-primary-600' : 'bg-white border-slate-200 text-slate-600 hover:border-primary-300 hover:text-primary-700'}`}
-                      >
-                        {c.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {primaryActions.map(({ to, label, icon: Icon }) => (
-                  <Link
-                    key={to}
-                    to={to}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
-                  >
-                    <Icon size={16} />
-                    {label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm text-slate-500">{greeting}</p>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            {firstName || 'Merhaba'}
             {activeChild && (
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                {careSignals.map(({ label, value, detail, icon: Icon, className }) => {
-                  const isMoodMissing = label === 'Ruh hali' && !todayMood;
-                  const inner = (
-                    <div className={`rounded-xl px-4 py-3 ring-1 h-full ${className} ${isMoodMissing ? 'hover:ring-2 transition-all' : ''}`}>
-                      <div className="flex items-center gap-2 text-xs font-semibold uppercase text-current">
-                        <Icon size={15} />
-                        {label}
-                      </div>
-                      <p className="mt-2 text-lg font-semibold text-slate-950">{value}</p>
-                      <p className="mt-1 line-clamp-1 text-xs text-slate-500">{detail}</p>
-                      {isMoodMissing && (
-                        <p className="mt-1.5 text-xs font-semibold text-current opacity-75">+ Kaydet →</p>
-                      )}
-                    </div>
-                  );
-                  return isMoodMissing
-                    ? <Link key={label} to="/gunluk-takip">{inner}</Link>
-                    : <div key={label}>{inner}</div>;
-                })}
-              </div>
+              <span className="text-slate-400 font-normal text-xl">· {activeChild.name}</span>
             )}
+          </h1>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {children.length > 1 && (
+            <div className="flex gap-1.5">
+              {children.map(c => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelectedChild(c)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                    activeChild?.id === c.id
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'
+                  }`}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <Link
+            to="/kriz-rehberi"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold hover:bg-rose-100 transition-colors"
+          >
+            <AlertTriangle size={15} />
+            Zor An
+          </Link>
+        </div>
+      </div>
+
+      {/* ── Uzman isteği bildirimi ── */}
+      {connectionRequests.length > 0 && (
+        <Link
+          to="/cocuklarim#uzman-istekleri"
+          className="group flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 shadow-sm transition-all hover:border-amber-300 hover:bg-amber-100/70 hover:shadow"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 ring-1 ring-amber-200">
+              <Bell size={18} className="text-amber-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-amber-900">
+                {connectionRequests.length} adet bekleyen uzman erişim isteği var
+              </p>
+              <p className="text-xs text-amber-700/70 mt-0.5">
+                {connectionRequests.map(r => r.expertName).join(', ')} — onaylamak veya reddetmek için tıklayın
+              </p>
+            </div>
           </div>
+          <span className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-amber-700 group-hover:translate-x-0.5 transition-transform">
+            Görüntüle
+            <ArrowRight size={14} />
+          </span>
+        </Link>
+      )}
 
-          <div className="border-t border-slate-100 bg-slate-50/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
-            {activeChild ? (
-              <div className="flex h-full flex-col justify-between gap-5">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Aktif odak</p>
-                  <div className="mt-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-600 text-lg font-bold text-white shadow-sm">
-                      {activeChild.name.charAt(0)}
-                    </div>
-                    <div className="min-w-0">
-                      <h2 className="truncate text-lg font-semibold text-slate-950">{activeChild.name}</h2>
-                      <p className="text-sm text-slate-500">{activeChildAge}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {(activeChildTherapies.length > 0 ? activeChildTherapies.slice(0, 3) : ['Günlük destek akışı']).map((therapy) => (
-                      <Badge key={therapy} variant="info" className="bg-white text-primary-700 ring-1 ring-primary-100">
-                        {therapy}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold text-slate-700">Hazırlık</span>
-                    <span className="font-bold text-primary-700">{readinessPct}%</span>
-                  </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
-                    <div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${readinessPct}%` }} />
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {readinessChecks.map((item) => (
-                      <div key={item.label} className={`flex items-center gap-2 text-xs font-medium ${item.done ? 'text-emerald-600' : 'text-slate-500'}`}>
-                        <span className={`h-2 w-2 rounded-full shrink-0 ${item.done ? 'bg-emerald-500' : 'bg-orange-300'}`} />
-                        {item.label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex h-full items-center justify-center text-center">
-                <div>
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
-                    <Baby size={22} />
-                  </div>
-                  <p className="mt-3 text-sm font-semibold text-slate-800">Profil bekleniyor</p>
-                  <p className="mt-1 text-sm text-slate-500">Günlük akış için çocuk profili ekleyin.</p>
-                  <Link
-                    to="/cocuklarim"
-                    className="mt-4 inline-flex h-9 items-center gap-2 rounded-xl bg-primary-600 px-3 text-xs font-bold text-white transition-colors hover:bg-primary-700"
-                  >
-                    <Plus size={14} />
-                    İlk profili ekle
-                  </Link>
-                </div>
-              </div>
-            )}
+      {/* ── Bugünün Odağı — tek büyük kart ── */}
+      {loading ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 animate-pulse">
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-slate-100 shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 bg-slate-100 rounded w-24" />
+              <div className="h-5 bg-slate-100 rounded w-64" />
+              <div className="h-3 bg-slate-100 rounded w-48" />
+            </div>
           </div>
         </div>
-      </section>
+      ) : !activeChild ? (
+        <div className="rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 p-8 text-center">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center mb-4">
+            <Baby size={28} className="text-indigo-600" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900">Başlamak için çocuk profili ekleyin</h2>
+          <p className="mt-2 text-slate-500 text-sm max-w-sm mx-auto">
+            Profil oluşturunca günlük plan, ruh hali takibi, randevu ve uzman paylaşımı otomatik düzenlenir.
+          </p>
+          <Link
+            to="/cocuklarim"
+            className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 transition-colors"
+          >
+            <Plus size={16} />
+            Profil Ekle
+          </Link>
+        </div>
+      ) : pendingMedicationSlots > 0 ? (
+        <Link
+          to="/gunluk-takip"
+          className="group block rounded-2xl border border-amber-200 bg-amber-50 p-6 hover:bg-amber-100/70 transition-colors"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
+              <Pill size={24} className="text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-600 mb-1">İlaç Hatırlatması</p>
+              <h2 className="text-xl font-bold text-slate-900">
+                {activeChild.name} için {pendingMedicationSlots} doz bekleniyor
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {todayMeds
+                  .filter(m => (m.scheduledTimes ?? []).some(t => !(m.todayLogs ?? []).find(l => l.scheduledTime === t && l.taken)))
+                  .map(m => m.name)
+                  .join(', ')}
+              </p>
+            </div>
+            <span className="shrink-0 flex items-center gap-1 text-sm font-semibold text-amber-700 group-hover:translate-x-0.5 transition-transform mt-1">
+              Git <ArrowRight size={16} />
+            </span>
+          </div>
+        </Link>
+      ) : !todayMood ? (
+        <Link
+          to="/gunluk-takip"
+          className="group block rounded-2xl border border-sky-200 bg-sky-50 p-6 hover:bg-sky-100/70 transition-colors"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-sky-100 flex items-center justify-center shrink-0">
+              <Brain size={24} className="text-sky-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-sky-600 mb-1">Günlük Kayıt</p>
+              <h2 className="text-xl font-bold text-slate-900">
+                {activeChild.name}&apos;in bugünkü ruh hali henüz kaydedilmedi
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                10 saniyede işaretleyin — öneriler daha isabetli olur.
+              </p>
+            </div>
+            <span className="shrink-0 flex items-center gap-1 text-sm font-semibold text-sky-700 group-hover:translate-x-0.5 transition-transform mt-1">
+              Kaydet <ArrowRight size={16} />
+            </span>
+          </div>
+        </Link>
+      ) : nextEvent ? (
+        <Link
+          to="/takvim"
+          className="group block rounded-2xl border border-emerald-200 bg-emerald-50 p-6 hover:bg-emerald-100/70 transition-colors"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center shrink-0">
+              <Calendar size={24} className="text-emerald-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-1">Yaklaşan Etkinlik</p>
+              <h2 className="text-xl font-bold text-slate-900">{nextEvent.title}</h2>
+              <p className="mt-1 text-sm text-slate-500">{formatDateTime(nextEvent.startTime)}</p>
+            </div>
+            <span className="shrink-0 flex items-center gap-1 text-sm font-semibold text-emerald-700 group-hover:translate-x-0.5 transition-transform mt-1">
+              Görüntüle <ArrowRight size={16} />
+            </span>
+          </div>
+        </Link>
+      ) : (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center shrink-0">
+              <CheckCircle size={24} className="text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-1">Bugün İyi Gidiyor</p>
+              <h2 className="text-xl font-bold text-slate-900">Günün temel kayıtları tamam</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Devam etmek için aşağıdaki araçları kullanabilirsiniz.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
+      {/* ── Hızlı Eylemler — 4 kart ── */}
+      {!loading && activeChild && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {quickCaptureActions.map(({ to, label, detail, icon: Icon, tone }) => (
+            <Link
+              key={to}
+              to={to}
+              className="group flex flex-col gap-3 p-4 rounded-2xl border border-slate-200 bg-white hover:border-indigo-200 hover:shadow-sm hover:-translate-y-0.5 transition-all"
+            >
+              <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ${tone}`}>
+                <Icon size={18} />
+              </span>
+              <div>
+                <p className="text-sm font-bold text-slate-900">{label}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{detail}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* ── Bağlı Uzmanlar — kompakt ── */}
+      {activeConnections.length > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Users size={16} className="text-indigo-600" />
+            <h2 className="text-sm font-semibold text-slate-900">Bağlı Uzmanlar</h2>
+          </div>
+          <div className="space-y-2">
+            {activeConnections.map(conn => (
+              <div key={conn.id} className="flex items-center justify-between gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{conn.expertName}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Çocuk: <span className="font-medium text-slate-700">{conn.childName}</span></p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-rose-600 border-rose-200 hover:bg-rose-50 shrink-0"
+                  onClick={async () => {
+                    if (!window.confirm('Bu uzman ile bağlantıyı kesmek istediğinize emin misiniz?')) return;
+                    try {
+                      await patientService.revokeConnection(conn.id);
+                      setActiveConnections(prev => prev.filter(r => r.id !== conn.id));
+                      toast.success('Uzman bağlantısı kesildi.');
+                    } catch { toast.error('İşlem başarısız.'); }
+                  }}
+                >
+                  Kes
+                </Button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Bugünün Planı — ikincil, sakin ── */}
+      {!loading && activeChild && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Bugünün Planı</p>
+              <h2 className="text-base font-semibold text-slate-900 mt-0.5">{dashboardTodayPlan.title}</h2>
+            </div>
+            <Link
+              to="/tedavi"
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-700 shrink-0"
+            >
+              Detay →
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {dashboardTodayPlan.steps.map((step, i) => (
+              <div key={step.title} className="flex items-start gap-3">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">
+                  {i + 1}
+                </div>
+                <div className="flex-1 min-w-0 bg-slate-50 rounded-xl p-3 flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{step.title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5 leading-5">{step.detail}</p>
+                  </div>
+                  <span className="shrink-0 text-xs font-medium text-slate-400 bg-white px-2 py-1 rounded-full ring-1 ring-slate-200 whitespace-nowrap">
+                    {step.duration}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Başlangıç adımları — sadece çocuk yoksa ── */}
       {!loading && !activeChild && (
-        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-3 sm:grid-cols-2">
           {parentStartSteps.map(({ to, icon: Icon, title, detail, cta, tone }) => (
             <Link
               key={title}
               to={to}
-              className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
+              className="group flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
             >
-              <span className={`flex h-11 w-11 items-center justify-center rounded-xl ring-1 ${tone}`}>
-                <Icon size={20} />
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${tone}`}>
+                <Icon size={18} />
               </span>
-              <h2 className="mt-4 text-sm font-bold text-slate-950">{title}</h2>
-              <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">{detail}</p>
-              <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-primary-700">
-                {cta}
-                <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
-              </span>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+                <p className="mt-1 text-xs text-slate-500 leading-5">{detail}</p>
+                <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-indigo-700">
+                  {cta} <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </div>
             </Link>
           ))}
         </section>
       )}
 
-      {/* Today's quick readiness banner — sabah nötr mavi, öğleden sonra amber */}
-      {!loading && activeChild && readinessPct < 100 && (() => {
-        const isAfternoon = new Date().getHours() >= 14;
-        return (
-          <div className={`flex items-center gap-3 rounded-2xl px-4 py-3 border ${isAfternoon ? 'border-amber-200 bg-amber-50' : 'border-blue-100 bg-blue-50'}`}>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <p className={`text-sm font-semibold ${isAfternoon ? 'text-amber-800' : 'text-blue-800'}`}>Bugünün hazırlığı tamamlanmadı</p>
-                <span className={`text-sm font-bold ${isAfternoon ? 'text-amber-700' : 'text-blue-700'}`}>{readinessPct}%</span>
-              </div>
-              <div className={`h-1.5 rounded-full overflow-hidden ${isAfternoon ? 'bg-amber-200' : 'bg-blue-100'}`}>
-                <div className={`h-full rounded-full transition-all ${isAfternoon ? 'bg-amber-500' : 'bg-blue-400'}`} style={{ width: `${readinessPct}%` }} />
-              </div>
-            </div>
-            <div className="flex gap-2 shrink-0 flex-wrap">
-              {readinessChecks.filter(c => !c.done).map(c => (
-                <span key={c.label} className={`text-xs font-medium bg-white px-2 py-0.5 rounded-full border ${isAfternoon ? 'border-amber-200 text-amber-700' : 'border-blue-100 text-blue-600'}`}>{c.label}</span>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        {loading ? (
-          <>
-            <SkeletonStatCard />
-            <SkeletonStatCard />
-            <SkeletonStatCard />
-            <SkeletonStatCard />
-            <SkeletonStatCard />
-          </>
-        ) : (
-          parentStats.map(({ to, label, value, icon: Icon, iconClass }) => (
-            <Link
-              key={`${to}-${label}`}
-              to={to}
-              className="group rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-2xl font-semibold text-slate-950">{value}</p>
-                  <p className="mt-0.5 truncate text-sm text-slate-500">{label}</p>
-                </div>
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconClass}`}>
-                  <Icon size={19} />
-                </div>
-              </div>
-            </Link>
-          ))
-        )}
-      </div>
-
-      {loading ? (
-        <div className="grid gap-5 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
-            <SkeletonCard lines={3} />
-            <SkeletonCard lines={2} />
-            <SkeletonCard lines={2} />
-          </div>
-          <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
-            <SkeletonCard lines={2} />
-            <SkeletonCard lines={2} />
-          </div>
-        </div>
-      ) : activeChild ? (
-        <div className="grid gap-5 xl:grid-cols-[1.18fr_0.82fr]">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Bugünün planı</p>
-                <h2 className="mt-2 text-xl font-semibold text-slate-950">{dashboardTodayPlan.title}</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{dashboardTodayPlan.summary}</p>
-              </div>
-              <Link
-                to="/tedavi"
-                className="inline-flex h-9 w-fit items-center gap-2 rounded-xl bg-primary-50 px-3 text-sm font-semibold text-primary-700 transition-colors hover:bg-primary-100"
-              >
-                Detay
-                <ArrowRight size={15} />
-              </Link>
-            </div>
-
-            <div className="mt-5 space-y-0">
-              {dashboardTodayPlan.steps.map((step, index) => {
-                const isLast = index === dashboardTodayPlan.steps.length - 1;
-                return (
-                  <div key={step.title} className="relative flex gap-4">
-                    {/* Timeline connector */}
-                    <div className="flex flex-col items-center">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-bold text-primary-700 ring-1 ring-primary-100 z-10">
-                        {index + 1}
-                      </div>
-                      {!isLast && <div className="w-0.5 flex-1 bg-slate-100 my-1" />}
-                    </div>
-                    {/* Step content */}
-                    <div className={`flex-1 min-w-0 ${isLast ? 'pb-0' : 'pb-4'}`}>
-                      <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4 flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-950">{step.title}</p>
-                          <p className="mt-1 text-sm leading-6 text-slate-500">{step.detail}</p>
-                        </div>
-                        <span className="shrink-0 w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">
-                          {step.duration}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-1">
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Duygu ve takip</p>
-                  <h2 className="mt-2 font-semibold text-slate-950">{moodMeta.label}</h2>
-                </div>
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ${moodMeta.className}`}>
-                  <Brain size={18} />
-                </div>
-              </div>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
-                <div className={`h-full rounded-full ${moodMeta.barClass}`} style={{ width: moodMeta.width }} />
-              </div>
-              <p className="mt-3 text-sm leading-6 text-slate-500">{moodMeta.detail}</p>
-              {todayMood?.notes && <p className="mt-2 line-clamp-2 text-sm font-medium text-slate-700">{todayMood.notes}</p>}
-              {!todayMood && (
-                <Link
-                  to="/gunluk-takip"
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-semibold text-primary-700 ring-1 ring-primary-100 hover:bg-primary-50 transition-colors"
-                >
-                  <Plus size={12} />
-                  Şimdi Kaydet
-                </Link>
-              )}
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Sıradaki</p>
-              <div className="mt-4 space-y-4">
-                <div className="flex gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                    <Calendar size={17} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-950">{nextEvent?.title || 'Planlı etkinlik yok'}</p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {nextEvent ? formatDateTime(nextEvent.startTime) : 'Kısa oyun akışıyla devam edebilirsiniz.'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3 border-t border-slate-100 pt-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
-                    <FileText size={17} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-950">{recentNotes[0]?.title || 'Henüz not yok'}</p>
-                    <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">
-                      {recentNotes[0]?.content || 'Bugün kısa bir gözlem notu ekleyebilirsiniz.'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
-        </div>
-      ) : (
-        <Card>
-          <EmptyState
-            icon={<Baby size={24} />}
-            title="Henüz çocuk profili yok"
-            description="Profil oluşturduğunuzda günlük plan, duygu takibi, randevular ve uzman paylaşımı tek ekranda birleşir."
-            action={
-              <Link to="/cocuklarim">
-                <Button size="sm">
-                  <Plus size={14} className="mr-1" />
-                  Profil Oluştur
-                </Button>
-              </Link>
-            }
-          />
-        </Card>
-      )}
-
-      <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+      {/* ── Haftalık konu + Kısa Yollar ── */}
+      <div className="grid gap-5 xl:grid-cols-2">
         <WeeklyTopicWidget variant="dashboard" />
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="font-semibold text-slate-950">Kısa yollar</h2>
-              <p className="mt-1 text-sm text-slate-500">Sık kullanılan aile araçları</p>
-            </div>
-            <Link to="/uzmanlar" className="inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:text-primary-800">
-              Uzmanlar
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <h2 className="text-sm font-semibold text-slate-900 mb-3">Kısa Yollar</h2>
+          <div className="grid grid-cols-3 gap-2">
             {[
-              { to: '/notlar', label: 'Gelişim notları', icon: FileText, tone: 'text-violet-600 bg-violet-50' },
-              { to: '/gunluk-takip', label: 'Günlük takip', icon: Target, tone: 'text-emerald-600 bg-emerald-50' },
-              { to: '/mesajlar', label: 'Mesajlar', icon: Bell, tone: 'text-orange-600 bg-orange-50' },
-              { to: '/gruplar', label: 'Gruplar', icon: Users, tone: 'text-sky-600 bg-sky-50' },
-              { to: '/dertlesme-duvari', label: 'Destek', icon: Heart, tone: 'text-rose-600 bg-rose-50' },
-              { to: '/cocuklarim', label: 'Profil', icon: Baby, tone: 'text-blue-600 bg-blue-50' },
+              { to: '/notlar', label: 'Gözlem Notları', icon: FileText, tone: 'text-violet-600 bg-violet-50 ring-violet-100' },
+              { to: '/gunluk-takip', label: 'Bugünün Kaydı', icon: Target, tone: 'text-emerald-600 bg-emerald-50 ring-emerald-100' },
+              { to: '/mesajlar', label: 'Mesajlar', icon: Bell, tone: 'text-orange-600 bg-orange-50 ring-orange-100' },
+              { to: '/gruplar', label: 'Gruplar', icon: Users, tone: 'text-sky-600 bg-sky-50 ring-sky-100' },
+              { to: '/dertlesme-duvari', label: 'Destek', icon: Heart, tone: 'text-rose-600 bg-rose-50 ring-rose-100' },
+              { to: '/uzmanlar', label: 'Uzmanlar', icon: GraduationCap, tone: 'text-indigo-600 bg-indigo-50 ring-indigo-100' },
             ].map(({ to, label, icon: Icon, tone }) => (
               <Link
                 key={to}
                 to={to}
-                className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-200 hover:bg-white"
+                className="flex flex-col items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-2 py-3.5 text-center transition-all hover:border-slate-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-sm"
               >
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone}`}>
-                  <Icon size={16} />
+                <span className={`flex h-9 w-9 items-center justify-center rounded-xl ring-1 ${tone}`}>
+                  <Icon size={17} />
                 </span>
-                <span className="truncate">{label}</span>
+                <span className="text-xs font-semibold text-slate-700 leading-tight">{label}</span>
               </Link>
             ))}
           </div>
@@ -1671,3 +1766,4 @@ export function DashboardPage() {
     </div>
   );
 }
+

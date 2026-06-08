@@ -71,6 +71,13 @@ public class GroupController {
         return ResponseEntity.ok(ApiResponse.success("Grup silindi", null));
     }
 
+    @PostMapping("/{id}/members/{userId}/ban")
+    public ResponseEntity<ApiResponse<Void>> banMember(
+            @PathVariable UUID id, @PathVariable UUID userId, @CurrentUser UserPrincipal principal) {
+        groupService.banMember(id, userId, requireUserId(principal), principal.getRole());
+        return ResponseEntity.ok(ApiResponse.success("Kullanıcı gruptan yasaklandı", null));
+    }
+
     @PostMapping("/{id}/verify")
     public ResponseEntity<ApiResponse<GroupDto>> toggleVerification(
             @PathVariable UUID id, @CurrentUser UserPrincipal principal) {

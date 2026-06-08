@@ -52,6 +52,7 @@ function applyTreatmentState(
     setGameFeedback: (value: Record<string, GameReflection>) => void;
     setGameSessions: (value: GameSession[]) => void;
     setGoalProgressHistory: (value: GoalProgressSnapshot[]) => void;
+    setTemplateGoalToggles: (value: Record<string, boolean>) => void;
   },
 ) {
   setters.setCustomGoals(nextState.customGoals);
@@ -59,6 +60,7 @@ function applyTreatmentState(
   setters.setGameFeedback(nextState.gameFeedback);
   setters.setGameSessions(nextState.gameSessions);
   setters.setGoalProgressHistory(nextState.goalProgressHistory);
+  setters.setTemplateGoalToggles(nextState.templateGoalToggles);
 }
 
 export function useTreatmentPageData() {
@@ -76,10 +78,13 @@ export function useTreatmentPageData() {
   const [sensoryProfile, setSensoryProfile] = useState<SensoryProfileState>(DEFAULT_SENSORY_PROFILE);
   const [gameSessions, setGameSessions] = useState<GameSession[]>([]);
   const [goalProgressHistory, setGoalProgressHistory] = useState<GoalProgressSnapshot[]>([]);
+  const [templateGoalToggles, setTemplateGoalToggles] = useState<Record<string, boolean>>({});
   const [savingTreatment, setSavingTreatment] = useState(false);
   const [todayMood, setTodayMood] = useState<{ moodLevel: number } | null | undefined>(undefined);
 
-  const activeChild = selectedChild || children[0] || null;
+  const activeChild = (selectedChild && children.some((child) => child.id === selectedChild.id))
+    ? selectedChild
+    : children[0] || null;
   const activeChildId = activeChild?.id;
   const therapyItems = useMemo(() => splitTherapies(activeChild?.therapies), [activeChild?.therapies]);
 
@@ -200,9 +205,10 @@ export function useTreatmentPageData() {
     gameFeedback,
     gameSessions,
     goalProgressHistory,
+    templateGoalToggles,
   });
 
-  const stateSetters = { setCustomGoals, setSensoryProfile, setGameFeedback, setGameSessions, setGoalProgressHistory };
+  const stateSetters = { setCustomGoals, setSensoryProfile, setGameFeedback, setGameSessions, setGoalProgressHistory, setTemplateGoalToggles };
 
   useEffect(() => {
     selectedChildIdRef.current = selectedChild?.id || null;
@@ -248,9 +254,10 @@ export function useTreatmentPageData() {
     if (!activeChildId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setChildEvents([]);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setRecentNotes([]);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
+       
       setDetailLoading(false);
       return;
     }
@@ -295,6 +302,7 @@ export function useTreatmentPageData() {
         gameFeedback: {},
         gameSessions: [],
         goalProgressHistory: [],
+        templateGoalToggles: {},
       }, stateSetters);
       return;
     }
@@ -308,6 +316,7 @@ export function useTreatmentPageData() {
           gameFeedback: {},
           gameSessions: [],
           goalProgressHistory: [],
+          templateGoalToggles: {},
         }, stateSetters);
       });
   }, [activeChildId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -459,6 +468,7 @@ export function useTreatmentPageData() {
     showMilestoneBanner,
     streakDays,
     supportPlan,
+    templateGoalToggles,
     todayCompletedGames,
     todayMood,
     totalGoalCount,

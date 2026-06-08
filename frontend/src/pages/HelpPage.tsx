@@ -3,21 +3,12 @@ import {
   HelpCircle, ChevronDown, ChevronUp, Mail, MessageCircle,
   BookOpen, Users, Calendar, Baby, ShieldCheck, Star,
   CheckCircle, ArrowRight, Search, Flag, X, Zap,
-  Phone, Video, Clock, TrendingUp, Heart, Award,
+  Video, Clock,
   ChevronRight, Bot,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-
 // ─── Data ────────────────────────────────────────────────────────────────────
-
-const PLATFORM_STATS = [
-  { label: 'Aile', value: '5.200+', icon: Heart, color: 'text-rose-500' },
-  { label: 'Uzman', value: '200+', icon: Award, color: 'text-amber-500' },
-  { label: 'Cevaplanan Soru', value: '12.000+', icon: CheckCircle, color: 'text-emerald-500' },
-  { label: 'Memnuniyet', value: '98%', icon: TrendingUp, color: 'text-blue-500' },
-];
 
 const QUICK_LINKS = [
   { icon: Baby, label: 'Çocuk Profili', desc: 'Ekle & düzenle', to: '/cocuklarim', color: 'bg-blue-50 text-blue-600 border-blue-100' },
@@ -288,35 +279,6 @@ export function HelpPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-
-      {/* Hero */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 via-primary-500 to-indigo-500 p-8 text-white shadow-lg">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-        <div className="relative text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm mb-1">
-            <HelpCircle size={28} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold">Yardım Merkezi</h1>
-          <p className="text-primary-100 text-sm max-w-md mx-auto leading-relaxed">
-            Platformu nasıl kullanacağınızı öğrenin, sık sorulan soruları inceleyin veya destek ekibiyle iletişime geçin.
-          </p>
-          {/* Stats */}
-          <div className="flex justify-center gap-6 pt-3">
-            {PLATFORM_STATS.map(stat => {
-              const Icon = stat.icon;
-              return (
-                <div key={stat.label} className="text-center">
-                  <div className="flex items-center justify-center gap-1 text-lg font-bold">
-                    <Icon size={14} className="text-white/80" />
-                    {stat.value}
-                  </div>
-                  <div className="text-xs text-primary-200">{stat.label}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
 
       {/* Search */}
       <div className="space-y-3">

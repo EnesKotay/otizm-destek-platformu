@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import java.util.List;
 
 @Data
 public class RegisterRequest {
@@ -19,6 +20,7 @@ public class RegisterRequest {
     private String fullName;
 
     private String phone;
+    private String city;
 
     private boolean kvkkConsent;
 
@@ -28,4 +30,5 @@ public class RegisterRequest {
     private String institution;
     private String licenseNumber;
     private String bio;
+    private List<String> specializations;
 }

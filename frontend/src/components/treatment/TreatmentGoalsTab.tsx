@@ -96,11 +96,12 @@ export function TreatmentGoalsTab({
   return (
     <div className="space-y-6">
 
-      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="relative overflow-hidden rounded-[2.5rem] border border-slate-200/60 bg-gradient-to-br from-indigo-50/50 to-white p-7 sm:p-9 shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
+        <div className="absolute -right-20 -top-20 h-64 w-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h3 className="text-xl font-semibold text-slate-900">Günlük Hedef Ekle</h3>
-            <p className="mt-1 text-sm text-slate-500">Bugün çocuğunuza özel takip etmek istediğiniz küçük bir şey yazın. Örn: "2 kez göz teması kurdu", "Selam dedi".</p>
+            <h3 className="text-xl font-bold text-slate-800">Günlük Hedef Ekle</h3>
+            <p className="mt-1.5 text-sm text-slate-500">Bugün çocuğunuza özel takip etmek istediğiniz küçük bir şey yazın. Örn: "2 kez göz teması kurdu", "Selam dedi".</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <select
@@ -127,14 +128,14 @@ export function TreatmentGoalsTab({
               placeholder="Örn: 2 kez göz teması kurdu"
               className="min-w-[16rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none ring-0 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300"
             />
-            <button
-              type="button"
-              onClick={onAddGoal}
-              disabled={savingTreatment || goalDraft.trim().length === 0}
-              className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {savingTreatment ? 'Kaydediliyor...' : 'Hedef ekle'}
-            </button>
+              <button
+                type="button"
+                onClick={onAddGoal}
+                disabled={savingTreatment || goalDraft.trim().length === 0}
+                className="rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(79,70,229,0.3)] hover:bg-indigo-700 hover:shadow-[0_12px_25px_rgba(79,70,229,0.4)] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none transition-all duration-300"
+              >
+                {savingTreatment ? 'Kaydediliyor...' : 'Hedef Ekle'}
+              </button>
           </div>
         </div>
 
@@ -253,13 +254,13 @@ export function TreatmentGoalsTab({
         )}
 
         {mergedGoalGroups.map((group) => (
-          <div key={group.title} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+          <div key={group.title} className="group rounded-[2.5rem] border border-slate-200/60 bg-white/70 p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
             {/* Header with donut */}
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3 text-slate-900">
                 <div className={cn(
-                  'flex h-10 w-10 items-center justify-center rounded-2xl',
-                  group.tone === 'sky' ? 'bg-sky-50 text-sky-600' : 'bg-violet-50 text-violet-600'
+                  'flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3',
+                  group.tone === 'sky' ? 'bg-sky-50 text-sky-600 shadow-sky-100/50' : 'bg-violet-50 text-violet-600 shadow-violet-100/50'
                 )}>
                   {group.icon}
                 </div>
@@ -317,7 +318,7 @@ export function TreatmentGoalsTab({
               })}
             </div>
 
-            <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-500">
+            <div className="mt-5 rounded-2xl bg-slate-50/80 px-5 py-4 text-sm leading-6 text-slate-500 font-medium">
               {group.summary}
             </div>
           </div>
@@ -325,11 +326,14 @@ export function TreatmentGoalsTab({
       </div>
 
       {/* Milestone quick-add */}
-      <div className="rounded-2xl border border-violet-100 bg-gradient-to-r from-violet-50/60 to-indigo-50/40 p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Award size={18} className="text-violet-600 shrink-0" />
-          <h3 className="text-sm font-semibold text-slate-900">Büyük Bir Başarı Kaydet 🏅</h3>
-          <p className="ml-auto text-[11px] text-slate-400">Hatırlamak istediğiniz önemli bir an</p>
+      <div className="relative overflow-hidden rounded-[2.5rem] border border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-white to-fuchsia-50/50 p-7 sm:p-9 shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
+        <div className="absolute right-0 top-0 h-40 w-40 bg-violet-400/10 rounded-full blur-[60px] pointer-events-none" />
+        <div className="relative z-10 flex items-center gap-3 mb-5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+            <Award size={20} className="animate-pulse" />
+          </div>
+          <h3 className="text-base font-bold text-slate-800">Büyük Bir Başarı Kaydet 🏅</h3>
+          <p className="ml-auto hidden sm:block text-xs font-medium text-slate-400">Hatırlamak istediğiniz önemli bir an</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <select
@@ -363,10 +367,12 @@ export function TreatmentGoalsTab({
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div className="group rounded-[2.5rem] border border-slate-200/60 bg-white/70 p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
           <div className="flex items-center gap-3">
-            <ClipboardList size={24} className="text-primary-600" aria-hidden="true" />
-            <h3 className="text-xl font-semibold text-slate-900">Son gözlem notları</h3>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-100/50 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3">
+              <ClipboardList size={20} aria-hidden="true" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">Son Gözlem Notları</h3>
           </div>
           <div className="mt-5 space-y-3">
             {detailLoading ? (
@@ -397,10 +403,12 @@ export function TreatmentGoalsTab({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div className="group rounded-[2.5rem] border border-slate-200/60 bg-white/70 p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
           <div className="flex items-center gap-3">
-            <CalendarDays size={24} className="text-primary-600" aria-hidden="true" />
-            <h3 className="text-xl font-semibold text-slate-900">Yaklaşan Randevu ve Etkinlikler</h3>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shadow-sm shadow-emerald-100/50 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+              <CalendarDays size={20} aria-hidden="true" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">Yaklaşan Etkinlikler</h3>
           </div>
           <div className="mt-5 space-y-3">
             {detailLoading ? (

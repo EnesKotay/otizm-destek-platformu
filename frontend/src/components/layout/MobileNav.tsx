@@ -1,35 +1,59 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { messagingService } from '@/services/messagingService';
 import { notificationService } from '@/services/notificationService';
 import { cn } from '@/utils/cn';
+import { prefetchRoute } from '@/utils/routePrefetch';
 import { getMobileNavItems } from './navConfig';
 import { MoreHorizontal } from 'lucide-react';
+
+const MESSAGE_UNREAD_REFRESH_EVENT = 'message-unread-refresh';
 
 export function MobileNav() {
   const role = useAuthStore(s => s.user?.role);
   const accessToken = useAuthStore(s => s.accessToken);
+  const { subscribe, unsubscribe } = useWebSocket();
   const mobileItems = getMobileNavItems(role);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
+
+  const refreshUnreadMessages = useCallback(() => {
+    if (!accessToken) {
+      setUnreadMessages(0);
+      return;
+    }
+    messagingService.getUnreadCount().then(setUnreadMessages).catch(() => {});
+  }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setUnreadMessages(0);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setUnreadNotifs(0);
       return;
     }
 
-    messagingService.getUnreadCount().then(setUnreadMessages).catch(() => {});
-    notificationService.getUnreadCount().then(setUnreadNotifs).catch(() => {});
-    const interval = setInterval(() => {
-      messagingService.getUnreadCount().then(setUnreadMessages).catch(() => {});
-    }, 60_000);
+    refreshUnreadMessages();
+    if (accessToken) {
+      notificationService.getUnreadCount().then(setUnreadNotifs).catch(() => {});
+    }
+    const interval = setInterval(refreshUnreadMessages, 60_000);
     return () => clearInterval(interval);
-  }, [accessToken]);
+  }, [accessToken, refreshUnreadMessages]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    const conversationTopic = '/user/queue/conversation-update';
+    window.addEventListener(MESSAGE_UNREAD_REFRESH_EVENT, refreshUnreadMessages);
+    subscribe(conversationTopic, refreshUnreadMessages);
+    return () => {
+      window.removeEventListener(MESSAGE_UNREAD_REFRESH_EVENT, refreshUnreadMessages);
+      unsubscribe(conversationTopic);
+    };
+  }, [accessToken, refreshUnreadMessages, subscribe, unsubscribe]);
 
   const getBadge = (to: string): number => {
     if (to === '/mesajlar') return unreadMessages;
@@ -43,13 +67,17 @@ export function MobileNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-100 bg-white/95 backdrop-blur-sm lg:hidden safe-area-pb">
       <div className="flex items-center justify-around px-1 pb-2 pt-1">
-        {mobileItems.map(({ to, icon: Icon, label }) => {
+        {mobileItems.map(({ to, icon: Icon, label, mobileLabel }) => {
           const badge = getBadge(to);
+          const displayLabel = mobileLabel || label;
           return (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
+              onFocus={() => prefetchRoute(to)}
+              onMouseEnter={() => prefetchRoute(to)}
+              onTouchStart={() => prefetchRoute(to)}
               className={({ isActive }) =>
                 cn(
                   'flex min-w-[48px] flex-col items-center gap-0.5 rounded-2xl px-2 py-1.5 text-[10px] font-medium transition-all',
@@ -70,7 +98,7 @@ export function MobileNav() {
                       </span>
                     )}
                   </div>
-                  <span>{label}</span>
+                  <span className="max-w-[4.25rem] truncate text-center leading-tight">{displayLabel}</span>
                 </>
               )}
             </NavLink>

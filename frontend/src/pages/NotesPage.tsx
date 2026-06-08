@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/Input';
 import { TextArea } from '@/components/ui/TextArea';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Badge } from '@/components/ui/Badge';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import { useChildStore } from '@/store/childStore';
 import { childService } from '@/services/childService';
@@ -60,7 +59,6 @@ export function NotesPage() {
   // Delete confirm
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const _photoInputRef = useRef<HTMLInputElement>(null);
 
   // Search + filter
   const [search, setSearch] = useState('');

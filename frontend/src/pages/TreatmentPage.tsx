@@ -224,19 +224,28 @@ export function TreatmentPage() {
       />
 
       {/* ── 2. STAT CARDS — 3 column mini grid ── */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3">
         {weeklySummary.map((item, i) => {
           const meta = SUMMARY_META[i % SUMMARY_META.length];
           const Icon = meta.icon;
           return (
-            <div key={item.title} className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-              <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', meta.iconBg)}>
-                <Icon size={18} className={meta.iconColor} />
+            <div key={item.title} className="group flex flex-col gap-3 rounded-3xl border border-slate-200/60 bg-white/70 backdrop-blur-xl p-5 shadow-[0_8px_30px_rgba(15,23,42,0.04)] hover:shadow-[0_8px_30px_rgba(15,23,42,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+                <Icon size={80} />
               </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{item.title}</p>
-                <p className={cn('text-xl font-bold', meta.valueCls)}>{item.value}</p>
-                <p className="text-xs text-slate-400 leading-none mt-0.5">{item.detail}</p>
+              <div className="flex items-center gap-4 relative z-10">
+                <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3', meta.iconBg)}>
+                  <Icon size={20} className={meta.iconColor} />
+                </div>
+                <div className="flex flex-col">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{item.title}</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className={cn('text-2xl font-extrabold tracking-tight', meta.valueCls)}>{item.value}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-1 relative z-10">
+                <p className="text-xs font-medium text-slate-500">{item.detail}</p>
               </div>
             </div>
           );
@@ -245,71 +254,87 @@ export function TreatmentPage() {
 
       {/* ── 3. PRIORITY GOAL STRIP ── */}
       {primaryGoal && (
-        <div className="rounded-[24px] border border-slate-200/50 bg-gradient-to-r from-white/95 to-slate-50/95 backdrop-blur-md p-5 shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-100/30">
-                <Target size={18} className="animate-pulse" />
+        <div className="group rounded-[2rem] border border-slate-200/50 bg-gradient-to-br from-white via-white to-slate-50/80 backdrop-blur-xl p-6 shadow-[0_8px_30px_rgba(15,23,42,0.04)] hover:shadow-[0_20px_40px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all duration-500 relative overflow-hidden">
+          {/* Abstract glowing shape behind goal */}
+          <div className={cn(
+            'absolute -right-20 -top-20 h-64 w-64 rounded-full blur-[80px] opacity-20 transition-opacity duration-500 group-hover:opacity-40',
+            primaryGoal.tone === 'sky' ? 'bg-sky-400' : 'bg-violet-400'
+          )} />
+          
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50/80 text-indigo-600 shadow-inner border border-indigo-100/50 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-[10deg]">
+                <Target size={22} className="animate-[pulse_3s_ease-in-out_infinite]" />
               </div>
               <div className="min-w-0">
-                <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50/80 px-2 py-0.5 rounded-md">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-500"></span>
+                  </span>
                   Öncelikli Hedef
                 </span>
-                <p className="mt-1 text-sm font-bold text-slate-800 leading-snug truncate">
+                <p className="mt-2 text-base font-bold text-slate-800 leading-snug truncate group-hover:text-indigo-900 transition-colors">
                   {primaryGoal.title}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-xs font-semibold text-slate-500">İlerleme Oranı</span>
-                <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1 mt-0.5">
-                  <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
-                  {totalDone} adım tamamlandı
+            
+            <div className="flex flex-col sm:items-end gap-2 shrink-0">
+              <div className="flex items-center justify-between sm:justify-end gap-3 w-full">
+                <div className="flex flex-col items-start sm:items-end">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">İlerleme</span>
+                  <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mt-0.5">
+                    <CheckCircle2 size={13} className="text-emerald-500 shrink-0 drop-shadow-sm" />
+                    {totalDone} adım tamamlandı
+                  </span>
+                </div>
+                <span className={cn(
+                  'rounded-2xl px-4 py-2 text-lg font-black shadow-sm ring-1 transition-transform duration-300 group-hover:scale-105',
+                  primaryGoal.tone === 'sky' 
+                    ? 'bg-sky-50 text-sky-600 ring-sky-100 shadow-sky-100/40' 
+                    : 'bg-violet-50 text-violet-600 ring-violet-100 shadow-violet-100/40'
+                )}>
+                  %{primaryGoal.percent}
                 </span>
               </div>
-              <span className={cn(
-                'rounded-2xl px-3 py-1.5 text-sm font-black shadow-sm ring-1',
-                primaryGoal.tone === 'sky' 
-                  ? 'bg-sky-50 text-sky-600 ring-sky-100 shadow-sky-100/40' 
-                  : 'bg-violet-50 text-violet-600 ring-violet-100 shadow-violet-100/40'
-              )}>
-                %{primaryGoal.percent}
-              </span>
             </div>
           </div>
-          <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100/80 ring-1 ring-slate-200/20">
+          
+          <div className="relative z-10 mt-5 h-3 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/50 shadow-inner">
             <div
               className={cn(
-                'h-full rounded-full transition-all duration-1000 ease-out shadow-sm',
+                'h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,0,0,0.1)] relative overflow-hidden',
                 primaryGoal.tone === 'sky' 
-                  ? 'bg-gradient-to-r from-sky-400 to-sky-500 shadow-sky-400/20' 
-                  : 'bg-gradient-to-r from-indigo-500 to-violet-600 shadow-indigo-500/20'
+                  ? 'bg-gradient-to-r from-sky-400 via-sky-300 to-sky-500' 
+                  : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500'
               )}
               style={{ width: `${primaryGoal.percent}%` }}
-            />
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+            </div>
           </div>
         </div>
       )}
 
       {/* ── 4. MAIN TAB PANEL ── */}
-      <div className="rounded-[28px] border border-slate-200/70 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.05)] overflow-hidden">
+      <div className="rounded-[2.5rem] border border-slate-200/60 bg-white/80 backdrop-blur-2xl shadow-[0_20px_60px_rgba(15,23,42,0.04)] overflow-hidden transition-all">
         {/* Tab bar + quick action */}
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 bg-white/50 px-6 py-4">
           <TreatmentDetailTabs
             tabs={DETAIL_TABS}
             value={activeDetailTab}
             onChange={setActiveDetailTab}
             label="Tedavi detay bölümleri"
           />
-          {/* "Hedef ekle" quick shortcut — goes to goals tab, not bep-generator */}
+          {/* "Hedef ekle" quick shortcut */}
           <button
             type="button"
             onClick={() => setActiveDetailTab('goals')}
-            className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-600 hover:bg-indigo-100 transition-colors"
+            className="group hidden sm:inline-flex shrink-0 items-center gap-2 rounded-2xl bg-indigo-50 px-4 py-2.5 text-sm font-bold text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-sm"
           >
-            <Plus size={13} />
-            Hedef ekle
+            <Plus size={16} className="transition-transform group-hover:rotate-90" />
+            Yeni Hedef
           </button>
         </div>
 

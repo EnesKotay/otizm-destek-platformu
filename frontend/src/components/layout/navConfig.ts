@@ -46,6 +46,8 @@ export interface NavItemConfig {
   requiresChild?: boolean;
   requiresVerifiedExpert?: boolean;
   mobile?: boolean;
+  mobileLabel?: string;
+  simple?: boolean;
 }
 
 export interface NavGroupConfig {
@@ -57,39 +59,41 @@ export interface NavGroupConfig {
 export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
   PARENT: [
     {
-      label: 'Temel Kullanım',
+      label: 'Başlangıç',
       defaultOpen: true,
       items: [
-        { to: '/', icon: Home, label: 'Ana Sayfa', description: 'Güncel özetler ve hızlı başlangıç', keywords: ['dashboard', 'özet', 'başlangıç'], mobile: true },
-        { to: '/cocuklarim', icon: Baby, label: 'Çocuklarım', description: 'Çocuk profilleri ve temel bilgiler', keywords: ['profil', 'çocuk', 'bilgi'], mobile: true },
+        { to: '/', icon: Home, label: 'Ana Sayfa', mobileLabel: 'Ana', description: 'Bugün ne yapacağınızı gösterir', keywords: ['dashboard', 'özet', 'başlangıç'], mobile: true, simple: true },
+        { to: '/cocuklarim', icon: Baby, label: 'Çocuklarım', description: 'Çocuk bilgileri ve profil', keywords: ['profil', 'çocuk', 'bilgi'], simple: true },
+        { to: '/gunluk-takip', icon: Pill, label: 'Bugünün Kaydı', mobileLabel: 'Kayıt', description: 'Duygu, uyku ve ilaç kaydı', keywords: ['ilaç', 'uyku', 'günlük', 'kayıt'], requiresChild: true, mobile: true, simple: true },
+        { to: '/randevular', icon: CalendarCheck, label: 'Randevular', mobileLabel: 'Randevu', description: 'Uzman görüşmeleri ve uygun saatler', keywords: ['uzman', 'seans', 'görüşme', 'doktor', 'terapist', 'müsaitlik'], requiresChild: true, mobile: true, simple: true },
+        { to: '/mesajlar', icon: MessageCircle, label: 'Mesajlar', description: 'Uzman ve ailelerle yazışmalar', keywords: ['chat', 'iletişim', 'sohbet'], badgeKey: 'messages', mobile: true, simple: true },
+        { to: '/kriz-rehberi', icon: AlertTriangle, label: 'Zor An Rehberi', description: 'Sakinleşme ve acil destek adımları', keywords: ['kriz', 'sakinleşme', 'destek'], badgeKey: 'crisis', simple: true },
+        { to: '/yardim', icon: HelpCircle, label: 'Yardım', description: 'Başlangıç rehberi ve destek', keywords: ['yardım', 'sss', 'destek', 'rehber'], simple: true },
         { to: '/takvim', icon: Calendar, label: 'Takvim', description: 'Seans, görev ve günlük plan', keywords: ['plan', 'etkinlik', 'hatırlatma'], requiresChild: true },
-        { to: '/randevular', icon: CalendarCheck, label: 'Randevular', description: 'Uzman görüşmeleri ve uygun saatler', keywords: ['uzman', 'seans', 'görüşme', 'doktor', 'terapist', 'müsaitlik'], requiresChild: true, mobile: true },
-        { to: '/mesajlar', icon: MessageCircle, label: 'Mesajlar', description: 'Uzman ve ailelerle yazışmalar', keywords: ['chat', 'iletişim', 'sohbet'], badgeKey: 'messages', mobile: true },
       ],
     },
     {
-      label: 'Gelişim Takibi',
-      defaultOpen: true,
-      items: [
-        { to: '/gelisim-paneli', icon: TrendingUp, label: 'Gelişim Paneli', description: 'İlerleme grafikleri ve genel durum', keywords: ['grafik', 'rapor', 'ilerleme'], requiresChild: true },
-        { to: '/tedavi', icon: Activity, label: 'Tedavi & Gelişim', description: 'Tedavi hedefleri ve gelişim kayıtları', keywords: ['terapi', 'hedef', 'klinik'], requiresChild: true },
-        { to: '/paylasimli-ilerleme', icon: ShieldCheck, label: 'Paylaşımlı İlerleme', description: 'Uzmanla güvenli ilerleme paylaşımı', keywords: ['paylaşım', 'uzman', 'rapor'], requiresChild: true },
-        { to: '/tarama', icon: ClipboardList, label: 'Tarama & Aktiviteler', description: 'Tarama sonuçları ve önerilen aktiviteler', keywords: ['test', 'aktivite', 'değerlendirme'], requiresChild: true },
-        { to: '/duyusal-profil', icon: Brain, label: 'Duyusal Profil', description: 'Duyusal hassasiyet ve tercih takibi', keywords: ['duyu', 'hassasiyet', 'profil'], requiresChild: true },
-        { to: '/davranis-gunlugu', icon: BookCheck, label: 'ABC Davranış Günlüğü', description: 'Davranış öncesi, anı ve sonrası notları', keywords: ['abc', 'davranış', 'günlük'], requiresChild: true },
-        { to: '/notlar', icon: FileText, label: 'Gelişim Notları', description: 'Gözlem ve gelişim notları', keywords: ['not', 'gözlem', 'kayıt'], requiresChild: true },
-      ],
-    },
-    {
-      label: 'Günlük Rutinler',
+      label: 'Gelişim',
       defaultOpen: false,
       items: [
-        { to: '/gunluk-takip', icon: Pill, label: 'Günlük Takip', description: 'İlaç, uyku ve günlük rutin kayıtları', keywords: ['ilaç', 'uyku', 'günlük'], requiresChild: true },
+        { to: '/gelisim-paneli', icon: TrendingUp, label: 'Nasıl İlerliyoruz?', description: 'İlerleme ve genel durum', keywords: ['grafik', 'rapor', 'ilerleme'], requiresChild: true },
+        { to: '/tedavi', icon: Activity, label: 'Günlük Plan', description: 'Hedefler ve gelişim akışı', keywords: ['terapi', 'hedef', 'klinik'], requiresChild: true },
+        { to: '/paylasimli-ilerleme', icon: ShieldCheck, label: 'Uzmanla Paylaş', description: 'Gelişim bilgilerini güvenle paylaşın', keywords: ['paylaşım', 'uzman', 'rapor'], requiresChild: true },
+        { to: '/tarama', icon: ClipboardList, label: 'Kısa Değerlendirme', description: 'Tarama sonuçları ve aktiviteler', keywords: ['test', 'aktivite', 'değerlendirme'], requiresChild: true },
+        { to: '/duyusal-profil', icon: Brain, label: 'Neler Rahatlatır?', description: 'Hassasiyet ve tercih takibi', keywords: ['duyu', 'hassasiyet', 'profil'], requiresChild: true },
+        { to: '/davranis-gunlugu', icon: BookCheck, label: 'Davranış Notu', description: 'Davranış öncesi ve sonrası notları', keywords: ['abc', 'davranış', 'günlük'], requiresChild: true },
+        { to: '/notlar', icon: FileText, label: 'Gözlem Notları', description: 'Kısa gözlem ve gelişim notları', keywords: ['not', 'gözlem', 'kayıt'], requiresChild: true },
+      ],
+    },
+    {
+      label: 'Günlük Yaşam',
+      defaultOpen: false,
+      items: [
         { to: '/gorevler', icon: ClipboardCheck, label: 'Ev Ödevleri', description: 'Uzman tarafından verilen görevler', keywords: ['ödev', 'görev', 'uzman'], requiresChild: true },
-        { to: '/rutinler', icon: ListChecks, label: 'Rutin Yönetimi', description: 'Görsel program ve rutin adımları', keywords: ['rutin', 'program', 'adım'], requiresChild: true },
-        { to: '/beslenme', icon: Apple, label: 'Beslenme Takibi', description: 'Öğün, tercih ve beslenme notları', keywords: ['yemek', 'öğün', 'beslenme'], requiresChild: true },
-        { to: '/okul-defteri', icon: School, label: 'Okul İletişim Defteri', description: 'Okul ve aile arası günlük notlar', keywords: ['okul', 'öğretmen', 'defter'], requiresChild: true },
-        { to: '/hedef-token', icon: Star, label: 'Hedef & Token', description: 'Hedefler, ödüller ve token takibi', keywords: ['ödül', 'token', 'hedef'], requiresChild: true },
+        { to: '/rutinler', icon: ListChecks, label: 'Rutinler', description: 'Görsel program ve rutin adımları', keywords: ['rutin', 'program', 'adım'], requiresChild: true },
+        { to: '/beslenme', icon: Apple, label: 'Beslenme', description: 'Öğün, tercih ve beslenme notları', keywords: ['yemek', 'öğün', 'beslenme'], requiresChild: true },
+        { to: '/okul-defteri', icon: School, label: 'Okul Notları', description: 'Okul ve aile arası günlük notlar', keywords: ['okul', 'öğretmen', 'defter'], requiresChild: true },
+        { to: '/hedef-token', icon: Star, label: 'Ödül Takibi', description: 'Hedefler, ödüller ve token takibi', keywords: ['ödül', 'token', 'hedef'], requiresChild: true },
       ],
     },
     {
@@ -104,17 +108,15 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       ],
     },
     {
-      label: 'Uzman & Rehber',
+      label: 'Yardım ve Rehber',
       defaultOpen: false,
       items: [
         { to: '/bilgi-bankasi', icon: Library, label: 'Bilgi Bankası', description: 'Güvenilir yazılar ve rehber içerikler', keywords: ['makale', 'rehber', 'bilgi'] },
         { to: '/uzmanlar', icon: GraduationCap, label: 'Uzmanlar', description: 'Uzman bulma ve profil inceleme', keywords: ['doktor', 'terapist', 'randevu'] },
         { to: '/uzman-harita', icon: Map, label: 'Uzman & Kurum Haritası', description: 'Yakındaki uzman ve kurumları görme', keywords: ['harita', 'kurum', 'yakın'] },
         { to: '/haklar-rehberi', icon: Scale, label: 'Haklar & Kurumlar Rehberi', description: 'Haklar, kurumlar ve başvuru yolları', keywords: ['hak', 'kurum', 'başvuru'] },
-        { to: '/sosyal-hikayeler', icon: BookMarked, label: 'Sosyal Hikayeler', description: 'Günlük durumlar için hikaye kartları', keywords: ['hikaye', 'kart', 'hazırlık'] },
+        { to: '/sosyal-hikayeler', icon: BookMarked, label: 'Hazırlık Hikayeleri', description: 'Günlük durumlar için hikaye kartları', keywords: ['hikaye', 'kart', 'hazırlık'] },
         { to: '/acil-kart', icon: ShieldAlert, label: 'Acil Durum Kartı', description: 'Acil durumda paylaşılacak çocuk bilgileri', keywords: ['acil', 'kart', 'güvenlik'], requiresChild: true },
-        { to: '/kriz-rehberi', icon: AlertTriangle, label: 'Kriz Rehberi', description: 'Zor anlarda hızlı destek adımları', keywords: ['kriz', 'sakinleşme', 'destek'], badgeKey: 'crisis' },
-        { to: '/yardim', icon: HelpCircle, label: 'Yardım Merkezi', description: 'SSS, başlangıç rehberi ve destek', keywords: ['yardım', 'sss', 'destek', 'rehber'] },
       ],
     },
   ],

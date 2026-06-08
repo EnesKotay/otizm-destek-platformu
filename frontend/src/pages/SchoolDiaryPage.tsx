@@ -80,6 +80,7 @@ export function SchoolDiaryPage() {
 
   useEffect(() => {
     if (!children.length) childService.getAll().then(setChildren).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

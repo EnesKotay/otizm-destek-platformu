@@ -99,11 +99,11 @@ export function DatePicker({ value, onChange, label, showTime = false }: DatePic
       const d = parseLocal(value);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplay({ year: d.getFullYear(), month: d.getMonth() });
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setSelDate(toDateStr(d));
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setSelHour(d.getHours());
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setSelMin(d.getMinutes());
     }
   }, [value]);

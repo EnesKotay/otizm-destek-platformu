@@ -35,7 +35,12 @@ const schema = z.object({
   // Step 1 – Kişisel Bilgiler
   fullName: z.string().min(2, 'Ad soyad en az 2 karakter olmalıdır'),
   email: z.string().email('Geçerli bir e-posta adresi giriniz'),
-  phone: z.string().optional(),
+  phone: z.string()
+    .refine(
+      (val) => !val || /^(\+90|0)?\d{10,11}$/.test(val.replace(/[\s\-\(\)]/g, '')),
+      { message: 'Geçerli bir telefon numarası giriniz (Örn: 05XX XXX XX XX)' }
+    )
+    .optional(),
   city: z.string().optional(),
 
   // Step 2 – Uzmanlık Bilgileri
@@ -47,7 +52,11 @@ const schema = z.object({
 
   // Step 3 – Güvenlik
   password: z.string().min(8, 'Şifre en az 8 karakter olmalıdır'),
+  confirmPassword: z.string().min(1, 'Şifre tekrarını giriniz'),
   kvkkConsent: z.boolean().refine((val) => val, 'KVKK onayı zorunludur'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Şifreler eşleşmiyor',
+  path: ['confirmPassword'],
 });
 
 type FormData = z.infer<typeof schema>;
@@ -123,7 +132,7 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 
 export function ExpertRegisterPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user, logout, setAuth } = useAuthStore();
   const [step, setStep] = useState(1);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -146,6 +155,7 @@ export function ExpertRegisterPage() {
     mode: 'onBlur',
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchedPassword = watch('password', '');
   const strength = getPasswordStrength(watchedPassword || passwordValue);
 
@@ -154,7 +164,7 @@ export function ExpertRegisterPage() {
   const stepFields: Record<number, (keyof FormData)[]> = {
     1: ['fullName', 'email', 'phone', 'city'],
     2: ['expertTitle', 'institution', 'licenseNumber', 'bio', 'specializations'],
-    3: ['password', 'kvkkConsent'],
+    3: ['password', 'confirmPassword', 'kvkkConsent'],
   };
 
   const toggleSpec = (spec: string) => {
@@ -176,7 +186,7 @@ export function ExpertRegisterPage() {
     setLoading(true);
     setError('');
     try {
-      await authService.register({
+      const authResponse = await authService.register({
         fullName: data.fullName,
         email: data.email,
         phone: data.phone,
@@ -190,6 +200,7 @@ export function ExpertRegisterPage() {
         bio: data.bio,
         specializations: selectedSpecs,
       });
+      setAuth(authResponse.user, authResponse.accessToken, authResponse.refreshToken);
       setSubmitted(true);
     } catch (err: unknown) {
       const message =
@@ -272,10 +283,10 @@ export function ExpertRegisterPage() {
           </div>
           <h1 className="text-3xl font-extrabold text-gray-900 mb-3 tracking-tight">Başvurunuz Alındı!</h1>
           <p className="text-gray-500 text-sm leading-relaxed mb-6">
-            Uzman hesabınız başarıyla oluşturuldu. Ekibimiz belgelerinizi inceledikten sonra
-            hesabınız onaylanacak ve size{' '}
-            <span className="text-indigo-600 font-bold">e-posta ile bildirim</span>{' '}
-            gönderilecektir.
+            Uzman hesabınız oluşturuldu ve oturumunuz açıldı. Hesabınızı hemen kullanabilirsiniz.
+            Ekibimiz belgelerinizi inceledikten sonra{' '}
+            <span className="text-indigo-600 font-bold">Onaylı Uzman</span>{' '}
+            rozetiniz aktifleşecektir.
           </p>
           <div
             className="rounded-2xl p-5 mb-6 text-left border"
@@ -286,16 +297,18 @@ export function ExpertRegisterPage() {
           >
             <p className="text-sm text-amber-800 font-bold mb-1">📋 Sonraki adımlar:</p>
             <ul className="text-xs text-amber-700 space-y-1.5 mt-2">
+              <li>• Hesabınıza hemen giriş yapabilirsiniz — bazı özellikler onay sonrası açılır.</li>
               <li>• Ekibimiz başvurunuzu 1-3 iş günü içinde inceler.</li>
               <li>• Onay sonrası profilinizde "Onaylı Uzman" rozeti aktif olur.</li>
-              <li>• Tüm soru-cevap ve içerik paylaşımı özelliklerine erişim kazanırsınız.</li>
             </ul>
           </div>
-          <Link to="/giris">
-            <Button className="w-full bg-gradient-to-r from-primary-600 to-indigo-600 border-0 h-11" size="lg">
-              Giriş Sayfasına Git
-            </Button>
-          </Link>
+          <Button
+            className="w-full bg-gradient-to-r from-primary-600 to-indigo-600 border-0 h-11"
+            size="lg"
+            onClick={() => navigate('/')}
+          >
+            Dashboard'a Git
+          </Button>
         </div>
       </div>
     );
@@ -691,6 +704,27 @@ export function ExpertRegisterPage() {
                     )}
                   </div>
 
+                  {/* Şifre Tekrar */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre Tekrar</label>
+                    <div className="relative">
+                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                        <Lock size={18} />
+                      </div>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Şifrenizi tekrar girin"
+                        className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
+                          errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
+                        }`}
+                        {...register('confirmPassword')}
+                      />
+                    </div>
+                    {errors.confirmPassword && (
+                      <p className="text-xs text-red-600 mt-1">{errors.confirmPassword.message}</p>
+                    )}
+                  </div>
+
                   {/* Info note */}
                   <div
                     className="rounded-xl p-4 text-xs flex items-start gap-3 border bg-gradient-to-br from-indigo-50/50 to-blue-50/50 border-indigo-100/50"
@@ -725,7 +759,11 @@ export function ExpertRegisterPage() {
                         </div>
                       </div>
                       <span className="text-xs text-gray-500 leading-relaxed select-none">
-                        <strong className="text-gray-700">KVKK Aydınlatma Metni:</strong> Kişisel verilerimin otizm destek platformu tarafından işlenmesine, saklanmasına ve korunmasına ilişkin aydınlatma metnini okudum ve onaylıyorum.
+                        <strong className="text-gray-700">KVKK Aydınlatma Metni:</strong> Kişisel verilerimin otizm destek platformu tarafından işlenmesine, saklanmasına ve korunmasına ilişkin{' '}
+                        <Link to="/kvkk" target="_blank" rel="noopener noreferrer" className="text-primary-600 font-semibold underline hover:text-primary-700">
+                          aydınlatma metnini
+                        </Link>{' '}
+                        okudum ve onaylıyorum.
                       </span>
                     </label>
                     {errors.kvkkConsent && (

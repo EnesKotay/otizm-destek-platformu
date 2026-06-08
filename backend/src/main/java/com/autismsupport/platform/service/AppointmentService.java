@@ -208,6 +208,8 @@ public class AppointmentService {
         int duration = resolveDuration(dto.getDuration());
         String type = resolveAppointmentType(dto.getType());
 
+        lockExpertSchedule(expert.getId());
+
         // Günlük kapasite kontrolü
         long dailyCount = appointmentRepository.countActiveByExpertIdAndDate(expert.getId(), dto.getDate());
         if (dailyCount >= MAX_APPOINTMENTS_PER_EXPERT_PER_DAY) {
@@ -306,12 +308,10 @@ public class AppointmentService {
     public void cancelRecurringGroup(UUID groupId, UUID userId) {
         List<Appointment> group = appointmentRepository.findByRecurringGroupId(groupId);
         if (group.isEmpty()) throw new RuntimeException("Seri bulunamadi");
+        assertRecurringGroupAccess(group, userId);
         for (Appointment appt : group) {
-            UUID parentId = appt.getParent() != null ? appt.getParent().getId() : null;
-            boolean isParent = parentId != null && parentId.equals(userId);
-            boolean isExpert = appt.getExpert().getId().equals(userId);
-            if (!isParent && !isExpert) continue;
             if ("COMPLETED".equals(appt.getStatus()) || "CANCELLED".equals(appt.getStatus())) continue;
+            boolean isParent = appt.getParent() != null && appt.getParent().getId().equals(userId);
             String prevStatus = appt.getStatus();
             boolean late = isLateCancellation(appt);
             appt.setStatus("CANCELLED");
@@ -326,7 +326,10 @@ public class AppointmentService {
 
     @Transactional(readOnly = true)
     public List<AppointmentDto> getRecurringGroup(UUID groupId, UUID userId) {
-        return appointmentRepository.findByRecurringGroupId(groupId).stream()
+        List<Appointment> group = appointmentRepository.findByRecurringGroupId(groupId);
+        if (group.isEmpty()) throw new RuntimeException("Seri bulunamadi");
+        assertRecurringGroupAccess(group, userId);
+        return group.stream()
                 .map(this::toDto).toList();
     }
 
@@ -452,6 +455,8 @@ public class AppointmentService {
                 ? resolveDuration(durationOverride)
                 : appointmentDuration(appointment);
 
+        lockExpertSchedule(appointment.getExpert().getId());
+
         validateAvailability(appointment.getExpert().getId(), date, newTime, newDuration);
         ensureNoAppointmentConflict(appointment.getExpert().getId(), date, newTime, newDuration, appointment.getId());
         List<Appointment> existingForDay = appointmentRepository.findByExpertIdAndAppointmentDateOrderByAppointmentTimeAsc(appointment.getExpert().getId(), date);
@@ -546,6 +551,9 @@ public class AppointmentService {
                 }
             }
         }
+        if ("CONFIRMED".equals(appointment.getStatus())) {
+            upsertCalendarEvent(appointment);
+        }
         return toDto(appointmentRepository.save(appointment));
     }
 
@@ -610,6 +618,7 @@ public class AppointmentService {
         validateStatusTransition(appointment.getStatus(), "COMPLETED");
 
         appointment.setStatus("COMPLETED");
+        syncLinkedCalendarEventStatus(appointment, "COMPLETED");
         Appointment saved = appointmentRepository.save(appointment);
         recordHistory(saved, "CONFIRMED", "COMPLETED", userRepository.findById(expertId).orElse(null), null);
 
@@ -726,6 +735,8 @@ public class AppointmentService {
             throw new AccessDeniedException("Sadece uzmanlar saat kapatabilir");
         }
 
+        lockExpertSchedule(expertId);
+
         LocalTime apptTime = parseTime(time, true);
         ExpertAvailability availability = findAvailabilityForDate(expertId, date);
 
@@ -786,6 +797,24 @@ public class AppointmentService {
                     "time", timeStr
             ));
         }
+    }
+
+    private void lockExpertSchedule(UUID expertId) {
+        userRepository.lockById(expertId)
+                .orElseThrow(() -> new RuntimeException("Uzman bulunamadi"));
+    }
+
+    private void assertRecurringGroupAccess(List<Appointment> group, UUID userId) {
+        if (group.stream().noneMatch(appt -> canAccessAppointment(appt, userId))) {
+            throw new AccessDeniedException("Bu randevu serisine erisim yetkiniz yok");
+        }
+    }
+
+    private boolean canAccessAppointment(Appointment appointment, UUID userId) {
+        UUID parentId = appointment.getParent() != null ? appointment.getParent().getId() : null;
+        boolean isParent = parentId != null && parentId.equals(userId);
+        boolean isExpert = appointment.getExpert() != null && appointment.getExpert().getId().equals(userId);
+        return isParent || isExpert;
     }
 
     private ExpertAvailability findAvailabilityForDate(UUID expertId, LocalDate date) {
@@ -948,11 +977,21 @@ public class AppointmentService {
         event.setEventType("APPOINTMENT");
         event.setStartTime(start);
         event.setEndTime(start.plusMinutes(appointmentDuration(appointment)));
-        event.setReminderEnabled(true);
+        event.setReminderMinutesBefore(60);
+        event.setStatus("COMPLETED".equals(appointment.getStatus()) ? "COMPLETED" : "PLANNED");
+        event.setLocation("ONLINE".equals(appointment.getType()) ? "Online görüşme" : null);
         event.setColor("#4F46E5");
 
         CalendarEvent saved = calendarEventRepository.save(event);
         appointment.setCalendarEventId(saved.getId());
+    }
+
+    private void syncLinkedCalendarEventStatus(Appointment appointment, String status) {
+        if (appointment.getCalendarEventId() == null) return;
+        calendarEventRepository.findById(appointment.getCalendarEventId()).ifPresent(event -> {
+            event.setStatus(status);
+            calendarEventRepository.save(event);
+        });
     }
 
     private void deleteLinkedCalendarEvent(Appointment appointment) {

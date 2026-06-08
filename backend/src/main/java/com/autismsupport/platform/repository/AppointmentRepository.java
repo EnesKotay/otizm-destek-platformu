@@ -4,6 +4,7 @@ import com.autismsupport.platform.model.Appointment;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -53,6 +54,16 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     // Recurring group — seri içindeki tüm randevular
     @Query("SELECT a FROM Appointment a LEFT JOIN FETCH a.expert LEFT JOIN FETCH a.parent LEFT JOIN FETCH a.child WHERE a.recurringGroupId = :groupId ORDER BY a.appointmentDate ASC, a.appointmentTime ASC")
     List<Appointment> findByRecurringGroupId(@Param("groupId") UUID groupId);
+
+    @Modifying
+    @Query("UPDATE Appointment a SET a.status = 'CANCELLED' WHERE a.expert.id = :expertId AND a.child.id = :childId AND a.status IN ('PENDING', 'CONFIRMED')")
+    int cancelPendingByExpertAndChild(@Param("expertId") UUID expertId, @Param("childId") UUID childId);
+
+    @Query("SELECT AVG(a.rating) FROM Appointment a WHERE a.expert.id = :expertId AND a.rating IS NOT NULL")
+    Double getAverageRatingByExpertId(@Param("expertId") UUID expertId);
+
+    @Query("SELECT a.child.id AS childId, MAX(a.appointmentDate) AS lastDate FROM Appointment a WHERE a.expert.id = :expertId AND a.child.id IN :childIds AND a.status = 'COMPLETED' GROUP BY a.child.id")
+    List<LastSessionProjection> findLastSessionsByExpertAndChildren(@Param("expertId") UUID expertId, @Param("childIds") List<UUID> childIds);
 
     // Günlük aktif randevu sayısı (kapasite kontrolü için)
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.expert.id = :expertId AND a.appointmentDate = :date AND a.status IN ('PENDING', 'CONFIRMED')")

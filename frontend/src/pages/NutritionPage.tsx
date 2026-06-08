@@ -92,6 +92,7 @@ export function NutritionPage() {
   const [filterStatus, setFilterStatus] = useState<FoodStatus | ''>('');
   const [filterCat, setFilterCat] = useState('');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!children.length) childService.getAll().then(setChildren).catch(() => {}); }, []);
   useEffect(() => { if (!selectedChild && children.length) setSelectedChild(children[0]); }, [children, selectedChild, setSelectedChild]);
   useEffect(() => {

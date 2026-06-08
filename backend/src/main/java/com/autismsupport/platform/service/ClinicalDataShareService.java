@@ -125,6 +125,8 @@ public class ClinicalDataShareService {
             case "sensory"   -> share.getShareSensoryProfile();
             case "screening" -> share.getShareScreeningResults();
             case "tracker"   -> share.getShareDailyTracker();
+            case "profile"   -> true;
+            case "notes"     -> true;
             default          -> false;
         };
     }

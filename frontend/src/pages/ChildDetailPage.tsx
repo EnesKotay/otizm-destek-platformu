@@ -25,11 +25,11 @@ import { calendarService } from '@/services/calendarService';
 import { appointmentService } from '@/services/appointmentService';
 import { moodService } from '@/services/moodService';
 import { sleepService } from '@/services/sleepService';
-import { medicationService } from '@/services/medicationService';
+
 import { formatDate } from '@/utils/date';
 import { toast } from '@/store/toastStore';
-import type { ActivityResult, AppointmentRecord, CalendarEvent, Child, DevelopmentNote, Milestone, Tag } from '@/types';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineChart, Line, CartesianGrid, AreaChart, Area } from 'recharts';
+import type { ActivityResult, AppointmentRecord, CalendarEvent, Child, DevelopmentNote, Milestone, MoodEntry, SleepEntry, Tag } from '@/types';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, AreaChart, Area } from 'recharts';
 
 const CATEGORY_LABELS: Record<string, string> = {
   ILETISIM: 'İletişim', SOSYAL: 'Sosyal', DUYUSAL: 'Duyusal',
@@ -54,6 +54,7 @@ const CATEGORY_DEFS: Record<string, {
   iconBg: string;
   iconColor: string;
   activeGradient: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: React.ComponentType<any>;
 }> = {
   DUYUSAL: {
@@ -135,14 +136,18 @@ const MILESTONE_CATEGORIES = [
 
 const NOTES_PAGE_SIZE = 5;
 
-function calcAge(birthDate: string): number | null {
+function calcAge(birthDate: string): string | null {
   if (!birthDate) return null;
   const birth = new Date(birthDate);
+  if (Number.isNaN(birth.getTime())) return null;
   const today = new Date();
-  let years = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) years--;
-  return years;
+  let months = (today.getFullYear() - birth.getFullYear()) * 12 + today.getMonth() - birth.getMonth();
+  if (today.getDate() < birth.getDate()) months -= 1;
+  if (months < 0) return null;
+  if (months < 24) return `${months} aylık`;
+  const years = Math.floor(months / 12);
+  const extra = months % 12;
+  return extra > 0 ? `${years} yaş ${extra} ay` : `${years} yaş`;
 }
 
 const CHART_COLORS = ['#6366f1', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
@@ -198,6 +203,8 @@ export function ChildDetailPage() {
   const [loadingMoreNotes, setLoadingMoreNotes] = useState(false);
 
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
+  const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
   const [screeningResults, setScreeningResults] = useState<ScreeningResultDto[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
@@ -234,7 +241,9 @@ export function ChildDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
+     
     setError(null);
 
     Promise.all([
@@ -252,6 +261,8 @@ export function ChildDetailPage() {
         setNotesTotal(res.totalPages);
       }).catch(() => {}),
       milestoneService.getByChild(id).then(setMilestones).catch(() => {}),
+      moodService.getByChild(id).then(data => setMoodEntries(data || [])).catch(() => {}),
+      sleepService.getByChild(id).then(data => setSleepEntries(data || [])).catch(() => {}),
       screeningService.getByChild(id).then(setScreeningResults).catch(() => setScreeningResults([])),
       calendarService.getByChild(id).then(setEvents).catch(() => setEvents([])),
       appointmentService.getAll()
@@ -271,9 +282,10 @@ export function ChildDetailPage() {
       setEditingTags(true);
       window.history.replaceState({}, '');
     }
-  }, [id]);
+  }, [id, location.state]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (child?.tagIds) setSelectedTagIds(new Set(child.tagIds));
     if (child) {
       setProfileForm({
@@ -447,7 +459,7 @@ export function ChildDetailPage() {
             {error || 'Aradığınız çocuk profili bulunamadı veya bu profile erişim yetkiniz bulunmuyor.'}
           </p>
           <div className="flex gap-3 justify-center">
-            <Link to="/danisanlarim">
+            <Link to="/cocuklarim">
               <Button variant="outline" className="rounded-xl border-slate-200 text-slate-700 font-bold text-xs">
                 Geri Dön
               </Button>
@@ -489,6 +501,7 @@ export function ChildDetailPage() {
   const monthlyData = (() => {
     const map: Record<string, number> = {};
     notes.forEach(n => {
+      // eslint-disable-next-line react-hooks/purity
       const d = new Date(n.noteDate || n.createdAt || Date.now());
       const key = d.toLocaleDateString('tr-TR', { month: 'short', year: '2-digit' });
       map[key] = (map[key] || 0) + 1;
@@ -499,6 +512,7 @@ export function ChildDetailPage() {
   const milestoneTimeline = (() => {
     const map: Record<string, number> = {};
     milestones.forEach(m => {
+      // eslint-disable-next-line react-hooks/purity
       const d = new Date(m.achievedDate || Date.now());
       const key = d.toLocaleDateString('tr-TR', { month: 'short', year: '2-digit' });
       map[key] = (map[key] || 0) + 1;
@@ -506,12 +520,32 @@ export function ChildDetailPage() {
     return Object.entries(map).slice(-6).map(([ay, milestone]) => ({ ay, milestone }));
   })();
 
+  const moodTrend = (() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    moodEntries.forEach(m => {
+      const d = new Date(m.entryDate || m.createdAt);
+      const key = d.toLocaleDateString('tr-TR', { month: 'short', year: '2-digit' });
+      if (!map[key]) map[key] = { total: 0, count: 0 };
+      map[key].total += m.moodLevel;
+      map[key].count++;
+    });
+    return Object.entries(map).slice(-6).map(([ay, v]) => ({ ay, ruh: parseFloat((v.total / v.count).toFixed(1)) }));
+  })();
+
+  const sleepTrend = (() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    sleepEntries.forEach(s => {
+      if (!s.durationMinutes) return;
+      const d = new Date(s.sleepDate || s.createdAt);
+      const key = d.toLocaleDateString('tr-TR', { month: 'short', year: '2-digit' });
+      if (!map[key]) map[key] = { total: 0, count: 0 };
+      map[key].total += s.durationMinutes / 60;
+      map[key].count++;
+    });
+    return Object.entries(map).slice(-6).map(([ay, v]) => ({ ay, saat: parseFloat((v.total / v.count).toFixed(1)) }));
+  })();
+
   const genderLabel = child.gender === 'ERKEK' ? 'Erkek' : child.gender === 'KIZ' ? 'Kız' : null;
-  const genderColor = child.gender === 'ERKEK'
-    ? 'bg-blue-50 text-blue-700'
-    : child.gender === 'KIZ'
-      ? 'bg-pink-50 text-pink-700'
-      : '';
   const sortedScreenings = [...screeningResults].sort((a, b) =>
     new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
   );
@@ -588,7 +622,7 @@ export function ChildDetailPage() {
                 )}
                 {age !== null && (
                   <span className="px-3 py-1 rounded-full bg-indigo-500/25 border border-indigo-400/20 text-indigo-200 text-xs font-semibold">
-                    {age} yaşında
+                    {age}
                   </span>
                 )}
                 {genderLabel && (
@@ -1440,6 +1474,82 @@ export function ChildDetailPage() {
                         }}
                       />
                       <Area type="monotone" dataKey="milestone" name="Kazanılan Beceri" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorMilestone)" dot={{ r: 3.5, fill: '#ffffff', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 5, strokeWidth: 0 }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {moodTrend.length > 1 && (
+                <div className="mt-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1.5 h-4 rounded-full bg-amber-400" />
+                    <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Aylık Ruh Hali Trendi (1–5)</p>
+                  </div>
+                  <ResponsiveContainer width="100%" height={140}>
+                    <AreaChart data={moodTrend} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorMood" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="4 4" stroke="#f3f4f6" vertical={false} />
+                      <XAxis dataKey="ay" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                      <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-white/90 backdrop-blur-md border border-amber-100 p-2.5 rounded-xl shadow-lg text-[11px] flex flex-col gap-0.5">
+                                <p className="font-bold text-gray-800">{label}</p>
+                                <p className="font-semibold text-amber-600 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" /> Ort. Ruh Hali: {payload[0].value}/5
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Area type="monotone" dataKey="ruh" name="Ruh Hali" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#colorMood)" dot={{ r: 3.5, fill: '#ffffff', stroke: '#f59e0b', strokeWidth: 2 }} activeDot={{ r: 5, strokeWidth: 0 }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {sleepTrend.length > 1 && (
+                <div className="mt-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1.5 h-4 rounded-full bg-cyan-500" />
+                    <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Aylık Uyku Süresi (Saat Ort.)</p>
+                  </div>
+                  <ResponsiveContainer width="100%" height={140}>
+                    <AreaChart data={sleepTrend} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorSleep" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="4 4" stroke="#f3f4f6" vertical={false} />
+                      <XAxis dataKey="ay" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-white/90 backdrop-blur-md border border-cyan-100 p-2.5 rounded-xl shadow-lg text-[11px] flex flex-col gap-0.5">
+                                <p className="font-bold text-gray-800">{label}</p>
+                                <p className="font-semibold text-cyan-600 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 inline-block" /> Ort. Uyku: {payload[0].value} saat
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Area type="monotone" dataKey="saat" name="Uyku Süresi" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill="url(#colorSleep)" dot={{ r: 3.5, fill: '#ffffff', stroke: '#06b6d4', strokeWidth: 2 }} activeDot={{ r: 5, strokeWidth: 0 }} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>

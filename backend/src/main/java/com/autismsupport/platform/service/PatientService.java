@@ -5,20 +5,20 @@ import com.autismsupport.platform.dto.PatientSummaryDto;
 import com.autismsupport.platform.model.*;
 import com.autismsupport.platform.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.Period;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PatientService {
-
-    private static final List<String> PATIENT_ACCESS_STATUSES = List.of("CONFIRMED", "COMPLETED");
 
     private final AppointmentRepository appointmentRepository;
     private final ExpertTaskRepository expertTaskRepository;
@@ -26,21 +26,38 @@ public class PatientService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final ExpertPatientConnectionRepository expertPatientConnectionRepository;
 
     @Transactional(readOnly = true)
-    public List<PatientSummaryDto> getPatients(UUID expertId) {
-        Map<UUID, Child> children = new LinkedHashMap<>();
+    public Page<PatientSummaryDto> getPatients(UUID expertId, Pageable pageable) {
+        Page<ExpertPatientConnection> connections = expertPatientConnectionRepository
+                .findApprovedWithChildByExpertId(expertId, ConnectionStatus.APPROVED, pageable);
 
-        appointmentRepository.findByExpertIdAndStatusInOrderByAppointmentDateAscAppointmentTimeAsc(expertId, PATIENT_ACCESS_STATUSES)
-                .forEach(appointment -> children.put(appointment.getChild().getId(), appointment.getChild()));
-
-        // Fix 2: findAll() yerine expertId'ye gore sorgu
-        expertTaskRepository.findByExpertIdOrderByCreatedAtDesc(expertId)
-                .forEach(task -> children.put(task.getChild().getId(), task.getChild()));
-
-        return children.values().stream()
-                .map(child -> toPatientSummary(expertId, child))
+        List<UUID> childIds = connections.stream()
+                .map(c -> c.getChild().getId())
                 .toList();
+
+        if (childIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Map<UUID, long[]> taskCounts = expertTaskRepository
+                .countTasksGroupedByChildren(expertId, childIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        TaskCountProjection::getChildId,
+                        p -> new long[]{p.getTotal(), p.getCompleted()}
+                ));
+
+        Map<UUID, LocalDate> lastSessions = appointmentRepository
+                .findLastSessionsByExpertAndChildren(expertId, childIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        LastSessionProjection::getChildId,
+                        LastSessionProjection::getLastDate
+                ));
+
+        return connections.map(conn -> toPatientSummary(conn.getChild(), taskCounts, lastSessions));
     }
 
     @Transactional(readOnly = true)
@@ -68,7 +85,7 @@ public class PatientService {
                 .frequency(dto.getFrequency())
                 .materialUrl(dto.getMaterialUrl())
                 .dueDate(dto.getDueDate())
-                .status(dto.getStatus() == null || dto.getStatus().isBlank() ? "PENDING" : dto.getStatus())
+                .status(TaskStatus.PENDING)
                 .build();
 
         ExpertTask saved = expertTaskRepository.save(task);
@@ -77,7 +94,7 @@ public class PatientService {
                 "TASK_ASSIGNED",
                 "Yeni uzman gorevi",
                 expert.getFullName() + " cocugunuz icin yeni bir gorev atadi: " + task.getTitle(),
-                "/patients"
+                "/gorevler"
         );
         auditLogService.log(expert, "TASK_ASSIGNED", "TASK", saved.getId(), Map.of(
                 "childId", child.getId().toString(),
@@ -88,7 +105,7 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public List<ExpertTaskDto> getMyTasksAsParent(UUID parentId) {
-        return expertTaskRepository.findByParentIdOrderByCreatedAtDesc(parentId).stream()
+        return expertTaskRepository.findByChildParentIdOrderByCreatedAtDesc(parentId).stream()
                 .map(this::toTaskDto)
                 .toList();
     }
@@ -106,6 +123,9 @@ public class PatientService {
                 .orElseThrow(() -> new RuntimeException("Gorev bulunamadi"));
         if (!task.getExpert().getId().equals(expertId)) {
             throw new AccessDeniedException("Bu gorevi guncelleme yetkiniz yok");
+        }
+        if (task.getStatus() != TaskStatus.PENDING) {
+            throw new RuntimeException("Yalnizca bekleyen (PENDING) gorevler guncellenebilir");
         }
         if (dto.getTitle() != null) task.setTitle(dto.getTitle());
         if (dto.getDescription() != null) task.setDescription(dto.getDescription());
@@ -131,57 +151,40 @@ public class PatientService {
     @Transactional(readOnly = true)
     public Map<String, Object> getExpertStats(UUID expertId) {
         long totalTasks = expertTaskRepository.countByExpertId(expertId);
-        long completedTasks = expertTaskRepository.countByExpertIdAndStatus(expertId, "COMPLETED");
+        long completedTasks = expertTaskRepository.countByExpertIdAndStatus(expertId, TaskStatus.COMPLETED);
         long cancelledAppointments = appointmentRepository.countByExpertIdAndStatus(expertId, "CANCELLED");
         long completedAppointments = appointmentRepository.countByExpertIdAndStatus(expertId, "COMPLETED");
+        Double avgRating = appointmentRepository.getAverageRatingByExpertId(expertId);
 
-        return Map.of(
-            "completedThisMonth", completedAppointments,
-            "cancelledThisMonth", cancelledAppointments,
-            "totalThisMonth", appointmentRepository.countByExpertId(expertId),
-            "avgRating", 5.0,
-            "pendingTasksCount", totalTasks - completedTasks,
-            "monthlyData", List.of()
-        );
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("completedThisMonth", completedAppointments);
+        stats.put("cancelledThisMonth", cancelledAppointments);
+        stats.put("totalThisMonth", appointmentRepository.countByExpertId(expertId));
+        stats.put("avgRating", avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : null);
+        stats.put("pendingTasksCount", totalTasks - completedTasks);
+        stats.put("monthlyData", List.of());
+        return stats;
     }
 
     private Child validateExpertChildAccess(UUID expertId, UUID childId) {
         Child child = childRepository.findById(childId)
                 .orElseThrow(() -> new RuntimeException("Cocuk bulunamadi"));
 
-        boolean hasActiveAppointment = appointmentRepository
-                .findByExpertIdAndParentIdAndStatusIn(expertId, child.getParent().getId(), PATIENT_ACCESS_STATUSES)
-                .stream()
-                .anyMatch(appointment -> appointment.getChild().getId().equals(childId));
+        boolean hasAccess = expertPatientConnectionRepository
+                .existsByExpertIdAndChildIdAndStatus(expertId, childId, ConnectionStatus.APPROVED);
 
-        boolean hasTask = expertTaskRepository
-                .findByExpertIdAndChildIdOrderByCreatedAtDesc(expertId, childId)
-                .stream()
-                .findAny()
-                .isPresent();
-
-        if (!hasActiveAppointment && !hasTask) {
+        if (!hasAccess) {
             throw new AccessDeniedException("Bu danisana erisim yetkiniz yok");
         }
         return child;
     }
 
-    private PatientSummaryDto toPatientSummary(UUID expertId, Child child) {
-        // Fix 4: "Son seans" = COMPLETED randevular; CANCELLED ve PENDING haric
-        List<Appointment> appointments = appointmentRepository
-                .findByExpertIdAndParentIdAndStatusIn(expertId, child.getParent().getId(), PATIENT_ACCESS_STATUSES)
-                .stream()
-                .filter(a -> a.getChild().getId().equals(child.getId()))
-                .filter(a -> "COMPLETED".equals(a.getStatus()))
-                .sorted(Comparator.comparing(Appointment::getAppointmentDate).reversed()
-                        .thenComparing(Appointment::getAppointmentTime, Comparator.reverseOrder()))
-                .toList();
-        String lastSession = appointments.isEmpty()
-                ? "Henuz tamamlanan seans yok"
-                : appointments.getFirst().getAppointmentDate().toString();
-
-        long totalTasks = expertTaskRepository.countByExpertIdAndChildId(expertId, child.getId());
-        long completedTasks = expertTaskRepository.countByExpertIdAndChildIdAndStatus(expertId, child.getId(), "COMPLETED");
+    private PatientSummaryDto toPatientSummary(Child child,
+                                               Map<UUID, long[]> taskCounts,
+                                               Map<UUID, LocalDate> lastSessions) {
+        long[] counts = taskCounts.getOrDefault(child.getId(), new long[]{0, 0});
+        LocalDate lastSessionDate = lastSessions.get(child.getId());
+        String lastSession = lastSessionDate != null ? lastSessionDate.toString() : "Henuz tamamlanan seans yok";
 
         return PatientSummaryDto.builder()
                 .id(child.getId())
@@ -192,8 +195,8 @@ public class PatientService {
                 .age(child.getBirthDate() == null ? 0 : Math.max(0, Period.between(child.getBirthDate(), LocalDate.now()).getYears()))
                 .diagnosis(child.getDiagnosisInfo())
                 .lastSession(lastSession)
-                .tasksCompleted((int) completedTasks)
-                .totalTasks((int) totalTasks)
+                .tasksCompleted((int) counts[1])
+                .totalTasks((int) counts[0])
                 .build();
     }
 
@@ -201,9 +204,13 @@ public class PatientService {
     public Map<String, Object> searchParentForExpert(String email) {
         User parent = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Bu e-posta adresine sahip bir ebeveyn bulunamadi"));
-        
+
         if (parent.getRole() != UserRole.PARENT) {
             throw new RuntimeException("Belirtilen e-posta adresine sahip kullanici bir ebeveyn degil");
+        }
+
+        if (!parent.isMatchingEnabled()) {
+            throw new RuntimeException("Bu kullanici uzman arama icin aranabilirligini kapatti");
         }
 
         List<Child> children = childRepository.findByParentId(parent.getId());
@@ -224,10 +231,10 @@ public class PatientService {
     }
 
     @Transactional
-    public PatientSummaryDto addPatientManually(UUID expertId, String parentEmail, UUID childId) {
+    public void addPatientManually(UUID expertId, String parentEmail, UUID childId) {
         User expert = userRepository.findById(expertId)
                 .orElseThrow(() -> new RuntimeException("Uzman bulunamadi"));
-        
+
         User parent = userRepository.findByEmail(parentEmail)
                 .orElseThrow(() -> new RuntimeException("Bu e-posta adresine sahip bir ebeveyn bulunamadi"));
 
@@ -238,46 +245,36 @@ public class PatientService {
             throw new RuntimeException("Secilen cocuk belirtilen ebeveyne ait degil");
         }
 
-        // Zaten ekli mi kontrol et
-        boolean alreadyLinked = appointmentRepository
-                .findByExpertIdAndParentIdAndStatusIn(expertId, parent.getId(), PATIENT_ACCESS_STATUSES)
-                .stream()
-                .anyMatch(a -> a.getChild().getId().equals(childId));
-
-        if (alreadyLinked) {
-            throw new RuntimeException("Bu danisan zaten listenizde ekli");
+        Optional<ExpertPatientConnection> existingOpt = expertPatientConnectionRepository
+                .findByExpertIdAndChildId(expertId, childId);
+        if (existingOpt.isPresent()) {
+            ExpertPatientConnection existing = existingOpt.get();
+            switch (existing.getStatus()) {
+                case APPROVED -> throw new RuntimeException("Bu danisan zaten listenizde ekli");
+                case PENDING -> throw new RuntimeException("Bu danisan icin zaten bekleyen bir isteginiz var");
+                case REVOKED -> throw new RuntimeException("Bu danisan ile baglantiniz ebeveyn tarafindan kesilmis. Tekrar istek gonderemezsiniz.");
+                case REJECTED, BLOCKED -> throw new RuntimeException("Erisim isteginiz reddedilmis veya engellenmis. Tekrar istek gonderemezsiniz.");
+            }
+        } else {
+            expertPatientConnectionRepository.save(ExpertPatientConnection.builder()
+                    .expert(expert)
+                    .child(child)
+                    .status(ConnectionStatus.PENDING)
+                    .build());
         }
 
-        // Baglantiyi saglamak icin tamamlanmis veya onaylanmis bir randevu kaydi olusturalim
-        Appointment connection = Appointment.builder()
-                .expert(expert)
-                .parent(parent)
-                .child(child)
-                .appointmentDate(LocalDate.now())
-                .appointmentTime(LocalTime.now())
-                .duration(50)
-                .type("ONLINE")
-                .status("CONFIRMED")
-                .notes("Manuel olarak uzman tarafindan eklendi")
-                .build();
-
-        appointmentRepository.save(connection);
-
-        // Ayrica ebeveyne bildirim gonderelim
         notificationService.createNotification(
                 parent.getId(),
                 "PATIENT_LINKED",
-                "Yeni uzman baglantisi",
-                expert.getFullName() + " sizi danisan olarak ekledi.",
-                "/patients"
+                "Yeni uzman erisim istegi",
+                expert.getFullName() + " cocugunuz " + child.getName() + " icin profil erisim istegi gonderdi. Lutfen onaylayin.",
+                "/cocuklarim/" + child.getId()
         );
 
-        auditLogService.log(expert, "PATIENT_LINKED", "CHILD", child.getId(), Map.of(
+        auditLogService.log(expert, "PATIENT_LINK_REQUESTED", "CHILD", child.getId(), Map.of(
                 "parentEmail", parentEmail,
                 "childName", child.getName()
         ));
-
-        return toPatientSummary(expertId, child);
     }
 
     private ExpertTaskDto toTaskDto(ExpertTask task) {
@@ -295,5 +292,134 @@ public class PatientService {
                 .dueDate(task.getDueDate())
                 .status(task.getStatus())
                 .build();
+    }
+
+    @Transactional
+    public void approveConnection(UUID parentId, UUID connectionId) {
+        ExpertPatientConnection conn = expertPatientConnectionRepository.findById(connectionId)
+                .orElseThrow(() -> new RuntimeException("Istek bulunamadi"));
+
+        if (!conn.getChild().getParent().getId().equals(parentId)) {
+            throw new AccessDeniedException("Bu islem icin yetkiniz yok");
+        }
+
+        conn.setStatus(ConnectionStatus.APPROVED);
+        expertPatientConnectionRepository.save(conn);
+
+        notificationService.createNotification(
+                conn.getExpert().getId(),
+                "CONNECTION_APPROVED",
+                "Istek Onaylandi",
+                conn.getChild().getParent().getFullName() + " erisim isteginizi onayladi.",
+                "/hastalar"
+        );
+    }
+
+    @Transactional
+    public void rejectConnection(UUID parentId, UUID connectionId) {
+        ExpertPatientConnection conn = expertPatientConnectionRepository.findById(connectionId)
+                .orElseThrow(() -> new RuntimeException("Istek bulunamadi"));
+
+        if (!conn.getChild().getParent().getId().equals(parentId)) {
+            throw new AccessDeniedException("Bu islem icin yetkiniz yok");
+        }
+
+        conn.setStatus(ConnectionStatus.REJECTED);
+        expertPatientConnectionRepository.save(conn);
+
+        notificationService.createNotification(
+                conn.getExpert().getId(),
+                "CONNECTION_REJECTED",
+                "Istek Reddedildi",
+                conn.getChild().getParent().getFullName() + " erisim isteginizi reddetti.",
+                "/hastalar"
+        );
+    }
+
+    @Transactional
+    public void revokeConnection(UUID parentId, UUID connectionId) {
+        ExpertPatientConnection conn = expertPatientConnectionRepository.findById(connectionId)
+                .orElseThrow(() -> new RuntimeException("Baglanti bulunamadi"));
+
+        if (!conn.getChild().getParent().getId().equals(parentId)) {
+            throw new AccessDeniedException("Bu islem icin yetkiniz yok");
+        }
+
+        conn.setStatus(ConnectionStatus.REVOKED);
+        expertPatientConnectionRepository.save(conn);
+
+        UUID expertId = conn.getExpert().getId();
+        UUID childId = conn.getChild().getId();
+
+        expertTaskRepository.bulkUpdateStatus(expertId, childId, TaskStatus.PENDING, TaskStatus.CANCELLED);
+        appointmentRepository.cancelPendingByExpertAndChild(expertId, childId);
+
+        notificationService.createNotification(
+                expertId,
+                "CONNECTION_REVOKED",
+                "Erisim Kaldirildi",
+                conn.getChild().getParent().getFullName() + " " + conn.getChild().getName() + " icin erisim izninizi kaldirdi.",
+                "/hastalar"
+        );
+    }
+
+    @Transactional
+    public void cancelConnectionRequest(UUID expertId, UUID connectionId) {
+        ExpertPatientConnection conn = expertPatientConnectionRepository.findById(connectionId)
+                .orElseThrow(() -> new RuntimeException("Istek bulunamadi"));
+
+        if (!conn.getExpert().getId().equals(expertId)) {
+            throw new AccessDeniedException("Bu islem icin yetkiniz yok");
+        }
+
+        if (conn.getStatus() != ConnectionStatus.PENDING) {
+            throw new RuntimeException("Sadece bekleyen istekler iptal edilebilir");
+        }
+
+        expertPatientConnectionRepository.delete(conn);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getSentConnectionRequestsForExpert(UUID expertId) {
+        return expertPatientConnectionRepository.findByExpertIdAndStatus(expertId, ConnectionStatus.PENDING)
+                .stream()
+                .map(conn -> Map.<String, Object>of(
+                        "id", conn.getId(),
+                        "childId", conn.getChild().getId(),
+                        "childName", conn.getChild().getName(),
+                        "parentName", conn.getChild().getParent().getFullName(),
+                        "createdAt", conn.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getConnectionRequestsForParent(UUID parentId) {
+        return expertPatientConnectionRepository.findByChildParentIdAndStatus(parentId, ConnectionStatus.PENDING)
+                .stream()
+                .map(conn -> Map.<String, Object>of(
+                        "id", conn.getId(),
+                        "expertId", conn.getExpert().getId(),
+                        "expertName", conn.getExpert().getFullName(),
+                        "childId", conn.getChild().getId(),
+                        "childName", conn.getChild().getName(),
+                        "createdAt", conn.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getActiveConnectionsForParent(UUID parentId) {
+        return expertPatientConnectionRepository.findByChildParentIdAndStatus(parentId, ConnectionStatus.APPROVED)
+                .stream()
+                .map(conn -> Map.<String, Object>of(
+                        "id", conn.getId(),
+                        "expertId", conn.getExpert().getId(),
+                        "expertName", conn.getExpert().getFullName(),
+                        "childId", conn.getChild().getId(),
+                        "childName", conn.getChild().getName(),
+                        "createdAt", conn.getCreatedAt()
+                ))
+                .toList();
     }
 }

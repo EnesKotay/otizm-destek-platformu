@@ -1,72 +1,80 @@
-import { Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ToastContainer } from '@/components/ui/Toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 // Eagerly loaded — critical auth path
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
-import { AdminLayout } from './pages/admin/AdminLayout';
-import { AdminOverviewPage } from './pages/admin/AdminOverviewPage';
-import { AdminAnalyticsPage } from './pages/admin/AdminAnalyticsPage';
-import { AdminExpertsPage } from './pages/admin/AdminExpertsPage';
-import { AdminUsersPage } from './pages/admin/AdminUsersPage';
-import { AdminArticlesPage } from './pages/admin/AdminArticlesPage';
-import { AdminReportsPage } from './pages/admin/AdminReportsPage';
-import { AdminAuditLogPage } from './pages/admin/AdminAuditLogPage';
-import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
-import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
-import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
-import { NotFoundPage } from '@/pages/NotFoundPage';
-import { SensoryProfilePage } from '@/pages/SensoryProfilePage';
 
-import { DashboardPage } from '@/pages/DashboardPage';
-import { ChildrenPage } from '@/pages/ChildrenPage';
-import { ChildDetailPage } from '@/pages/ChildDetailPage';
-import { TreatmentPage } from '@/pages/TreatmentPage';
-import { NotesPage } from '@/pages/NotesPage';
-import { CalendarPage } from '@/pages/CalendarPage';
-import { MessagesPage } from '@/pages/MessagesPage';
-import { GroupsPage } from '@/pages/GroupsPage';
-import { ForumPage } from '@/pages/ForumPage';
-import { SimilarFamiliesPage } from '@/pages/SimilarFamiliesPage';
-import { SupportWallPage } from '@/pages/SupportWallPage';
-import { SettingsPage } from '@/pages/SettingsPage';
-import { KnowledgePage } from '@/pages/KnowledgePage';
-import { ExpertsPage } from '@/pages/ExpertsPage';
-import { SearchPage } from '@/pages/SearchPage';
-import { OnboardingPage } from '@/pages/OnboardingPage';
-import { ExpertRegisterPage } from '@/pages/ExpertRegisterPage';
-import { PublicLandingPage } from '@/pages/PublicLandingPage';
-import { PublicInfoPage } from '@/pages/PublicInfoPage';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function lazyNamed<T extends Record<K, ComponentType<any>>, K extends string>(
+  loader: () => Promise<T>,
+  exportName: K,
+) {
+  return lazy(async () => ({ default: (await loader())[exportName] }));
+}
 
-import { AppointmentPage } from '@/pages/AppointmentPage';
-import { PatientsPage } from '@/pages/PatientsPage';
-import { BepGeneratorPage } from '@/pages/BepGeneratorPage';
-import { ScreeningPage } from '@/pages/ScreeningPage';
-import { DailyTrackerPage } from '@/pages/DailyTrackerPage';
-import { AnalyticsPage } from '@/pages/AnalyticsPage';
-import { SocialStoriesPage } from '@/pages/SocialStoriesPage';
-import { CrisisGuidePage } from '@/pages/CrisisGuidePage';
-import { TasksPage } from '@/pages/TasksPage';
-import { RoutinesPage } from '@/pages/RoutinesPage';
-import { VenueMapPage } from '@/pages/VenueMapPage';
-import { ProfilePage } from '@/pages/ProfilePage';
-import { BehaviorJournalPage } from '@/pages/BehaviorJournalPage';
-import { RightsGuidePage } from '@/pages/RightsGuidePage';
-import { PublicEmergencyCardPage } from '@/pages/PublicEmergencyCardPage';
-import { SchoolDiaryPage } from '@/pages/SchoolDiaryPage';
-import { GoalTokenPage } from '@/pages/GoalTokenPage';
-import { EmergencyCardPage } from '@/pages/EmergencyCardPage';
-import { NutritionPage } from '@/pages/NutritionPage';
-import { SharedProgressPage } from '@/pages/SharedProgressPage';
-import { ExpertMapPage } from '@/pages/ExpertMapPage';
-import { WellbeingPage } from '@/pages/WellbeingPage';
-import { HelpPage } from '@/pages/HelpPage';
+const AdminLayout = lazyNamed(() => import('./pages/admin/AdminLayout'), 'AdminLayout');
+const AdminOverviewPage = lazyNamed(() => import('./pages/admin/AdminOverviewPage'), 'AdminOverviewPage');
+const AdminAnalyticsPage = lazyNamed(() => import('./pages/admin/AdminAnalyticsPage'), 'AdminAnalyticsPage');
+const AdminExpertsPage = lazyNamed(() => import('./pages/admin/AdminExpertsPage'), 'AdminExpertsPage');
+const AdminUsersPage = lazyNamed(() => import('./pages/admin/AdminUsersPage'), 'AdminUsersPage');
+const AdminArticlesPage = lazyNamed(() => import('./pages/admin/AdminArticlesPage'), 'AdminArticlesPage');
+const AdminReportsPage = lazyNamed(() => import('./pages/admin/AdminReportsPage'), 'AdminReportsPage');
+const AdminAuditLogPage = lazyNamed(() => import('./pages/admin/AdminAuditLogPage'), 'AdminAuditLogPage');
+const AdminSettingsPage = lazyNamed(() => import('./pages/admin/AdminSettingsPage'), 'AdminSettingsPage');
+const ForgotPasswordPage = lazyNamed(() => import('@/pages/ForgotPasswordPage'), 'ForgotPasswordPage');
+const ResetPasswordPage = lazyNamed(() => import('@/pages/ResetPasswordPage'), 'ResetPasswordPage');
+const NotFoundPage = lazyNamed(() => import('@/pages/NotFoundPage'), 'NotFoundPage');
+const SensoryProfilePage = lazyNamed(() => import('@/pages/SensoryProfilePage'), 'SensoryProfilePage');
+const DashboardPage = lazyNamed(() => import('@/pages/DashboardPage'), 'DashboardPage');
+const ChildrenPage = lazyNamed(() => import('@/pages/ChildrenPage'), 'ChildrenPage');
+const ChildDetailPage = lazyNamed(() => import('@/pages/ChildDetailPage'), 'ChildDetailPage');
+const TreatmentPage = lazyNamed(() => import('@/pages/TreatmentPage'), 'TreatmentPage');
+const NotesPage = lazyNamed(() => import('@/pages/NotesPage'), 'NotesPage');
+const CalendarPage = lazyNamed(() => import('@/pages/CalendarPage'), 'CalendarPage');
+const MessagesPage = lazyNamed(() => import('@/pages/MessagesPage'), 'MessagesPage');
+const GroupsPage = lazyNamed(() => import('@/pages/GroupsPage'), 'GroupsPage');
+const ForumPage = lazyNamed(() => import('@/pages/ForumPage'), 'ForumPage');
+const SimilarFamiliesPage = lazyNamed(() => import('@/pages/SimilarFamiliesPage'), 'SimilarFamiliesPage');
+const SupportWallPage = lazyNamed(() => import('@/pages/SupportWallPage'), 'SupportWallPage');
+const SettingsPage = lazyNamed(() => import('@/pages/SettingsPage'), 'SettingsPage');
+const KnowledgePage = lazyNamed(() => import('@/pages/KnowledgePage'), 'KnowledgePage');
+const ExpertsPage = lazyNamed(() => import('@/pages/ExpertsPage'), 'ExpertsPage');
+const SearchPage = lazyNamed(() => import('@/pages/SearchPage'), 'SearchPage');
+const OnboardingPage = lazyNamed(() => import('@/pages/OnboardingPage'), 'OnboardingPage');
+const ExpertRegisterPage = lazyNamed(() => import('@/pages/ExpertRegisterPage'), 'ExpertRegisterPage');
+const PublicLandingPage = lazyNamed(() => import('@/pages/PublicLandingPage'), 'PublicLandingPage');
+const PublicInfoPage = lazyNamed(() => import('@/pages/PublicInfoPage'), 'PublicInfoPage');
+const AppointmentPage = lazyNamed(() => import('@/pages/AppointmentPage'), 'AppointmentPage');
+const PatientsPage = lazyNamed(() => import('@/pages/PatientsPage'), 'PatientsPage');
+const BepGeneratorPage = lazyNamed(() => import('@/pages/BepGeneratorPage'), 'BepGeneratorPage');
+const ScreeningPage = lazyNamed(() => import('@/pages/ScreeningPage'), 'ScreeningPage');
+const DailyTrackerPage = lazyNamed(() => import('@/pages/DailyTrackerPage'), 'DailyTrackerPage');
+const AnalyticsPage = lazyNamed(() => import('@/pages/AnalyticsPage'), 'AnalyticsPage');
+const SocialStoriesPage = lazyNamed(() => import('@/pages/SocialStoriesPage'), 'SocialStoriesPage');
+const CrisisGuidePage = lazyNamed(() => import('@/pages/CrisisGuidePage'), 'CrisisGuidePage');
+const TasksPage = lazyNamed(() => import('@/pages/TasksPage'), 'TasksPage');
+const RoutinesPage = lazyNamed(() => import('@/pages/RoutinesPage'), 'RoutinesPage');
+const VenueMapPage = lazyNamed(() => import('@/pages/VenueMapPage'), 'VenueMapPage');
+const ProfilePage = lazyNamed(() => import('@/pages/ProfilePage'), 'ProfilePage');
+const BehaviorJournalPage = lazyNamed(() => import('@/pages/BehaviorJournalPage'), 'BehaviorJournalPage');
+const RightsGuidePage = lazyNamed(() => import('@/pages/RightsGuidePage'), 'RightsGuidePage');
+const PublicEmergencyCardPage = lazyNamed(() => import('@/pages/PublicEmergencyCardPage'), 'PublicEmergencyCardPage');
+const SchoolDiaryPage = lazyNamed(() => import('@/pages/SchoolDiaryPage'), 'SchoolDiaryPage');
+const GoalTokenPage = lazyNamed(() => import('@/pages/GoalTokenPage'), 'GoalTokenPage');
+const EmergencyCardPage = lazyNamed(() => import('@/pages/EmergencyCardPage'), 'EmergencyCardPage');
+const NutritionPage = lazyNamed(() => import('@/pages/NutritionPage'), 'NutritionPage');
+const SharedProgressPage = lazyNamed(() => import('@/pages/SharedProgressPage'), 'SharedProgressPage');
+const ExpertMapPage = lazyNamed(() => import('@/pages/ExpertMapPage'), 'ExpertMapPage');
+const WellbeingPage = lazyNamed(() => import('@/pages/WellbeingPage'), 'WellbeingPage');
+const HelpPage = lazyNamed(() => import('@/pages/HelpPage'), 'HelpPage');
+const ExpertConsultationPage = lazyNamed(() => import('@/pages/ExpertConsultationPage'), 'ExpertConsultationPage');
 
 function PageLoader() {
   return (
@@ -101,6 +109,13 @@ function AdminRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function ExpertRoute({ children }: { children: ReactNode }) {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/giris" replace />;
+  if (user?.role !== 'EXPERT' && user?.role !== 'ADMIN') return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 function PublicRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuthStore();
   if (isAuthenticated) return <Navigate to="/" replace />;
@@ -120,7 +135,8 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <ToastContainer />
         <BrowserRouter>
-          <Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
             <Route path="/giris" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/kayit" element={<PublicRoute><RegisterPage /></PublicRoute>} />
             <Route path="/sifremi-unuttum" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
@@ -189,10 +205,12 @@ export default function App() {
                 <Route path="/uzman-harita" element={<ExpertMapPage />} />
                 <Route path="/ebeveyn-refahi" element={<WellbeingPage />} />
                 <Route path="/yardim" element={<HelpPage />} />
+                <Route path="/uzman-odasi" element={<ExpertRoute><ExpertConsultationPage /></ExpertRoute>} />
               </Route>
 
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+          </Suspense>
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>

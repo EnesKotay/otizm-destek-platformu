@@ -42,6 +42,41 @@ public class ChatbotService {
         return apiKey != null && !apiKey.isBlank();
     }
 
+    private String buildFallbackResponse(String message) {
+        String lower = message.toLowerCase();
+        if (lower.contains("aba") || lower.contains("davranış analizi"))
+            return "**ABA (Uygulamalı Davranış Analizi)**, otizmde en güçlü kanıt tabanına sahip terapi yöntemidir. Hedef davranışları küçük adımlara böler ve olumlu pekiştirme kullanır. Türkiye'de pek çok özel rehabilitasyon merkezinde uygulanmaktadır.";
+        if (lower.contains("bep") || lower.contains("bireyselleştirilmiş"))
+            return "**BEP (Bireyselleştirilmiş Eğitim Programı)**, otizm tanılı her çocuk için yasal olarak hazırlanması gereken bireysel eğitim belgesidir. RAM üzerinden başvuru yapılır. /bep-raporu sayfasında BEP hazırlamanıza yardımcı araçlar bulabilirsiniz.";
+        if (lower.contains("ram") || lower.contains("rehberlik araştırma"))
+            return "**RAM (Rehberlik ve Araştırma Merkezi)**, otizm tanısı sonrası başvurulacak ilk devlet kurumudur. Eğitsel değerlendirme ve okul yerleştirmesi yapar. Tanı belgenizle bölgenizdeki RAM'a başvurabilirsiniz.";
+        if (lower.contains("kriz") || lower.contains("meltdown"))
+            return "Kriz anında sakin kalmak önemlidir. /kriz-rehberi sayfasında adım adım rehber bulabilirsiniz. Acil destek için **ALO 182**'yi arayabilirsiniz.";
+        if (lower.contains("terapi") || lower.contains("eğitim") || lower.contains("yöntem"))
+            return "Otizmde kanıta dayalı başlıca terapi yöntemleri:\n\n- **ABA** (Uygulamalı Davranış Analizi) — en güçlü kanıt tabanı\n- **PECS** — görsel iletişim sistemi\n- **Duyusal Entegrasyon (OT)** — duyusal işleme güçlükleri için\n- **Konuşma ve Dil Terapisi (KDT)** — iletişim gelişimi\n- **DIR/Floortime** — duygusal ve sosyal gelişim\n- **TEACCH** — yapılandırılmış öğretim\n\nDetaylı bilgi için /bilgi-bankasi sayfasını ziyaret edebilirsiniz.";
+        if (lower.contains("platform") || lower.contains("nasıl kullan"))
+            return "Platform ana özelliklerine sol menüden ulaşabilirsiniz:\n- Çocuk profili: /cocuklarim\n- Randevu: /randevular\n- Gelişim takibi: /gelisim-paneli\n- BEP raporu: /bep-raporu\n\nSorularınız için buradayım!";
+        if (lower.contains("sgk") || lower.contains("hak") || lower.contains("engelli"))
+            return "Türkiye'de OSB olan çocuklar için başlıca haklar:\n\n- **SGK Rehabilitasyon Desteği** — RAM yönlendirmesiyle anlaşmalı merkezlerde ücretsiz seans\n- **BEP Hakkı** — 573 sayılı KHK ile yasal zorunluluk\n- **Engelli Kimlik Kartı** — ücretsiz toplu taşıma ve indirimler\n- **Bakım Ücreti** — ağır engelli çocukların ailelerine ödeme\n\nDetaylar için /haklar-rehberi sayfasına bakabilirsiniz.";
+        return "Merhaba! Ben **AutiBot**, otizm destek platformunuzun AI asistanıyım. Otizm, terapi yöntemleri, platform kullanımı veya Türkiye'deki haklar hakkında sorularınızı yanıtlayabilirim.\n\nNasıl yardımcı olabilirim?";
+    }
+
+    private void streamFallbackResponse(String message, SseEmitter emitter) {
+        String response = buildFallbackResponse(message);
+        executor.submit(() -> {
+            try {
+                for (String word : response.split("(?<=\\s)|(?=\\n)")) {
+                    emitter.send(SseEmitter.event().name("chunk").data(word));
+                    Thread.sleep(25);
+                }
+                emitter.send(SseEmitter.event().name("done").data("[DONE]"));
+                emitter.complete();
+            } catch (Exception e) {
+                try { emitter.completeWithError(e); } catch (Exception ignored) {}
+            }
+        });
+    }
+
     /* ─── Rate Limit ───────────────────────────────────────── */
     private static final int  RATE_LIMIT_MAX       = 20;
     private static final long RATE_LIMIT_WINDOW_MS = 60_000L;
@@ -181,7 +216,7 @@ public class ChatbotService {
                                  String userId, String childContext) {
         if (!isApiKeyConfigured()) {
             log.warn("Gemini API anahtari yapilandirilmamis — GEMINI_API_KEY ortam degiskeni eksik.");
-            return ChatbotResponse.error("AI servisi su anda yapilandirilmamis. Lutfen sistem yoneticisiyle iletisime gecin.");
+            return ChatbotResponse.success(buildFallbackResponse(userMessage));
         }
         if (isRateLimited(userId)) {
             return ChatbotResponse.error("Dakika basina en fazla 20 mesaj gonderebilirsiniz. Lutfen biraz bekleyin.");
@@ -213,10 +248,7 @@ public class ChatbotService {
 
         if (!isApiKeyConfigured()) {
             log.warn("Gemini API anahtari yapilandirilmamis — GEMINI_API_KEY ortam degiskeni eksik.");
-            try {
-                emitter.send(SseEmitter.event().name("error").data("AI servisi yapilandirilmamis."));
-                emitter.complete();
-            } catch (Exception ignored) {}
+            streamFallbackResponse(userMessage, emitter);
             return emitter;
         }
 

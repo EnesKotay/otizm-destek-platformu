@@ -11,6 +11,11 @@ export function VenueMapPage() {
   const [reviews, setReviews] = useState<VenueReview[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // New venue form
+  const [showVenueForm, setShowVenueForm] = useState(false);
+  const [venueForm, setVenueForm] = useState({ name: '', category: '', description: '', address: '' });
+  const [submittingVenue, setSubmittingVenue] = useState(false);
+
   // New review form
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewForm, setReviewForm] = useState({
@@ -20,6 +25,25 @@ export function VenueMapPage() {
   useEffect(() => {
     venueService.getAll().then(setVenues).finally(() => setLoading(false));
   }, []);
+
+  const handleSubmitVenue = async () => {
+    if (!venueForm.name.trim() || !venueForm.address.trim()) {
+      toast.error('Mekan adı ve adres zorunludur.');
+      return;
+    }
+    setSubmittingVenue(true);
+    try {
+      await venueService.create({ ...venueForm, latitude: 0, longitude: 0, avgNoiseLevel: 0, avgLightLevel: 0, avgCrowdLevel: 0 });
+      venueService.getAll().then(setVenues);
+      setShowVenueForm(false);
+      setVenueForm({ name: '', category: '', description: '', address: '' });
+      toast.success('Mekan eklendi!');
+    } catch {
+      toast.error('Mekan eklenemedi.');
+    } finally {
+      setSubmittingVenue(false);
+    }
+  };
 
   const handleSelectVenue = (v: Venue) => {
     setSelectedVenue(v);
@@ -67,8 +91,43 @@ export function VenueMapPage() {
           <h1 className="text-2xl font-bold text-gray-900">Duyusal Dostu Mekanlar</h1>
           <p className="text-gray-500 mt-1">Aileler tarafından değerlendirilmiş mekanlar</p>
         </div>
-        <Button onClick={() => toast.info('Haritada yeni mekan ekleme yakında eklenecek!')}><Plus size={16} className="mr-2" />Yeni Mekan Ekle</Button>
+        <Button onClick={() => setShowVenueForm(v => !v)}><Plus size={16} className="mr-2" />{showVenueForm ? 'İptal' : 'Yeni Mekan Ekle'}</Button>
       </div>
+
+      {showVenueForm && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4">
+          <h2 className="font-bold text-gray-900">Yeni Mekan Ekle</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Mekan Adı *</label>
+              <input value={venueForm.name} onChange={e => setVenueForm({...venueForm, name: e.target.value})} className="w-full text-sm p-2 rounded-lg border border-gray-200" placeholder="ör. Sessiz Kafe" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Kategori</label>
+              <select value={venueForm.category} onChange={e => setVenueForm({...venueForm, category: e.target.value})} className="w-full text-sm p-2 rounded-lg border border-gray-200">
+                <option value="">Seçiniz</option>
+                <option value="cafe">Kafe</option>
+                <option value="restaurant">Restoran</option>
+                <option value="park">Park</option>
+                <option value="museum">Müze</option>
+                <option value="library">Kütüphane</option>
+                <option value="other">Diğer</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Adres *</label>
+              <input value={venueForm.address} onChange={e => setVenueForm({...venueForm, address: e.target.value})} className="w-full text-sm p-2 rounded-lg border border-gray-200" placeholder="ör. Kadıköy, İstanbul" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Açıklama</label>
+              <textarea value={venueForm.description} onChange={e => setVenueForm({...venueForm, description: e.target.value})} className="w-full text-sm p-2 rounded-lg border border-gray-200" rows={2} placeholder="Mekan hakkında kısa bilgi..." />
+            </div>
+          </div>
+          <Button onClick={handleSubmitVenue} disabled={submittingVenue} className="w-full">
+            {submittingVenue ? 'Ekleniyor…' : 'Mekanı Kaydet'}
+          </Button>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">

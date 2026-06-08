@@ -5,12 +5,12 @@ import {
   FileText, MapPin, Star, Trash2, Send,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
-import { expertService, type ExpertReview, type ExpertReviewsResponse } from '@/services/expertService';
+import { expertService, type ExpertReviewsResponse } from '@/services/expertService';
 import { messagingService } from '@/services/messagingService';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
@@ -52,7 +52,7 @@ function extractSpecialtyLabel(title?: string): string | null {
   for (const key of Object.keys(SPECIALTY_COLORS)) {
     if (title.toLowerCase().includes(key.toLowerCase())) return key;
   }
-  const first = title.split(/[ ,\/]/)[0];
+  const first = title.split(/[ ,/]/)[0];
   return first || null;
 }
 

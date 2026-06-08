@@ -29,8 +29,16 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
       completedOnboardingIds: [],
-      setAuth: (user, accessToken, refreshToken) =>
-        set({ user, accessToken, refreshToken, isAuthenticated: true }),
+      setAuth: (user, accessToken, refreshToken) => {
+        const previousUserId = get().user?.id;
+        if (previousUserId !== user.id) {
+          useChildStore.getState().clearChildren();
+          childService.clearCache();
+          queryClient.clear();
+        }
+
+        set({ user, accessToken, refreshToken, isAuthenticated: true });
+      },
       setTokens: (accessToken, refreshToken) =>
         set({ accessToken, refreshToken }),
       setUser: (user) => set({ user }),
@@ -48,9 +56,9 @@ export const useAuthStore = create<AuthState>()(
         useChildStore.getState().clearChildren();
         childService.clearCache();
         queryClient.clear();
-        
-        // Tüm yerel verileri (önbellekleri) temizle (hesap izolasyonu için)
-        localStorage.clear();
+
+        // Sadece oturum verisini kaldır; görünüm/bildirim tercihleri korunsun
+        localStorage.removeItem('auth-storage');
 
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
       },

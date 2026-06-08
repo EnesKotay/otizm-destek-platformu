@@ -10,12 +10,14 @@ import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.repository.ChildRepository;
 import com.autismsupport.platform.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChildService {
@@ -27,7 +29,7 @@ public class ChildService {
 
     @Transactional(readOnly = true)
     public List<ChildDto> getChildrenByParent(UUID parentId) {
-        return childRepository.findByParentId(parentId).stream()
+        return childRepository.findByParentIdWithTags(parentId).stream()
                 .map(this::toDto)
                 .toList();
     }
@@ -57,6 +59,8 @@ public class ChildService {
                 .diagnosisInfo(dto.getDiagnosisInfo())
                 .educationProgram(dto.getEducationProgram())
                 .therapies(dto.getTherapies())
+                .gender(dto.getGender())
+                .profileImageUrl(dto.getProfileImageUrl())
                 .privacySettings(dto.getPrivacySettings())
                 .build();
 
@@ -70,7 +74,7 @@ public class ChildService {
 
     @Transactional
     public ChildDto updateChild(UUID childId, ChildDto dto, UUID parentId) {
-        Child child = childRepository.findById(childId)
+        Child child = childRepository.findByIdWithTags(childId)
                 .orElseThrow(() -> new ResourceNotFoundException("Çocuk profili bulunamadı"));
         validateOwnership(child, parentId);
 
@@ -79,6 +83,12 @@ public class ChildService {
         child.setDiagnosisInfo(dto.getDiagnosisInfo());
         child.setEducationProgram(dto.getEducationProgram());
         child.setTherapies(dto.getTherapies());
+        if (dto.getGender() != null) {
+            child.setGender(dto.getGender());
+        }
+        if (dto.getProfileImageUrl() != null) {
+            child.setProfileImageUrl(dto.getProfileImageUrl());
+        }
         if (dto.getPrivacySettings() != null) {
             child.setPrivacySettings(dto.getPrivacySettings());
         }
@@ -99,8 +109,8 @@ public class ChildService {
     }
 
     private void validateOwnership(Child child, UUID parentId) {
-        if (!child.getParent().getId().equals(parentId)) {
-            System.err.println("OWNERSHIP FAILED! child.parent.id=" + child.getParent().getId() + ", parentId=" + parentId);
+        if (!clinicalDataShareService.verifyAccess(parentId, child.getId(), "profile")) {
+            log.warn("Unauthorized child access attempt: childId={}, requestedBy={}", child.getId(), parentId);
             throw new UnauthorizedException("Bu çocuk profiline erişim yetkiniz yok");
         }
     }
@@ -127,6 +137,8 @@ public class ChildService {
                 .diagnosisInfo(child.getDiagnosisInfo())
                 .educationProgram(child.getEducationProgram())
                 .therapies(child.getTherapies())
+                .gender(child.getGender())
+                .profileImageUrl(child.getProfileImageUrl())
                 .privacySettings(child.getPrivacySettings())
                 .tags(tagDtos)
                 .tagIds(tagIds)

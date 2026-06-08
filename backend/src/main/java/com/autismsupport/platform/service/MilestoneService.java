@@ -32,7 +32,7 @@ public class MilestoneService {
     @Transactional
     public MilestoneDto createMilestone(MilestoneDto dto, UUID parentId) {
         Child child = childRepository.findById(dto.getChildId())
-                .orElseThrow(() -> new RuntimeException("Çocuk profili bulunamadı"));
+                .orElseThrow(() -> new ResourceNotFoundException("Çocuk profili bulunamadı"));
         validateChildOwnership(child, parentId);
 
         Milestone milestone = Milestone.builder()
@@ -50,7 +50,7 @@ public class MilestoneService {
     @Transactional
     public void deleteMilestone(UUID milestoneId, UUID parentId) {
         Milestone milestone = milestoneRepository.findById(milestoneId)
-                .orElseThrow(() -> new RuntimeException("Milestone bulunamadı"));
+                .orElseThrow(() -> new ResourceNotFoundException("Milestone bulunamadı"));
         validateChildOwnership(milestone.getChild(), parentId);
         milestoneRepository.delete(milestone);
     }
@@ -58,7 +58,7 @@ public class MilestoneService {
     @Transactional
     public MilestoneDto updateMilestone(UUID id, MilestoneDto dto, UUID parentId) {
         Milestone milestone = milestoneRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Milestone bulunamadı"));
+                .orElseThrow(() -> new ResourceNotFoundException("Milestone bulunamadı"));
         validateChildOwnership(milestone.getChild(), parentId);
         if (dto.getTitle() != null) milestone.setTitle(dto.getTitle());
         if (dto.getDescription() != null) milestone.setDescription(dto.getDescription());

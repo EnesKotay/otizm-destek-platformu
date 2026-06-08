@@ -29,11 +29,13 @@ public class SocialStoryService {
     private final ChildRepository childRepository;
     private final SocialStoryCommentRepository socialStoryCommentRepository;
 
+    @Transactional(readOnly = true)
     public List<SocialStoryDto> getMyStories(UUID userId) {
         return socialStoryRepository.findByAuthorIdWithDetails(userId)
                 .stream().map(this::toDto).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<SocialStoryDto> getPublicStories(String category) {
         List<SocialStory> stories = category != null && !category.isBlank()
                 ? socialStoryRepository.findPublicByCategoryWithDetails(category)
@@ -106,6 +108,7 @@ public class SocialStoryService {
 
     // --- Comments ---
 
+    @Transactional(readOnly = true)
     public List<SocialStoryCommentDto> getComments(UUID storyId) {
         return socialStoryCommentRepository.findBySocialStoryIdOrderByCreatedAtAsc(storyId)
                 .stream().map(this::toCommentDto).toList();

@@ -3,7 +3,6 @@ import {
   Heart, MessageSquare, Plus, ArrowLeft, Send, Sparkles,
   ShieldCheck, Users, HelpCircle, Pencil, Trash2, Flag
 } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { TextArea } from '@/components/ui/TextArea';
@@ -16,6 +15,7 @@ import { formatRelative } from '@/utils/date';
 import { useAuthStore } from '@/store/authStore';
 import type { ForumPost, ForumComment } from '@/types';
 import { toast } from '@/store/toastStore';
+import { htmlToPlainText } from '@/utils/sanitizeHtml';
 
 export function SupportWallPage() {
   const user = useAuthStore(s => s.user);
@@ -148,7 +148,7 @@ export function SupportWallPage() {
   };
 
   if (selectedPost) {
-    const isAuthor = user?.id === selectedPost.author?.id;
+    const isAuthor = !!selectedPost.ownedByMe || user?.id === selectedPost.author?.id;
 
     return (
       <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -201,7 +201,7 @@ export function SupportWallPage() {
           </div>
 
           <h2 className="text-2xl font-bold text-gray-900 mb-4 leading-tight">{selectedPost.title}</h2>
-          <p className="text-lg text-gray-700 whitespace-pre-wrap leading-relaxed">{selectedPost.content}</p>
+          <p className="text-lg text-gray-700 whitespace-pre-wrap leading-relaxed">{htmlToPlainText(selectedPost.content)}</p>
 
           <div className="flex items-center gap-6 mt-8 pt-6 border-t border-rose-50">
             <button
@@ -224,7 +224,7 @@ export function SupportWallPage() {
           </h3>
           <div className="space-y-4">
             {comments.map(comment => {
-              const isCommentAuthor = !comment.anonymous && user?.id === comment.author?.id;
+              const isCommentAuthor = !!comment.ownedByMe || (!comment.anonymous && user?.id === comment.author?.id);
               const isEditing = editingComment?.id === comment.id;
               return (
                 <div key={comment.id} className="bg-white/60 backdrop-blur-sm rounded-2xl p-5 border border-white shadow-sm hover:shadow-md transition-all">

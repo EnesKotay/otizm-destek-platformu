@@ -9,6 +9,7 @@ import com.autismsupport.platform.repository.ForumCommentRepository;
 import com.autismsupport.platform.repository.ForumPostRepository;
 import com.autismsupport.platform.repository.UserRepository;
 import com.autismsupport.platform.repository.VoteRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,8 +36,14 @@ class ForumServiceTest {
     @Mock TagService tagService;
     @Mock VoteRepository voteRepository;
     @Mock NotificationService notificationService;
+    @Mock HtmlSanitizer htmlSanitizer;
 
     @InjectMocks ForumService forumService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(htmlSanitizer.sanitize(any())).thenAnswer(inv -> inv.getArgument(0));
+    }
 
     // ── getPost ───────────────────────────────────────────────────────────────
 

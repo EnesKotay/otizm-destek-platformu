@@ -47,8 +47,8 @@ public class DevelopmentNoteService {
     @Transactional
     public DevelopmentNoteDto createNote(DevelopmentNoteDto dto, UUID parentId) {
         Child child = childRepository.findById(dto.getChildId())
-                .orElseThrow(() -> new RuntimeException("Çocuk profili bulunamadı"));
-        validateChildOwnership(child, parentId);
+                .orElseThrow(() -> new ResourceNotFoundException("Çocuk profili bulunamadı"));
+        validateChildOwnership(child.getId(), parentId);
 
         DevelopmentNote note = DevelopmentNote.builder()
                 .child(child)
@@ -66,8 +66,8 @@ public class DevelopmentNoteService {
     @Transactional
     public DevelopmentNoteDto updateNote(UUID noteId, DevelopmentNoteDto dto, UUID parentId) {
         DevelopmentNote note = noteRepository.findById(noteId)
-                .orElseThrow(() -> new RuntimeException("Not bulunamadı"));
-        validateChildOwnership(note.getChild(), parentId);
+                .orElseThrow(() -> new ResourceNotFoundException("Not bulunamadı"));
+        validateChildOwnership(note.getChild().getId(), parentId);
 
         note.setTitle(dto.getTitle());
         note.setContent(dto.getContent());
@@ -84,8 +84,8 @@ public class DevelopmentNoteService {
     @Transactional
     public void deleteNote(UUID noteId, UUID parentId) {
         DevelopmentNote note = noteRepository.findById(noteId)
-                .orElseThrow(() -> new RuntimeException("Not bulunamadı"));
-        validateChildOwnership(note.getChild(), parentId);
+                .orElseThrow(() -> new ResourceNotFoundException("Not bulunamadı"));
+        validateChildOwnership(note.getChild().getId(), parentId);
         noteRepository.delete(note);
     }
 

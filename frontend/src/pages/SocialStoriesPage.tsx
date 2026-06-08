@@ -8,11 +8,13 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import {
   BookOpen, Plus, Globe, Lock, Eye, Trash2, Edit3, ChevronRight,
   ChevronLeft, X, Check, Sparkles, Play, Pause, Search, AArrowUp, AArrowDown,
-  Image
+  Image, AlertCircle, RotateCcw, Users, Layers, FilterX, FileText
 } from 'lucide-react';
 import type { SocialStory, StoryPage } from '@/types';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import { formatRelative } from '@/utils/date';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const CATEGORIES = ['Günlük Yaşam', 'Sosyal Beceri', 'Duygu Yönetimi', 'Okul', 'Aile', 'Diğer'];
 
@@ -185,11 +187,12 @@ function StoryViewer({ story, onClose }: { story: SocialStory; onClose: () => vo
   );
 }
 
-function StoryEditor({ initial, onSave, onClose, children }: {
+function StoryEditor({ initial, onSave, onClose, children, saving }: {
   initial?: Partial<SocialStory>;
   onSave: (data: Partial<SocialStory>) => void;
   onClose: () => void;
   children: { id: string; name: string }[];
+  saving?: boolean;
 }) {
   const [title, setTitle] = useState(initial?.title || '');
   const [category, setCategory] = useState(initial?.category || CATEGORIES[0]);
@@ -204,8 +207,33 @@ function StoryEditor({ initial, onSave, onClose, children }: {
   const updatePageImage = (i: number, imageUrl: string) => setPages(ps => ps.map((p, idx) => idx === i ? { ...p, imageUrl } : p));
 
   const handleSave = () => {
-    if (!title.trim()) return;
-    onSave({ title, category, description, isPublic, childId: childId || undefined, pages });
+    const cleanPages = pages
+      .map((page) => ({
+        ...page,
+        text: page.text.trim(),
+        imageUrl: page.imageUrl?.trim() || undefined,
+      }))
+      .filter((page) => page.text || page.imageUrl)
+      .map((page, index) => ({ ...page, order: index + 1 }));
+
+    if (!title.trim()) {
+      toast.error('Hikaye başlığı gerekli.');
+      return;
+    }
+
+    if (cleanPages.length === 0) {
+      toast.error('En az bir sayfaya metin veya resim ekleyin.');
+      return;
+    }
+
+    onSave({
+      title: title.trim(),
+      category,
+      description: description.trim(),
+      isPublic,
+      childId: childId || undefined,
+      pages: cleanPages,
+    });
   };
 
   return (
@@ -332,10 +360,10 @@ function StoryEditor({ initial, onSave, onClose, children }: {
           </button>
           <button
             onClick={handleSave}
-            disabled={!title.trim()}
+            disabled={!title.trim() || saving}
             className="flex-1 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 disabled:opacity-40 transition-colors flex items-center justify-center gap-2"
           >
-            <Check size={16} /> Kaydet
+            <Check size={16} /> {saving ? 'Kaydediliyor...' : 'Kaydet'}
           </button>
         </div>
       </div>
@@ -351,20 +379,34 @@ function StoryCard({ story, onView, onEdit, onDelete, isOwner }: {
   isOwner: boolean;
 }) {
   const thumbnail = story.pages?.find(p => p.imageUrl)?.imageUrl;
+  const pageCount = story.pages?.length || 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer group" onClick={onView}>
+    <div
+      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
+      onClick={onView}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onView();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+    >
       {thumbnail ? (
-        <div className="h-36 overflow-hidden bg-gray-50">
+        <div className="h-36 overflow-hidden bg-slate-50">
           <img src={thumbnail} alt={story.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         </div>
       ) : (
-        <div className="h-36 bg-gradient-to-br from-purple-50 to-indigo-100 flex items-center justify-center">
-          <BookOpen size={32} className="text-indigo-300" />
+        <div className="flex h-36 items-center justify-center bg-gradient-to-br from-indigo-50 via-sky-50 to-emerald-50">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-indigo-400 shadow-sm ring-1 ring-indigo-100">
+            <BookOpen size={28} />
+          </div>
         </div>
       )}
 
-      <div className="p-4">
+      <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-gray-800 truncate">{story.title}</h3>
@@ -379,12 +421,13 @@ function StoryCard({ story, onView, onEdit, onDelete, isOwner }: {
 
         <div className="flex items-center gap-3 text-xs text-gray-400 mb-3">
           {story.category && <span className="bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full">{story.category}</span>}
-          <span>{story.pages?.length || 0} sayfa</span>
+          <span>{pageCount} sayfa</span>
           <span className="flex items-center gap-0.5"><Eye size={10} /> {story.viewCount}</span>
         </div>
 
-        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+        <div className="mt-auto flex items-center gap-2" onClick={e => e.stopPropagation()}>
           <button
+            type="button"
             onClick={onView}
             className="flex-1 py-2 bg-primary-50 text-primary-700 rounded-xl text-xs font-semibold hover:bg-primary-100 transition-colors flex items-center justify-center gap-1"
           >
@@ -393,13 +436,17 @@ function StoryCard({ story, onView, onEdit, onDelete, isOwner }: {
           {isOwner && (
             <>
               <button
+                type="button"
                 onClick={onEdit}
+                aria-label="Hikayeyi düzenle"
                 className="p-2 hover:bg-gray-50 rounded-xl text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <Edit3 size={15} />
               </button>
               <button
+                type="button"
                 onClick={onDelete}
+                aria-label="Hikayeyi sil"
                 className="p-2 hover:bg-red-50 rounded-xl text-gray-400 hover:text-red-500 transition-colors"
               >
                 <Trash2 size={15} />
@@ -408,6 +455,27 @@ function StoryCard({ story, onView, onEdit, onDelete, isOwner }: {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function StoryGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-0">
+          <Skeleton className="h-36 rounded-none" />
+          <div className="space-y-3 p-4">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-2/3" />
+            <div className="flex gap-2 pt-2">
+              <Skeleton className="h-9 flex-1 rounded-xl" />
+              <Skeleton className="h-9 w-9 rounded-xl" />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -722,7 +790,7 @@ function StoryWizardModal({ isOpen, onClose, children, onSuccess }: StoryWizardM
       });
       onSuccess();
     } catch {
-      // Handle error
+      toast.error('Hikaye üretilirken bir sorun oluştu.');
     } finally {
       setGenerating(false);
     }
@@ -734,7 +802,7 @@ function StoryWizardModal({ isOpen, onClose, children, onSuccess }: StoryWizardM
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 bg-gradient-to-r from-purple-50 to-indigo-50">
           <div className="flex items-center gap-2">
-            <span className="text-xl">✨</span>
+            <Sparkles size={18} className="text-indigo-600" />
             <h2 className="text-sm font-bold text-gray-800">Sosyal Hikaye Şablon Sihirbazı</h2>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
@@ -900,7 +968,7 @@ function StoryWizardModal({ isOpen, onClose, children, onSuccess }: StoryWizardM
               disabled={generating || !comfortItem.trim()}
               className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-sm font-semibold hover:from-purple-700 hover:to-indigo-700 disabled:opacity-40 transition-colors flex items-center justify-center gap-1.5"
             >
-              {generating ? 'Sihirbaz Hikayeyi Dokuyor...' : '✨ Hikaye Üret'}
+              {generating ? 'Hikaye oluşturuluyor...' : 'Hikaye Üret'}
             </button>
           )}
         </div>
@@ -922,13 +990,23 @@ export function SocialStoriesPage() {
   const [showEditor, setShowEditor] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
 
-  const { data: mine = [] } = useQuery({
+  const {
+    data: mine = [],
+    isLoading: mineLoading,
+    isError: mineError,
+    refetch: refetchMine,
+  } = useQuery({
     queryKey: ['social-stories-mine'],
     queryFn: () => socialStoryService.getMine(),
     enabled: Boolean(accessToken),
   });
 
-  const { data: publicStories = [] } = useQuery({
+  const {
+    data: publicStories = [],
+    isLoading: publicLoading,
+    isError: publicError,
+    refetch: refetchPublic,
+  } = useQuery({
     queryKey: ['social-stories-public', filterCat],
     queryFn: () => socialStoryService.getPublic(filterCat || undefined),
   });
@@ -945,7 +1023,9 @@ export function SocialStoriesPage() {
       qc.invalidateQueries({ queryKey: ['social-stories-mine'] });
       qc.invalidateQueries({ queryKey: ['social-stories-public'] });
       setShowEditor(false);
+      toast.success('Hikaye kaydedildi.');
     },
+    onError: () => toast.error('Hikaye kaydedilemedi. Lütfen tekrar deneyin.'),
   });
 
   const updateMut = useMutation({
@@ -955,7 +1035,9 @@ export function SocialStoriesPage() {
       qc.invalidateQueries({ queryKey: ['social-stories-mine'] });
       qc.invalidateQueries({ queryKey: ['social-stories-public'] });
       setShowEditor(false);
+      toast.success('Hikaye güncellendi.');
     },
+    onError: () => toast.error('Hikaye güncellenemedi. Lütfen tekrar deneyin.'),
   });
 
   const deleteMut = useMutation({
@@ -963,7 +1045,9 @@ export function SocialStoriesPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['social-stories-mine'] });
       qc.invalidateQueries({ queryKey: ['social-stories-public'] });
+      toast.success('Hikaye silindi.');
     },
+    onError: () => toast.error('Hikaye silinemedi. Lütfen tekrar deneyin.'),
   });
 
   const handleSave = (data: Partial<SocialStory>) => {
@@ -975,16 +1059,25 @@ export function SocialStoriesPage() {
   };
 
   const displayed = (tab === 'mine' ? mine : publicStories).filter(s => {
-    if (filterChild && s.childId !== filterChild) return false;
+    if (tab === 'mine' && filterChild && s.childId !== filterChild) return false;
     if (tab === 'mine' && filterCat && s.category !== filterCat) return false;
     if (search && !s.title.toLowerCase().includes(search.toLowerCase()) && !s.description?.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
   const totalViews = mine.reduce((sum, s) => sum + (s.viewCount || 0), 0);
+  const isLoading = tab === 'mine' ? mineLoading : publicLoading;
+  const isError = tab === 'mine' ? mineError : publicError;
+  const hasFilters = Boolean(search || filterCat || (tab === 'mine' && filterChild));
+  const isSaving = createMut.isPending || updateMut.isPending;
+  const clearFilters = () => {
+    setSearch('');
+    setFilterCat('');
+    setFilterChild('');
+  };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div className="mx-auto max-w-5xl px-4 py-6 space-y-6">
       <PageOnboarding
         pageId="social_stories"
         title="Sosyal Hikayeler"
@@ -1009,7 +1102,7 @@ export function SocialStoriesPage() {
       />
 
       {/* header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
             <BookOpen size={20} className="text-white" />
@@ -1019,20 +1112,38 @@ export function SocialStoriesPage() {
             <p className="text-xs text-gray-500">Hikaye oluştur ve keşfet</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <button
             onClick={() => setShowWizard(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-sm font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg active:scale-95 duration-150 cursor-pointer"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all duration-150 hover:from-purple-700 hover:to-indigo-700 hover:shadow-lg active:scale-95"
           >
-            <Sparkles size={16} /> ✨ Sihirbazla Üret
+            <Sparkles size={16} /> Sihirbazla Üret
           </button>
           <button
             onClick={() => { setEditing(null); setShowEditor(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors shadow-sm cursor-pointer"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700"
           >
             <Plus size={16} /> Yeni Hikaye
           </button>
         </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          { label: 'Hikayelerim', value: mine.length, icon: <BookOpen size={17} />, tone: 'text-indigo-600 bg-indigo-50' },
+          { label: 'Toplam Okunma', value: totalViews, icon: <Eye size={17} />, tone: 'text-emerald-600 bg-emerald-50' },
+          { label: 'Açık Paylaşım', value: mine.filter(s => s.isPublic).length, icon: <Users size={17} />, tone: 'text-sky-600 bg-sky-50' },
+        ].map(stat => (
+          <div key={stat.label} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${stat.tone}`}>
+              {stat.icon}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xl font-bold text-slate-900">{stat.value}</p>
+              <p className="truncate text-xs font-medium text-slate-500">{stat.label}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* tabs */}
@@ -1049,7 +1160,7 @@ export function SocialStoriesPage() {
       </div>
 
       {/* Çocuk filtresi */}
-      {children.length > 0 && (
+      {tab === 'mine' && children.length > 0 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setFilterChild('')}
@@ -1065,22 +1176,6 @@ export function SocialStoriesPage() {
             >
               {c.name}
             </button>
-          ))}
-        </div>
-      )}
-
-      {/* stats row (mine tab) */}
-      {tab === 'mine' && mine.length > 0 && (
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Hikaye', value: mine.length },
-            { label: 'Toplam Görüntülenme', value: totalViews },
-            { label: 'Herkese Açık', value: mine.filter(s => s.isPublic).length },
-          ].map(stat => (
-            <div key={stat.label} className="bg-white rounded-2xl border border-gray-100 p-3 text-center">
-              <p className="text-xl font-bold text-gray-900">{stat.value}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">{stat.label}</p>
-            </div>
           ))}
         </div>
       )}
@@ -1117,15 +1212,65 @@ export function SocialStoriesPage() {
       </div>
 
       {/* story grid */}
-      {displayed.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <BookOpen size={40} className="mx-auto mb-3 opacity-40" />
-          <p className="text-sm">
-            {search ? 'Aramanızla eşleşen hikaye bulunamadı.' : tab === 'mine' ? 'Henüz hikaye oluşturmadınız.' : 'Bu kategoride hikaye bulunamadı.'}
-          </p>
-        </div>
+      {isLoading ? (
+        <StoryGridSkeleton />
+      ) : isError ? (
+        <EmptyState
+          icon={<AlertCircle size={24} />}
+          title="Hikayeler yüklenemedi"
+          description="Bağlantı ya da sunucu yanıtı nedeniyle liste alınamadı."
+          action={
+            <button
+              type="button"
+              onClick={() => (tab === 'mine' ? refetchMine() : refetchPublic())}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
+            >
+              <RotateCcw size={15} /> Tekrar Dene
+            </button>
+          }
+        />
+      ) : displayed.length === 0 ? (
+        <EmptyState
+          icon={hasFilters ? <FilterX size={24} /> : tab === 'mine' ? <FileText size={24} /> : <Layers size={24} />}
+          title={hasFilters ? 'Eşleşen hikaye yok' : tab === 'mine' ? 'Henüz hikaye oluşturmadınız' : 'Bu alanda hikaye yok'}
+          description={
+            hasFilters
+              ? 'Arama veya filtreleri değiştirerek daha fazla hikaye görebilirsiniz.'
+              : tab === 'mine'
+                ? 'İlk hikayenizi sıfırdan yazabilir veya sihirbazla hızlıca kişiselleştirilmiş bir taslak oluşturabilirsiniz.'
+                : 'Topluluk hikayeleri paylaşıldığında burada listelenecek.'
+          }
+          action={
+            hasFilters ? (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                <FilterX size={15} /> Filtreleri Temizle
+              </button>
+            ) : tab === 'mine' ? (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => setShowWizard(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
+                >
+                  <Sparkles size={15} /> Sihirbazla Başla
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setEditing(null); setShowEditor(true); }}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                >
+                  <Plus size={15} /> Yeni Hikaye
+                </button>
+              </div>
+            ) : undefined
+          }
+        />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {displayed.map(story => (
             <StoryCard
               key={story.id}
@@ -1158,6 +1303,7 @@ export function SocialStoriesPage() {
           onSave={handleSave}
           onClose={() => setShowEditor(false)}
           children={children.map(c => ({ id: c.id, name: c.name }))}
+          saving={isSaving}
         />
       )}
 
@@ -1171,7 +1317,7 @@ export function SocialStoriesPage() {
             qc.invalidateQueries({ queryKey: ['social-stories-mine'] });
             qc.invalidateQueries({ queryKey: ['social-stories-public'] });
             setShowWizard(false);
-            toast.success('Sosyal hikaye başarıyla üretildi! 🎉');
+            toast.success('Sosyal hikaye başarıyla üretildi.');
           }}
         />
       )}

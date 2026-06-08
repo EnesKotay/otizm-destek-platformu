@@ -13,12 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final WebPushService webPushService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public void createNotification(UUID userId, String type, String title, String body, String link) {
@@ -31,7 +34,18 @@ public class NotificationService {
                 .body(body)
                 .link(link)
                 .build();
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+        webPushService.sendToUser(userId, title, body, link);
+        
+        try {
+            messagingTemplate.convertAndSendToUser(
+                userId.toString(),
+                "/queue/notifications",
+                toDto(saved)
+            );
+        } catch (Exception e) {
+            // ignore exceptions related to messaging
+        }
     }
 
     public Page<NotificationDto> getNotifications(UUID userId, Pageable pageable) {

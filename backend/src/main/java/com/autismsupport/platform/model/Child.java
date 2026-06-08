@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
+
 @Entity
 @Table(name = "children")
 @Getter
@@ -43,6 +44,12 @@ public class Child {
     @Column(columnDefinition = "TEXT")
     private String therapies;
 
+    @Column(length = 10)
+    private String gender;
+
+    @Column(name = "profile_image_url", length = 512)
+    private String profileImageUrl;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "privacy_settings", columnDefinition = "jsonb")
     private Map<String, Object> privacySettings;
@@ -55,6 +62,18 @@ public class Child {
     )
     @Builder.Default
     private Set<Tag> tags = new HashSet<>();
+
+    @OneToMany(mappedBy = "child", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ExpertPatientConnection> expertPatientConnections = new ArrayList<>();
+
+    @OneToMany(mappedBy = "child", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ExpertTask> expertTasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "child", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Appointment> appointments = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

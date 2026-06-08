@@ -28,8 +28,15 @@ public class ExpertController {
     private final com.autismsupport.platform.service.PatientService patientService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<UserDto>>> getExperts() {
+    public ResponseEntity<ApiResponse<List<UserDto>>> getExperts(
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String specialization) {
         List<UserDto> experts = userRepository.findByRole(UserRole.EXPERT).stream()
+                .filter(u -> city == null || city.isBlank() ||
+                        (u.getCity() != null && u.getCity().equalsIgnoreCase(city)))
+                .filter(u -> specialization == null || specialization.isBlank() ||
+                        (u.getSpecializations() != null && u.getSpecializations().stream()
+                                .anyMatch(s -> s.toLowerCase().contains(specialization.toLowerCase()))))
                 .map(u -> {
                     Double avgRating = reviewRepository.findAverageRatingByExpertId(u.getId());
                     long articleCount = articleRepository.countByAuthorId(u.getId());

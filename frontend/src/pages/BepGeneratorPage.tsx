@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
   BarChart3,
-  BookOpen,
   CheckCircle,
   ChevronLeft,
   ClipboardCheck,
@@ -185,6 +184,7 @@ export function BepGeneratorPage() {
   const [aiAssistantLoading, setAiAssistantLoading] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPatientsLoading(true);
     patientService.getPatients()
       .then(data => {
@@ -206,12 +206,14 @@ export function BepGeneratorPage() {
 
   useEffect(() => {
     if (!selectedChildId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNotes([]);
       setScreeningResults([]);
       setActivityResults([]);
       return;
     }
 
+     
     setContextLoading(true);
     Promise.allSettled([
       noteService.getRecent(selectedChildId),
@@ -469,7 +471,7 @@ Yanıtını tam olarak aşağıdaki etiketleri kullanarak ver. Başka hiçbir a�
       toast.success('SMART Hedef başarıyla oluşturuldu ve forma aktarıldı!');
       setShowAiAssistantModal(false);
       setAiAssistantInput('');
-    } catch (err) {
+    } catch {
       toast.error('AI hedef asistanı bir hata ile karşılaştı.');
     } finally {
       setAiAssistantLoading(false);

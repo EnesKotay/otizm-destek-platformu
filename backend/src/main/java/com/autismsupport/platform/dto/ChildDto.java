@@ -24,6 +24,8 @@ public class ChildDto {
     private String diagnosisInfo;
     private String educationProgram;
     private String therapies;
+    private String gender;
+    private String profileImageUrl;
     private Map<String, Object> privacySettings;
     private List<TagDto> tags;
     private Set<UUID> tagIds;

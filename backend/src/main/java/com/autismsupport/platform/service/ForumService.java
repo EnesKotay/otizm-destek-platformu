@@ -39,6 +39,7 @@ public class ForumService {
     private final TagService tagService;
     private final VoteRepository voteRepository;
     private final NotificationService notificationService;
+    private final HtmlSanitizer htmlSanitizer;
 
     public Page<ForumPostDto> getPosts(Pageable pageable, UUID currentUserId) {
         return postRepository.findAllByOrderByPinnedDescCreatedAtDesc(pageable)
@@ -62,6 +63,26 @@ public class ForumService {
         }
         return postRepository.findByPostTypeAndTagIds(normalizePostType(postType), tagIds, pageable)
                 .map(p -> toPostDto(p, currentUserId));
+    }
+
+    public Page<ForumPostDto> getPostsByFilters(String postType, Set<UUID> tagIds, String query, String sort,
+            Pageable pageable, UUID currentUserId) {
+        String normalizedType = postType == null || postType.isBlank() ? null : normalizePostType(postType);
+        String normalizedQuery = normalizeOptional(query);
+        boolean hasQuery = normalizedQuery != null;
+        String safeQuery = hasQuery ? normalizedQuery : "";
+        boolean tagFilter = tagIds != null && !tagIds.isEmpty();
+        Set<UUID> safeTagIds = tagFilter ? tagIds : Set.of(new UUID(0L, 0L));
+        String normalizedSort = sort == null ? "new" : sort.trim().toLowerCase(Locale.ROOT);
+
+        Page<ForumPost> page = switch (normalizedSort) {
+            case "hot" -> postRepository.findByFiltersHot(normalizedType, safeQuery, hasQuery, tagFilter, safeTagIds, pageable);
+            case "unanswered" -> postRepository.findUnansweredByFilters(safeQuery, hasQuery, tagFilter, safeTagIds, pageable);
+            case "expert" -> postRepository.findExpertAnsweredByFilters(normalizedType, safeQuery, hasQuery, tagFilter, safeTagIds, pageable);
+            default -> postRepository.findByFilters(normalizedType, safeQuery, hasQuery, tagFilter, safeTagIds, pageable);
+        };
+
+        return page.map(p -> toPostDto(p, currentUserId));
     }
 
     public Page<ForumPostDto> getUnansweredQuestions(Pageable pageable, UUID currentUserId) {
@@ -97,7 +118,7 @@ public class ForumService {
         ForumPost post = ForumPost.builder()
                 .author(author)
                 .title(requireText(dto.getTitle(), "Başlık zorunludur"))
-                .content(requireText(dto.getContent(), "İçerik zorunludur"))
+                .content(sanitizeRequiredHtml(dto.getContent(), "İçerik zorunludur"))
                 .category(normalizeOptional(dto.getCategory()))
                 .postType(normalizePostType(dto.getPostType()))
                 .privacySettings(dto.getPrivacySettings())
@@ -122,7 +143,7 @@ public class ForumService {
         }
 
         post.setTitle(requireText(dto.getTitle(), "Başlık zorunludur"));
-        post.setContent(requireText(dto.getContent(), "İçerik zorunludur"));
+        post.setContent(sanitizeRequiredHtml(dto.getContent(), "İçerik zorunludur"));
         post.setCategory(normalizeOptional(dto.getCategory()));
         if (dto.getPostType() != null) {
             post.setPostType(normalizePostType(dto.getPostType()));
@@ -208,7 +229,7 @@ public class ForumService {
         ForumComment comment = ForumComment.builder()
                 .post(post)
                 .author(author)
-                .content(requireText(dto.getContent(), "Yorum içeriği zorunludur"))
+                .content(sanitizeRequiredHtml(dto.getContent(), "Yorum içeriği zorunludur"))
                 .anonymous(dto.isAnonymous())
                 .expertApproved(author.getRole() == com.autismsupport.platform.model.UserRole.EXPERT)
                 .parentComment(parentComment)
@@ -240,7 +261,7 @@ public class ForumService {
         if (!comment.getAuthor().getId().equals(userId)) {
             throw new AccessDeniedException("Bu yorumu düzenleme yetkiniz yok");
         }
-        comment.setContent(requireText(dto.getContent(), "Yorum içeriği zorunludur"));
+        comment.setContent(sanitizeRequiredHtml(dto.getContent(), "Yorum içeriği zorunludur"));
         return toCommentDto(commentRepository.save(comment), userId);
     }
 
@@ -255,9 +276,22 @@ public class ForumService {
             throw new AccessDeniedException("Bu yorumu silme yetkiniz yok");
         }
         ForumPost post = comment.getPost();
-        commentRepository.delete(comment);
-        post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
+        int deletedCount = deleteCommentTree(comment);
+        if (post.getAcceptedAnswerId() != null && post.getAcceptedAnswerId().equals(commentId)) {
+            post.setAcceptedAnswerId(null);
+            post.setAnswered(false);
+        }
+        post.setCommentCount(Math.max(0, post.getCommentCount() - deletedCount));
         postRepository.save(post);
+    }
+
+    private int deleteCommentTree(ForumComment comment) {
+        int count = 1;
+        for (ForumComment reply : commentRepository.findByParentCommentId(comment.getId())) {
+            count += deleteCommentTree(reply);
+        }
+        commentRepository.delete(comment);
+        return count;
     }
 
     private ForumPostDto toPostDto(ForumPost post, UUID currentUserId) {
@@ -267,6 +301,8 @@ public class ForumService {
 
         boolean likedByMe = currentUserId != null
                 && voteRepository.existsByUserIdAndTargetTypeAndTargetId(currentUserId, "POST", post.getId());
+        boolean ownedByMe = currentUserId != null && post.getAuthor() != null
+                && currentUserId.equals(post.getAuthor().getId());
 
         return ForumPostDto.builder()
                 .id(post.getId())
@@ -283,6 +319,7 @@ public class ForumService {
                 .privacySettings(post.getPrivacySettings())
                 .tags(tagDtos)
                 .likedByMe(likedByMe)
+                .ownedByMe(ownedByMe)
                 .anonymous(post.isAnonymous())
                 .author(post.isAnonymous() ? 
                         UserDto.builder()
@@ -324,6 +361,7 @@ public class ForumService {
                 .downvotedByMe(downvotedByMe)
                 .anonymous(comment.isAnonymous())
                 .expertApproved(comment.isExpertApproved())
+                .ownedByMe(currentUserId != null && comment.getAuthor() != null && currentUserId.equals(comment.getAuthor().getId()))
                 .author(comment.isAnonymous() ?
                         UserDto.builder()
                                 .fullName("Anonim Ebeveyn")
@@ -362,6 +400,18 @@ public class ForumService {
             throw new ValidationException(message);
         }
         return normalized;
+    }
+
+    private String sanitizeRequiredHtml(String value, String message) {
+        String sanitized = htmlSanitizer.sanitize(value);
+        if (normalizeOptional(stripTags(sanitized)) == null) {
+            throw new ValidationException(message);
+        }
+        return sanitized;
+    }
+
+    private String stripTags(String value) {
+        return value == null ? "" : value.replaceAll("<[^>]+>", " ");
     }
 
     private void ensureCommentBelongsToPost(ForumComment comment, UUID postId) {

@@ -126,6 +126,54 @@ function getInitial(name?: string) {
   return name?.trim().charAt(0).toLocaleUpperCase('tr-TR') || '?';
 }
 
+function normalizeCity(city?: string) {
+  return city?.trim().toLocaleLowerCase('tr-TR') || '';
+}
+
+function toCoordinate(value?: number | string | null) {
+  if (value === undefined || value === null || value === '') return null;
+  const numeric = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function getBearingDegrees(fromLat: number, fromLon: number, toLat: number, toLon: number) {
+  const lat1 = fromLat * Math.PI / 180;
+  const lat2 = toLat * Math.PI / 180;
+  const deltaLon = (toLon - fromLon) * Math.PI / 180;
+  const y = Math.sin(deltaLon) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLon);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function getFallbackAngle(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % 360;
+}
+
+function getRadarPosition(
+  buddy: BuddyDto,
+  maxDistance: number,
+  origin: { latitude: number; longitude: number } | null
+) {
+  const buddyLat = toCoordinate(buddy.latitude);
+  const buddyLon = toCoordinate(buddy.longitude);
+  const angle = origin && buddyLat !== null && buddyLon !== null
+    ? getBearingDegrees(origin.latitude, origin.longitude, buddyLat, buddyLon) - 90
+    : getFallbackAngle(buddy.buddyId);
+  const angleRad = (angle * Math.PI) / 180;
+  const distance = Math.max(0, buddy.distanceKm ?? 0);
+  const rPercent = Math.min(distance / Math.max(maxDistance, 1), 1.0);
+  const radiusPercent = rPercent * 45;
+
+  return {
+    leftPercent: 50 + radiusPercent * Math.cos(angleRad),
+    topPercent: 50 + radiusPercent * Math.sin(angleRad),
+  };
+}
+
 function getAffinityPill(score: number) {
   if (score >= 0.75) {
     return {
@@ -206,7 +254,7 @@ function FamilyMatchCard({
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-lg font-bold text-slate-950 truncate">{family.parentName}</h3>
                 <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${pill.bg}`}>
-                  {pill.text.replace(/[🔥✨🤝🌱]/g, '').trim()}
+                  {pill.text.replace(/[🔥✨🤝🌱]/gu, '').trim()}
                 </span>
                 {sameCity && (
                   <span className="px-2.5 py-1 rounded-full text-[11px] font-bold border border-emerald-200 bg-emerald-50 text-emerald-700">
@@ -351,6 +399,12 @@ export function SimilarFamiliesPage() {
   const [sortBy, setSortBy] = useState('score');
   const [cityOnly, setCityOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const userLatitude = toCoordinate(user?.latitude);
+  const userLongitude = toCoordinate(user?.longitude);
+  const hasUserCoordinates = userLatitude !== null && userLongitude !== null;
+  const radarOrigin = hasUserCoordinates
+    ? { latitude: userLatitude, longitude: userLongitude }
+    : null;
 
   useEffect(() => {
     childService.getAll().then(data => {
@@ -359,10 +413,16 @@ export function SimilarFamiliesPage() {
       if (childrenData.length > 0 && !selectedChild) setSelectedChild(childrenData[0]);
     }).catch(() => {});
     matchingService.getMatchingStatus().then(setMatchingEnabled).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const doSearch = useCallback(async (childId: string) => {
     if (!childId) return;
+    if (!matchingEnabled) {
+      setResults([]);
+      setSearched(true);
+      return;
+    }
     setLoading(true);
     setSearched(true);
     try {
@@ -375,7 +435,7 @@ export function SimilarFamiliesPage() {
       toast.error('Eşleştirme sırasında bir hata oluştu.');
     }
     setLoading(false);
-  }, [minScore, ageGroup, sortBy]);
+  }, [ageGroup, matchingEnabled, minScore, sortBy]);
 
   const fetchBuddiesData = useCallback(async () => {
     setBuddiesLoading(true);
@@ -393,14 +453,6 @@ export function SimilarFamiliesPage() {
     }
     setBuddiesLoading(false);
   }, [maxDistance]);
-  const getAngleFromId = (id: string) => {
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) {
-      hash = id.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return Math.abs(hash) % 360;
-  };
-
   const handleGeolocate = () => {
     if (!navigator.geolocation) {
       toast.error("Tarayıcınız coğrafi konumu desteklemiyor.");
@@ -413,8 +465,8 @@ export function SimilarFamiliesPage() {
         const { latitude, longitude } = position.coords;
         try {
           const updatedUser = await userService.updateProfile({
-            latitude: latitude.toFixed(6),
-            longitude: longitude.toFixed(6),
+            latitude: Number(latitude.toFixed(6)),
+            longitude: Number(longitude.toFixed(6)),
             city: user?.city || undefined
           });
           useAuthStore.setState({ user: updatedUser });
@@ -454,6 +506,7 @@ export function SimilarFamiliesPage() {
 
   useEffect(() => {
     if (activeChatBuddy) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadDrawerChat(activeChatBuddy.buddyId);
     } else {
       setDrawerConversation(null);
@@ -463,12 +516,13 @@ export function SimilarFamiliesPage() {
 
   // Radar animated logs
   useEffect(() => {
-    if (user?.latitude && user?.longitude && activeTab === 'nearby') {
+    if (hasUserCoordinates && activeTab === 'nearby') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRadarLogs([`[${new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'})}] 📡 Proximity radar arayüzü başlatıldı.`]);
       const events = [
         "📍 Cihaz koordinatları doğrulandı.",
-        "🔍 15 km çapındaki kapsama alanı taranıyor...",
-        "🟢 Moda bölgesinde benzer gelişim profiline sahip ebeveynler aranıyor...",
+        `🔍 ${maxDistance} km çapındaki kapsama alanı taranıyor...`,
+        `🟢 ${user?.city || 'yakın çevreniz'} bölgesinde benzer gelişim profiline sahip ebeveynler aranıyor...`,
         `✨ ${nearbyBuddies.length} potansiyel buddy/mentor eşleşmesi tespit edildi!`,
         "💡 Detayları görmek için radar üzerindeki noktalara tıklayabilirsiniz."
       ];
@@ -483,15 +537,24 @@ export function SimilarFamiliesPage() {
       }, 2500);
       return () => clearInterval(interval);
     }
-  }, [user?.latitude, user?.longitude, activeTab, nearbyBuddies.length]);
+  }, [hasUserCoordinates, userLatitude, userLongitude, user?.city, activeTab, maxDistance, nearbyBuddies.length]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (selectedChildId) doSearch(selectedChildId);
   }, [selectedChildId, doSearch]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchBuddiesData();
   }, [fetchBuddiesData]);
+
+  useEffect(() => {
+    if (!selectedBlip) return;
+    const freshBuddy = nearbyBuddies.find(buddy => buddy.buddyId === selectedBlip.buddyId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedBlip(freshBuddy ?? null);
+  }, [nearbyBuddies, selectedBlip]);
 
   const handleSearch = () => doSearch(selectedChildId);
 
@@ -500,6 +563,12 @@ export function SimilarFamiliesPage() {
     try {
       const enabled = await matchingService.toggleMatching();
       setMatchingEnabled(enabled);
+      if (!enabled) {
+        setResults([]);
+        toast.success('Eşleşme görünürlüğünüz kapatıldı.');
+      } else {
+        toast.success('Eşleşme görünürlüğünüz açıldı.');
+      }
     } catch { toast.error('Eşleştirme ayarı değiştirilemedi.'); }
     setTogglingOptOut(false);
   };
@@ -507,8 +576,8 @@ export function SimilarFamiliesPage() {
   const handleMessage = async (parentId: string) => {
     setMessagingId(parentId);
     try {
-      await messagingService.getOrCreateDirect(parentId);
-      navigate('/mesajlar');
+      const conv = await messagingService.getOrCreateDirect(parentId);
+      navigate('/mesajlar', { state: { openConversationId: conv.id } });
     } catch { toast.error('Mesaj başlatılamadı.'); }
     setMessagingId(null);
   };
@@ -524,6 +593,7 @@ export function SimilarFamiliesPage() {
       ));
       fetchBuddiesData();
       if (selectedChildId) doSearch(selectedChildId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       toast.error(e?.message || 'İstek gönderilemedi.');
     }
@@ -607,7 +677,7 @@ export function SimilarFamiliesPage() {
 
   const hasNoTags = selectedChild && (!selectedChild.tags || selectedChild.tags.length === 0);
   const filteredResults = cityOnly && user?.city
-    ? results.filter(r => r.parentCity === user.city)
+    ? results.filter(r => normalizeCity(r.parentCity) === normalizeCity(user.city))
     : results;
 
   const getSortedResults = () => {
@@ -894,7 +964,7 @@ export function SimilarFamiliesPage() {
                         key={focus.id}
                         type="button"
                         onClick={() => {
-                          setPriorityFocus(focus.id as any);
+                          setPriorityFocus(focus.id as 'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY');
                           toast.success(`Eşleştirme motoru önceliği "${focus.label}" olarak güncellendi! 🚀`);
                         }}
                         title={focus.desc}
@@ -1040,7 +1110,7 @@ export function SimilarFamiliesPage() {
               </div>
 
               {/* Parametre Ayarları (Sadece Konum Tanımlıysa Göster) */}
-              {user?.latitude != null && user?.longitude != null && (
+              {hasUserCoordinates && (
                 <div className="w-full md:w-72 shrink-0 space-y-2 bg-slate-50/60 p-3 rounded-2xl border border-slate-100">
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
@@ -1069,8 +1139,8 @@ export function SimilarFamiliesPage() {
               )}
             </div>
 
-            {/* Simulated Coordinate Setter for KVKK / Test */}
-            {(user?.latitude == null || user?.longitude == null) && (
+            {/* Location setup */}
+            {!hasUserCoordinates && (
               <div className="mt-5 p-5 bg-gradient-to-r from-slate-900 to-indigo-950 rounded-2xl shadow-xl border border-slate-800 text-white relative overflow-hidden">
                 {/* Visual Fake Radar Scanner Preview */}
                 <div className="absolute right-[-40px] bottom-[-40px] w-48 h-48 rounded-full border border-indigo-500/20 bg-indigo-500/5 flex items-center justify-center pointer-events-none select-none">
@@ -1086,36 +1156,17 @@ export function SimilarFamiliesPage() {
                     📍 Coğrafi Konumunuz Henüz Tanımlanmamış
                   </h4>
                   <p className="text-xs text-slate-300 leading-relaxed">
-                    Yakındaki velileri mesafe hesabı ve etkileşimli radar ekranında görebilmek için konum erişimi vermeli veya simüle bir konum atamalısınız. 
-                    <strong>"Konumumu Simüle Et"</strong> butonuna tıklayarak İstanbul Kadıköy koordinatlarını veritabanına atayabilir veya gerçek tarayıcı konumunuzu kullanabilirsiniz.
+                    Yakındaki velileri mesafe hesabı ve etkileşimli radar ekranında görebilmek için konum erişimi vermelisiniz.
+                    Konumunuz yalnızca size yakın eşleşmeleri bulmak için kullanılır; istediğiniz zaman profilinizden güncelleyebilirsiniz.
                   </p>
                   <div className="flex flex-wrap gap-2.5 pt-1.5">
                     <button
-                      onClick={async () => {
-                        try {
-                          const updatedUser = await userService.updateProfile({
-                            latitude: '40.9901',
-                            longitude: '29.0224',
-                            city: 'İstanbul'
-                          });
-                          useAuthStore.setState({ user: updatedUser });
-                          toast.success("İstanbul Kadıköy konum koordinatları başarıyla simüle edildi! (40.9901, 29.0224) 📍");
-                          fetchBuddiesData();
-                        } catch {
-                          toast.error("Konum atanamadı.");
-                        }
-                      }}
-                      className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-750 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all hover:-translate-y-0.5 animate-pulse"
-                    >
-                      Konumumu Simüle Et
-                    </button>
-                    <button
                       onClick={handleGeolocate}
                       disabled={locating}
-                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-xs font-bold cursor-pointer transition-all hover:-translate-y-0.5 flex items-center gap-1.5 disabled:opacity-50"
+                      className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 border border-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all hover:-translate-y-0.5 flex items-center gap-1.5 disabled:opacity-50"
                     >
                       <Navigation size={13} className={locating ? 'animate-spin' : ''} />
-                      {locating ? 'Alınıyor...' : 'Gerçek Konumumu Kullan (GPS)'}
+                      {locating ? 'Alınıyor...' : 'Konumumu Kullan'}
                     </button>
                   </div>
                 </div>
@@ -1124,7 +1175,7 @@ export function SimilarFamiliesPage() {
           </Card>
 
           {/* Konum Tanımlıysa ve Sonuçlar Yüklendiyse */}
-          {user?.latitude != null && user?.longitude != null && (
+          {hasUserCoordinates && (
             <div className="space-y-4 animate-fadeIn">
               {/* Görünüm Değiştirici Sekmeler */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/85 pb-3 gap-3">
@@ -1153,7 +1204,7 @@ export function SimilarFamiliesPage() {
                 
                 <div className="flex items-center justify-end gap-2.5">
                   <span className="text-[10px] font-bold text-slate-450">
-                    Mevcut Konum: {user.city || 'İstanbul'} ({Number(user.latitude ?? 41.008).toFixed(3)}, {Number(user.longitude ?? 28.978).toFixed(3)})
+                    Mevcut Konum: {user?.city || 'Şehir belirtilmemiş'} ({(userLatitude ?? 0).toFixed(3)}, {(userLongitude ?? 0).toFixed(3)})
                   </span>
                   <button
                     onClick={handleGeolocate}
@@ -1187,7 +1238,7 @@ export function SimilarFamiliesPage() {
                     <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:24px_24px]" />
                     
                     {/* Radar Scanning sweep container */}
-                    <div className="relative w-full max-w-[340px] aspect-square rounded-full border border-slate-800/80 bg-slate-950 relative shadow-inner overflow-hidden">
+                    <div className="relative w-full max-w-[340px] aspect-square rounded-full border border-slate-800/80 bg-slate-950 shadow-inner overflow-hidden">
                       {/* Sweeping glowing radial cone */}
                       <div className="absolute inset-0 origin-center animate-radar-sweep pointer-events-none" style={{
                         background: 'conic-gradient(from 0deg at 50% 50%, rgba(99, 102, 241, 0.25) 0deg, rgba(99, 102, 241, 0) 120deg)',
@@ -1220,14 +1271,7 @@ export function SimilarFamiliesPage() {
                       
                       {/* Interactive Radar Blips representing Veliler */}
                       {nearbyBuddies.map((buddy) => {
-                        const angle = getAngleFromId(buddy.buddyId);
-                        const angleRad = (angle * Math.PI) / 180;
-                        const rPercent = Math.min((buddy.distanceKm || 0) / maxDistance, 1.0);
-                        // Scale so the radius stays within the 180px radius (45% of 400px viewbox)
-                        const radiusPercent = rPercent * 45;
-                        const leftPercent = 50 + radiusPercent * Math.cos(angleRad);
-                        const topPercent = 50 + radiusPercent * Math.sin(angleRad);
-                        
+                        const { leftPercent, topPercent } = getRadarPosition(buddy, maxDistance, radarOrigin);
                         const isSelected = selectedBlip?.buddyId === buddy.buddyId;
                         
                         return (

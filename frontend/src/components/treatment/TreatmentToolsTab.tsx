@@ -88,6 +88,7 @@ export function TreatmentToolsTab({
   ];
 
   const handleWordClick = (word: string, emoji: string) => {
+    // eslint-disable-next-line react-hooks/purity
     const newItem = { id: `${Date.now()}-${word}`, word, emoji };
     setSentence(prev => [...prev, newItem]);
     speakWord(word);
@@ -175,7 +176,8 @@ export function TreatmentToolsTab({
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         
         {/* LEFT COLUMN: THE 5 INTERACTIVE TOOLS PANEL */}
-        <div className="rounded-3xl border border-slate-200/50 bg-white p-6 shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300">
+        <div className="group rounded-[2.5rem] border border-slate-200/60 bg-white/70 backdrop-blur-2xl p-7 sm:p-9 shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500 relative overflow-hidden">
+          <div className="absolute -left-20 top-0 h-64 w-64 bg-indigo-400/10 rounded-full blur-[80px] pointer-events-none" />
           
           {/* Header & Sub navigation */}
           <div className="border-b border-slate-100 pb-5">
@@ -690,8 +692,9 @@ export function TreatmentToolsTab({
         </div>
 
         {/* RIGHT COLUMN: SENSORY PROFILE SLIDERS AND TRIGGERS */}
-        <div className="rounded-3xl border border-slate-200/50 bg-white p-6 shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300">
-          <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
+        <div className="group rounded-[2.5rem] border border-slate-200/60 bg-white/70 backdrop-blur-2xl p-7 sm:p-9 shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500 relative overflow-hidden">
+          <div className="absolute right-0 bottom-0 h-64 w-64 bg-violet-400/10 rounded-full blur-[80px] pointer-events-none" />
+          <div className="relative z-10 flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm shadow-indigo-100">
                 <Thermometer size={16} />

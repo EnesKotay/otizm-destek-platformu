@@ -10,30 +10,20 @@ import java.util.List;
 import java.util.UUID;
 
 public interface CalendarEventRepository extends JpaRepository<CalendarEvent, UUID> {
-    List<CalendarEvent> findByChildIdOrderByStartTimeAsc(UUID childId);
 
-    @Query("SELECT e FROM CalendarEvent e WHERE e.child.id = :childId AND e.startTime BETWEEN :start AND :end ORDER BY e.startTime")
+    @Query("SELECT e FROM CalendarEvent e LEFT JOIN FETCH e.child WHERE e.child.id = :childId ORDER BY e.startTime ASC")
+    List<CalendarEvent> findByChildIdOrderByStartTimeAsc(@Param("childId") UUID childId);
+
+    @Query("SELECT e FROM CalendarEvent e LEFT JOIN FETCH e.child WHERE e.child.id = :childId AND e.startTime BETWEEN :start AND :end ORDER BY e.startTime")
     List<CalendarEvent> findByChildIdAndDateRange(
-        @Param("childId") UUID childId,
-        @Param("start") LocalDateTime start,
-        @Param("end") LocalDateTime end
-    );
+            @Param("childId") UUID childId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 
-    @Query("SELECT e FROM CalendarEvent e WHERE e.child.parent.id = :parentId AND e.startTime >= :from ORDER BY e.startTime")
+    // Ebeveynin tüm çocuklarına ait yaklaşan etkinlikler
+    @Query("SELECT e FROM CalendarEvent e LEFT JOIN FETCH e.child c WHERE c.parent.id = :parentId AND e.startTime >= :from AND e.status = 'PLANNED' ORDER BY e.startTime")
     List<CalendarEvent> findUpcomingByParentId(@Param("parentId") UUID parentId, @Param("from") LocalDateTime from);
 
-    @Query("""
-            SELECT e FROM CalendarEvent e
-            JOIN FETCH e.child c
-            JOIN FETCH c.parent
-            WHERE e.startTime BETWEEN :start AND :end
-              AND e.status = 'PLANNED'
-              AND e.reminderMinutesBefore IS NOT NULL
-              AND e.reminderSent = false
-            ORDER BY e.startTime
-            """)
-    List<CalendarEvent> findEventsNeedingReminder(
-        @Param("start") LocalDateTime start,
-        @Param("end") LocalDateTime end
-    );
+    @Query("SELECT e FROM CalendarEvent e LEFT JOIN FETCH e.child WHERE e.status = 'PLANNED' AND e.reminderSent = false AND e.reminderMinutesBefore IS NOT NULL AND e.startTime BETWEEN :windowStart AND :windowEnd ORDER BY e.startTime")
+    List<CalendarEvent> findEventsNeedingReminder(@Param("windowStart") LocalDateTime windowStart, @Param("windowEnd") LocalDateTime windowEnd);
 }

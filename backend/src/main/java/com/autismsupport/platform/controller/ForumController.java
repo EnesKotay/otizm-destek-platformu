@@ -3,6 +3,7 @@ package com.autismsupport.platform.controller;
 import com.autismsupport.platform.dto.ApiResponse;
 import com.autismsupport.platform.dto.ForumCommentDto;
 import com.autismsupport.platform.dto.ForumPostDto;
+import com.autismsupport.platform.dto.PageResponseDto;
 import com.autismsupport.platform.exception.AuthenticationRequiredException;
 import com.autismsupport.platform.exception.ValidationException;
 import com.autismsupport.platform.security.CurrentUser;
@@ -10,13 +11,13 @@ import com.autismsupport.platform.security.UserPrincipal;
 import com.autismsupport.platform.service.ForumService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -28,39 +29,50 @@ public class ForumController {
 
     private final ForumService forumService;
 
-    @GetMapping("/posts")
-    public ResponseEntity<ApiResponse<Page<ForumPostDto>>> getPosts(
+    @GetMapping({"", "/"})
+    public ResponseEntity<ApiResponse<PageResponseDto<ForumPostDto>>> getForumRoot(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) Set<String> tagIds,
+            @RequestParam(required = false) String q,
+            @RequestParam(name = "order", required = false, defaultValue = "new") String sort,
+            @CurrentUser UserPrincipal principal,
+            Pageable pageable) {
+
+        return getPosts(type, tagIds, q, sort, principal, pageable);
+    }
+
+    @GetMapping("/posts")
+    public ResponseEntity<ApiResponse<PageResponseDto<ForumPostDto>>> getPosts(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Set<String> tagIds,
+            @RequestParam(required = false) String q,
+            @RequestParam(name = "order", required = false, defaultValue = "new") String sort,
             @CurrentUser UserPrincipal principal,
             Pageable pageable) {
 
         UUID userId = principal != null ? principal.getId() : null;
         Set<UUID> tagUuids = parseTagIds(tagIds);
 
-        if (type != null) {
-            return ResponseEntity.ok(ApiResponse.success(
-                    forumService.getPostsByTypeAndTags(type, tagUuids, pageable, userId)));
-        }
-        return ResponseEntity.ok(ApiResponse.success(forumService.getPosts(pageable, userId)));
+        return ResponseEntity.ok(ApiResponse.success(
+                PageResponseDto.from(forumService.getPostsByFilters(type, tagUuids, q, sort, pageable, userId))));
     }
 
     @GetMapping("/posts/category/{category}")
-    public ResponseEntity<ApiResponse<Page<ForumPostDto>>> getPostsByCategory(
+    public ResponseEntity<ApiResponse<PageResponseDto<ForumPostDto>>> getPostsByCategory(
             @PathVariable String category, @CurrentUser UserPrincipal principal, Pageable pageable) {
         UUID userId = principal != null ? principal.getId() : null;
         return ResponseEntity.ok(ApiResponse.success(
-                forumService.getPostsByCategory(category, pageable, userId)));
+                PageResponseDto.from(forumService.getPostsByCategory(category, pageable, userId))));
     }
 
     @GetMapping("/featured")
-    public ResponseEntity<ApiResponse<Page<ForumPostDto>>> getFeatured(
+    public ResponseEntity<ApiResponse<PageResponseDto<ForumPostDto>>> getFeatured(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @CurrentUser UserPrincipal principal) {
         UUID userId = principal != null ? principal.getId() : null;
         return ResponseEntity.ok(ApiResponse.success(
-                forumService.getFeaturedPosts(PageRequest.of(page, size), userId)));
+                PageResponseDto.from(forumService.getFeaturedPosts(PageRequest.of(page, size), userId))));
     }
 
     @PutMapping("/{id}/feature")
@@ -74,11 +86,11 @@ public class ForumController {
     }
 
     @GetMapping("/posts/unanswered")
-    public ResponseEntity<ApiResponse<Page<ForumPostDto>>> getUnansweredQuestions(
+    public ResponseEntity<ApiResponse<PageResponseDto<ForumPostDto>>> getUnansweredQuestions(
             @CurrentUser UserPrincipal principal, Pageable pageable) {
         UUID userId = principal != null ? principal.getId() : null;
         return ResponseEntity.ok(ApiResponse.success(
-                forumService.getUnansweredQuestions(pageable, userId)));
+                PageResponseDto.from(forumService.getUnansweredQuestions(pageable, userId))));
     }
 
     @GetMapping("/posts/{id}")
@@ -117,11 +129,11 @@ public class ForumController {
     }
 
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<ApiResponse<Page<ForumCommentDto>>> getComments(
+    public ResponseEntity<ApiResponse<PageResponseDto<ForumCommentDto>>> getComments(
             @PathVariable UUID postId, @CurrentUser UserPrincipal principal, Pageable pageable) {
         UUID userId = principal != null ? principal.getId() : null;
         return ResponseEntity.ok(ApiResponse.success(
-                forumService.getComments(postId, pageable, userId)));
+                PageResponseDto.from(forumService.getComments(postId, pageable, userId))));
     }
 
     @PostMapping("/posts/{postId}/comments")
@@ -160,7 +172,7 @@ public class ForumController {
 
     private Set<UUID> parseTagIds(Set<String> tagIds) {
         if (tagIds == null || tagIds.isEmpty()) {
-            return null;
+            return Collections.emptySet();
         }
         try {
             return tagIds.stream().map(UUID::fromString).collect(Collectors.toSet());

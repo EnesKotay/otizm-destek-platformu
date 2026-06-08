@@ -1,5 +1,6 @@
 package com.autismsupport.platform.dto;
 
+import com.autismsupport.platform.model.TaskStatus;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,5 +29,5 @@ public class ExpertTaskDto {
     private String frequency;
     private String materialUrl;
     private LocalDate dueDate;
-    private String status;
+    private TaskStatus status;
 }

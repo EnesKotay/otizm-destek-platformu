@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import { HeartHandshake, ArrowLeft, Mail, SendHorizonal, CheckCircle2, Sparkles } from 'lucide-react';
+import { HeartHandshake, ArrowLeft, Mail, SendHorizonal, CheckCircle2 } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { toast } from '@/store/toastStore';
 
@@ -52,7 +51,7 @@ export function ForgotPasswordPage() {
 
         <div className="relative z-10 my-auto max-w-lg space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs text-primary-300 font-medium">
-            <Sparkles size={12} className="text-yellow-400" />
+            <Mail size={12} />
             <span>Şifre Sıfırlama</span>
           </div>
           <h2 className="text-4xl font-extrabold tracking-tight leading-[1.15]">
@@ -62,7 +61,8 @@ export function ForgotPasswordPage() {
             </span>
           </h2>
           <p className="text-slate-300 leading-relaxed text-sm">
-            Endişelenmeyin. Kayıtlı e-posta adresinize bir sıfırlama bağlantısı gönderiyoruz. Birkaç dakika içinde yeni şifrenizle giriş yapabilirsiniz.
+            Endişelenmeyin. Kayıtlı e-posta adresinize bir sıfırlama bağlantısı gönderiyoruz.
+            Birkaç dakika içinde yeni şifrenizle giriş yapabilirsiniz.
           </p>
 
           <div className="space-y-3 pt-2">
@@ -91,17 +91,18 @@ export function ForgotPasswordPage() {
         </div>
       </div>
 
-      {/* Sağ panel */}
+      {/* Sağ panel – form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 md:p-16 overflow-y-auto">
         <div className="w-full max-w-md space-y-8 my-8">
 
+          {/* Mobile logo */}
           <div className="text-center lg:text-left">
             <div className="lg:hidden inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 shadow-lg shadow-primary-200/50 mb-4">
               <HeartHandshake size={26} className="text-white" />
             </div>
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Şifremi Unuttum</h1>
             <p className="text-gray-500 text-sm mt-2">
-              E-posta adresinize sıfırlama bağlantısı gönderilecektir.
+              E-posta adresinize sıfırlama bağlantısı göndereceğiz.
             </p>
           </div>
 
@@ -116,14 +117,15 @@ export function ForgotPasswordPage() {
                 </div>
                 <h2 className="text-xl font-extrabold text-gray-900">Bağlantı Gönderildi</h2>
                 <p className="text-gray-500 text-sm leading-relaxed">
-                  <strong className="text-gray-700">{email}</strong> adresine şifre sıfırlama bağlantısı gönderildi. Gelen kutunuzu ve spam klasörünüzü kontrol edin.
+                  <strong className="text-gray-700">{email}</strong> adresine şifre sıfırlama bağlantısı gönderildi.
+                  Gelen kutunuzu ve spam klasörünüzü kontrol edin.
                 </p>
 
                 {devToken && (
                   <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left space-y-2">
                     <p className="text-xs font-bold text-amber-800">Geliştirici Modu — E-posta Aktif Değil</p>
                     <p className="text-xs text-amber-700">
-                      Yerel ortamda çalıştığınız için e-posta gönderilmedi. Şifrenizi sıfırlamak için aşağıdaki linki kullanın:
+                      Yerel ortamda çalıştığınız için e-posta gönderilmedi. Şifrenizi sıfırlamak için:
                     </p>
                     <Link
                       to={`/sifre-sifirla?token=${devToken}`}
@@ -172,15 +174,27 @@ export function ForgotPasswordPage() {
                   </div>
                 </div>
 
-                <Button
+                <button
                   type="submit"
-                  loading={loading}
-                  disabled={!email.trim()}
-                  className="w-full h-12 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 border-0 rounded-xl font-bold shadow-lg shadow-primary-200/50 flex items-center justify-center gap-2"
+                  disabled={loading || !email.trim()}
+                  className="w-full h-12 flex items-center justify-center gap-2 rounded-xl text-white text-sm font-bold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', boxShadow: '0 8px 24px rgba(79,70,229,0.25)' }}
                 >
-                  Sıfırlama Bağlantısı Gönder
-                  <SendHorizonal size={16} />
-                </Button>
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Gönderiliyor...
+                    </span>
+                  ) : (
+                    <>
+                      Sıfırlama Bağlantısı Gönder
+                      <SendHorizonal size={16} />
+                    </>
+                  )}
+                </button>
 
                 <Link
                   to="/giris"
