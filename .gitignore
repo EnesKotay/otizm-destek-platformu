@@ -21,3 +21,8 @@ out.json
 status.txt
 current_files.txt
 build.log
+
+# Build çıktıları
+backend/target/
+frontend/dist/
+frontend/node_modules/

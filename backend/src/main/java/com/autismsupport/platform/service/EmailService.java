@@ -21,8 +21,8 @@ public class EmailService {
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
-    @Async
-    public void sendEmail(String to, String subject, String content) {
+    // NOT @Async — called only from @Async public methods below to avoid self-invocation proxy bypass
+    private void sendEmail(String to, String subject, String content) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
@@ -36,6 +36,7 @@ public class EmailService {
         }
     }
 
+    @Async
     public void sendPasswordResetEmail(String toEmail, String token) {
         String resetUrl = frontendUrl + "/sifre-sifirla?token=" + token;
         String subject = "Sifre Sifirlama Talebi";
@@ -48,6 +49,7 @@ public class EmailService {
         sendEmail(toEmail, subject, content);
     }
 
+    @Async
     public void sendExpertApprovalEmail(String toEmail, String name) {
         String subject = "Uzman Basvurunuz Onaylandi!";
         String content = "Merhaba " + name + ",\n\n"
@@ -58,6 +60,7 @@ public class EmailService {
         sendEmail(toEmail, subject, content);
     }
 
+    @Async
     public void sendExpertRejectionEmail(String toEmail, String name) {
         String subject = "Uzmanlik Basvurusu Hakkinda";
         String content = "Merhaba " + name + ",\n\n"
@@ -68,6 +71,7 @@ public class EmailService {
         sendEmail(toEmail, subject, content);
     }
 
+    @Async
     public void sendAppointmentReminderEmail(String toEmail, String title, String body) {
         String subject = "Randevu Hatirlatmasi - " + title;
         String content = "Merhaba,\n\n"

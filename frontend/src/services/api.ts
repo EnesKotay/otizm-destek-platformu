@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
+import { API_BASE_URL } from '@/services/endpoints';
 
 function normalizeApiError(error: unknown): string {
   if (!axios.isAxiosError(error)) {
@@ -46,7 +47,7 @@ function normalizeApiError(error: unknown): string {
 }
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -102,7 +103,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await axios.post('/api/auth/refresh', { refreshToken });
+        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
         const { accessToken, refreshToken: newRefresh } = data.data;
         useAuthStore.getState().setTokens(accessToken, newRefresh);
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;

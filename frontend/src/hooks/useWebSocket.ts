@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuthStore } from '@/store/authStore';
+import { WS_BASE_URL } from '@/services/endpoints';
 
 type MessageCallback = (body: unknown) => void;
 
@@ -41,7 +42,7 @@ function getClient(token: string): Client {
 
   currentToken = token;
   client = new Client({
-    webSocketFactory: () => new SockJS(`/ws?token=${token}`),
+    webSocketFactory: () => new SockJS(`${WS_BASE_URL}?token=${encodeURIComponent(token)}`),
     connectHeaders: { Authorization: `Bearer ${token}` },
     reconnectDelay: 5000,
     onConnect: () => {

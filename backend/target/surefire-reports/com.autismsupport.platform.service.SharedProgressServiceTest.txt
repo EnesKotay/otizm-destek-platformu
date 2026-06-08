@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.autismsupport.platform.service.SharedProgressServiceTest
--------------------------------------------------------------------------------
-Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in com.autismsupport.platform.service.SharedProgressServiceTest

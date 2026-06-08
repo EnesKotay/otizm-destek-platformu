@@ -80,7 +80,7 @@ describe('childService', () => {
     expect(updated.name).toBe('Güncel');
     expect(treatment.treatmentState).toEqual({ aba: true });
     expect(apiMock.put).toHaveBeenNthCalledWith(1, '/children/c1', { name: 'Güncel' });
-    expect(apiMock.put).toHaveBeenNthCalledWith(2, '/children/c1/treatment-state', { aba: true });
+    expect(apiMock.put).toHaveBeenNthCalledWith(2, '/treatment-state/c1', { aba: true });
   });
 
   it('delete: çocuk silme endpointini çağırır', async () => {

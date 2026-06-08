@@ -1,7 +1,7 @@
 # ── Production Compose ────────────────────────────────────────────────────────
 # Kullanım:
-#   1. cp .env.example .env   → değerleri doldur
-#   2. docker compose -f docker-compose.prod.yml up -d --build
+#   1. İlk kez: bash scripts/setup-ssl.sh   (SSL sertifikası alır)
+#   2. Sonraki deploy: docker compose -f docker-compose.prod.yml up -d --build
 #
 # Geliştirme için docker-compose.yml kullanılmaya devam eder.
 
@@ -13,8 +13,6 @@ services:
       POSTGRES_DB: autism
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -96,15 +94,38 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+      args:
+        VITE_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
     container_name: autism-platform-frontend
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - letsencrypt_data:/etc/letsencrypt:ro
+      - certbot_webroot:/var/www/certbot:ro
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: autism-platform-certbot
+    volumes:
+      - letsencrypt_data:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    # 12 saatte bir sertifika yenileme kontrolü yapar
+    entrypoint: >
+      /bin/sh -c "trap exit TERM;
+      while :; do
+        certbot renew --webroot --webroot-path=/var/www/certbot --quiet;
+        sleep 12h & wait $${!};
+      done"
     restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
   uploads_data:
+  letsencrypt_data:
+  certbot_webroot:

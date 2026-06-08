@@ -47,6 +47,20 @@ public class CalendarEvent {
     @Builder.Default
     private boolean reminderEnabled = true;
 
+    @Column(name = "reminder_minutes_before")
+    @Builder.Default
+    private Integer reminderMinutesBefore = 60;
+
+    @Column(name = "location")
+    private String location;
+
+    @Column(name = "reminder_sent")
+    @Builder.Default
+    private boolean reminderSent = false;
+
+    @Builder.Default
+    private String status = "PLANNED";
+
     @Builder.Default
     private String color = "#4F46E5";
 

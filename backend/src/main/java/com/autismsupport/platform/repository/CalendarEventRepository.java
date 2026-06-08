@@ -21,4 +21,19 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, UU
 
     @Query("SELECT e FROM CalendarEvent e WHERE e.child.parent.id = :parentId AND e.startTime >= :from ORDER BY e.startTime")
     List<CalendarEvent> findUpcomingByParentId(@Param("parentId") UUID parentId, @Param("from") LocalDateTime from);
+
+    @Query("""
+            SELECT e FROM CalendarEvent e
+            JOIN FETCH e.child c
+            JOIN FETCH c.parent
+            WHERE e.startTime BETWEEN :start AND :end
+              AND e.status = 'PLANNED'
+              AND e.reminderMinutesBefore IS NOT NULL
+              AND e.reminderSent = false
+            ORDER BY e.startTime
+            """)
+    List<CalendarEvent> findEventsNeedingReminder(
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end
+    );
 }
