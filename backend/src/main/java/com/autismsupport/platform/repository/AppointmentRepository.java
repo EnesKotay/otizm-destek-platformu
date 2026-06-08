@@ -31,6 +31,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
     long countByExpertId(UUID expertId);
     long countByExpertIdAndStatus(UUID expertId, String status);
+    boolean existsByExpertIdAndChildIdAndStatusIn(UUID expertId, UUID childId, List<String> statuses);
 
     @Query("SELECT a FROM Appointment a LEFT JOIN FETCH a.expert LEFT JOIN FETCH a.parent LEFT JOIN FETCH a.child WHERE a.expert.id = :expertId AND a.appointmentDate = :date ORDER BY a.appointmentTime ASC")
     List<Appointment> findByExpertIdAndAppointmentDateOrderByAppointmentTimeAsc(@Param("expertId") UUID expertId, @Param("date") LocalDate date);

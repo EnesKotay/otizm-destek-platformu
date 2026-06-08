@@ -31,7 +31,7 @@ public class ScreeningResultController {
     public ResponseEntity<ApiResponse<List<ScreeningResultDto>>> getResultsByChild(
             @PathVariable UUID childId, @CurrentUser UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.success(
-                screeningResultService.getResultsByChild(childId, principal.getId())));
+                screeningResultService.getResultsByChild(childId, principal.getId(), principal.getRole())));
     }
 
     @PostMapping

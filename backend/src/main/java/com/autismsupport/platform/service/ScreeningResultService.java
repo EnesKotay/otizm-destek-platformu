@@ -21,13 +21,17 @@ public class ScreeningResultService {
     private final ScreeningResultRepository screeningResultRepository;
     private final ChildRepository childRepository;
     private final ClinicalDataShareService clinicalDataShareService;
+    private final PatientAccessService patientAccessService;
 
-    public List<ScreeningResultDto> getResultsByChild(UUID childId, UUID parentId) {
+    @Transactional(readOnly = true)
+    public List<ScreeningResultDto> getResultsByChild(UUID childId, UUID userId, String role) {
         childRepository.findById(childId)
                 .orElseThrow(() -> new ResourceNotFoundException("Çocuk profili bulunamadı"));
 
-        // Enforce parent OR active medical data share permission
-        if (!clinicalDataShareService.verifyAccess(parentId, childId, "screening")) {
+        boolean hasScreeningAccess = patientAccessService.canReadChild(userId, role, childId)
+                || clinicalDataShareService.verifyAccess(userId, childId, "screening");
+
+        if (!hasScreeningAccess) {
             throw new UnauthorizedException("Bu çocuk profiline erişim yetkiniz yok");
         }
         return screeningResultRepository.findByChildIdOrderByCreatedAtDesc(childId)

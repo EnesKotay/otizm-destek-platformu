@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface ExpertTaskRepository extends JpaRepository<ExpertTask, UUID> {
     List<ExpertTask> findByExpertIdAndChildIdOrderByCreatedAtDesc(UUID expertId, UUID childId);
+    boolean existsByExpertIdAndChildId(UUID expertId, UUID childId);
     List<ExpertTask> findByExpertIdAndParentIdOrderByCreatedAtDesc(UUID expertId, UUID parentId);
     List<ExpertTask> findByParentIdOrderByCreatedAtDesc(UUID parentId);
     long countByExpertId(UUID expertId);

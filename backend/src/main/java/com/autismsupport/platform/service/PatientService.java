@@ -27,6 +27,7 @@ public class PatientService {
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
 
+    @Transactional(readOnly = true)
     public List<PatientSummaryDto> getPatients(UUID expertId) {
         Map<UUID, Child> children = new LinkedHashMap<>();
 
@@ -42,6 +43,7 @@ public class PatientService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ExpertTaskDto> getTasks(UUID expertId, UUID childId) {
         validateExpertChildAccess(expertId, childId);
         return expertTaskRepository.findByExpertIdAndChildIdOrderByCreatedAtDesc(expertId, childId).stream()
@@ -84,12 +86,14 @@ public class PatientService {
         return toTaskDto(saved);
     }
 
+    @Transactional(readOnly = true)
     public List<ExpertTaskDto> getMyTasksAsParent(UUID parentId) {
         return expertTaskRepository.findByParentIdOrderByCreatedAtDesc(parentId).stream()
                 .map(this::toTaskDto)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ExpertTaskDto> getTasksByExpert(UUID expertId) {
         return expertTaskRepository.findByExpertIdOrderByCreatedAtDesc(expertId).stream()
                 .map(this::toTaskDto)
@@ -124,6 +128,7 @@ public class PatientService {
         expertTaskRepository.delete(task);
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> getExpertStats(UUID expertId) {
         long totalTasks = expertTaskRepository.countByExpertId(expertId);
         long completedTasks = expertTaskRepository.countByExpertIdAndStatus(expertId, "COMPLETED");
@@ -192,6 +197,7 @@ public class PatientService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> searchParentForExpert(String email) {
         User parent = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Bu e-posta adresine sahip bir ebeveyn bulunamadi"));

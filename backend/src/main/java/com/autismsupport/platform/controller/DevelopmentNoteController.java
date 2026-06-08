@@ -25,13 +25,13 @@ public class DevelopmentNoteController {
     @GetMapping("/child/{childId}")
     public ResponseEntity<ApiResponse<Page<DevelopmentNoteDto>>> getNotes(
             @PathVariable UUID childId, @CurrentUser UserPrincipal principal, Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(noteService.getNotesByChild(childId, principal.getId(), pageable)));
+        return ResponseEntity.ok(ApiResponse.success(noteService.getNotesByChild(childId, principal.getId(), principal.getRole(), pageable)));
     }
 
     @GetMapping("/child/{childId}/recent")
     public ResponseEntity<ApiResponse<List<DevelopmentNoteDto>>> getRecentNotes(
             @PathVariable UUID childId, @CurrentUser UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.success(noteService.getRecentNotes(childId, principal.getId())));
+        return ResponseEntity.ok(ApiResponse.success(noteService.getRecentNotes(childId, principal.getId(), principal.getRole())));
     }
 
     @GetMapping("/count")

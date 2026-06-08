@@ -27,7 +27,7 @@ public class ChildController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ChildDto>> getChild(@PathVariable UUID id, @CurrentUser UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.success(childService.getChild(id, principal.getId())));
+        return ResponseEntity.ok(ApiResponse.success(childService.getChild(id, principal.getId(), principal.getRole())));
     }
 
     @PostMapping

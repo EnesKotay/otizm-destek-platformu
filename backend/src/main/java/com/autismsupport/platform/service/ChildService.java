@@ -23,6 +23,7 @@ public class ChildService {
     private final ChildRepository childRepository;
     private final UserRepository userRepository;
     private final TagService tagService;
+    private final PatientAccessService patientAccessService;
 
     @Transactional(readOnly = true)
     public List<ChildDto> getChildrenByParent(UUID parentId) {
@@ -32,11 +33,16 @@ public class ChildService {
     }
 
     @Transactional(readOnly = true)
-    public ChildDto getChild(UUID childId, UUID parentId) {
+    public ChildDto getChild(UUID childId, UUID userId, String role) {
         Child child = childRepository.findById(childId)
                 .orElseThrow(() -> new ResourceNotFoundException("Çocuk profili bulunamadı"));
-        validateOwnership(child, parentId);
+        validateReadAccess(child, userId, role);
         return toDto(child);
+    }
+
+    @Transactional(readOnly = true)
+    public ChildDto getChild(UUID childId, UUID parentId) {
+        return getChild(childId, parentId, "PARENT");
     }
 
     @Transactional
@@ -95,6 +101,12 @@ public class ChildService {
     private void validateOwnership(Child child, UUID parentId) {
         if (!child.getParent().getId().equals(parentId)) {
             System.err.println("OWNERSHIP FAILED! child.parent.id=" + child.getParent().getId() + ", parentId=" + parentId);
+            throw new UnauthorizedException("Bu çocuk profiline erişim yetkiniz yok");
+        }
+    }
+
+    private void validateReadAccess(Child child, UUID userId, String role) {
+        if (!patientAccessService.canReadChild(userId, role, child.getId())) {
             throw new UnauthorizedException("Bu çocuk profiline erişim yetkiniz yok");
         }
     }

@@ -23,15 +23,18 @@ public class DevelopmentNoteService {
 
     private final DevelopmentNoteRepository noteRepository;
     private final ChildRepository childRepository;
+    private final PatientAccessService patientAccessService;
 
-    public Page<DevelopmentNoteDto> getNotesByChild(UUID childId, UUID parentId, Pageable pageable) {
-        validateChildOwnership(childId, parentId);
+    @Transactional(readOnly = true)
+    public Page<DevelopmentNoteDto> getNotesByChild(UUID childId, UUID userId, String role, Pageable pageable) {
+        validateChildReadAccess(childId, userId, role);
         return noteRepository.findByChildIdOrderByNoteDateDesc(childId, pageable)
                 .map(this::toDto);
     }
 
-    public List<DevelopmentNoteDto> getRecentNotes(UUID childId, UUID parentId) {
-        validateChildOwnership(childId, parentId);
+    @Transactional(readOnly = true)
+    public List<DevelopmentNoteDto> getRecentNotes(UUID childId, UUID userId, String role) {
+        validateChildReadAccess(childId, userId, role);
         return noteRepository.findTop5ByChildIdOrderByCreatedAtDesc(childId).stream()
                 .map(this::toDto)
                 .toList();
@@ -90,6 +93,14 @@ public class DevelopmentNoteService {
         Child child = childRepository.findById(childId)
                 .orElseThrow(() -> new ResourceNotFoundException("Çocuk profili bulunamadı"));
         validateChildOwnership(child, parentId);
+    }
+
+    private void validateChildReadAccess(UUID childId, UUID userId, String role) {
+        childRepository.findById(childId)
+                .orElseThrow(() -> new ResourceNotFoundException("Çocuk profili bulunamadı"));
+        if (!patientAccessService.canReadChild(userId, role, childId)) {
+            throw new UnauthorizedException("Bu çocuk profiline erişim yetkiniz yok");
+        }
     }
 
     private void validateChildOwnership(Child child, UUID parentId) {
