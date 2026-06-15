@@ -1,16 +1,33 @@
 import api from './api';
 import type { ApiResponse, ExpertStats, ExpertTask, PatientSummary, TaskSubmission, ExpertConnectionRequest } from '@/types';
 
+function asArray<T>(value: T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizePatient(patient: PatientSummary): PatientSummary {
+  const legacyLastSession = patient.lastSession && patient.lastSession !== 'Henuz tamamlanan seans yok'
+    ? patient.lastSession
+    : undefined;
+
+  return {
+    ...patient,
+    lastSession: patient.lastSession ?? (patient.lastSessionDate ?? undefined),
+    lastSessionDate: patient.lastSessionDate ?? legacyLastSession ?? null,
+    implicit: patient.implicit ?? false,
+  };
+}
+
 export const patientService = {
   getPatients: () =>
     api.get<ApiResponse<{ content: PatientSummary[]; totalElements: number; totalPages: number }>>('/patients')
-      .then(r => r.data.data.content),
+      .then(r => asArray(r.data.data?.content).map(normalizePatient)),
 
   getMyTasks: () =>
-    api.get<ApiResponse<ExpertTask[]>>('/patients/my-tasks').then(r => r.data.data),
+    api.get<ApiResponse<ExpertTask[]>>('/patients/my-tasks').then(r => asArray(r.data.data)),
 
   getTasks: (childId: string) =>
-    api.get<ApiResponse<ExpertTask[]>>(`/patients/${childId}/tasks`).then(r => r.data.data),
+    api.get<ApiResponse<ExpertTask[]>>(`/patients/${childId}/tasks`).then(r => asArray(r.data.data)),
 
   assignTask: (childId: string, data: Partial<ExpertTask>) =>
     api.post<ApiResponse<ExpertTask>>(`/patients/${childId}/tasks`, data).then(r => r.data.data),
@@ -19,7 +36,7 @@ export const patientService = {
     api.post<ApiResponse<unknown>>('/task-submissions', { taskId, parentId, parentNote: note, evidenceUrl }).then(r => r.data.data),
 
   getTaskSubmissions: (taskId: string) =>
-    api.get<ApiResponse<TaskSubmission[]>>(`/task-submissions/task/${taskId}`).then(r => r.data.data),
+    api.get<ApiResponse<TaskSubmission[]>>(`/task-submissions/task/${taskId}`).then(r => asArray(r.data.data)),
 
   reviewTaskSubmission: (submissionId: string, feedback: string) =>
     api.post<ApiResponse<TaskSubmission>>(`/task-submissions/${submissionId}/review`, { expertFeedback: feedback }).then(r => r.data.data),
@@ -40,10 +57,10 @@ export const patientService = {
     api.post<ApiResponse<void>>('/patients/add', { parentEmail, childId }).then(r => r.data),
 
   getConnectionRequests: () =>
-    api.get<ApiResponse<ExpertConnectionRequest[]>>('/patients/connections/requests').then(r => r.data.data),
+    api.get<ApiResponse<ExpertConnectionRequest[]>>('/patients/connections/requests').then(r => asArray(r.data.data)),
 
   getActiveConnections: () =>
-    api.get<ApiResponse<ExpertConnectionRequest[]>>('/patients/connections/active').then(r => r.data.data),
+    api.get<ApiResponse<ExpertConnectionRequest[]>>('/patients/connections/active').then(r => asArray(r.data.data)),
 
   approveConnection: (id: string) =>
     api.post<ApiResponse<void>>(`/patients/connections/${id}/approve`).then(r => r.data),
@@ -55,7 +72,7 @@ export const patientService = {
     api.post<ApiResponse<void>>(`/patients/connections/${id}/revoke`).then(r => r.data),
 
   getSentConnectionRequests: () =>
-    api.get<ApiResponse<ExpertConnectionRequest[]>>('/patients/connections/sent-requests').then(r => r.data.data),
+    api.get<ApiResponse<ExpertConnectionRequest[]>>('/patients/connections/sent-requests').then(r => asArray(r.data.data)),
 
   cancelConnectionRequest: (id: string) =>
     api.post<ApiResponse<void>>(`/patients/connections/${id}/cancel`).then(r => r.data),

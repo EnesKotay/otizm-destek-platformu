@@ -14,7 +14,8 @@ import java.util.UUID;
 
 public interface ExpertPatientConnectionRepository extends JpaRepository<ExpertPatientConnection, UUID> {
 
-    List<ExpertPatientConnection> findByExpertIdAndStatus(UUID expertId, ConnectionStatus status);
+    @Query("SELECT c FROM ExpertPatientConnection c JOIN FETCH c.child ch JOIN FETCH ch.parent WHERE c.expert.id = :expertId AND c.status = :status")
+    List<ExpertPatientConnection> findByExpertIdAndStatus(@Param("expertId") UUID expertId, @Param("status") ConnectionStatus status);
 
     @Query("SELECT c FROM ExpertPatientConnection c JOIN FETCH c.child ch JOIN FETCH ch.parent WHERE c.expert.id = :expertId AND c.status = :status")
     Page<ExpertPatientConnection> findApprovedWithChildByExpertId(@Param("expertId") UUID expertId,
@@ -23,10 +24,12 @@ public interface ExpertPatientConnectionRepository extends JpaRepository<ExpertP
 
     List<ExpertPatientConnection> findByChildIdAndStatus(UUID childId, ConnectionStatus status);
 
-    @Query("SELECT c FROM ExpertPatientConnection c WHERE c.child.parent.id = :parentId AND c.status = :status")
+    @Query("SELECT c FROM ExpertPatientConnection c JOIN FETCH c.expert JOIN FETCH c.child ch JOIN FETCH ch.parent WHERE ch.parent.id = :parentId AND c.status = :status")
     List<ExpertPatientConnection> findByChildParentIdAndStatus(@Param("parentId") UUID parentId, @Param("status") ConnectionStatus status);
 
     Optional<ExpertPatientConnection> findByExpertIdAndChildId(UUID expertId, UUID childId);
 
     boolean existsByExpertIdAndChildIdAndStatus(UUID expertId, UUID childId, ConnectionStatus status);
+
+    boolean existsByExpertIdAndChildIdAndStatusIn(UUID expertId, UUID childId, java.util.Collection<ConnectionStatus> statuses);
 }

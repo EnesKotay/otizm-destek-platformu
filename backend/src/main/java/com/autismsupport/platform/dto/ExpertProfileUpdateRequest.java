@@ -17,4 +17,5 @@ public class ExpertProfileUpdateRequest {
     private String institution;
     private String city;
     private List<String> specializations;
+    private Boolean acceptingPatients;
 }

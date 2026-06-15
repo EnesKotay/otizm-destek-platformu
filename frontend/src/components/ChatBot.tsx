@@ -633,7 +633,7 @@ export function ChatBot() {
               </div>
               <div>
                 <div className="cb-header-title"><Sparkles size={12} /> AutiBot</div>
-                <div className="cb-header-subtitle">Gemini AI destekli • Her zaman burada</div>
+                <div className="cb-header-subtitle">Yardımcı asistan • Bilgilendirme amaçlıdır</div>
               </div>
             </div>
             <div className="cb-header-actions">

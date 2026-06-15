@@ -8,8 +8,12 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.autismsupport.platform.model.Child;
+import com.autismsupport.platform.model.ConnectionStatus;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -84,4 +88,20 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
            "WHERE a.expert.id = :expertId AND a.parent IS NOT NULL AND a.status != 'BLOCKED' " +
            "GROUP BY a.parent.id, a.parent.fullName, a.child.id, a.child.name")
     List<PatientSummaryProjection> getPatientSummariesGrouped(@Param("expertId") UUID expertId);
+
+    @Query("""
+            SELECT DISTINCT a.child FROM Appointment a
+            WHERE a.expert.id = :expertId
+              AND a.status = 'COMPLETED'
+              AND a.child IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT ec FROM ExpertPatientConnection ec
+                  WHERE ec.expert.id = :expertId
+                    AND ec.child = a.child
+                    AND ec.status IN :terminalStatuses
+              )
+            """)
+    List<Child> findDistinctChildrenWithCompletedAppointments(
+            @Param("expertId") UUID expertId,
+            @Param("terminalStatuses") Collection<ConnectionStatus> terminalStatuses);
 }

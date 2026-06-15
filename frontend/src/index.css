@@ -66,7 +66,7 @@ body {
   }
   
   /* Konteyner ve Kartların Tam Genişliğe Yayılması */
-  .max-w-5xl, .max-w-6xl, .max-w-[92rem] {
+  .max-w-5xl, .max-w-6xl, .max-w-\[92rem\] {
     max-width: none !important;
     width: 100% !important;
     padding: 0 !important;

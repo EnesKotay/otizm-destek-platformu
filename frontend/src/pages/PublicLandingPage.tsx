@@ -96,8 +96,8 @@ const modules: { icon: React.ElementType; title: string; text: string; color: Mo
 const platformFeatures = [
   {
     icon: Layers,
-    title: 'Dağınıklık biter',
-    description: 'Farklı defterler, WhatsApp mesajları ve hafıza yerine her şey tek, düzenli bir profilde.',
+    title: 'Dağınıklık azalır',
+    description: 'Farklı defterler, mesajlar ve hatırlama yükü yerine temel bilgiler tek profilde toplanır.',
     color: 'blue' as ModuleColor,
   },
   {
@@ -108,8 +108,8 @@ const platformFeatures = [
   },
   {
     icon: Share2,
-    title: 'İletişim kolaylaşır',
-    description: 'Aile ve uzman aynı bağlamı paylaşır; her seferinde sıfırdan anlatmak gerekmez.',
+    title: 'Paylaşım kontrollü olur',
+    description: 'Aile ve uzman aynı güncel bağlamı görür; hangi bilginin paylaşılacağı sizde kalır.',
     color: 'violet' as ModuleColor,
   },
 ];
@@ -167,8 +167,8 @@ export function PublicLandingPage() {
           </Link>
 
           <nav className="hidden items-center gap-6 text-sm font-semibold text-slate-600 lg:flex">
-            <a href="#rehber"  className="transition-colors hover:text-primary-700">Rehber</a>
-            <a href="#moduller" className="transition-colors hover:text-primary-700">Modüller</a>
+            <a href="#rehber"  className="transition-colors hover:text-primary-700">Nasıl başlarım?</a>
+            <a href="#moduller" className="transition-colors hover:text-primary-700">Araçlar</a>
             <a href="#guven"   className="transition-colors hover:text-primary-700">Güven</a>
           </nav>
 
@@ -177,7 +177,7 @@ export function PublicLandingPage() {
               Giriş
             </Link>
             <Link to="/kayit" className="rounded-xl bg-primary-600 px-3 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-700 sm:px-4">
-              Ücretsiz Başla
+              Hesap Aç
             </Link>
             <button
               type="button"
@@ -194,8 +194,8 @@ export function PublicLandingPage() {
         {mobileMenuOpen && (
           <div className="border-t border-slate-100 bg-white px-5 py-4 lg:hidden">
             <nav className="flex flex-col gap-3 text-sm font-semibold text-slate-700">
-              <a href="#rehber"   className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Rehber</a>
-              <a href="#moduller" className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Modüller</a>
+              <a href="#rehber"   className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Nasıl başlarım?</a>
+              <a href="#moduller" className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Araçlar</a>
               <a href="#guven"    className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Güven</a>
               <Link to="/giris"  className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Giriş yap</Link>
             </nav>
@@ -204,25 +204,20 @@ export function PublicLandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section id="rehber" className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-br from-slate-50 via-white to-primary-50/40">
-        {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -right-40 -top-40 h-[28rem] w-[28rem] rounded-full bg-primary-100/50 blur-3xl" aria-hidden="true" />
-        <div className="pointer-events-none absolute -bottom-24 left-0 h-72 w-72 rounded-full bg-blue-50/70 blur-3xl" aria-hidden="true" />
-
-        <div className="relative mx-auto grid min-h-[calc(100vh-65px)] max-w-6xl items-center gap-10 px-5 py-12 lg:grid-cols-[0.92fr_1.08fr]">
+      <section id="rehber" className="relative overflow-hidden border-b border-slate-200 bg-slate-50">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 lg:min-h-[calc(100vh-145px)] lg:grid-cols-[0.9fr_1.1fr] lg:py-14">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white px-4 py-1.5 text-xs font-bold text-primary-700 shadow-sm">
               <CheckCircle2 size={14} />
-              Başlamak için aşağı kaydırmanız gerekmez
+              İlk adım ekranda hazır
             </div>
 
             <h1 className="mt-7 text-4xl font-extrabold leading-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Adım adım ne yapacağınızı gösteren{' '}
-              <span className="text-primary-600">otizm destek</span> platformu
+              Otizm Destek Platformu
             </h1>
 
             <p className="mt-5 text-lg leading-8 text-slate-600">
-              Çocuk profili, günlük kayıt, randevu, uzman iletişimi ve gelişim takibi tek düzenli akışta birleşir.
+              Çocuk profili, bugünün kaydı, randevular ve uzman paylaşımı için sade bir çalışma alanı. Nereden başlayacağınızı adım adım gösterir.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
@@ -245,19 +240,22 @@ export function PublicLandingPage() {
             {/* Platform özellikleri şeridi */}
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               {[
-                '✓ Ücretsiz başlayın',
-                '✓ KVKK uyumlu',
-                '✓ 10+ modül',
+                'Kontrollü paylaşım',
+                'Rol bazlı erişim',
+                'Tıbbi karar değildir',
               ].map((item) => (
-                <span key={item} className="text-sm font-semibold text-slate-500">{item}</span>
+                <span key={item} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500">
+                  <CheckCircle2 size={14} className="text-emerald-500" />
+                  {item}
+                </span>
               ))}
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               {[
                 ['1', 'Profil oluştur'],
-                ['2', 'Günlük takip et'],
-                ['3', 'Uzmanla paylaş'],
+                ['2', 'Bugünü kaydet'],
+                ['3', 'Gerekirse paylaş'],
               ].map(([number, label]) => (
                 <div key={label} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-sm font-black text-primary-700">
@@ -275,7 +273,7 @@ export function PublicLandingPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Başlangıç planı</p>
-                  <h2 className="mt-1 text-xl font-extrabold text-slate-950">Platformda sırayla ne yapacağım?</h2>
+                  <h2 className="mt-1 text-xl font-extrabold text-slate-950">İlk gün ne yapacağım?</h2>
                 </div>
                 <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
                   {activeStepIndex + 1}/{guideSteps.length}
@@ -380,9 +378,9 @@ export function PublicLandingPage() {
         <div className="mx-auto max-w-6xl px-5 py-16">
           <div className="mb-10 text-center">
             <p className="text-xs font-black uppercase tracking-widest text-primary-700">Platform avantajları</p>
-            <h2 className="mt-2 text-3xl font-extrabold text-slate-950">Neden bu platform?</h2>
+            <h2 className="mt-2 text-3xl font-extrabold text-slate-950">Günlük yükü sadeleştirir</h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
-              Otizm destek sürecindeki en yaygın üç zorluğu doğrudan çözmek için tasarlandı.
+              Otizm destek sürecinde sık yaşanan takip, hatırlama ve paylaşım yükünü azaltmak için tasarlandı.
             </p>
           </div>
 
@@ -411,11 +409,11 @@ export function PublicLandingPage() {
         <div className="mx-auto max-w-6xl px-5 py-16">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
-              <p className="text-xs font-black uppercase tracking-widest text-primary-700">Platform modülleri</p>
-              <h2 className="mt-2 text-3xl font-extrabold text-slate-950">Her ekranın görevi net</h2>
+              <p className="text-xs font-black uppercase tracking-widest text-primary-700">Araçlar</p>
+              <h2 className="mt-2 text-3xl font-extrabold text-slate-950">Önce temel akış, sonra detaylar</h2>
             </div>
             <p className="max-w-xl text-sm leading-6 text-slate-600">
-              Kullanıcı hangi sayfaya neden girdiğini anlar; kayıt, planlama, iletişim ve takip birbirine bağlı çalışır.
+              Kullanıcı önce profil, bugünün kaydı, randevu ve mesajlaşmaya yönlenir; ihtiyaç oldukça detay modüller açılır.
             </p>
           </div>
 
@@ -474,16 +472,13 @@ export function PublicLandingPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-white/5 blur-3xl" aria-hidden="true" />
-        <div className="pointer-events-none absolute -bottom-20 left-10 h-64 w-64 rounded-full bg-white/5 blur-3xl" aria-hidden="true" />
-
+      <section className="relative overflow-hidden bg-primary-700 text-white">
         <div className="relative mx-auto flex max-w-6xl flex-col items-start justify-between gap-8 px-5 py-16 sm:flex-row sm:items-center">
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-primary-200">Hazır olduğunuzda</p>
-            <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">İlk adım: hesabınızı açın.</h2>
+            <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">İlk adım: çocuk profilini hazırlayın.</h2>
             <p className="mt-3 max-w-md text-sm leading-6 text-primary-100">
-              Ücretsiz, kurulum gerektirmeden, hemen başlayın.
+              Kısa bir kayıt sonrası temel bilgileri ekleyip günlük akışı kullanmaya başlayabilirsiniz.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

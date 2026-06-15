@@ -41,37 +41,20 @@ public class CalendarEvent {
     @Column(name = "recurrence_rule")
     private String recurrenceRule;
 
-    // Etkinlik durumu: PLANNED / COMPLETED / CANCELLED
     @Column(nullable = false, length = 20)
     @Builder.Default
     private String status = "PLANNED";
 
-    // Etkinlik konumu (klinik adı, adres vb.)
     @Column(length = 255)
     private String location;
-
-    // Etkinlikten kaç dakika önce hatırlatma (null = kapalı)
-    @Column(name = "reminder_minutes_before")
-    private Integer reminderMinutesBefore;
-
-    // Hatırlatma bildirimi gönderildi mi?
-    @Column(name = "reminder_sent", nullable = false)
-    @Builder.Default
-    private boolean reminderSent = false;
 
     @Column(name = "reminder_minutes_before")
     @Builder.Default
     private Integer reminderMinutesBefore = 60;
 
-    @Column(name = "location")
-    private String location;
-
-    @Column(name = "reminder_sent")
+    @Column(name = "reminder_sent", nullable = false)
     @Builder.Default
     private boolean reminderSent = false;
-
-    @Builder.Default
-    private String status = "PLANNED";
 
     @Builder.Default
     private String color = "#4F46E5";

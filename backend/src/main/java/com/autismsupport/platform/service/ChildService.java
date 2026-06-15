@@ -26,6 +26,7 @@ public class ChildService {
     private final UserRepository userRepository;
     private final TagService tagService;
     private final PatientAccessService patientAccessService;
+    private final ClinicalDataShareService clinicalDataShareService;
 
     @Transactional(readOnly = true)
     public List<ChildDto> getChildrenByParent(UUID parentId) {

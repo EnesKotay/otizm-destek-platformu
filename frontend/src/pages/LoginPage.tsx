@@ -22,11 +22,11 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const QUOTES = [
-  'Her çocuk bir mucizedir. Bazıları sadece farklı bir dilde parlar.',
-  'Farklı düşünmek, farklı görmek — bu bir hediyedir.',
-  'Sevgi, sabır ve anlayış; en güçlü terapinin ta kendisidir.',
-  'Her beyin benzersiz bir güzellik taşır.',
-  'Çocuğunuzun dünyasına adım atın; orada harikalar keşfedeceksiniz.',
+  'Bugün için küçük, uygulanabilir bir adım yeterli olabilir.',
+  'Düzenli notlar, zor günleri daha anlaşılır hale getirir.',
+  'Gelişim takibi sakin, kısa ve sürdürülebilir olduğunda işe yarar.',
+  'Aile ve uzman aynı bilgiyi gördüğünde görüşmeler daha net ilerler.',
+  'Her kayıt, bir sonraki adımı biraz daha görünür kılar.',
 ];
 
 const FEATURES = [
@@ -34,27 +34,27 @@ const FEATURES = [
     icon: Brain,
     color: 'bg-primary-500/20 border-primary-500/30',
     iconColor: 'text-primary-400',
-    title: 'Yapay Zeka Destekli BEP Planları',
-    desc: 'Çocuğunuzun ihtiyaçlarına özel hazırlanmış bireyselleştirilmiş eğitim planları.',
+    title: 'BEP ve hedef hazırlığı',
+    desc: 'Uzmanın düzenleyip tamamlayabileceği hedef ve rapor taslakları.',
   },
   {
     icon: Users,
     color: 'bg-emerald-500/20 border-emerald-500/30',
     iconColor: 'text-emerald-400',
-    title: 'Uzman ve Aile Ağı',
-    desc: 'Deneyimli terapistler ve benzer deneyimdeki ailelerle iletişim.',
+    title: 'Uzman ve aile iletişimi',
+    desc: 'Randevu, mesaj ve paylaşım izinlerini aynı yerden takip edin.',
   },
   {
     icon: CalendarCheck,
     color: 'bg-indigo-400/20 border-indigo-400/30',
     iconColor: 'text-indigo-300',
-    title: 'Yapay Zeka Eşleştirme',
-    desc: 'En uyumlu aileler ve uzmanları otomatik olarak bulun.',
+    title: 'Günlük takip akışı',
+    desc: 'Duygu, uyku, ilaç ve kısa gözlemleri yorulmadan kaydedin.',
   },
 ];
 
 const TRUST_ITEMS = [
-  { icon: Shield, label: 'KVKK uyumlu veri akışı' },
+  { icon: Shield, label: 'İzin ve gizlilik akışı' },
   { icon: BadgeCheck, label: 'Onaylı uzman profilleri' },
   { icon: FileCheck2, label: 'Çocuk verisi için güvenli kayıt' },
 ];
@@ -133,8 +133,8 @@ export function LoginPage() {
         <div className="relative z-10 my-auto max-w-lg space-y-8">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs text-primary-300 font-medium">
-              <Sparkles size={12} className="animate-pulse text-yellow-400" />
-              <span>Nöroçeşitlilik Bir Güçtür</span>
+              <Sparkles size={12} className="text-primary-300" />
+              <span>Günlük takip ve güvenli paylaşım</span>
             </div>
 
             {/* Dönen alıntı — login'e özgü */}
@@ -164,7 +164,7 @@ export function LoginPage() {
             </div>
 
             <p className="text-slate-300 leading-relaxed text-sm">
-              Otizm Destek Platformu ile çocuğunuzun gelişimini izleyin, uzmanlarla iletişime geçin ve benzer ailelerle güçlü bağlar kurun.
+              Otizm Destek Platformu, çocuk bilgilerini, günlük kayıtları ve uzman iletişimini tek düzenli çalışma alanında toplar.
             </p>
           </div>
 
@@ -219,11 +219,11 @@ export function LoginPage() {
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">
               Çocuğunuzun yanında<br />
               <span className="bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">
-                olmaya devam edin.
+                kaldığınız yerden devam edin.
               </span>
             </h1>
             <p className="text-gray-400 text-sm mt-3 leading-relaxed">
-              Her gün küçük bir adım, büyük bir fark yaratır.
+              Bugünün kaydına, randevulara ve mesajlara güvenli şekilde ulaşın.
             </p>
           </div>
 

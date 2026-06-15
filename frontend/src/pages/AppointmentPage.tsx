@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar as CalendarIcon, Clock, CheckCircle, ChevronLeft, ChevronRight,
   GraduationCap, Sun, Check, Loader2, AlertCircle, Search, X,
@@ -81,6 +81,7 @@ const DURATION_OPTIONS = [30, 50, 90];
 
 export function AppointmentPage() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isExpert = user?.role === 'EXPERT';
   const requestedExpertId = useMemo(() => searchParams.get('expert') ?? '', [searchParams]);
@@ -173,6 +174,11 @@ export function AppointmentPage() {
   const [scheduleIsDirty, setScheduleIsDirty] = useState(false);
 
   const didFetchKey = useRef('');
+
+  const openPatientPage = useCallback((patient: Record<string, unknown>) => {
+    const childId = typeof patient.childId === 'string' ? patient.childId : '';
+    navigate(childId ? `/danisanlarim?childId=${encodeURIComponent(childId)}` : '/danisanlarim');
+  }, [navigate]);
 
   useEffect(() => {
     const fetchKey = `${isExpert}-${requestedExpertId}`;
@@ -1399,7 +1405,20 @@ export function AppointmentPage() {
                 const hasRating = p.avgRating != null && !isNaN(Number(p.avgRating)) && Number(p.avgRating) > 0;
 
                 return (
-                  <div key={i} className="group relative bg-white border border-slate-200 rounded-[20px] p-5 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-100/50 transition-all cursor-pointer overflow-hidden">
+                  <div
+                    key={i}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${childNameStr} danışan sayfasını aç`}
+                    onClick={() => openPatientPage(p)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openPatientPage(p);
+                      }
+                    }}
+                    className="group relative bg-white border border-slate-200 rounded-[20px] p-5 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-100/50 transition-all cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                  >
                     {/* Decorative accent */}
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-400 to-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                     
@@ -2543,4 +2562,3 @@ function AppointmentCard({ appt, isExpert, completingId, deletingId, compact = f
     </div>
   );
 }
-

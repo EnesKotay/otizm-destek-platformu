@@ -21,6 +21,33 @@ export interface User {
   avgRating?: number;
   articleCount?: number;
   reviewCount?: number;
+  acceptingPatients?: boolean;
+}
+
+export interface ConsultationReply {
+  id: string;
+  consultationId: string;
+  authorId: string;
+  authorName: string;
+  authorTitle?: string;
+  authorImageUrl?: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface ConsultationCase {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorTitle?: string;
+  authorImageUrl?: string;
+  title: string;
+  description: string;
+  tags: string[];
+  status: 'OPEN' | 'RESOLVED' | 'ARCHIVED';
+  replyCount: number;
+  createdAt: string;
+  replies?: ConsultationReply[];
 }
 
 export interface Tag {
@@ -329,9 +356,14 @@ export interface PatientSummary {
   parentName: string;
   age: number;
   diagnosis?: string;
-  lastSession: string;
+  /** Legacy display label used by older views. Prefer lastSessionDate for new code. */
+  lastSession?: string;
+  /** ISO date string (YYYY-MM-DD) or null when no completed session exists. */
+  lastSessionDate: string | null;
   tasksCompleted: number;
   totalTasks: number;
+  /** True when the patient has no explicit connection — access is appointment-based. */
+  implicit: boolean;
 }
 
 export interface ExpertTask {

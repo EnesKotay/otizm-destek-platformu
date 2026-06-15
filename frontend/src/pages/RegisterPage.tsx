@@ -116,17 +116,17 @@ export function RegisterPage() {
         <div className="relative z-10 my-auto max-w-lg space-y-8">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs text-primary-300 font-medium">
-              <Sparkles size={12} className="animate-pulse text-yellow-400" />
-              <span>Yapay Zeka Destekli Yeni Nesil Platform</span>
+              <Sparkles size={12} className="text-primary-300" />
+              <span>Günlük takip ve uzman paylaşımı</span>
             </div>
             <h2 className="text-4xl font-extrabold tracking-tight leading-[1.15]">
-              Çocuğunuzun Gelişim Yolculuğunda <br />
+              Çocuğunuzun gelişim sürecini <br />
               <span className="bg-gradient-to-r from-primary-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
-                Her An Yanınızdayız
+                daha düzenli takip edin
               </span>
             </h2>
             <p className="text-slate-300 leading-relaxed text-sm">
-              Otizm Destek Platformu ile çocuğunuzun günlük gelişimini izleyin, yapay zeka destekli eğitim planları oluşturun ve alanında uzman terapistlerle anında iletişime geçin.
+              Otizm Destek Platformu; çocuk profili, günlük kayıt, randevu ve uzman iletişimini sakin bir akışta bir araya getirir.
             </p>
           </div>
 
@@ -138,8 +138,8 @@ export function RegisterPage() {
                 <Brain className="text-primary-400" size={20} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-white">Yapay Zeka Destekli BEP Planları</h4>
-                <p className="text-xs text-slate-400 mt-1">Çocuğunuzun ihtiyaçlarına özel hazırlanmış Bireyselleştirilmiş Eğitim Planları.</p>
+                <h4 className="text-sm font-semibold text-white">BEP ve hedef hazırlığı</h4>
+                <p className="text-xs text-slate-400 mt-1">Uzmanın düzenleyip tamamlayabileceği hedef ve rapor taslakları.</p>
               </div>
             </div>
 
@@ -149,8 +149,8 @@ export function RegisterPage() {
                 <Users className="text-emerald-400" size={20} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-white">Uzman ve Aile Ağı</h4>
-                <p className="text-xs text-slate-400 mt-1">Deneyimli psikologlar, dil terapistleri ve benzer deneyimdeki diğer ailelerle iletişim.</p>
+                <h4 className="text-sm font-semibold text-white">Uzman ve aile iletişimi</h4>
+                <p className="text-xs text-slate-400 mt-1">Randevu, mesaj ve paylaşım izinlerini aynı yerden takip edin.</p>
               </div>
             </div>
           </div>
@@ -172,7 +172,7 @@ export function RegisterPage() {
             </div>
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Kayıt Ol</h1>
             <p className="text-gray-500 text-sm mt-2">
-              Çocuğunuzun gelişimini desteklemek için hemen ücretsiz hesabınızı oluşturun.
+              Temel bilgileri ekleyip günlük takip akışını kullanmaya başlayın.
             </p>
           </div>
 

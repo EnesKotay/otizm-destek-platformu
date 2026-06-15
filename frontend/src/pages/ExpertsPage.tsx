@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   GraduationCap, ShieldCheck, BookOpen, Search, MessageCircle,
   Building2, BadgeCheck, Calendar, ChevronRight, Users, X,
-  FileText, MapPin, Star, Trash2, Send,
+  FileText, MapPin, Star, Trash2, Send, Heart, UserCheck, UserX,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
@@ -18,13 +18,7 @@ import { toast } from '@/store/toastStore';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import type { User } from '@/types';
 
-// Fix 3: Türkçe normalize
-function normalizeTR(str: string): string {
-  return str
-    .toLocaleLowerCase('tr-TR')
-    .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i')
-    .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u');
-}
+import { normalizeTR } from '@/utils/string';
 
 const SPECIALTY_COLORS: Record<string, string> = {
   'ABA':          'bg-blue-100 text-blue-700',
@@ -397,6 +391,28 @@ function ExpertDetailModal({
   );
 }
 
+const FAVORITES_KEY = 'expert_favorites_v1';
+
+function useFavorites() {
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(FAVORITES_KEY);
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+    } catch { return new Set(); }
+  });
+
+  const toggle = useCallback((id: string) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
+      return next;
+    });
+  }, []);
+
+  return { favorites, toggle };
+}
+
 export function ExpertsPage() {
   const navigate = useNavigate();
   const user = useAuthStore(s => s.user);
@@ -406,12 +422,14 @@ export function ExpertsPage() {
   const [messagingId, setMessagingId] = useState<string | null>(null);
   const [selectedExpert, setSelectedExpert] = useState<User | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('Tümü');
-  
+
   // Advanced filters state
   const [selectedCity, setSelectedCity] = useState<string>('Tümü');
   const [sortBy, setSortBy] = useState<string>('default');
   const [onlyVerified, setOnlyVerified] = useState<boolean>(false);
   const [minRating, setMinRating] = useState<number>(0);
+  const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
+  const { favorites, toggle: toggleFavorite } = useFavorites();
 
   useEffect(() => {
     expertService.getAll()
@@ -454,8 +472,9 @@ export function ExpertsPage() {
     const matchesCity = selectedCity === 'Tümü' || e.city === selectedCity;
     const matchesVerified = !onlyVerified || e.verified;
     const matchesRating = minRating === 0 || (e.avgRating ?? 0) >= minRating;
+    const matchesFavorites = !onlyFavorites || favorites.has(e.id);
 
-    return matchesSearch && matchesFilter && matchesCity && matchesVerified && matchesRating;
+    return matchesSearch && matchesFilter && matchesCity && matchesVerified && matchesRating && matchesFavorites;
   });
 
   // Sort logic
@@ -488,14 +507,14 @@ export function ExpertsPage() {
 
   const verifiedCount = experts.filter(e => e.verified).length;
 
-  const hasActiveFilter = search.trim() || 
-    activeFilter !== 'Tümü' || 
-    selectedCity !== 'Tümü' || 
-    onlyVerified || 
-    minRating > 0 || 
-    sortBy !== 'default';
+  const hasActiveFilter = search.trim() ||
+    activeFilter !== 'Tümü' ||
+    selectedCity !== 'Tümü' ||
+    onlyVerified ||
+    minRating > 0 ||
+    sortBy !== 'default' ||
+    onlyFavorites;
 
-  // Fix 8: filtre + arama temizle
   const clearFilters = () => {
     setSearch('');
     setActiveFilter('Tümü');
@@ -503,6 +522,7 @@ export function ExpertsPage() {
     setOnlyVerified(false);
     setMinRating(0);
     setSortBy('default');
+    setOnlyFavorites(false);
   };
 
   return (
@@ -708,7 +728,7 @@ export function ExpertsPage() {
 
         {/* Alt Filtre Barı (Onaylı Switch'i ve Temizleme Butonu) */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-50">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <label className="relative inline-flex items-center cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -719,7 +739,24 @@ export function ExpertsPage() {
               <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
               <span className="ml-2 text-xs font-semibold text-gray-700 flex items-center gap-1">
                 <BadgeCheck size={14} className="text-blue-500" />
-                Yalnızca Onaylı Uzmanlar
+                Yalnızca Onaylı
+              </span>
+            </label>
+
+            <label className="relative inline-flex items-center cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={onlyFavorites}
+                onChange={e => setOnlyFavorites(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
+              <span className="ml-2 text-xs font-semibold text-gray-700 flex items-center gap-1">
+                <Heart size={13} className="text-rose-500" />
+                Favorilerim
+                {favorites.size > 0 && (
+                  <span className="bg-rose-100 text-rose-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-0.5">{favorites.size}</span>
+                )}
               </span>
             </label>
 
@@ -804,7 +841,7 @@ export function ExpertsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-1">
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <h3 className="font-bold text-gray-900 text-sm leading-snug group-hover:text-indigo-600 transition-colors">
                             {expert.fullName}
@@ -818,8 +855,34 @@ export function ExpertsPage() {
                             {expert.expertTitle}
                           </span>
                         )}
+                        {/* Müsaitlik badge */}
+                        <div className="mt-1.5">
+                          {expert.acceptingPatients !== false ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                              <UserCheck size={10} /> Yeni hasta kabul ediyor
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
+                              <UserX size={10} /> Şu an dolu
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all mt-0.5 shrink-0" />
+                      <div className="flex items-center gap-1 shrink-0">
+                        {!isSelf && (
+                          <button
+                            onClick={e => { e.stopPropagation(); toggleFavorite(expert.id); }}
+                            className="p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                            title={favorites.has(expert.id) ? 'Favorilerden Çıkar' : 'Favorilere Ekle'}
+                          >
+                            <Heart
+                              size={16}
+                              className={favorites.has(expert.id) ? 'fill-rose-500 text-rose-500' : 'text-gray-300 hover:text-rose-400'}
+                            />
+                          </button>
+                        )}
+                        <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all mt-0.5" />
+                      </div>
                     </div>
                   </div>
                 </div>

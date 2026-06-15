@@ -701,17 +701,17 @@ export function SimilarFamiliesPage() {
       <PageOnboarding
         pageId="similar-families"
         title="🤝 Ortak Yolculukta Birlikte Güçlüyüz: Benzer Aileler ve Buddy Sistemi"
-        description="Yapay zeka destekli eşleştirme motorumuz, çocuğunuzun gelişim seyrini, semptomlarını ve terapi hedeflerini analiz ederek sizinle en uyumlu aileleri bulur. Ayrıca 'Buddy & Mentorluk' altyapımızla 15 km yakınınızdaki velileri keşfedebilir, karşılıklı destek bağları kurabilirsiniz."
+        description="Eşleştirme akışı; yaş aralığı, ortak hedefler, şehir ve seçtiğiniz tercihleri dikkate alarak benzer deneyimdeki aileleri listelemeye yardımcı olur. Konum paylaşımı isteğe bağlıdır."
         steps={[
           {
             icon: <Sparkles size={20} />,
-            title: "🧩 Akıllı Klinik Benzerlik",
-            description: "Çocuğunuzun gelişimsel özellikleri, terapi hedefleri, yaş aralığı ve tanı etiketleri yapay zekamız tarafından güvenle işlenerek en yüksek sinerjiye sahip aileleri listeler."
+            title: "🧩 Benzerlik Sıralaması",
+            description: "Gelişimsel notlar, terapi hedefleri, yaş aralığı ve seçili etiketler benzer aileleri öne çıkarmak için kullanılır."
           },
           {
             icon: <MapPin size={20} />,
-            title: "📍 Mahalle Bazlı Eşleşme (Buddy)",
-            description: "Enlem ve boylam konum verilerini kullanarak en yakınınızdaki benzer hedeflere sahip otizmli velileri bulun, sosyal bir destek çemberi oluşturun."
+            title: "📍 Yakındaki Aileler",
+            description: "Konum izni verirseniz yakın çevredeki aileleri mesafe hesabıyla görebilirsiniz."
           },
           {
             icon: <Handshake size={20} />,

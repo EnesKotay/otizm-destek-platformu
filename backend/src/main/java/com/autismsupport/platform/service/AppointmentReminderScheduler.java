@@ -33,6 +33,7 @@ public class AppointmentReminderScheduler {
     private final ExpertTaskRepository expertTaskRepository;
     private final NotificationService notificationService;
     private final EmailService emailService;
+    private final PatientService patientService;
 
     /** Her sabah 08:00'de calisir — ertesi gun randevusu olan herkese hatirlatma gonderir. */
     @Transactional
@@ -202,6 +203,7 @@ public class AppointmentReminderScheduler {
             historyRepository.save(AppointmentStatusHistory.builder()
                     .appointment(savedComplete).oldStatus("CONFIRMED").newStatus("COMPLETED")
                     .note("Otomatik tamamlandi: randevu suresi doldu").build());
+            patientService.syncConnectionFromCompletedAppointment(savedComplete);
             if (appt.getParent() != null) {
                 notificationService.createNotification(
                         appt.getParent().getId(),

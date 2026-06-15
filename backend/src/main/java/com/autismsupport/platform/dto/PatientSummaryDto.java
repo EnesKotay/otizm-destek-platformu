@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
@@ -19,7 +20,14 @@ public class PatientSummaryDto {
     private String parentName;
     private int age;
     private String diagnosis;
-    private String lastSession;
+    /** Null when no completed session exists. */
+    private LocalDate lastSessionDate;
     private int tasksCompleted;
     private int totalTasks;
+    /**
+     * True when the patient appears only because of a completed appointment —
+     * i.e. there is no explicit APPROVED ExpertPatientConnection record.
+     * Shown as an "implicit access" hint in the UI.
+     */
+    private boolean implicit;
 }

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArticle, UUID> {
@@ -22,4 +23,12 @@ public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArtic
 
     @Query("SELECT a FROM KnowledgeArticle a WHERE a.published = true AND (LOWER(a.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(a.content) LIKE LOWER(CONCAT('%', :q, '%')))")
     Page<KnowledgeArticle> searchPublished(@Param("q") String q, Pageable pageable);
+
+    @Query("SELECT a.author.id AS authorId, COUNT(a) AS articleCount FROM KnowledgeArticle a WHERE a.author.id IN :authorIds GROUP BY a.author.id")
+    List<ArticleCountProjection> findArticleCountsByAuthorIds(@Param("authorIds") List<UUID> authorIds);
+
+    interface ArticleCountProjection {
+        UUID getAuthorId();
+        Long getArticleCount();
+    }
 }

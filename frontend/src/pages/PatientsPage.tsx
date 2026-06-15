@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Users, Search, FileText, Calendar, Plus, CheckCircle,
   Clock, BarChart2, Printer, Target, AlertCircle,
@@ -16,16 +16,17 @@ import { patientService } from '@/services/patientService';
 import { messagingService } from '@/services/messagingService';
 import type { ExpertTask, PatientSummary, TaskSubmission, ExpertConnectionRequest } from '@/types';
 
-function normalizeTR(str: string): string {
-  return str
-    .toLocaleLowerCase('tr-TR')
-    .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i')
-    .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u');
-}
+import { normalizeTR } from '@/utils/string';
 
 function isOverdue(dueDate?: string): boolean {
   if (!dueDate) return false;
   return new Date(dueDate) < new Date(new Date().toDateString());
+}
+
+function formatLastSession(date: string | null): string {
+  if (!date) return 'Yok';
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? 'Yok' : d.toLocaleDateString('tr-TR');
 }
 
 const EMPTY_TASK = {
@@ -38,6 +39,8 @@ type TaskFilter = 'all' | 'pending' | 'completed' | 'overdue' | 'review_pending'
 
 export function PatientsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedChildId = searchParams.get('childId') ?? '';
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [tasks, setTasks] = useState<ExpertTask[]>([]);
   const [search, setSearch] = useState('');
@@ -56,9 +59,12 @@ export function PatientsPage() {
   const [patientSort, setPatientSort] = useState<'recent' | 'name' | 'tasks'>('recent');
   const [newTask, setNewTask] = useState({ ...EMPTY_TASK });
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
-  
+
+  // Per-task submissions loaded lazily on expand
   const [taskSubmissions, setTaskSubmissions] = useState<Record<string, TaskSubmission[]>>({});
-  const [feedbackText, setFeedbackText] = useState('');
+  const [loadingSubmissions, setLoadingSubmissions] = useState<Record<string, boolean>>({});
+  // Per-submission feedback text — key: submissionId
+  const [feedbackText, setFeedbackText] = useState<Record<string, string>>({});
   const [submittingFeedback, setSubmittingFeedback] = useState<string | null>(null);
   const [sentRequests, setSentRequests] = useState<ExpertConnectionRequest[]>([]);
 
@@ -125,7 +131,18 @@ export function PatientsPage() {
       const data = await patientService.getPatients();
       if (signal?.aborted) return;
       setPatients(data);
-      if (data.length > 0) setSelectedPatient(prev => prev ?? data[0]);
+      if (data.length > 0) {
+        setSelectedPatient(prev => {
+          const requestedPatient = requestedChildId
+            ? data.find(p => p.childId === requestedChildId)
+            : null;
+          if (requestedPatient) return requestedPatient;
+          if (prev && data.some(p => p.childId === prev.childId)) return prev;
+          return data[0];
+        });
+      } else {
+        setSelectedPatient(null);
+      }
     } catch {
       if (signal?.aborted) return;
       setLoadError(true);
@@ -133,7 +150,7 @@ export function PatientsPage() {
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, []);
+  }, [requestedChildId]);
 
   const loadSentRequests = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -161,40 +178,48 @@ export function PatientsPage() {
     return () => controller.abort();
   }, [loadPatients, loadSentRequests]);
 
+  // Danışan değişince görevleri yükle, submission cache'i sıfırla
   useEffect(() => {
     if (!selectedPatient) { setTasks([]); return; }
     const controller = new AbortController();
-     
+
     setTasksLoading(true);
     setTaskSearch('');
     setTaskFilter('all');
-    
+    setTaskSubmissions({});
+    setExpandedTaskId(null);
+
     patientService.getTasks(selectedPatient.childId)
-      .then(async data => { 
-        if (controller.signal.aborted) return;
-        setTasks(data);
-        
-        // Eagerly fetch submissions for completed tasks to determine 'review_pending' status
-        const completedTasks = data.filter(t => t.status === 'COMPLETED');
-        const submissionsMap: Record<string, TaskSubmission[]> = {};
-        
-        await Promise.all(
-          completedTasks.map(t => 
-            patientService.getTaskSubmissions(t.id)
-              .then(subs => { submissionsMap[t.id] = subs; })
-              .catch(err => console.error("Could not fetch submissions for task", t.id, err))
-          )
-        );
-        
-        if (!controller.signal.aborted) {
-          setTaskSubmissions(submissionsMap);
-        }
+      .then(data => {
+        if (!controller.signal.aborted) setTasks(data);
       })
       .catch(() => { if (!controller.signal.aborted) toast.error('Görevler yüklenemedi.'); })
       .finally(() => { if (!controller.signal.aborted) setTasksLoading(false); });
-      
+
     return () => controller.abort();
   }, [selectedPatient?.childId]);
+
+  // Görev genişletilince submission'ları lazy yükle
+  const handleExpandTask = useCallback(async (taskId: string, taskStatus: string) => {
+    setExpandedTaskId(prev => prev === taskId ? null : taskId);
+    if (taskStatus !== 'COMPLETED') return;
+    if (taskSubmissions[taskId] !== undefined || loadingSubmissions[taskId]) return;
+
+    setLoadingSubmissions(prev => ({ ...prev, [taskId]: true }));
+    try {
+      const subs = await patientService.getTaskSubmissions(taskId);
+      setTaskSubmissions(prev => ({ ...prev, [taskId]: subs }));
+    } catch {
+      setTaskSubmissions(prev => ({ ...prev, [taskId]: [] }));
+    } finally {
+      setLoadingSubmissions(prev => ({ ...prev, [taskId]: false }));
+    }
+  }, [taskSubmissions, loadingSubmissions]);
+
+  const isReviewPending = useCallback((taskId: string) => {
+    const subs = taskSubmissions[taskId];
+    return Array.isArray(subs) && subs.length > 0 && subs.some(s => !s.expertReviewed);
+  }, [taskSubmissions]);
 
   // Danışan arama ve sıralama
   const filteredPatients = useMemo(() => {
@@ -203,7 +228,7 @@ export function PatientsPage() {
       const q = normalizeTR(search);
       return normalizeTR(p.name).includes(q) || normalizeTR(p.parentName).includes(q);
     });
-    
+
     if (patientSort === 'name') {
       list.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
     } else if (patientSort === 'tasks') {
@@ -213,44 +238,40 @@ export function PatientsPage() {
         return bPending - aPending;
       });
     } else {
-      list.sort((a, b) => b.id.localeCompare(a.id));
+      // 'recent': son seans tarihine göre — tarihi olmayanlar sona
+      list.sort((a, b) => {
+        if (!a.lastSessionDate && !b.lastSessionDate) return 0;
+        if (!a.lastSessionDate) return 1;
+        if (!b.lastSessionDate) return -1;
+        return b.lastSessionDate.localeCompare(a.lastSessionDate);
+      });
     }
-    
+
     return list;
   }, [patients, search, patientSort]);
-
-  // Helper to check if a task is review pending
-  const isReviewPending = useCallback((taskId: string) => {
-    const subs = taskSubmissions[taskId];
-    if (!subs || subs.length === 0) return false;
-    // If any submission is NOT expertReviewed, it's review pending
-    return subs.some(s => !s.expertReviewed);
-  }, [taskSubmissions]);
 
   // Görev filtre + arama + sıralama
   const filteredTasks = useMemo(() => {
     let list = tasks.filter(t => {
-      if (taskFilter === 'pending')   return t.status === 'PENDING' && !isOverdue(t.dueDate);
-      if (taskFilter === 'completed') return t.status === 'COMPLETED';
-      if (taskFilter === 'overdue')   return t.status === 'PENDING' && isOverdue(t.dueDate);
+      if (taskFilter === 'pending')        return t.status === 'PENDING' && !isOverdue(t.dueDate);
+      if (taskFilter === 'completed')      return t.status === 'COMPLETED';
+      if (taskFilter === 'overdue')        return t.status === 'PENDING' && isOverdue(t.dueDate);
       if (taskFilter === 'review_pending') return t.status === 'COMPLETED' && isReviewPending(t.id);
       return true;
     });
-    
+
     if (taskSearch.trim()) {
       const q = normalizeTR(taskSearch);
       list = list.filter(t => normalizeTR(t.title).includes(q) || normalizeTR(t.description ?? '').includes(q));
     }
-    
+
     return [...list].sort((a, b) => {
       const aOver = isOverdue(a.dueDate) && a.status === 'PENDING';
       const bOver = isOverdue(b.dueDate) && b.status === 'PENDING';
       if (aOver !== bOver) return aOver ? -1 : 1;
-      
       const aReview = isReviewPending(a.id);
       const bReview = isReviewPending(b.id);
       if (aReview !== bReview) return aReview ? -1 : 1;
-      
       if (!a.dueDate && !b.dueDate) return 0;
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
@@ -258,12 +279,11 @@ export function PatientsPage() {
     });
   }, [tasks, taskFilter, taskSearch, isReviewPending]);
 
-  // Görev istatistikleri
   const taskStats = useMemo(() => ({
-    total:     tasks.length,
-    pending:   tasks.filter(t => t.status === 'PENDING' && !isOverdue(t.dueDate)).length,
-    completed: tasks.filter(t => t.status === 'COMPLETED').length,
-    overdue:   tasks.filter(t => t.status === 'PENDING' && isOverdue(t.dueDate)).length,
+    total:          tasks.length,
+    pending:        tasks.filter(t => t.status === 'PENDING' && !isOverdue(t.dueDate)).length,
+    completed:      tasks.filter(t => t.status === 'COMPLETED').length,
+    overdue:        tasks.filter(t => t.status === 'PENDING' && isOverdue(t.dueDate)).length,
     review_pending: tasks.filter(t => t.status === 'COMPLETED' && isReviewPending(t.id)).length,
   }), [tasks, isReviewPending]);
 
@@ -342,10 +362,10 @@ export function PatientsPage() {
   };
 
   const taskFilterLabels: Record<TaskFilter, string> = {
-    all:       `Tümü (${taskStats.total})`,
-    pending:   `Bekleyen (${taskStats.pending})`,
-    completed: `Tamamlanan (${taskStats.completed})`,
-    overdue:   `Gecikmiş (${taskStats.overdue})`,
+    all:            `Tümü (${taskStats.total})`,
+    pending:        `Bekleyen (${taskStats.pending})`,
+    completed:      `Tamamlanan (${taskStats.completed})`,
+    overdue:        `Gecikmiş (${taskStats.overdue})`,
     review_pending: `Değerlendirme Bekleyen (${taskStats.review_pending})`,
   };
 
@@ -392,12 +412,12 @@ export function PatientsPage() {
             </div>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <select 
-                  value={patientSort} 
-                  onChange={e => setPatientSort(e.target.value as any)}
+                <select
+                  value={patientSort}
+                  onChange={e => setPatientSort(e.target.value as 'recent' | 'name' | 'tasks')}
                   className="w-full appearance-none text-xs border border-gray-200 bg-white rounded-xl pl-8 pr-8 py-2 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 font-bold text-gray-600 shadow-sm cursor-pointer transition-all"
                 >
-                  <option value="recent">En Yeni Eklenenler</option>
+                  <option value="recent">Son Seans Tarihine Göre</option>
                   <option value="name">İsme Göre (A-Z)</option>
                   <option value="tasks">Görev Bekleyenler</option>
                 </select>
@@ -425,7 +445,7 @@ export function PatientsPage() {
                   <p className="font-semibold text-gray-800">Yüklenemedi</p>
                   <p className="text-sm text-gray-500 mt-1">Danışan listesi alınamadı.</p>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => { loadPatients(); }}>
+                <Button size="sm" variant="outline" onClick={() => loadPatients()}>
                   <RefreshCw size={14} className="mr-1.5" /> Tekrar Dene
                 </Button>
               </div>
@@ -475,82 +495,84 @@ export function PatientsPage() {
                   </div>
                 ))}
                 {filteredPatients.map(patient => {
-                const pct = patient.totalTasks > 0 ? Math.round((patient.tasksCompleted / patient.totalTasks) * 100) : 0;
-                const isSelected = selectedPatient?.id === patient.id;
-                
-                // Dinamik avatarlar çocuk isimlerine göre
-                const colors = [
-                  'from-pink-500 to-rose-500',
-                  'from-indigo-500 to-blue-500',
-                  'from-emerald-500 to-teal-500',
-                  'from-amber-500 to-orange-500'
-                ];
-                const hash = patient.name.charCodeAt(0) % colors.length;
-                const avatarGradient = colors[hash];
+                  const pct = patient.totalTasks > 0 ? Math.round((patient.tasksCompleted / patient.totalTasks) * 100) : 0;
+                  const isSelected = selectedPatient?.id === patient.id;
+                  const colors = [
+                    'from-pink-500 to-rose-500',
+                    'from-indigo-500 to-blue-500',
+                    'from-emerald-500 to-teal-500',
+                    'from-amber-500 to-orange-500'
+                  ];
+                  const avatarGradient = colors[patient.name.charCodeAt(0) % colors.length];
 
-                return (
-                  <button
-                    key={patient.id}
-                    onClick={() => setSelectedPatient(patient)}
-                    className={`w-full text-left p-4 rounded-2xl transition-all border outline-none relative overflow-hidden group cursor-pointer ${
-                      isSelected
-                        ? 'bg-indigo-50/80 border-indigo-200 shadow-sm'
-                        : 'bg-white border-slate-100 hover:border-indigo-100/50 hover:bg-slate-50'
-                    }`}
-                  >
-                    {/* Active Left indicator */}
-                    {isSelected && (
-                      <span className="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-600 rounded-r-md" />
-                    )}
+                  return (
+                    <button
+                      key={patient.id}
+                      onClick={() => setSelectedPatient(patient)}
+                      className={`w-full text-left p-4 rounded-2xl transition-all border outline-none relative overflow-hidden group cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-50/80 border-indigo-200 shadow-sm'
+                          : 'bg-white border-slate-100 hover:border-indigo-100/50 hover:bg-slate-50'
+                      }`}
+                    >
+                      {isSelected && (
+                        <span className="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-600 rounded-r-md" />
+                      )}
 
-                    <div className="flex items-center gap-3 relative z-10">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 shadow-sm bg-gradient-to-br ${avatarGradient} text-white`}>
-                        {patient.name.charAt(0).toUpperCase()}
+                      <div className="flex items-center gap-3 relative z-10">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 shadow-sm bg-gradient-to-br ${avatarGradient} text-white`}>
+                          {patient.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <h3 className={`font-extrabold truncate text-xs sm:text-sm tracking-tight ${isSelected ? 'text-indigo-950' : 'text-slate-900'}`}>
+                              {patient.name}
+                            </h3>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {patient.implicit && (
+                                <span className="text-[8px] px-1.5 py-0.5 rounded-md font-bold bg-slate-100 text-slate-400 border border-slate-200">
+                                  Randevudan
+                                </span>
+                              )}
+                              <span className={`text-[9px] px-2 py-0.5 rounded-md font-extrabold tracking-wide uppercase ${
+                                isSelected ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'
+                              }`}>
+                                {patient.age} Yaş
+                              </span>
+                            </div>
+                          </div>
+                          <p className={`text-[11px] font-bold mt-0.5 truncate ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>
+                            Veli İsmi: {patient.parentName}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <h3 className={`font-extrabold truncate text-xs sm:text-sm tracking-tight ${isSelected ? 'text-indigo-950' : 'text-slate-900'}`}>
-                            {patient.name}
-                          </h3>
-                          <span className={`text-[9px] px-2 py-0.5 rounded-md font-extrabold tracking-wide uppercase shrink-0 ${
-                            isSelected ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'
-                          }`}>
-                            {patient.age} Yaş
+
+                      {patient.totalTasks > 0 ? (
+                        <div className="mt-3.5 relative z-10">
+                          <div className="flex items-center justify-between text-[10px] mb-1 font-bold">
+                            <span className={isSelected ? 'text-indigo-500' : 'text-slate-400'}>
+                              {patient.tasksCompleted}/{patient.totalTasks} Görev
+                            </span>
+                            <span className="font-black text-indigo-600">{pct}%</span>
+                          </div>
+                          <div className={`h-1.5 rounded-full overflow-hidden p-0.5 border border-transparent ${isSelected ? 'bg-indigo-100' : 'bg-slate-100'}`}>
+                            <div
+                              className={`h-full rounded-full transition-all ${isSelected ? 'bg-gradient-to-r from-indigo-400 to-indigo-600' : 'bg-gradient-to-r from-emerald-400 to-teal-500'}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-2.5 flex items-center justify-between text-[9px] font-bold text-slate-400">
+                          <span>Görev atanmamış</span>
+                          <span className="text-[10px] text-indigo-500 font-extrabold flex items-center gap-0.5 hover:underline group-hover:translate-x-0.5 transition-transform shrink-0">
+                            Hedef Ata →
                           </span>
                         </div>
-                        <p className={`text-[11px] font-bold mt-0.5 truncate ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>
-                          Veli İsmi: {patient.parentName}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Progress bar */}
-                    {patient.totalTasks > 0 ? (
-                      <div className="mt-3.5 relative z-10">
-                        <div className="flex items-center justify-between text-[10px] mb-1 font-bold">
-                          <span className={isSelected ? 'text-indigo-500' : 'text-slate-400'}>
-                            {patient.tasksCompleted}/{patient.totalTasks} Görev
-                          </span>
-                          <span className="font-black text-indigo-600">{pct}%</span>
-                        </div>
-                        <div className={`h-1.5 rounded-full overflow-hidden p-0.5 border border-transparent ${isSelected ? 'bg-indigo-100' : 'bg-slate-100'}`}>
-                          <div
-                            className={`h-full rounded-full transition-all ${isSelected ? 'bg-gradient-to-r from-indigo-400 to-indigo-600' : 'bg-gradient-to-r from-emerald-400 to-teal-500'}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-2.5 flex items-center justify-between text-[9px] font-bold text-slate-400">
-                        <span>Görev atanmamış</span>
-                        <span className="text-[10px] text-indigo-500 font-extrabold flex items-center gap-0.5 hover:underline group-hover:translate-x-0.5 transition-transform shrink-0">
-                          Hedef Ata →
-                        </span>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+                      )}
+                    </button>
+                  );
+                })}
               </>
             )}
           </div>
@@ -570,7 +592,14 @@ export function PatientsPage() {
                         {selectedPatient.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">{selectedPatient.name}</h2>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">{selectedPatient.name}</h2>
+                          {selectedPatient.implicit && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-lg font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                              Randevu erişimi
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                           <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-lg font-black text-xs uppercase tracking-wide">{selectedPatient.age} Yaş</span>
                           <span className="text-slate-500 text-xs font-bold bg-slate-100 px-2.5 py-0.5 rounded-lg">{selectedPatient.diagnosis || 'Tanı bilgisi eklenmemiş'}</span>
@@ -606,29 +635,24 @@ export function PatientsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                     <div className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100/50 flex flex-col justify-between">
                       <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
-                        <Users size={12} className="text-slate-400" />
-                        Veli İsmi
+                        <Users size={12} className="text-slate-400" /> Veli İsmi
                       </p>
                       <p className="font-extrabold text-slate-800 text-sm truncate">{selectedPatient.parentName}</p>
                     </div>
                     <div className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100/50 flex flex-col justify-between">
                       <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
-                        <Calendar size={12} className="text-indigo-400" />
-                        Son Seans
+                        <Calendar size={12} className="text-indigo-400" /> Son Seans
                       </p>
-                      <p className="font-extrabold text-slate-800 text-sm truncate" title={selectedPatient.lastSession}>
-                        {selectedPatient.lastSession && !isNaN(Date.parse(selectedPatient.lastSession)) 
-                          ? new Date(selectedPatient.lastSession).toLocaleDateString('tr-TR') 
-                          : (selectedPatient.lastSession === 'Henüz tamamlanan seans yok' ? 'Yok' : selectedPatient.lastSession || 'Yok')}
+                      <p className="font-extrabold text-slate-800 text-sm truncate">
+                        {formatLastSession(selectedPatient.lastSessionDate)}
                       </p>
                     </div>
                     <div className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100/50 flex flex-col justify-between">
                       <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
-                        <Activity size={12} className="text-emerald-400" />
-                        Görev İlerleme
+                        <Activity size={12} className="text-emerald-400" /> Görev İlerleme
                       </p>
                       <div className="flex items-center gap-2 mt-auto">
-                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner relative">
+                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                           <div
                             className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all"
                             style={{ width: `${selectedPatient.totalTasks > 0 ? (selectedPatient.tasksCompleted / selectedPatient.totalTasks) * 100 : 0}%` }}
@@ -648,28 +672,13 @@ export function PatientsPage() {
                     <h3 className="mt-1 text-sm font-extrabold text-slate-900 dark:text-white">Planla, veliden geri bildirim al, rapora taşı</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => setShowTaskModal(true)}
-                      className="h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white hover:bg-indigo-700 shadow-sm"
-                    >
+                    <Button size="sm" onClick={() => setShowTaskModal(true)} className="h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white hover:bg-indigo-700 shadow-sm">
                       <Plus size={14} className="mr-1.5" /> Görev ver
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleMessageParent}
-                      loading={messaging}
-                      className="h-9 rounded-xl border-slate-200 px-3 text-xs font-bold text-slate-700"
-                    >
+                    <Button variant="outline" size="sm" onClick={handleMessageParent} loading={messaging} className="h-9 rounded-xl border-slate-200 px-3 text-xs font-bold text-slate-700">
                       <MessageCircle size={14} className="mr-1.5 text-blue-500" /> Veliye yaz
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowReportModal(true)}
-                      className="h-9 rounded-xl border-slate-200 px-3 text-xs font-bold text-slate-700"
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setShowReportModal(true)} className="h-9 rounded-xl border-slate-200 px-3 text-xs font-bold text-slate-700">
                       <FileText size={14} className="mr-1.5 text-emerald-500" /> Raporla
                     </Button>
                   </div>
@@ -696,7 +705,6 @@ export function PatientsPage() {
 
               {/* Görevler */}
               <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-[28px] border border-slate-200/50 dark:border-slate-800/40 shadow-sm flex-1 flex flex-col overflow-hidden hover:border-slate-300/50 transition-all">
-                {/* Tasks header */}
                 <div className="p-5 border-b border-slate-100/60 dark:border-slate-800/30 bg-slate-50/20">
                   <div className="flex items-center justify-between gap-3 mb-4">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -707,7 +715,6 @@ export function PatientsPage() {
                     </Button>
                   </div>
 
-                  {/* Task filter tabs */}
                   {tasks.length > 0 && (
                     <div className="flex flex-wrap gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl mb-3 border border-slate-200/20">
                       {(['all', 'pending', 'review_pending', 'completed', 'overdue'] as TaskFilter[]).map(f => (
@@ -724,7 +731,6 @@ export function PatientsPage() {
                     </div>
                   )}
 
-                  {/* Task search */}
                   {tasks.length > 3 && (
                     <div className="relative">
                       <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -793,7 +799,7 @@ export function PatientsPage() {
                         <div
                           key={task.id}
                           className={`rounded-2xl border transition-all overflow-hidden ${
-                            needsReview 
+                            needsReview
                               ? 'border-indigo-200 bg-indigo-50/30'
                               : over
                               ? 'border-red-200 bg-red-50/20'
@@ -802,9 +808,9 @@ export function PatientsPage() {
                               : 'border-slate-100 bg-white hover:border-indigo-100/50 hover:bg-slate-50/10'
                           }`}
                         >
-                          <div 
+                          <div
                             className="flex items-start gap-4 p-4 cursor-pointer group/header"
-                            onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                            onClick={() => handleExpandTask(task.id, task.status)}
                           >
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
                               needsReview ? 'bg-indigo-100 text-indigo-600' :
@@ -854,7 +860,6 @@ export function PatientsPage() {
                             </div>
                           </div>
 
-                          {/* Expanded detail */}
                           {isExpanded && (
                             <div className="px-4 pb-4 pt-0 border-t border-slate-100/60 space-y-3 mt-1.5 animate-in slide-in-from-top-1 duration-200">
                               {task.description && (
@@ -865,9 +870,9 @@ export function PatientsPage() {
                               )}
                               {task.materialUrl && (
                                 <div className="pt-1.5">
-                                  <a 
-                                    href={task.materialUrl} 
-                                    target="_blank" 
+                                  <a
+                                    href={task.materialUrl}
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:underline font-extrabold bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/30"
                                   >
@@ -876,88 +881,93 @@ export function PatientsPage() {
                                 </div>
                               )}
 
-                              {/* Görev Teslimleri ve Değerlendirme */}
-                              {task.status === 'COMPLETED' && taskSubmissions[task.id] && taskSubmissions[task.id].length > 0 && (
+                              {task.status === 'COMPLETED' && (
                                 <div className="mt-4 pt-4 border-t border-slate-100/60">
-                                  <h5 className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-3 flex items-center gap-1.5">
-                                    <CheckCircle size={14} className="text-emerald-500" /> Veli Görev Teslimi
-                                  </h5>
-                                  
-                                  {taskSubmissions[task.id].map(sub => (
-                                    <div key={sub.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                                      {/* Veli Notu ve Kanıt */}
-                                      <div className="grid sm:grid-cols-2 gap-4">
-                                        {sub.parentNote && (
-                                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Velinin Notu</p>
-                                            <p className="text-xs text-slate-700 font-medium">
-                                              {sub.parentNote}
-                                            </p>
-                                          </div>
-                                        )}
-                                        {sub.evidenceUrl && (
-                                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col justify-center items-start">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Yüklenen Kanıt/Dosya</p>
-                                            <a href={sub.evidenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-xl transition-colors border border-indigo-100 w-full justify-center">
-                                              <LinkIcon size={14} /> Bağlantıya Git
-                                            </a>
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {/* Uzman Değerlendirmesi */}
-                                      <div className="pt-2 border-t border-slate-100">
-                                        {sub.expertReviewed ? (
-                                          <div className="bg-emerald-50/50 border border-emerald-100 p-3 rounded-xl flex gap-2">
-                                            <ShieldCheck size={16} className="text-emerald-500 shrink-0 mt-0.5" />
-                                            <div>
-                                              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5">Uzman Değerlendirmesi Gönderildi</p>
-                                              <p className="text-xs text-emerald-800 font-medium">{sub.expertFeedback}</p>
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <div className="space-y-3 bg-indigo-50/30 p-3 rounded-xl border border-indigo-100">
-                                            <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
-                                              <Sparkles size={12} /> Uzman Görüşü Ekle (Zorunlu)
-                                            </p>
-                                            <textarea
-                                              value={feedbackText}
-                                              onChange={(e) => setFeedbackText(e.target.value)}
-                                              placeholder="Veliye geri bildirim verin. Bu geri bildirim velinin ödev panelinde görünecektir..."
-                                              className="w-full text-xs p-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 resize-none shadow-inner"
-                                              rows={3}
-                                            />
-                                            <div className="flex justify-end">
-                                              <Button 
-                                                size="sm" 
-                                                loading={submittingFeedback === sub.id}
-                                                onClick={async () => {
-                                                  if (!feedbackText.trim()) return toast.error('Lütfen bir geri bildirim yazın.');
-                                                  setSubmittingFeedback(sub.id);
-                                                  try {
-                                                    const updated = await patientService.reviewTaskSubmission(sub.id, feedbackText);
-                                                    setTaskSubmissions(prev => ({
-                                                      ...prev,
-                                                      [task.id]: prev[task.id].map(s => s.id === sub.id ? updated : s)
-                                                    }));
-                                                    setFeedbackText('');
-                                                    toast.success('Geri bildirim başarıyla iletildi.');
-                                                   } catch {
-                                                     toast.error('Değerlendirme gönderilemedi.');
-                                                   } finally {
-                                                    setSubmittingFeedback(null);
-                                                  }
-                                                }}
-                                                className="rounded-xl text-[11px] font-bold px-5 py-2 h-auto bg-indigo-600 hover:bg-indigo-700 shadow-sm"
-                                              >
-                                                Gönder ve Onayla
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
+                                  {loadingSubmissions[task.id] ? (
+                                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                                      <Loader2 size={14} className="animate-spin" /> Teslimler yükleniyor...
                                     </div>
-                                  ))}
+                                  ) : taskSubmissions[task.id]?.length > 0 ? (
+                                    <>
+                                      <h5 className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-3 flex items-center gap-1.5">
+                                        <CheckCircle size={14} className="text-emerald-500" /> Veli Görev Teslimi
+                                      </h5>
+                                      {taskSubmissions[task.id].map(sub => (
+                                        <div key={sub.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                                          <div className="grid sm:grid-cols-2 gap-4">
+                                            {sub.parentNote && (
+                                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Velinin Notu</p>
+                                                <p className="text-xs text-slate-700 font-medium">{sub.parentNote}</p>
+                                              </div>
+                                            )}
+                                            {sub.evidenceUrl && (
+                                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col justify-center items-start">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Yüklenen Kanıt/Dosya</p>
+                                                <a href={sub.evidenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-xl transition-colors border border-indigo-100 w-full justify-center">
+                                                  <LinkIcon size={14} /> Bağlantıya Git
+                                                </a>
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          <div className="pt-2 border-t border-slate-100">
+                                            {sub.expertReviewed ? (
+                                              <div className="bg-emerald-50/50 border border-emerald-100 p-3 rounded-xl flex gap-2">
+                                                <ShieldCheck size={16} className="text-emerald-500 shrink-0 mt-0.5" />
+                                                <div>
+                                                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5">Uzman Değerlendirmesi Gönderildi</p>
+                                                  <p className="text-xs text-emerald-800 font-medium">{sub.expertFeedback}</p>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div className="space-y-3 bg-indigo-50/30 p-3 rounded-xl border border-indigo-100">
+                                                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
+                                                  <Sparkles size={12} /> Uzman Görüşü Ekle (Zorunlu)
+                                                </p>
+                                                <textarea
+                                                  value={feedbackText[sub.id] ?? ''}
+                                                  onChange={e => setFeedbackText(prev => ({ ...prev, [sub.id]: e.target.value }))}
+                                                  placeholder="Veliye geri bildirim verin. Bu geri bildirim velinin ödev panelinde görünecektir..."
+                                                  className="w-full text-xs p-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 resize-none shadow-inner"
+                                                  rows={3}
+                                                />
+                                                <div className="flex justify-end">
+                                                  <Button
+                                                    size="sm"
+                                                    loading={submittingFeedback === sub.id}
+                                                    onClick={async () => {
+                                                      const text = feedbackText[sub.id] ?? '';
+                                                      if (!text.trim()) return toast.error('Lütfen bir geri bildirim yazın.');
+                                                      setSubmittingFeedback(sub.id);
+                                                      try {
+                                                        const updated = await patientService.reviewTaskSubmission(sub.id, text);
+                                                        setTaskSubmissions(prev => ({
+                                                          ...prev,
+                                                          [task.id]: prev[task.id].map(s => s.id === sub.id ? updated : s)
+                                                        }));
+                                                        setFeedbackText(prev => { const next = { ...prev }; delete next[sub.id]; return next; });
+                                                        toast.success('Geri bildirim başarıyla iletildi.');
+                                                      } catch {
+                                                        toast.error('Değerlendirme gönderilemedi.');
+                                                      } finally {
+                                                        setSubmittingFeedback(null);
+                                                      }
+                                                    }}
+                                                    className="rounded-xl text-[11px] font-bold px-5 py-2 h-auto bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+                                                  >
+                                                    Gönder ve Onayla
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </>
+                                  ) : (
+                                    <p className="text-xs text-slate-400 font-medium">Veli henüz teslim yapmadı.</p>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -984,11 +994,7 @@ export function PatientsPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Görev Başlığı</label>
-            <Input
-              value={newTask.title}
-              onChange={e => setNewTask(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="Örn: Renkleri eşleştirme oyunu"
-            />
+            <Input value={newTask.title} onChange={e => setNewTask(prev => ({ ...prev, title: e.target.value }))} placeholder="Örn: Renkleri eşleştirme oyunu" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Açıklama & Adımlar</label>
@@ -1003,11 +1009,7 @@ export function PatientsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
-              <select
-                value={newTask.category}
-                onChange={e => setNewTask(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 p-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-              >
+              <select value={newTask.category} onChange={e => setNewTask(prev => ({ ...prev, category: e.target.value }))} className="w-full rounded-xl border border-slate-200 p-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none">
                 <option>İletişim Becerileri</option>
                 <option>Motor Beceriler</option>
                 <option>Davranış Yönetimi</option>
@@ -1017,11 +1019,7 @@ export function PatientsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Zorluk</label>
-              <select
-                value={newTask.difficulty}
-                onChange={e => setNewTask(prev => ({ ...prev, difficulty: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 p-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-              >
+              <select value={newTask.difficulty} onChange={e => setNewTask(prev => ({ ...prev, difficulty: e.target.value }))} className="w-full rounded-xl border border-slate-200 p-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none">
                 <option value="Kolay">Kolay</option>
                 <option value="Orta">Orta</option>
                 <option value="Zor">Zor</option>
@@ -1029,11 +1027,7 @@ export function PatientsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Sıklık</label>
-              <select
-                value={newTask.frequency}
-                onChange={e => setNewTask(prev => ({ ...prev, frequency: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 p-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-              >
+              <select value={newTask.frequency} onChange={e => setNewTask(prev => ({ ...prev, frequency: e.target.value }))} className="w-full rounded-xl border border-slate-200 p-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none">
                 <option>Günde 1 Kez</option>
                 <option>Günde 2 Kez</option>
                 <option>Haftada 3 Kez</option>
@@ -1043,20 +1037,12 @@ export function PatientsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Son Tarih</label>
-              <Input
-                type="date"
-                value={newTask.dueDate}
-                onChange={e => setNewTask(prev => ({ ...prev, dueDate: e.target.value }))}
-              />
+              <Input type="date" value={newTask.dueDate} onChange={e => setNewTask(prev => ({ ...prev, dueDate: e.target.value }))} />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Materyal Bağlantısı (Opsiyonel)</label>
-            <Input
-              value={newTask.materialUrl}
-              onChange={e => setNewTask(prev => ({ ...prev, materialUrl: e.target.value }))}
-              placeholder="https://..."
-            />
+            <Input value={newTask.materialUrl} onChange={e => setNewTask(prev => ({ ...prev, materialUrl: e.target.value }))} placeholder="https://..." />
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t mt-6">
             <Button variant="outline" onClick={closeTaskModal} className="rounded-xl">İptal</Button>
@@ -1067,7 +1053,6 @@ export function PatientsPage() {
         </div>
       </Modal>
 
-      {/* Rapor, Silme, Danışan Ekle Modal kısımları (Aynı şekilde bırakıldı) */}
       <ConfirmModal
         isOpen={!!deleteTaskId}
         onCancel={() => setDeleteTaskId(null)}
@@ -1082,18 +1067,86 @@ export function PatientsPage() {
       <Modal isOpen={showReportModal} onClose={() => setShowReportModal(false)} title="Gelişim Raporu Oluştur">
         <div className="space-y-4">
           <p className="text-sm text-slate-600">
-            {selectedPatient?.name} için genel gelişim raporu PDF olarak hazırlanacaktır.
+            <strong>{selectedPatient?.name}</strong> için genel gelişim raporu hazırlanacaktır.
+            Tarayıcı yazdır ekranından PDF olarak kaydedebilirsiniz.
           </p>
+          <div className="text-xs text-slate-500 bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1">
+            <p><strong>Dahil edilecek bilgiler:</strong></p>
+            <ul className="list-disc list-inside space-y-0.5 mt-1">
+              <li>Danışan adı, yaş, tanı</li>
+              <li>Veli bilgisi ve son seans tarihi</li>
+              <li>Görev özeti ({taskStats.completed}/{taskStats.total} tamamlandı)</li>
+              <li>Gecikmiş ve bekleyen görevler</li>
+            </ul>
+          </div>
           <div className="flex items-center gap-2 bg-indigo-50 text-indigo-700 p-3 rounded-xl text-sm">
-            <Printer size={16} /> Rapor yazdırmaya veya indirmeye hazır.
+            <Printer size={16} /> Tarayıcı yazdır ekranında "PDF olarak kaydet" seçeneğini kullanın.
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="outline" onClick={() => setShowReportModal(false)}>İptal</Button>
-            <Button onClick={() => {
-              toast.success('Rapor başarıyla oluşturuldu ve indirildi.');
-              setShowReportModal(false);
-            }} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              PDF Olarak İndir
+            <Button
+              onClick={() => {
+                if (!selectedPatient) return;
+                const reportWindow = window.open('', '_blank');
+                if (!reportWindow) { toast.error('Popup engelleyici açık olabilir.'); return; }
+                const now = new Date().toLocaleDateString('tr-TR');
+                const pendingTasks = tasks.filter(t => t.status === 'PENDING' && !isOverdue(t.dueDate));
+                const overdueTasks = tasks.filter(t => t.status === 'PENDING' && isOverdue(t.dueDate));
+                const completedTasks = tasks.filter(t => t.status === 'COMPLETED');
+                reportWindow.document.write(`<!DOCTYPE html><html lang="tr"><head>
+                  <meta charset="UTF-8"/>
+                  <title>Gelişim Raporu — ${selectedPatient.name}</title>
+                  <style>
+                    body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;color:#1e293b;font-size:14px}
+                    h1{font-size:22px;border-bottom:2px solid #6366f1;padding-bottom:8px;color:#4338ca}
+                    h2{font-size:15px;margin-top:24px;margin-bottom:8px;color:#334155;border-left:4px solid #6366f1;padding-left:8px}
+                    table{width:100%;border-collapse:collapse;margin-top:8px}
+                    th,td{text-align:left;padding:6px 10px;border:1px solid #e2e8f0;font-size:13px}
+                    th{background:#f8fafc;font-weight:600}
+                    .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+                    .red{background:#fee2e2;color:#b91c1c}
+                    .green{background:#dcfce7;color:#15803d}
+                    .amber{background:#fef3c7;color:#b45309}
+                    .footer{margin-top:40px;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px}
+                    @media print{body{margin:20px}}
+                  </style>
+                </head><body>
+                  <h1>Gelişim Raporu</h1>
+                  <p style="color:#64748b;font-size:12px">Oluşturulma tarihi: ${now}</p>
+                  <h2>Danışan Bilgileri</h2>
+                  <table>
+                    <tr><th>Ad</th><td>${selectedPatient.name}</td><th>Yaş</th><td>${selectedPatient.age}</td></tr>
+                    <tr><th>Tanı</th><td colspan="3">${selectedPatient.diagnosis || '—'}</td></tr>
+                    <tr><th>Veli</th><td>${selectedPatient.parentName}</td><th>Son Seans</th><td>${formatLastSession(selectedPatient.lastSessionDate)}</td></tr>
+                  </table>
+                  <h2>Görev Özeti</h2>
+                  <table>
+                    <tr><th>Toplam</th><th>Tamamlanan</th><th>Bekleyen</th><th>Gecikmiş</th></tr>
+                    <tr>
+                      <td>${taskStats.total}</td>
+                      <td><span class="badge green">${taskStats.completed}</span></td>
+                      <td><span class="badge amber">${pendingTasks.length}</span></td>
+                      <td><span class="badge red">${overdueTasks.length}</span></td>
+                    </tr>
+                  </table>
+                  ${overdueTasks.length > 0 ? `<h2>Gecikmiş Görevler</h2><table>
+                    <tr><th>Görev</th><th>Kategori</th><th>Son Tarih</th></tr>
+                    ${overdueTasks.map(t => `<tr><td>${t.title}</td><td>${t.category || '—'}</td><td>${t.dueDate ? new Date(t.dueDate).toLocaleDateString('tr-TR') : '—'}</td></tr>`).join('')}
+                  </table>` : ''}
+                  ${completedTasks.length > 0 ? `<h2>Tamamlanan Görevler</h2><table>
+                    <tr><th>Görev</th><th>Kategori</th><th>Zorluk</th></tr>
+                    ${completedTasks.map(t => `<tr><td>${t.title}</td><td>${t.category || '—'}</td><td>${t.difficulty || '—'}</td></tr>`).join('')}
+                  </table>` : ''}
+                  <div class="footer">Bu rapor Otizm Destek Platformu aracılığıyla oluşturulmuştur. Tıbbi tanı veya tedavi amacı taşımaz.</div>
+                </body></html>`);
+                reportWindow.document.close();
+                reportWindow.focus();
+                reportWindow.print();
+                setShowReportModal(false);
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              <Printer size={14} className="mr-1.5" /> PDF Oluştur ve Yazdır
             </Button>
           </div>
         </div>
@@ -1182,9 +1235,9 @@ export function PatientsPage() {
 
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="outline" onClick={() => setShowAddModal(false)}>İptal</Button>
-            <Button 
-              onClick={handleAddPatient} 
-              loading={addingPatient} 
+            <Button
+              onClick={handleAddPatient}
+              loading={addingPatient}
               disabled={!foundParent || !selectedChildToAdd || !hasConsent}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >

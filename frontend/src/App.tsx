@@ -75,6 +75,7 @@ const ExpertMapPage = lazyNamed(() => import('@/pages/ExpertMapPage'), 'ExpertMa
 const WellbeingPage = lazyNamed(() => import('@/pages/WellbeingPage'), 'WellbeingPage');
 const HelpPage = lazyNamed(() => import('@/pages/HelpPage'), 'HelpPage');
 const ExpertConsultationPage = lazyNamed(() => import('@/pages/ExpertConsultationPage'), 'ExpertConsultationPage');
+const ConnectionManagementPage = lazyNamed(() => import('@/pages/ConnectionManagementPage'), 'ConnectionManagementPage');
 
 function PageLoader() {
   return (
@@ -206,6 +207,7 @@ export default function App() {
                 <Route path="/ebeveyn-refahi" element={<WellbeingPage />} />
                 <Route path="/yardim" element={<HelpPage />} />
                 <Route path="/uzman-odasi" element={<ExpertRoute><ExpertConsultationPage /></ExpertRoute>} />
+                <Route path="/uzman-erisim" element={<ConnectionManagementPage />} />
               </Route>
 
                 <Route path="*" element={<NotFoundPage />} />

@@ -56,6 +56,7 @@ public class AppointmentService {
     private final CalendarEventRepository calendarEventRepository;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final PatientService patientService;
 
     @Transactional(readOnly = true)
     public List<AppointmentDto> getAppointments(UUID userId, String role) {
@@ -621,6 +622,8 @@ public class AppointmentService {
         syncLinkedCalendarEventStatus(appointment, "COMPLETED");
         Appointment saved = appointmentRepository.save(appointment);
         recordHistory(saved, "CONFIRMED", "COMPLETED", userRepository.findById(expertId).orElse(null), null);
+
+        patientService.syncConnectionFromCompletedAppointment(saved);
 
         if (appointment.getParent() != null) {
             notificationService.createNotification(

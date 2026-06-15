@@ -5,8 +5,10 @@ import com.autismsupport.platform.dto.ExpertProfileUpdateRequest;
 import com.autismsupport.platform.dto.UserDto;
 import com.autismsupport.platform.model.UserRole;
 import com.autismsupport.platform.repository.KnowledgeArticleRepository;
+import com.autismsupport.platform.repository.KnowledgeArticleRepository.ArticleCountProjection;
 import com.autismsupport.platform.repository.UserRepository;
 import com.autismsupport.platform.repository.ExpertReviewRepository;
+import com.autismsupport.platform.repository.ExpertReviewRepository.ExpertRatingStatsProjection;
 import com.autismsupport.platform.security.CurrentUser;
 import com.autismsupport.platform.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -31,17 +33,34 @@ public class ExpertController {
     public ResponseEntity<ApiResponse<List<UserDto>>> getExperts(
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String specialization) {
-        List<UserDto> experts = userRepository.findByRole(UserRole.EXPERT).stream()
+
+        var allExperts = userRepository.findByRole(UserRole.EXPERT).stream()
                 .filter(u -> city == null || city.isBlank() ||
                         (u.getCity() != null && u.getCity().equalsIgnoreCase(city)))
                 .filter(u -> specialization == null || specialization.isBlank() ||
                         (u.getSpecializations() != null && u.getSpecializations().stream()
                                 .anyMatch(s -> s.toLowerCase().contains(specialization.toLowerCase()))))
-                .map(u -> {
-                    Double avgRating = reviewRepository.findAverageRatingByExpertId(u.getId());
-                    long articleCount = articleRepository.countByAuthorId(u.getId());
-                    long reviewCount = reviewRepository.countByExpertId(u.getId());
+                .toList();
 
+        if (allExperts.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.success(List.of()));
+        }
+
+        List<UUID> ids = allExperts.stream().map(u -> u.getId()).toList();
+
+        Map<UUID, ExpertRatingStatsProjection> ratingStats = reviewRepository
+                .findRatingStatsByExpertIds(ids)
+                .stream()
+                .collect(Collectors.toMap(ExpertRatingStatsProjection::getExpertId, p -> p));
+
+        Map<UUID, Long> articleCounts = articleRepository
+                .findArticleCountsByAuthorIds(ids)
+                .stream()
+                .collect(Collectors.toMap(ArticleCountProjection::getAuthorId, ArticleCountProjection::getArticleCount));
+
+        List<UserDto> experts = allExperts.stream()
+                .map(u -> {
+                    ExpertRatingStatsProjection stats = ratingStats.get(u.getId());
                     return UserDto.builder()
                         .id(u.getId())
                         .fullName(u.getFullName())
@@ -55,12 +74,14 @@ public class ExpertController {
                         .city(u.getCity())
                         .bio(u.getBio())
                         .createdAt(u.getCreatedAt())
-                        .avgRating(avgRating != null ? avgRating : 0.0)
-                        .articleCount(articleCount)
-                        .reviewCount(reviewCount)
+                        .avgRating(stats != null && stats.getAvgRating() != null ? stats.getAvgRating() : 0.0)
+                        .reviewCount(stats != null && stats.getReviewCount() != null ? stats.getReviewCount() : 0L)
+                        .articleCount(articleCounts.getOrDefault(u.getId(), 0L))
+                        .acceptingPatients(u.isAcceptingPatients())
                         .build();
                 })
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(ApiResponse.success(experts));
     }
 
@@ -110,6 +131,9 @@ public class ExpertController {
         }
         if (body.getSpecializations() != null) {
             user.setSpecializations(body.getSpecializations());
+        }
+        if (body.getAcceptingPatients() != null) {
+            user.setAcceptingPatients(body.getAcceptingPatients());
         }
 
         var saved = userRepository.save(user);

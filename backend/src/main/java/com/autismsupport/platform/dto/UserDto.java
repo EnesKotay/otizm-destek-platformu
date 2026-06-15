@@ -34,4 +34,5 @@ public class UserDto {
     private Double avgRating;
     private Long articleCount;
     private Long reviewCount;
+    private boolean acceptingPatients;
 }

@@ -88,6 +88,10 @@ public class User {
     @Builder.Default
     private boolean licenseVerified = false;
 
+    @Column(name = "accepting_patients")
+    @Builder.Default
+    private boolean acceptingPatients = true;
+
     @Column(name = "license_verified_at")
     private LocalDateTime licenseVerifiedAt;
 
