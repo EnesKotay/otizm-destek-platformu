@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Activity, ArrowRight, CalendarDays, Gamepad2, Sparkles, Target,
-  TrendingUp, CheckCircle2, Plus,
+  Activity, ArrowRight, CalendarDays, FileText, Gamepad2, Sparkles, Target,
+  TrendingUp, CheckCircle2, Plus, Users,
 } from 'lucide-react';
 import api from '@/services/api';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -10,9 +10,6 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { TreatmentDetailTabs } from '@/components/treatment/TreatmentDetailTabs';
 import { TreatmentGamesTab } from '@/components/treatment/TreatmentGamesTab';
 import { TreatmentGoalsTab } from '@/components/treatment/TreatmentGoalsTab';
-import { TreatmentHero } from '@/components/treatment/TreatmentHero';
-import { TreatmentOnboarding } from '@/components/treatment/TreatmentOnboarding';
-import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import { TreatmentTodayTab } from '@/components/treatment/TreatmentTodayTab';
 import { TreatmentToolsTab } from '@/components/treatment/TreatmentToolsTab';
 import { useTreatmentPageData } from '@/features/treatment/useTreatmentPageData';
@@ -29,10 +26,10 @@ const SUMMARY_META = [
 ] as const;
 
 const DETAIL_TABS = [
-  { value: 'today' as const, label: 'Bugün',                 icon: <CalendarDays size={15} aria-hidden="true" /> },
-  { value: 'goals' as const, label: 'Hedefler',              icon: <Target       size={15} aria-hidden="true" /> },
-  { value: 'games' as const, label: 'Etkinlikler',           icon: <Gamepad2     size={15} aria-hidden="true" /> },
-  { value: 'tools' as const, label: 'Destek Araçları',       icon: <Sparkles     size={15} aria-hidden="true" /> },
+  { value: 'today' as const, label: 'Bugün',    icon: <CalendarDays size={15} aria-hidden="true" /> },
+  { value: 'goals' as const, label: 'Hedefler', icon: <Target       size={15} aria-hidden="true" /> },
+  { value: 'games' as const, label: 'Oyunlar',  icon: <Gamepad2     size={15} aria-hidden="true" /> },
+  { value: 'tools' as const, label: 'Araçlar',  icon: <Sparkles     size={15} aria-hidden="true" /> },
 ];
 
 export function TreatmentPage() {
@@ -161,32 +158,42 @@ export function TreatmentPage() {
   const totalDone = mergedGoalGroups.reduce(
     (acc, g) => acc + g.items.filter((i) => i.status === 'done').length, 0
   );
+  const startGuideSteps: Array<{
+    tab: DetailTab;
+    icon: typeof CalendarDays;
+    title: string;
+    description: string;
+    action: string;
+    tone: string;
+  }> = [
+    {
+      tab: 'today',
+      icon: CalendarDays,
+      title: 'Bugünün planını kontrol et',
+      description: 'Önce çocuğunuzla bugün yapabileceğiniz kısa adımları görün.',
+      action: 'Bugün planına git',
+      tone: 'bg-blue-50 text-blue-700 ring-blue-100',
+    },
+    {
+      tab: 'goals',
+      icon: Target,
+      title: 'Küçük bir hedef seç',
+      description: primaryGoal ? 'Sıradaki hedefe bakın ve ilerlemeyi işaretleyin.' : 'Takip etmek istediğiniz ilk küçük beceriyi ekleyin.',
+      action: primaryGoal ? 'Hedefleri aç' : 'Hedef ekle',
+      tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+    },
+    {
+      tab: 'games',
+      icon: Gamepad2,
+      title: '5 dakikalık oyun deneyin',
+      description: 'Kısa etkinliği uygulayın, sonra kolay mı zor mu geçtiğini seçin.',
+      action: 'Oyunlara git',
+      tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+    },
+  ];
 
   return (
     <div className="space-y-5">
-      <PageOnboarding
-        pageId="treatment-development"
-        title="Tedavi ve Gelişim Takibine Hoş Geldiniz"
-        description="Çocuğunuzun özel eğitim hedeflerini, terapilerini ve oyun bazlı gelişimini tek bir merkezden yönetin."
-        steps={[
-          {
-            icon: <Target size={20} />,
-            title: "Hedeflerinizi Takip Edin",
-            description: "Uzmanların önerdiği gelişim hedeflerini görün veya kendi hedeflerinizi ekleyin."
-          },
-          {
-            icon: <Gamepad2 size={20} />,
-            title: "Oyunla Eğitim",
-            description: "Gelişim alanlarına özel önerilen tedavi oyunlarını keşfedin."
-          },
-          {
-            icon: <Sparkles size={20} />,
-            title: "Destekleyici Araçlar",
-            description: "Duyusal profil ayarlarına, sosyal öykülere ve diğer destek araçlarına kolayca ulaşın."
-          }
-        ]}
-      />
-
       {/* PWA Çevrimdışı Çalışma Modu Bildirimi */}
       {!isOnline && (
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-amber-700 shadow-sm animate-pulse">
@@ -205,141 +212,221 @@ export function TreatmentPage() {
         </div>
       )}
 
-      {/* ── 1. HERO ── */}
-      <TreatmentHero
-        childName={activeChild.name}
-        focusAreas={focusAreas}
-        activeProgramLabel={activeProgramLabel}
-        onDownloadPdf={handleDownloadPdf}
-        childrenList={children}
-        activeChildId={activeChild.id}
-        onSelectChild={actions.setSelectedChild}
-        onAddGoalClick={() => setActiveDetailTab('goals')}
-      />
+      <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase text-indigo-600">Tedavi ve gelişim</p>
+            <h1 className="mt-1 text-2xl font-black text-slate-950">Bugün ne yapacağız?</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+              {activeChild.name} için hedefleri, kısa oyunları ve takip notlarını tek yerde yönetin. Önce bugünkü küçük adımdan başlayın.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              <FileText size={16} />
+              Rapor
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveDetailTab('goals')}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-indigo-700"
+            >
+              <Plus size={16} />
+              Hedef Ekle
+            </button>
+          </div>
+        </div>
 
-      {/* ── 1.5. ONBOARDING BANNER ── */}
-      <TreatmentOnboarding
-        onNavigateToTab={(tab) => setActiveDetailTab(tab)}
-        hasData={totalDone > 0 || gameSessions.length > 0}
-      />
+        <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-black text-slate-950">3 adımda başlayın</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Hepsini bir anda yapmanız gerekmiyor. Sırayla ilerleyin; her adım sizi doğru bölüme götürür.
+              </p>
+            </div>
+            <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">
+              Önerilen sıra
+            </span>
+          </div>
 
-      {/* ── 2. STAT CARDS — 3 column mini grid ── */}
-      <div className="grid gap-4 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            {startGuideSteps.map(({ tab, icon: Icon, title, description, action, tone }, index) => (
+              <button
+                key={title}
+                type="button"
+                onClick={() => setActiveDetailTab(tab)}
+                className="group flex min-h-[10rem] flex-col justify-between rounded-2xl border border-white bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ${tone}`}>
+                      <Icon size={18} />
+                    </span>
+                    <span className="rounded-full bg-slate-50 px-2.5 py-1 text-xs font-black text-slate-400 ring-1 ring-slate-100">
+                      {index + 1}
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-sm font-black text-slate-950">{title}</h3>
+                  <p className="mt-1 text-xs font-medium leading-5 text-slate-500">{description}</p>
+                </div>
+                <span className="mt-4 inline-flex items-center gap-1 text-xs font-black text-indigo-700">
+                  {action}
+                  <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">
+                    <Target size={13} />
+                    Sıradaki hedef
+                  </span>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 ring-1 ring-indigo-100">
+                    {activeProgramLabel}
+                  </span>
+                </div>
+                <h2 className="mt-3 text-lg font-black text-slate-950">
+                  {primaryGoal ? primaryGoal.title : 'İlk küçük hedefi belirleyin'}
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  {primaryGoal
+                    ? `${totalDone} adım tamamlandı. Bugün yalnızca kısa bir tekrar veya not yeterli.`
+                    : 'Hedef ekleyince oyunlar ve takip adımları daha anlaşılır hale gelir.'}
+                </p>
+              </div>
+              <div className="shrink-0 rounded-2xl bg-white px-4 py-3 text-center ring-1 ring-indigo-100">
+                <p className="text-[11px] font-bold uppercase text-slate-400">İlerleme</p>
+                <p className="mt-1 text-2xl font-black text-indigo-700">%{primaryGoal?.percent ?? 0}</p>
+              </div>
+            </div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white ring-1 ring-indigo-100">
+              <div
+                className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                style={{ width: `${primaryGoal?.percent ?? 0}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-black text-slate-900">Bugünkü kontrol listesi</h2>
+                <p className="mt-1 text-xs leading-5 text-slate-500">Bu üç şey tamamlanınca sayfa anlam kazanır.</p>
+              </div>
+              <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
+            </div>
+            <div className="mt-4 space-y-2">
+              {[
+                { done: todayPlan.length > 0, text: 'Bugünün planını görüntüle' },
+                { done: Boolean(primaryGoal), text: 'En az bir hedef belirle' },
+                { done: todayCompletedGames.length > 0, text: 'Bir oyunu tamamla veya geri bildirim ver' },
+              ].map((item) => (
+                <div key={item.text} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                    item.done ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-300 ring-1 ring-slate-200'
+                  }`}>
+                    <CheckCircle2 size={13} />
+                  </span>
+                  <span className={`text-xs font-bold ${item.done ? 'text-slate-800' : 'text-slate-500'}`}>
+                    {item.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {children.length > 1 && (
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase text-slate-400">
+              <Users size={14} />
+              Profil seç
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {children.map((child) => {
+                const isActive = child.id === activeChild.id;
+                return (
+                  <button
+                    key={child.id}
+                    type="button"
+                    onClick={() => actions.setSelectedChild(child)}
+                    aria-pressed={isActive}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition-colors',
+                      isActive
+                        ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    )}
+                  >
+                    <span className={cn(
+                      'flex h-7 w-7 items-center justify-center rounded-lg text-xs font-black',
+                      isActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
+                    )}>
+                      {child.name.charAt(0).toUpperCase()}
+                    </span>
+                    {child.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </section>
+
+      <div className="grid gap-3 sm:grid-cols-3">
         {weeklySummary.map((item, i) => {
           const meta = SUMMARY_META[i % SUMMARY_META.length];
           const Icon = meta.icon;
           return (
-            <div key={item.title} className="group flex flex-col gap-3 rounded-3xl border border-slate-200/60 bg-white/70 backdrop-blur-xl p-5 shadow-[0_8px_30px_rgba(15,23,42,0.04)] hover:shadow-[0_8px_30px_rgba(15,23,42,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-                <Icon size={80} />
-              </div>
-              <div className="flex items-center gap-4 relative z-10">
-                <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3', meta.iconBg)}>
-                  <Icon size={20} className={meta.iconColor} />
+            <div key={item.title} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', meta.iconBg)}>
+                <Icon size={18} className={meta.iconColor} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-400">{item.title}</p>
+                <div className="mt-0.5 flex flex-wrap items-baseline gap-2">
+                  <p className={cn('text-xl font-black', meta.valueCls)}>{item.value}</p>
+                  <p className="text-xs font-medium text-slate-500">{item.detail}</p>
                 </div>
-                <div className="flex flex-col">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{item.title}</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className={cn('text-2xl font-extrabold tracking-tight', meta.valueCls)}>{item.value}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-1 relative z-10">
-                <p className="text-xs font-medium text-slate-500">{item.detail}</p>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* ── 3. PRIORITY GOAL STRIP ── */}
-      {primaryGoal && (
-        <div className="group rounded-[2rem] border border-slate-200/50 bg-gradient-to-br from-white via-white to-slate-50/80 backdrop-blur-xl p-6 shadow-[0_8px_30px_rgba(15,23,42,0.04)] hover:shadow-[0_20px_40px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all duration-500 relative overflow-hidden">
-          {/* Abstract glowing shape behind goal */}
-          <div className={cn(
-            'absolute -right-20 -top-20 h-64 w-64 rounded-full blur-[80px] opacity-20 transition-opacity duration-500 group-hover:opacity-40',
-            primaryGoal.tone === 'sky' ? 'bg-sky-400' : 'bg-violet-400'
-          )} />
-          
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-            <div className="flex items-center gap-4 min-w-0">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50/80 text-indigo-600 shadow-inner border border-indigo-100/50 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-[10deg]">
-                <Target size={22} className="animate-[pulse_3s_ease-in-out_infinite]" />
-              </div>
-              <div className="min-w-0">
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-500"></span>
-                  </span>
-                  Öncelikli Hedef
-                </span>
-                <p className="mt-2 text-base font-bold text-slate-800 leading-snug truncate group-hover:text-indigo-900 transition-colors">
-                  {primaryGoal.title}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-col sm:items-end gap-2 shrink-0">
-              <div className="flex items-center justify-between sm:justify-end gap-3 w-full">
-                <div className="flex flex-col items-start sm:items-end">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">İlerleme</span>
-                  <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mt-0.5">
-                    <CheckCircle2 size={13} className="text-emerald-500 shrink-0 drop-shadow-sm" />
-                    {totalDone} adım tamamlandı
-                  </span>
-                </div>
-                <span className={cn(
-                  'rounded-2xl px-4 py-2 text-lg font-black shadow-sm ring-1 transition-transform duration-300 group-hover:scale-105',
-                  primaryGoal.tone === 'sky' 
-                    ? 'bg-sky-50 text-sky-600 ring-sky-100 shadow-sky-100/40' 
-                    : 'bg-violet-50 text-violet-600 ring-violet-100 shadow-violet-100/40'
-                )}>
-                  %{primaryGoal.percent}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="relative z-10 mt-5 h-3 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/50 shadow-inner">
-            <div
-              className={cn(
-                'h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,0,0,0.1)] relative overflow-hidden',
-                primaryGoal.tone === 'sky' 
-                  ? 'bg-gradient-to-r from-sky-400 via-sky-300 to-sky-500' 
-                  : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500'
-              )}
-              style={{ width: `${primaryGoal.percent}%` }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── 4. MAIN TAB PANEL ── */}
-      <div className="rounded-[2.5rem] border border-slate-200/60 bg-white/80 backdrop-blur-2xl shadow-[0_20px_60px_rgba(15,23,42,0.04)] overflow-hidden transition-all">
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         {/* Tab bar + quick action */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 bg-white/50 px-6 py-4">
+        <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <TreatmentDetailTabs
             tabs={DETAIL_TABS}
             value={activeDetailTab}
             onChange={setActiveDetailTab}
             label="Tedavi detay bölümleri"
           />
-          {/* "Hedef ekle" quick shortcut */}
           <button
             type="button"
             onClick={() => setActiveDetailTab('goals')}
-            className="group hidden sm:inline-flex shrink-0 items-center gap-2 rounded-2xl bg-indigo-50 px-4 py-2.5 text-sm font-bold text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-sm"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-50 px-4 py-2.5 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
           >
-            <Plus size={16} className="transition-transform group-hover:rotate-90" />
+            <Plus size={16} />
             Yeni Hedef
           </button>
         </div>
 
         {/* Tab content */}
-        <div className="p-5">
+        <div className="p-4 sm:p-5">
           {activeDetailTab === 'today' && (
             <TreatmentTodayTab
               todayPlan={todayPlan}

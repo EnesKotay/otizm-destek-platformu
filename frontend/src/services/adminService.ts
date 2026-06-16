@@ -35,6 +35,25 @@ export interface PlatformSettings {
   aiEnabled: boolean;
 }
 
+export interface ReportTargetPreview {
+  targetType: string;
+  targetId: string;
+  available: boolean;
+  title?: string;
+  content?: string;
+  authorId?: string;
+  authorName?: string;
+  authorEmail?: string;
+  createdAt?: string;
+}
+
+export interface BackupResult {
+  status: 'COMPLETED' | 'SIMULATED' | string;
+  timestamp?: string;
+  type?: string;
+  message?: string;
+}
+
 export type GrowthPeriod = '7d' | '30d' | '90d' | '1y';
 
 export const adminService = {
@@ -75,6 +94,21 @@ export const adminService = {
   rejectReport: (reportId: string, adminNote?: string) =>
     api
       .put<ApiResponse<Report>>(`/reports/${reportId}/status`, { status: 'REJECTED', adminNote })
+      .then(r => r.data.data),
+
+  getReportTargetPreview: (reportId: string) =>
+    api
+      .get<ApiResponse<ReportTargetPreview>>(`/admin/reports/${reportId}/target-preview`)
+      .then(r => r.data.data),
+
+  warnReportTarget: (reportId: string) =>
+    api
+      .post<ApiResponse<Report>>(`/admin/reports/${reportId}/warn`)
+      .then(r => r.data.data),
+
+  removeReportTarget: (reportId: string) =>
+    api
+      .delete<ApiResponse<Report>>(`/admin/reports/${reportId}/target`)
       .then(r => r.data.data),
 
   getAuditLogs: (page = 0, size = 50, filters?: AuditLogFilters) => {
@@ -125,10 +159,10 @@ export const adminService = {
     api.put<ApiResponse<PlatformSettings>>('/admin/settings', settings).then(r => r.data.data),
 
   triggerBackup: () =>
-    api.post<ApiResponse<Record<string, unknown>>>('/admin/backup').then(r => r.data),
+    api.post<ApiResponse<BackupResult>>('/admin/backup').then(r => r.data.data),
 
   getTokenStats: () =>
-    api.get<ApiResponse<{ used: number; budget: number; remaining: number; cost: number; updatedAt: string }>>('/admin/token-stats').then(r => r.data.data),
+    api.get<ApiResponse<{ used: number; budget: number; remaining: number; cost: number; estimated?: boolean; updatedAt: string }>>('/admin/token-stats').then(r => r.data.data),
 
   verifyExpertLicense: (expertId: string) =>
     api.post<ApiResponse<unknown>>(`/admin/experts/${expertId}/verify-license`).then(r => r.data.data),

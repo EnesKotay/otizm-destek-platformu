@@ -5,12 +5,18 @@ import com.autismsupport.platform.dto.AuditLogDto;
 import com.autismsupport.platform.dto.MonthlyGrowthDto;
 import com.autismsupport.platform.dto.PlatformSettingsDto;
 import com.autismsupport.platform.dto.ReportDto;
+import com.autismsupport.platform.dto.ReportTargetPreviewDto;
 import com.autismsupport.platform.dto.UserDto;
 import com.autismsupport.platform.model.AuditLog;
+import com.autismsupport.platform.model.ForumComment;
+import com.autismsupport.platform.model.ForumPost;
+import com.autismsupport.platform.model.Message;
 import com.autismsupport.platform.model.PlatformSettings;
+import com.autismsupport.platform.model.Report;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.model.UserRole;
 import com.autismsupport.platform.repository.AuditLogRepository;
+import com.autismsupport.platform.repository.ForumCommentRepository;
 import com.autismsupport.platform.repository.MessageRepository;
 import com.autismsupport.platform.repository.PlatformSettingsRepository;
 import com.autismsupport.platform.repository.ReportRepository;
@@ -44,6 +50,7 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final ForumPostRepository forumPostRepository;
+    private final ForumCommentRepository forumCommentRepository;
     private final MessageRepository messageRepository;
     private final ReportRepository reportRepository;
     private final AuditLogRepository auditLogRepository;
@@ -142,6 +149,72 @@ public class AdminService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public ReportTargetPreviewDto getReportTargetPreview(UUID reportId) {
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new RuntimeException("Sikayet bulunamadi"));
+        return buildTargetPreview(report);
+    }
+
+    @Transactional
+    public ReportDto warnReportTarget(UUID reportId, UUID adminId) {
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new RuntimeException("Sikayet bulunamadi"));
+        User targetUser = resolveTargetUser(report);
+        if (targetUser == null) {
+            throw new RuntimeException("Uyarilacak kullanici bulunamadi");
+        }
+
+        notificationService.createNotification(
+                targetUser.getId(),
+                "MODERATION_WARNING",
+                "İçeriğiniz hakkında moderasyon uyarısı",
+                "Platform kurallarına aykırı olabilecek bir içerik nedeniyle resmi uyarı aldınız. Lütfen topluluk kurallarına uygun paylaşım yapın.",
+                "/forum"
+        );
+
+        report.setStatus("RESOLVED");
+        report.setAdminNote("Kullanıcı uyarıldı.");
+        Report saved = reportRepository.save(report);
+        auditLogService.log(
+                userRepository.findById(adminId).orElse(null),
+                "REPORT_TARGET_WARNED",
+                report.getTargetType(),
+                report.getTargetId(),
+                Map.of("reportId", report.getId(), "targetUserEmail", targetUser.getEmail())
+        );
+        return toReportDto(saved);
+    }
+
+    @Transactional
+    public ReportDto removeReportTarget(UUID reportId, UUID adminId) {
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new RuntimeException("Sikayet bulunamadi"));
+        User targetUser = removeTargetContent(report);
+
+        report.setStatus("RESOLVED");
+        report.setAdminNote("Hedef içerik moderasyon kararıyla kaldırıldı.");
+        Report saved = reportRepository.save(report);
+        auditLogService.log(
+                userRepository.findById(adminId).orElse(null),
+                "REPORT_TARGET_REMOVED",
+                report.getTargetType(),
+                report.getTargetId(),
+                Map.of("reportId", report.getId())
+        );
+
+        if (targetUser != null) {
+            notificationService.createNotification(
+                    targetUser.getId(),
+                    "CONTENT_REMOVED",
+                    "İçeriğiniz kaldırıldı",
+                    "Bir içeriğiniz platform kurallarını ihlal ettiği için moderasyon tarafından kaldırıldı.",
+                    "/forum"
+            );
+        }
+        return toReportDto(saved);
+    }
+
     @Transactional
     @org.springframework.cache.annotation.CacheEvict(value = "experts", allEntries = true)
     public UserDto approveExpert(UUID expertId, UUID adminId) {
@@ -198,21 +271,147 @@ public class AdminService {
     public List<ReportDto> getPendingReports() {
         return reportRepository.findByStatusOrderByCreatedAtDesc("PENDING", org.springframework.data.domain.Pageable.ofSize(20))
                 .stream()
-                .map(report -> ReportDto.builder()
-                        .id(report.getId())
-                        .targetType(report.getTargetType())
-                        .targetId(report.getTargetId())
-                        .reason(report.getReason())
-                        .status(report.getStatus())
-                        .adminNote(report.getAdminNote())
-                        .createdAt(report.getCreatedAt())
-                        .reporter(UserDto.builder()
-                                .id(report.getReporter().getId())
-                                .fullName(report.getReporter().getFullName())
-                                .email(report.getReporter().getEmail())
-                                .build())
-                        .build())
+                .map(this::toReportDto)
                 .toList();
+    }
+
+    private ReportTargetPreviewDto buildTargetPreview(Report report) {
+        String targetType = report.getTargetType().toUpperCase(Locale.ROOT);
+        return switch (targetType) {
+            case "POST" -> forumPostRepository.findById(report.getTargetId())
+                    .map(post -> ReportTargetPreviewDto.builder()
+                            .targetType(report.getTargetType())
+                            .targetId(report.getTargetId())
+                            .available(true)
+                            .title(post.getTitle())
+                            .content(post.getContent())
+                            .authorId(post.getAuthor().getId())
+                            .authorName(post.getAuthor().getFullName())
+                            .authorEmail(post.getAuthor().getEmail())
+                            .createdAt(post.getCreatedAt())
+                            .build())
+                    .orElseGet(() -> missingTargetPreview(report));
+            case "COMMENT" -> forumCommentRepository.findById(report.getTargetId())
+                    .map(comment -> ReportTargetPreviewDto.builder()
+                            .targetType(report.getTargetType())
+                            .targetId(report.getTargetId())
+                            .available(true)
+                            .title("Forum yorumu")
+                            .content(comment.getContent())
+                            .authorId(comment.getAuthor().getId())
+                            .authorName(comment.getAuthor().getFullName())
+                            .authorEmail(comment.getAuthor().getEmail())
+                            .createdAt(comment.getCreatedAt())
+                            .build())
+                    .orElseGet(() -> missingTargetPreview(report));
+            case "MESSAGE" -> messageRepository.findById(report.getTargetId())
+                    .map(message -> ReportTargetPreviewDto.builder()
+                            .targetType(report.getTargetType())
+                            .targetId(report.getTargetId())
+                            .available(true)
+                            .title("Özel mesaj")
+                            .content(message.getContent())
+                            .authorId(message.getSender().getId())
+                            .authorName(message.getSender().getFullName())
+                            .authorEmail(message.getSender().getEmail())
+                            .createdAt(message.getSentAt())
+                            .build())
+                    .orElseGet(() -> missingTargetPreview(report));
+            case "USER", "EXPERT" -> userRepository.findById(report.getTargetId())
+                    .map(user -> ReportTargetPreviewDto.builder()
+                            .targetType(report.getTargetType())
+                            .targetId(report.getTargetId())
+                            .available(true)
+                            .title(user.getFullName())
+                            .content((user.getRole() != null ? user.getRole().name() : "USER") + " hesabı")
+                            .authorId(user.getId())
+                            .authorName(user.getFullName())
+                            .authorEmail(user.getEmail())
+                            .createdAt(user.getCreatedAt())
+                            .build())
+                    .orElseGet(() -> missingTargetPreview(report));
+            default -> missingTargetPreview(report);
+        };
+    }
+
+    private ReportTargetPreviewDto missingTargetPreview(Report report) {
+        return ReportTargetPreviewDto.builder()
+                .targetType(report.getTargetType())
+                .targetId(report.getTargetId())
+                .available(false)
+                .title("Hedef içerik bulunamadı")
+                .content("Bu rapora bağlı kayıt silinmiş veya artık erişilebilir değil.")
+                .build();
+    }
+
+    private User resolveTargetUser(Report report) {
+        String targetType = report.getTargetType().toUpperCase(Locale.ROOT);
+        return switch (targetType) {
+            case "POST" -> forumPostRepository.findById(report.getTargetId()).map(ForumPost::getAuthor).orElse(null);
+            case "COMMENT" -> forumCommentRepository.findById(report.getTargetId()).map(ForumComment::getAuthor).orElse(null);
+            case "MESSAGE" -> messageRepository.findById(report.getTargetId()).map(Message::getSender).orElse(null);
+            case "USER", "EXPERT" -> userRepository.findById(report.getTargetId()).orElse(null);
+            default -> null;
+        };
+    }
+
+    private User removeTargetContent(Report report) {
+        String targetType = report.getTargetType().toUpperCase(Locale.ROOT);
+        String removedText = "Bu içerik platform kurallarını ihlal ettiği için moderasyon tarafından kaldırıldı.";
+        return switch (targetType) {
+            case "POST" -> {
+                ForumPost post = forumPostRepository.findById(report.getTargetId())
+                        .orElseThrow(() -> new RuntimeException("Gonderi bulunamadi"));
+                User author = post.getAuthor();
+                post.setTitle("[Moderasyonla kaldırıldı]");
+                post.setContent(removedText);
+                forumPostRepository.save(post);
+                yield author;
+            }
+            case "COMMENT" -> {
+                ForumComment comment = forumCommentRepository.findById(report.getTargetId())
+                        .orElseThrow(() -> new RuntimeException("Yorum bulunamadi"));
+                User author = comment.getAuthor();
+                comment.setContent(removedText);
+                forumCommentRepository.save(comment);
+                yield author;
+            }
+            case "MESSAGE" -> {
+                Message message = messageRepository.findById(report.getTargetId())
+                        .orElseThrow(() -> new RuntimeException("Mesaj bulunamadi"));
+                User sender = message.getSender();
+                message.setContent(removedText);
+                messageRepository.save(message);
+                yield sender;
+            }
+            case "USER", "EXPERT" -> {
+                User user = userRepository.findById(report.getTargetId())
+                        .orElseThrow(() -> new RuntimeException("Kullanici bulunamadi"));
+                if (user.getRole() != UserRole.ADMIN) {
+                    user.setIsActive(false);
+                    userRepository.save(user);
+                }
+                yield user;
+            }
+            default -> throw new RuntimeException("Desteklenmeyen hedef tipi: " + report.getTargetType());
+        };
+    }
+
+    private ReportDto toReportDto(Report report) {
+        return ReportDto.builder()
+                .id(report.getId())
+                .targetType(report.getTargetType())
+                .targetId(report.getTargetId())
+                .reason(report.getReason())
+                .status(report.getStatus())
+                .adminNote(report.getAdminNote())
+                .createdAt(report.getCreatedAt())
+                .reporter(UserDto.builder()
+                        .id(report.getReporter().getId())
+                        .fullName(report.getReporter().getFullName())
+                        .email(report.getReporter().getEmail())
+                        .build())
+                .build();
     }
 
     public Page<AuditLogDto> getAuditLogs(int page, int size, UUID userId, String action, String from, String to) {
@@ -290,11 +489,12 @@ public class AdminService {
         int updated = 0;
         for (UUID id : userIds) {
             if (id.equals(adminId)) continue;
-            userRepository.findById(id).ifPresent(user -> {
+            boolean changed = userRepository.findById(id).map(user -> {
                 user.setIsActive(!user.isActive());
                 userRepository.save(user);
-            });
-            updated++;
+                return true;
+            }).orElse(false);
+            if (changed) updated++;
         }
         return Map.of("updated", updated);
     }

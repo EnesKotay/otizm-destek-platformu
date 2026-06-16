@@ -498,6 +498,124 @@ export function DashboardPage() {
       className: pendingMedicationSlots > 0 ? 'bg-amber-50 text-amber-700 ring-amber-100' : 'bg-emerald-50 text-emerald-700 ring-emerald-100',
     },
   ];
+  const todayTasks = activeChild ? [
+    {
+      to: '/gunluk-takip',
+      icon: Heart,
+      title: 'Bugünün kısa kaydını gir',
+      detail: todayMood
+        ? 'Ruh hali girildi; uyku, ilaç veya kısa not ekleyebilirsiniz.'
+        : 'Ruh hali, uyku ve ilaç bilgisini 1 dakikada işaretleyin.',
+      reason: todayMood ? 'Bugünkü ruh hali kaydı var.' : 'Ruh hali bugün kaydedilmedi.',
+      duration: '1 dk',
+      done: Boolean(todayMood),
+      tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+      cta: todayMood ? 'Güncelle' : 'Kaydet',
+      doneCta: 'Kaydı görüntüle',
+    },
+    {
+      to: pendingMedicationSlots > 0 ? '/gunluk-takip' : '/takvim',
+      icon: pendingMedicationSlots > 0 ? Pill : CalendarCheck,
+      title: pendingMedicationSlots > 0 ? 'İlaç kontrolünü tamamla' : 'Bugünkü planı kontrol et',
+      detail: pendingMedicationSlots > 0
+        ? `${pendingMedicationSlots} doz bekliyor.`
+        : nextEvent
+          ? `Sıradaki: ${nextEvent.title}`
+          : 'Randevu, okul veya etkinlik varsa takvime ekleyin.',
+      reason: pendingMedicationSlots > 0
+        ? `${pendingMedicationSlots} ilaç dozu bekliyor.`
+        : nextEvent
+          ? 'Takvimde yaklaşan etkinlik var.'
+          : 'Bugün için takvimde plan görünmüyor.',
+      duration: pendingMedicationSlots > 0 ? '2 dk' : '30 sn',
+      done: pendingMedicationSlots === 0 && Boolean(nextEvent),
+      tone: pendingMedicationSlots > 0 ? 'bg-amber-50 text-amber-700 ring-amber-100' : 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+      cta: pendingMedicationSlots > 0 ? 'Kontrol et' : 'Takvimi aç',
+      doneCta: 'Planı gör',
+    },
+    {
+      to: unreadMessagesCount > 0 ? '/mesajlar' : '/notlar',
+      icon: unreadMessagesCount > 0 ? MessageCircle : FileText,
+      title: unreadMessagesCount > 0 ? 'Mesajları yanıtla' : 'Kısa gözlem notu ekle',
+      detail: unreadMessagesCount > 0
+        ? `${unreadMessagesCount} okunmamış mesaj var.`
+        : recentNotes.length > 0
+          ? 'Bugüne dair yeni fark ettiğiniz bir şeyi ekleyin.'
+          : 'İlk not ilerleme takibini başlatır.',
+      reason: unreadMessagesCount > 0
+        ? `${unreadMessagesCount} mesaj yanıt bekliyor.`
+        : recentNotes.length > 0
+          ? 'Son gözlem notu hazır.'
+          : 'Henüz gözlem notu yok.',
+      duration: unreadMessagesCount > 0 ? '2 dk' : '2 dk',
+      done: unreadMessagesCount === 0 && recentNotes.length > 0,
+      tone: unreadMessagesCount > 0 ? 'bg-orange-50 text-orange-700 ring-orange-100' : 'bg-sky-50 text-sky-700 ring-sky-100',
+      cta: unreadMessagesCount > 0 ? 'Mesajlar' : 'Not ekle',
+      doneCta: 'Notları gör',
+    },
+  ] : [
+    {
+      to: '/cocuklarim',
+      icon: Baby,
+      title: 'İlk çocuk profilini oluştur',
+      detail: 'Profil eklenince menü ve öneriler çocuğunuza göre sadeleşir.',
+      reason: 'Uygulama henüz kime göre kişiselleşeceğini bilmiyor.',
+      duration: '3 dk',
+      done: false,
+      tone: 'bg-blue-50 text-blue-700 ring-blue-100',
+      cta: 'Başla',
+      doneCta: 'Profili gör',
+    },
+    {
+      to: '/yardim',
+      icon: ClipboardList,
+      title: 'Uygulamanın kısa yolunu görün',
+      detail: 'Hangi sayfanın ne işe yaradığını hızlıca öğrenin.',
+      reason: 'İlk girişte menü kalabalık gelebilir.',
+      duration: '1 dk',
+      done: false,
+      tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+      cta: 'Yardımı aç',
+      doneCta: 'Yardımı aç',
+    },
+    {
+      to: '/uzmanlar',
+      icon: GraduationCap,
+      title: 'Uzman desteğini keşfet',
+      detail: 'Randevu almadan önce uzman profillerini inceleyebilirsiniz.',
+      reason: 'Destek seçeneklerini erken görmek karar vermeyi kolaylaştırır.',
+      duration: '2 dk',
+      done: false,
+      tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+      cta: 'Uzman bul',
+      doneCta: 'Uzman bul',
+    },
+  ];
+  const firstPendingTaskIndex = todayTasks.findIndex((task) => !task.done);
+  const guidedTodayTasks = todayTasks.map((task, index) => ({
+    ...task,
+    priorityLabel: task.done
+      ? 'Tamam'
+      : index === firstPendingTaskIndex
+        ? 'Şimdi bunu yap'
+        : index === firstPendingTaskIndex + 1
+          ? 'Sonra'
+          : 'İsteğe bağlı',
+  }));
+  const completedTodayTasks = todayTasks.filter((task) => task.done).length;
+  const todayProgressPct = Math.round((completedTodayTasks / todayTasks.length) * 100);
+  const allTodayTasksDone = completedTodayTasks === todayTasks.length;
+  const dailyCoachNote = !activeChild
+    ? 'Bugün yalnızca profil oluşturmanız yeterli. Diğer alanlar profil sonrası anlam kazanır.'
+    : allTodayTasksDone
+      ? 'Bugünün temel işleri tamam. İsterseniz gelişim planına veya bilgi bankasına geçebilirsiniz.'
+      : pendingMedicationSlots > 0
+        ? 'Bugün önce ilaç kontrolünü bitirmek iyi olur; diğer işleri kısa tutabilirsiniz.'
+        : !todayMood
+          ? 'Önce kısa günlük kaydı girin. Kalan işler daha net hale gelir.'
+          : nextEvent
+            ? 'Bugün planlı bir etkinlik var; not veya mesaj işleri kısa tutulabilir.'
+            : 'Bugün düşük yoğunluklu bir plan yeterli: kayıt, kısa takvim kontrolü ve bir not.';
 
   if (user?.role === 'ADMIN') {
     return (
@@ -1504,6 +1622,110 @@ export function DashboardPage() {
         </Link>
       )}
 
+      {!loading && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-indigo-500">Görev Merkezi</p>
+              <h2 className="mt-0.5 text-lg font-bold text-slate-900">Bugün ne yapacağım?</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {activeChild
+                  ? `${activeChild.name} için en önemli ${todayTasks.length} adım.`
+                  : 'Önce profil oluşturun; sonra günlük takip ve randevu akışı açılır.'}
+              </p>
+            </div>
+            <div className="w-full rounded-2xl bg-slate-50 px-3 py-3 ring-1 ring-slate-100 sm:w-48">
+              <div className="flex items-center justify-between gap-2 text-xs font-bold text-slate-600">
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle size={15} className="text-emerald-600" />
+                  {completedTodayTasks}/{todayTasks.length} tamam
+                </span>
+                <span className="text-slate-400">%{todayProgressPct}</span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white ring-1 ring-slate-100">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-indigo-500 transition-all duration-500"
+                  style={{ width: `${todayProgressPct}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-3">
+            <div className="flex items-start gap-2.5">
+              <Sparkles size={16} className="mt-0.5 shrink-0 text-indigo-600" />
+              <p className="text-sm font-semibold leading-6 text-indigo-950">{dailyCoachNote}</p>
+            </div>
+          </div>
+
+          {allTodayTasksDone && (
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <Link
+                to="/tedavi"
+                className="group rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800 transition-colors hover:bg-emerald-100"
+              >
+                Günün işleri tamamlandı. Gelişim planına geç
+                <ArrowRight size={13} className="ml-1 inline transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <Link
+                to="/bilgi-bankasi"
+                className="group rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm font-bold text-sky-800 transition-colors hover:bg-sky-100"
+              >
+                Bugün için kısa bir kaynak oku
+                <ArrowRight size={13} className="ml-1 inline transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
+          )}
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            {guidedTodayTasks.map(({ to, icon: Icon, title, detail, reason, duration, done, tone, cta, doneCta, priorityLabel }) => (
+              <Link
+                key={title}
+                to={to}
+                className={`group flex min-h-[10.5rem] flex-col justify-between rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-sm ${
+                  done
+                    ? 'border-emerald-100 bg-emerald-50/35 hover:bg-white'
+                    : priorityLabel === 'Şimdi bunu yap'
+                      ? 'border-indigo-200 bg-white shadow-sm ring-1 ring-indigo-100 hover:border-indigo-300'
+                      : 'border-slate-100 bg-slate-50/70 hover:border-indigo-200 hover:bg-white'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${tone}`}>
+                    <Icon size={18} />
+                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`rounded-full px-2 py-1 text-[10px] font-extrabold ${
+                      done
+                        ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
+                        : priorityLabel === 'Şimdi bunu yap'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'bg-white text-slate-500 ring-1 ring-slate-200'
+                    }`}>
+                      {priorityLabel}
+                    </span>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 ring-1 ring-slate-100">
+                      {duration}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
+                  <p className="mt-2 rounded-xl bg-white/80 px-2.5 py-1.5 text-[11px] font-semibold leading-4 text-slate-500 ring-1 ring-slate-100">
+                    {reason}
+                  </p>
+                  <span className={`mt-3 inline-flex items-center gap-1 text-xs font-bold ${done ? 'text-emerald-700' : 'text-indigo-700'}`}>
+                    {done ? doneCta : cta}
+                    <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ── Bugünün Odağı — tek büyük kart ── */}
       {loading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 animate-pulse">
@@ -1674,38 +1896,127 @@ export function DashboardPage() {
         </section>
       )}
 
-      {/* ── Bugünün Planı — ikincil, sakin ── */}
+      {/* ── Bugünün Planı — pratik mini seans ── */}
       {!loading && activeChild && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Bugünün Planı</p>
-              <h2 className="text-base font-semibold text-slate-900 mt-0.5">{dashboardTodayPlan.title}</h2>
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-sky-50 text-sky-700 ring-1 ring-sky-100">
+                  <Timer size={18} />
+                </span>
+                <p className="text-xs font-bold uppercase text-slate-400">Bugünün Mini Seansı</p>
+              </div>
+              <h2 className="mt-3 text-xl font-black leading-tight text-slate-950 sm:text-2xl">
+                {dashboardTodayPlan.title}
+              </h2>
+              <p className="mt-2 text-sm font-medium leading-6 text-slate-500">{dashboardTodayPlan.summary}</p>
             </div>
-            <Link
-              to="/tedavi"
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700 shrink-0"
-            >
-              Detay →
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-600 ring-1 ring-slate-100">
+                <Clock size={14} />
+                {planTotalMinutes} dk
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">
+                <CheckCircle size={14} />
+                Baskısız tempo
+              </span>
+            </div>
           </div>
-          <div className="space-y-3">
-            {dashboardTodayPlan.steps.map((step, i) => (
-              <div key={step.title} className="flex items-start gap-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">
-                  {i + 1}
-                </div>
-                <div className="flex-1 min-w-0 bg-slate-50 rounded-xl p-3 flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{step.title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5 leading-5">{step.detail}</p>
-                  </div>
-                  <span className="shrink-0 text-xs font-medium text-slate-400 bg-white px-2 py-1 rounded-full ring-1 ring-slate-200 whitespace-nowrap">
-                    {step.duration}
+
+          <div className="mt-5 grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
+            <div className="rounded-3xl border border-sky-100 bg-sky-50/70 p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-bold uppercase text-sky-700">Şimdi başla</p>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 ring-1 ring-sky-100">
+                  {dashboardTodayPlan.steps[0]?.duration}
+                </span>
+              </div>
+              <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-sky-100">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-600 text-lg font-black text-white shadow-sm">
+                    1
                   </span>
+                  <div>
+                    <h3 className="text-base font-black text-slate-950">{dashboardTodayPlan.steps[0]?.title}</h3>
+                    <p className="mt-1 text-sm font-medium leading-6 text-slate-500">{dashboardTodayPlan.steps[0]?.detail}</p>
+                  </div>
                 </div>
               </div>
-            ))}
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {[
+                  { label: 'Ortam', value: 'Sakin' },
+                  { label: 'Yönerge', value: 'Net' },
+                  { label: 'Bitiş', value: 'Not' },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-2xl bg-white px-3 py-3 ring-1 ring-sky-100">
+                    <p className="text-[10px] font-bold uppercase text-slate-400">{item.label}</p>
+                    <p className="mt-1 text-xs font-black text-slate-800">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  to="/tedavi"
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-slate-800"
+                >
+                  Planı Aç
+                  <ArrowRight size={14} />
+                </Link>
+                <Link
+                  to="/notlar"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-700 ring-1 ring-sky-100 transition-all hover:bg-sky-50"
+                >
+                  Seans Notu
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4 sm:p-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase text-slate-400">Uygulama akışı</p>
+                  <h3 className="mt-1 text-base font-black text-slate-950">Adım adım ilerleyin</h3>
+                </div>
+                <Link to="/tedavi" className="group inline-flex w-fit items-center gap-1 text-sm font-bold text-indigo-700 hover:text-indigo-800">
+                  Detay
+                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+
+              <div className="mt-4 space-y-2.5">
+                {dashboardTodayPlan.steps.map((step, i) => (
+                  <div
+                    key={step.title}
+                    className="group grid gap-3 rounded-2xl border border-white bg-white p-3 shadow-sm transition-all hover:border-indigo-100 sm:grid-cols-[auto_1fr_auto]"
+                  >
+                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black ring-1 ${
+                      i === 0
+                        ? 'bg-indigo-600 text-white ring-indigo-600'
+                        : 'bg-slate-50 text-slate-500 ring-slate-200'
+                    }`}>
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-slate-900">{step.title}</p>
+                      <p className="mt-1 text-sm font-medium leading-6 text-slate-500">{step.detail}</p>
+                    </div>
+                    <span className="h-fit w-fit rounded-full bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-400 ring-1 ring-slate-200">
+                      {step.duration}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                <div className="flex items-start gap-2.5">
+                  <Sparkles size={16} className="mt-0.5 shrink-0 text-emerald-600" />
+                  <p className="text-sm font-semibold leading-6 text-emerald-900">
+                    Zorlanırsa süreyi yarıya indirin. Amaç kusursuz yapmak değil, günü güvenli bir ritimle kapatmak.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       )}
@@ -1766,4 +2077,3 @@ export function DashboardPage() {
     </div>
   );
 }
-

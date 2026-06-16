@@ -13,7 +13,7 @@ import {
   Trash2,
   AlertTriangle
 } from 'lucide-react';
-import { adminService } from '@/services/adminService';
+import { adminService, type ReportTargetPreview } from '@/services/adminService';
 import { toast } from '@/store/toastStore';
 import { formatDate } from '@/utils/date';
 import type { Report } from '@/types';
@@ -27,24 +27,7 @@ function getReportBadgeVariant(status?: string): 'default' | 'success' | 'warnin
   return 'default';
 }
 
-const TARGET_TYPES = ['TÜMÜ', 'POST', 'COMMENT', 'USER', 'MESSAGE'];
-
-// Simulated bodies for content preview based on targetType
-const getSimulatedReportedContent = (type: string, id: string): string => {
-  const shortId = id.split('-')[0] || id;
-  switch (type) {
-    case 'POST':
-      return `[Forum Gönderisi #${shortId}]\n"Otizm teşhisi sonrası uygulanan alternatif tıp yöntemleri hakkında ne düşünüyorsunuz? Kanıtlanmamış bazı bitkisel kürlerin otizmi tamamen iyileştirdiği söyleniyor. Bize bu ürünü satmaya çalışan bir grup var..."`;
-    case 'COMMENT':
-      return `[Forum Yorumu #${shortId}]\n"Söylediğiniz şeyler tamamen uydurma ve bilim dışı. Aileleri dolandırmaya çalışmaktan utanmıyor musunuz? Sizin gibi insanlar yüzünden çocuklar zarar görüyor!"`;
-    case 'MESSAGE':
-      return `[Özel Mesaj #${shortId}]\n"Merhaba, size özel olarak otizm destek seansları satmak istiyorum. Fiyatlarımız piyasaya göre çok ucuzdur, klinikte onaylıyız diyebiliriz..."`;
-    case 'USER':
-      return `[Kullanıcı Hesabı #${shortId}]\nBu profil hakkında spam yayma, sahte uzmanlık unvanı kullanma veya uygunsuz profil fotoğrafı yükleme şikayeti alınmıştır.`;
-    default:
-      return `İçerik ID: ${id}\nSistemde kayıtlı içerik detayları inceleniyor. Rapor gerekçesi: Spam veya yanıltıcı bilgi.`;
-  }
-};
+const TARGET_TYPES = ['TÜMÜ', 'POST', 'COMMENT', 'USER', 'EXPERT', 'MESSAGE'];
 
 export function AdminReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -55,6 +38,8 @@ export function AdminReportsPage() {
 
   // Detail Drawer State
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [targetPreview, setTargetPreview] = useState<ReportTargetPreview | null>(null);
+  const [targetPreviewLoading, setTargetPreviewLoading] = useState(false);
 
   const fetchReports = useCallback(async () => {
     setLoading(true);
@@ -73,16 +58,37 @@ export function AdminReportsPage() {
     fetchReports();
   }, [fetchReports]);
 
+  useEffect(() => {
+    if (!selectedReport) {
+      setTargetPreview(null);
+      return;
+    }
+    setTargetPreviewLoading(true);
+    setTargetPreview(null);
+    adminService.getReportTargetPreview(selectedReport.id)
+      .then(setTargetPreview)
+      .catch(() => {
+        setTargetPreview({
+          targetType: selectedReport.targetType,
+          targetId: selectedReport.targetId,
+          available: false,
+          title: 'Hedef içerik yüklenemedi',
+          content: 'Bu rapora bağlı hedef içerik şu anda alınamıyor.',
+        });
+      })
+      .finally(() => setTargetPreviewLoading(false));
+  }, [selectedReport]);
+
   const handleResolveReport = async (reportId: string, action: 'resolve' | 'reject') => {
     setActionLoading(`${reportId}-${action}`);
     try {
       if (action === 'resolve') {
-        const updated = await adminService.resolveReport(reportId, 'İhlal onaylandı ve içerik kaldırıldı.');
+        const updated = await adminService.resolveReport(reportId, 'İhlal onaylandı.');
         setReports(prev => prev.map(r => r.id === reportId ? updated : r));
         if (selectedReport?.id === reportId) {
           setSelectedReport(updated);
         }
-        toast.success('Rapor çözüldü olarak işaretlendi.');
+        toast.success('Rapor ihlal olarak işaretlendi.');
       } else {
         const updated = await adminService.rejectReport(reportId, 'Gözardı edildi.');
         setReports(prev => prev.map(r => r.id === reportId ? updated : r));
@@ -98,14 +104,32 @@ export function AdminReportsPage() {
     }
   };
 
-  const handleSimulateDelete = (reportId: string) => {
-    toast.success('İçerik veri tabanından kalıcı olarak silindi ve rapor kapatıldı.');
-    handleResolveReport(reportId, 'resolve');
+  const handleRemoveTarget = async (reportId: string) => {
+    setActionLoading(`${reportId}-remove`);
+    try {
+      const updated = await adminService.removeReportTarget(reportId);
+      setReports(prev => prev.map(r => r.id === reportId ? updated : r));
+      setSelectedReport(updated);
+      toast.success('Hedef içerik moderasyon kararıyla kaldırıldı.');
+    } catch {
+      toast.error('Hedef içerik kaldırılamadı.');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleSimulateWarn = (reportId: string) => {
-    toast.success('Kullanıcıya resmi uyarı mesajı ve e-posta iletildi.');
-    handleResolveReport(reportId, 'resolve');
+  const handleWarnTarget = async (reportId: string) => {
+    setActionLoading(`${reportId}-warn`);
+    try {
+      const updated = await adminService.warnReportTarget(reportId);
+      setReports(prev => prev.map(r => r.id === reportId ? updated : r));
+      setSelectedReport(updated);
+      toast.success('Kullanıcıya moderasyon uyarısı gönderildi.');
+    } catch {
+      toast.error('Kullanıcı uyarılamadı.');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const filteredReports = reports.filter((report) => {
@@ -281,12 +305,30 @@ export function AdminReportsPage() {
             <Card className="border-rose-100 shadow-sm bg-rose-50/10 rounded-2xl">
               <CardHeader className="border-b border-rose-100 pb-3 flex flex-row items-center gap-2">
                 <AlertTriangle className="text-rose-500 shrink-0" size={16} />
-                <h4 className="text-xs font-extrabold uppercase text-rose-700 tracking-wider">Şikayet Edilen İçerik Önizlemesi</h4>
+                <h4 className="text-xs font-extrabold uppercase text-rose-700 tracking-wider">Şikayet Edilen Hedef Önizlemesi</h4>
               </CardHeader>
               <CardContent className="p-4">
-                <div className="bg-white border border-rose-100 rounded-xl p-3.5 text-xs text-slate-700 font-medium whitespace-pre-wrap leading-relaxed">
-                  {getSimulatedReportedContent(selectedReport.targetType, selectedReport.targetId)}
-                </div>
+                {targetPreviewLoading ? (
+                  <div className="bg-white border border-rose-100 rounded-xl p-3.5 text-xs text-slate-400 font-semibold">
+                    Hedef içerik yükleniyor...
+                  </div>
+                ) : (
+                  <div className="bg-white border border-rose-100 rounded-xl p-3.5 text-xs text-slate-700 font-medium whitespace-pre-wrap leading-relaxed">
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase mb-1">
+                      {targetPreview?.available ? 'Canlı kayıt' : 'Kayıt bulunamadı'}
+                    </p>
+                    {targetPreview?.title && (
+                      <p className="text-sm font-bold text-slate-900 mb-2">{targetPreview.title}</p>
+                    )}
+                    <p>{targetPreview?.content || 'Önizleme alınamadı.'}</p>
+                    {targetPreview?.authorName && (
+                      <p className="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+                        Sahip: <span className="font-bold text-slate-700">{targetPreview.authorName}</span>
+                        {targetPreview.authorEmail ? ` • ${targetPreview.authorEmail}` : ''}
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -330,8 +372,9 @@ export function AdminReportsPage() {
                   </Button>
                   <Button 
                     className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-10 text-xs font-bold flex items-center justify-center gap-1.5"
-                    onClick={() => handleSimulateWarn(selectedReport.id)}
+                    onClick={() => handleWarnTarget(selectedReport.id)}
                     disabled={actionLoading !== null}
+                    loading={actionLoading === `${selectedReport.id}-warn`}
                   >
                     <MessageSquare size={14} />
                     Kullanıcıyı Uyar
@@ -341,11 +384,14 @@ export function AdminReportsPage() {
                   <Button 
                     variant="outline"
                     className="border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl h-10 text-xs font-bold flex items-center justify-center gap-1.5"
-                    onClick={() => handleSimulateDelete(selectedReport.id)}
+                    onClick={() => handleRemoveTarget(selectedReport.id)}
                     disabled={actionLoading !== null}
+                    loading={actionLoading === `${selectedReport.id}-remove`}
                   >
                     <Trash2 size={14} />
-                    İçeriği Sil & Çöz
+                    {selectedReport.targetType === 'USER' || selectedReport.targetType === 'EXPERT'
+                      ? 'Hesabı Pasifleştir & Çöz'
+                      : 'İçeriği Kaldır & Çöz'}
                   </Button>
                   <Button 
                     className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl h-10 text-xs font-bold flex items-center justify-center gap-1.5"

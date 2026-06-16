@@ -153,31 +153,47 @@ function buildInitialOpenState(groups: NavGroupConfig[]) {
 function buildSimpleParentGroups(groups: NavGroupConfig[]): NavGroupConfig[] {
   const allItems = groups.flatMap((group) => group.items);
   const byPath = (path: string) => allItems.find((item) => item.to === path);
-  const firstSteps = ['/', '/cocuklarim', '/gunluk-takip', '/randevular']
+  const today = ['/', '/gunluk-takip', '/kriz-rehberi']
     .map(byPath)
     .filter(Boolean) as NavItemConfig[];
-  const community = ['/forum', '/bilgi-bankasi', '/uzmanlar']
+  const childAndProgress = ['/cocuklarim', '/gelisim-paneli', '/notlar']
     .map(byPath)
     .filter(Boolean) as NavItemConfig[];
-  const support = ['/mesajlar', '/kriz-rehberi', '/yardim']
+  const treatmentAndPlanning = ['/randevular', '/tedavi', '/gorevler', '/takvim']
+    .map(byPath)
+    .filter(Boolean) as NavItemConfig[];
+  const communication = ['/mesajlar', '/forum', '/gruplar']
+    .map(byPath)
+    .filter(Boolean) as NavItemConfig[];
+  const resources = ['/bilgi-bankasi', '/uzmanlar', '/yardim']
     .map(byPath)
     .filter(Boolean) as NavItemConfig[];
 
   return [
     {
-      label: 'İlk Adımlar',
+      label: 'Bugün',
       defaultOpen: true,
-      items: firstSteps,
+      items: today,
     },
     {
-      label: 'Bilgi ve Topluluk',
+      label: 'Çocuk ve Gelişim',
       defaultOpen: true,
-      items: community,
+      items: childAndProgress,
     },
     {
-      label: 'Destek',
-      defaultOpen: true,
-      items: support,
+      label: 'Tedavi ve Takip',
+      defaultOpen: false,
+      items: treatmentAndPlanning,
+    },
+    {
+      label: 'İletişim',
+      defaultOpen: false,
+      items: communication,
+    },
+    {
+      label: 'Kaynaklar',
+      defaultOpen: false,
+      items: resources,
     },
   ].filter((group) => group.items.length > 0);
 }
@@ -442,8 +458,13 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
         setPaletteOpen(true);
       }
     };
+    const handleOpenCommandPalette = () => setPaletteOpen(true);
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('open-command-palette', handleOpenCommandPalette);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('open-command-palette', handleOpenCommandPalette);
+    };
   }, []);
 
   useEffect(() => {
@@ -683,8 +704,8 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
                 : 'text-primary-600 hover:bg-primary-50'
             )}
           >
-            <span>{simpleMode ? 'Tüm araçları göster' : 'Sade moda geç'}</span>
-            <span>{simpleMode ? 'Aç' : 'Sade'}</span>
+            <span>{simpleMode ? 'Tüm sayfaları göster' : 'Görev odaklı menüye geç'}</span>
+            <span>{simpleMode ? 'Tam' : 'Sade'}</span>
           </button>
         )}
 

@@ -59,7 +59,7 @@ export interface NavGroupConfig {
 export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
   PARENT: [
     {
-      label: 'Önce Bunlar',
+      label: 'Bugün',
       defaultOpen: true,
       items: [
         { to: '/', icon: Home, label: 'Ana Sayfa', mobileLabel: 'Ana', description: 'Bugünün kısa yol haritası', keywords: ['dashboard', 'özet', 'başlangıç'], mobile: true, simple: true },
@@ -73,7 +73,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       ],
     },
     {
-      label: 'Gelişim Takibi',
+      label: 'Çocuk ve Gelişim',
       defaultOpen: false,
       items: [
         { to: '/gelisim-paneli', icon: TrendingUp, label: 'İlerleme Özeti', description: 'Haftalık durum ve örüntüler', keywords: ['grafik', 'rapor', 'ilerleme'], requiresChild: true },
@@ -86,7 +86,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       ],
     },
     {
-      label: 'Günlük Yaşam',
+      label: 'Tedavi ve Takip',
       defaultOpen: false,
       items: [
         { to: '/gorevler', icon: ClipboardCheck, label: 'Ev Ödevleri', description: 'Uzman tarafından verilen görevler', keywords: ['ödev', 'görev', 'uzman'], requiresChild: true },
@@ -97,7 +97,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       ],
     },
     {
-      label: 'Topluluk',
+      label: 'İletişim',
       defaultOpen: false,
       items: [
         { to: '/forum', icon: BookOpen, label: 'Forum', description: 'Sorular, yanıtlar ve deneyim paylaşımı', keywords: ['soru', 'cevap', 'paylaşım'] },
@@ -108,7 +108,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       ],
     },
     {
-      label: 'Yardım ve Rehber',
+      label: 'Kaynaklar',
       defaultOpen: false,
       items: [
         { to: '/bilgi-bankasi', icon: Library, label: 'Bilgi Bankası', description: 'Güvenilir yazılar ve rehber içerikler', keywords: ['makale', 'rehber', 'bilgi'] },

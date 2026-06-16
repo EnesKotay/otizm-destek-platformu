@@ -65,6 +65,10 @@ export function AppLayout() {
     }
   };
 
+  const openCommandPalette = () => {
+    window.dispatchEvent(new Event('open-command-palette'));
+  };
+
   // Push bildirim aboneliği — kullanıcı oturum açtıktan sonra otomatik kayıt
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -165,13 +169,15 @@ export function AppLayout() {
                   <span className="hidden xs:inline">Uygulamayı Yükle</span>
                 </button>
               )}
-              <Link
-                to="/arama"
+              <button
+                type="button"
+                onClick={openCommandPalette}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-500 hover:bg-white dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 hover:shadow-sm transition-all text-sm border border-transparent hover:border-gray-100 dark:hover:border-gray-700"
               >
                 <Search size={16} />
-                <span className="hidden sm:inline">Ara...</span>
-              </Link>
+                <span className="hidden sm:inline">Ara veya komut ver...</span>
+                <kbd className="hidden rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-400 sm:inline">⌘K</kbd>
+              </button>
               {isAuthenticated && routeHelp && (
                 <button
                   type="button"

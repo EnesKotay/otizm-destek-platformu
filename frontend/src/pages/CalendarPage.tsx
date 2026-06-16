@@ -397,6 +397,60 @@ export function CalendarPage() {
     );
   };
 
+  const UpcomingEmptyState = () => (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+      <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+            <CalendarIcon size={22} />
+          </span>
+          <div className="min-w-0">
+            <h3 className="text-base font-bold text-slate-900">Henüz yaklaşan plan yok</h3>
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              İlk randevu, terapi ya da okul notunu ekleyin; zamanı gelince ana sayfada da görünür.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          {[
+            { icon: Brain, label: 'Terapi', detail: 'Seans ve ev çalışması', tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100' },
+            { icon: Stethoscope, label: 'Doktor', detail: 'Randevu takibi', tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100' },
+            { icon: BookOpen, label: 'Okul', detail: 'Görüşme ve not', tone: 'bg-amber-50 text-amber-700 ring-amber-100' },
+          ].map(({ icon: Icon, label, detail, tone }) => (
+            <div key={label} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ${tone}`}>
+                <Icon size={16} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-800">{label}</p>
+                <p className="truncate text-[11px] font-medium text-slate-500">{detail}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <Button size="sm" onClick={handleOpenModal} className="sm:flex-1">
+            <Plus size={14} className="mr-1" />
+            Plan Ekle
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setSelectedDate(new Date());
+              setFilterStatus('ALL');
+            }}
+            className="sm:flex-1"
+          >
+            Bugünü Seç
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
 
 
   return (
@@ -531,7 +585,9 @@ export function CalendarPage() {
                 <EmptyState
                   icon={<CalendarIcon size={24} />}
                   title="Etkinlik yok"
-                  description="Bu tarihte etkinlik bulunmuyor"
+                  description="Bu tarihe terapi, okul, doktor veya ev çalışması ekleyebilirsiniz."
+                  steps={['Etkinlik türünü seçin.', 'Saat ve hatırlatma ekleyin.', 'Gün gelince ana sayfada görünür.']}
+                  action={<Button size="sm" onClick={handleOpenModal}><Plus size={14} className="mr-1" />Etkinlik Ekle</Button>}
                 />
               ) : (
                 <div className="space-y-2">
@@ -550,11 +606,7 @@ export function CalendarPage() {
                 </div>
               </CardHeader>
               {upcomingEvents.length === 0 ? (
-                <EmptyState
-                  icon={<CalendarIcon size={24} />}
-                  title="Etkinlik yok"
-                  description="Yaklaşan planlanmış etkinlik bulunmuyor"
-                />
+                <UpcomingEmptyState />
               ) : (
                 <div className="space-y-2">
                   {upcomingEvents.map(event => (

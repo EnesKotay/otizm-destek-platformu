@@ -203,7 +203,7 @@ export function OnboardingPage() {
           onClick={handleFinish}
           className="text-sm text-gray-400 hover:text-gray-600 transition-colors cursor-pointer flex items-center gap-1"
         >
-          {step === 3 ? 'Platforma Başla' : 'Atla'}
+          Şimdilik atla
           <ArrowRight size={14} />
         </button>
       </div>
@@ -243,6 +243,19 @@ export function OnboardingPage() {
             </div>
           );
         })}
+      </div>
+
+      <div className="mx-auto mb-6 grid w-full max-w-3xl gap-2 px-4 sm:grid-cols-3">
+        {[
+          'Önce çocuk profili',
+          'Sonra ihtiyaçları seç',
+          'Ana sayfada günlük adımlar',
+        ].map((item, index) => (
+          <div key={item} className="rounded-2xl border border-indigo-100 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+            <span className="mr-2 text-indigo-600">{index + 1}.</span>
+            {item}
+          </div>
+        ))}
       </div>
 
       {/* Card content */}

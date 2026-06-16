@@ -6,6 +6,7 @@ import com.autismsupport.platform.dto.AuditLogDto;
 import com.autismsupport.platform.dto.MonthlyGrowthDto;
 import com.autismsupport.platform.dto.PlatformSettingsDto;
 import com.autismsupport.platform.dto.ReportDto;
+import com.autismsupport.platform.dto.ReportTargetPreviewDto;
 import com.autismsupport.platform.dto.UserDto;
 import com.autismsupport.platform.security.CurrentUser;
 import com.autismsupport.platform.security.UserPrincipal;
@@ -79,6 +80,31 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(adminService.getPendingReports()));
     }
 
+    @GetMapping("/reports/{reportId}/target-preview")
+    public ResponseEntity<ApiResponse<ReportTargetPreviewDto>> getReportTargetPreview(@PathVariable UUID reportId) {
+        return ResponseEntity.ok(ApiResponse.success(adminService.getReportTargetPreview(reportId)));
+    }
+
+    @PostMapping("/reports/{reportId}/warn")
+    public ResponseEntity<ApiResponse<ReportDto>> warnReportTarget(
+            @PathVariable UUID reportId,
+            @CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Kullanici uyarildi",
+                adminService.warnReportTarget(reportId, principal.getId())
+        ));
+    }
+
+    @DeleteMapping("/reports/{reportId}/target")
+    public ResponseEntity<ApiResponse<ReportDto>> removeReportTarget(
+            @PathVariable UUID reportId,
+            @CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Hedef icerik kaldirildi",
+                adminService.removeReportTarget(reportId, principal.getId())
+        ));
+    }
+
     @GetMapping("/audit-logs")
     public ResponseEntity<ApiResponse<Page<AuditLogDto>>> getAuditLogs(
             @RequestParam(defaultValue = "0") int page,
@@ -141,11 +167,11 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Ayarlar kaydedildi", adminService.updatePlatformSettings(dto)));
     }
 
-    /** Anlik veritabani yedegi tetikler (SQL dump). */
+    /** Yedekleme talebini isler. Pg_dump entegre degilse yalnizca audit kaydi olusturur. */
     @PostMapping("/backup")
     public ResponseEntity<ApiResponse<Map<String, Object>>> triggerBackup(@CurrentUser UserPrincipal principal) {
         Map<String, Object> result = adminService.triggerBackup(principal.getId());
-        return ResponseEntity.ok(ApiResponse.success("Yedekleme basariyla tamamlandi.", result));
+        return ResponseEntity.ok(ApiResponse.success("Yedekleme talebi islendi.", result));
     }
 
     /** Platform token kullanim istatistiklerini doner. */

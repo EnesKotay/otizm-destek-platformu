@@ -46,6 +46,7 @@ interface TokenStats {
   budget: number;
   remaining: number;
   cost: number;
+  estimated?: boolean;
   updatedAt: string;
 }
 
@@ -203,7 +204,7 @@ export function AdminSettingsPage() {
     setSelectedModel(model);
     localStorage.setItem('admin_ai_model', model);
     setShowModelDropdown(false);
-    toast.success(`Varsayılan AI Modeli: ${model} olarak güncellendi.`);
+    toast.success(`Bu cihazdaki admin AI modeli tercihi ${model} olarak güncellendi.`);
   };
 
   // Yapay Zeka Mikro Modül Değişimi
@@ -211,20 +212,24 @@ export function AdminSettingsPage() {
     const updated = { ...aiModules, [moduleKey]: !aiModules[moduleKey] };
     setAiModules(updated);
     localStorage.setItem('admin_ai_modules', JSON.stringify(updated));
-    toast.success('Yapay zeka modül yapılandırması güncellendi.');
+    toast.success('Yerel AI modül görünüm tercihi güncellendi.');
   };
 
   // Veritabanı Yedeği Tetikleyici
   const handleBackup = async () => {
     setBackupLoading(true);
     try {
-      await adminService.triggerBackup();
+      const result = await adminService.triggerBackup();
       const now = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
       const today = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
       const ts = `${today} ${now}`;
       setLastBackupTime(ts);
       localStorage.setItem('admin_last_backup', ts);
-      toast.success('Veritabanı yedeği başarıyla alındı!');
+      if (result.status === 'COMPLETED') {
+        toast.success('Veritabanı yedeği başarıyla alındı!');
+      } else {
+        toast.info(result.message || 'Yedek talebi kaydedildi. Gerçek SQL dump entegrasyonu henüz yapılandırılmamış.');
+      }
     } catch {
       toast.error('Yedekleme başarısız oldu. Lütfen tekrar deneyin.');
     } finally {
@@ -358,6 +363,11 @@ export function AdminSettingsPage() {
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Coins className="text-purple-500" size={18} />
                 AI Motoru Kota ve Token Tüketimi
+                {tokenStats?.estimated && (
+                  <Badge className="bg-amber-50 text-amber-700 border border-amber-100 text-[9px] font-extrabold">
+                    Tahmini
+                  </Badge>
+                )}
               </h3>
               <button
                 onClick={fetchTokenStats}
@@ -380,7 +390,7 @@ export function AdminSettingsPage() {
                   {/* Premium Kota Progress Barı */}
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                      <span>Gemini API Token Kullanımı</span>
+                      <span>Gemini API Token Kullanımı {tokenStats.estimated ? '(Tahmini)' : ''}</span>
                       <span className={`px-2 py-0.5 rounded-md font-extrabold text-[9px] ${usagePct >= 80 ? 'bg-red-50 text-red-600 dark:bg-red-950/20' : usagePct >= 50 ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/20' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20'}`}>
                         {usagePct}% Tüketildi
                       </span>
@@ -439,12 +449,12 @@ export function AdminSettingsPage() {
           {/* İleri AI Yapılandırması Paneli - NEW PREMUM ELEMENT */}
           {settings.aiEnabled && (
             <div className="p-6 pt-0 border-t border-slate-100/60 dark:border-slate-800/30 mt-2 space-y-4">
-              <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">İleri AI Motoru Yapılandırması</h4>
+              <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Yerel AI Panel Tercihleri</h4>
               
               <div className="grid sm:grid-cols-2 gap-4">
                 {/* Model Seçim Dropdown */}
                 <div className="space-y-1.5 relative">
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">Varsayılan Yapay Zeka Modeli</label>
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">Bu Cihazdaki Model Tercihi</label>
                   <button
                     onClick={() => setShowModelDropdown(!showModelDropdown)}
                     className="w-full flex items-center justify-between border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
@@ -479,7 +489,7 @@ export function AdminSettingsPage() {
 
                 {/* AI Modül Alt Toggle'ları */}
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">Aktif AI Modülleri</label>
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">Yerel Modül Görünümü</label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { key: 'chatbot', label: 'Chatbot' },
@@ -526,14 +536,14 @@ export function AdminSettingsPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <Database size={14} className="text-slate-500" />
-                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Veritabanı SQL Yedeği</p>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Yedekleme Talebi</p>
                   </div>
                   <p className="text-[10px] text-slate-400 font-medium mt-0.5 ml-5 leading-normal">
-                    {lastBackupTime ? `Son: ${lastBackupTime}` : 'Henüz yedek alınmadı'}
+                    {lastBackupTime ? `Son talep: ${lastBackupTime}` : 'Henüz yedek talebi yok'}
                   </p>
                 </div>
                 <Badge className={`text-[10px] font-extrabold border ${lastBackupTime ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30' : 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30'}`}>
-                  {lastBackupTime ? 'Güvenli' : 'Bekliyor'}
+                  {lastBackupTime ? 'Talep edildi' : 'Bekliyor'}
                 </Badge>
               </div>
 
@@ -573,7 +583,7 @@ export function AdminSettingsPage() {
                 className="w-full h-9.5 border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-2xl text-[11px] mt-2 transition-all cursor-pointer shadow-sm"
               >
                 {!backupLoading && <RefreshCw size={12} className="mr-1.5 text-slate-400" />}
-                Anlık SQL Yedeği Al
+                Yedek Talebi Oluştur
               </Button>
             </div>
           </div>

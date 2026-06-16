@@ -276,7 +276,8 @@ export function NotesPage() {
         <EmptyState
           icon={<FileText size={32} />}
           title="Henüz gelişim notu yok"
-          description="Bugün çocuğunuzla ilgili bir gözleminizi kaydedin"
+          description="Bugün çocuğunuzla ilgili küçük bir gözlemi kaydedin; uzun yazmak zorunda değilsiniz."
+          steps={['Ne oldu?', 'Öncesinde ne vardı?', 'Sonrasında ne işe yaradı?']}
           action={<Button onClick={() => setShowModal(true)}>İlk Notu Ekle</Button>}
         />
       ) : filteredNotes.length === 0 ? (

@@ -37,7 +37,7 @@ export function AdminOverviewPage() {
   const fetchMetrics = () => {
     adminService.getSystemMetrics()
       .then(m => {
-        setCpuUsage(Math.round(m.cpuUsage * 100));
+        setCpuUsage(Math.round(m.cpuUsage));
         setHeapUsedMb(Math.round(m.heapUsedMb));
         setUptimeMs(m.uptimeMs);
       })
@@ -66,6 +66,17 @@ export function AdminOverviewPage() {
       setPendingExperts(prev => prev.filter(x => x.id !== expertId));
       toast.success('Uzman başvurusu onaylandı.');
       // Refresh stats
+      adminService.getStats().then(setStats);
+    } catch {
+      toast.error('İşlem gerçekleştirilemedi.');
+    }
+  };
+
+  const handleRejectExpert = async (expertId: string) => {
+    try {
+      await adminService.rejectExpert(expertId);
+      setPendingExperts(prev => prev.filter(x => x.id !== expertId));
+      toast.success('Uzman başvurusu reddedildi.');
       adminService.getStats().then(setStats);
     } catch {
       toast.error('İşlem gerçekleştirilemedi.');
@@ -260,7 +271,7 @@ export function AdminOverviewPage() {
                     <Button 
                       size="sm" 
                       variant="ghost" 
-                      onClick={() => handleResolveReport(expert.id, 'reject')}
+                      onClick={() => handleRejectExpert(expert.id)}
                       className="text-red-500 bg-red-50 hover:bg-red-100 rounded-lg text-[10px] px-2.5 h-8 font-bold"
                     >
                       Reddet
@@ -418,7 +429,7 @@ export function AdminOverviewPage() {
                   <Activity size={14} /> Altyapı Sağlığı
                 </h4>
                 <p className="text-[11px] text-indigo-900 mt-2 font-medium">
-                  Tüm servisler aktif ve sağlıklı şekilde çalışıyor. Son veritabanı yedeği 4 saat önce başarıyla tamamlandı.
+                  Canlı JVM metrikleri admin panelinden izleniyor. Veritabanı yedekleme entegrasyonu ayarlar ekranındaki durum bilgisinden takip edilir.
                 </p>
               </div>
             </div>

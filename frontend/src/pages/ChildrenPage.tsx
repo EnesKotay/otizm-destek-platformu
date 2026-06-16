@@ -241,6 +241,7 @@ export function ChildrenPage() {
           icon={<Baby size={32} />}
           title="Henüz çocuk profili eklenmemiş"
           description="İlk profil; günlük takip, BEP planı, randevu ve uzman paylaşımı için güvenli başlangıç noktasıdır."
+          steps={['Ad ve yaş bilgisini girin.', 'Tanı, eğitim veya hassasiyet notu ekleyin.', 'Profil oluşunca ana sayfa günlük adımları gösterir.']}
           action={
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Button onClick={() => setShowModal(true)}>
