@@ -28,7 +28,7 @@ public class NutritionController {
     // Foods
     @GetMapping("/foods/{childId}")
     public ResponseEntity<ApiResponse<List<NutritionFood>>> getFoods(@PathVariable UUID childId, @CurrentUser UserPrincipal p) {
-        return ResponseEntity.ok(ApiResponse.success(service.getFoods(childId)));
+        return ResponseEntity.ok(ApiResponse.success(service.getFoods(childId, p.getId())));
     }
 
     @PostMapping("/foods/{childId}")
@@ -39,14 +39,14 @@ public class NutritionController {
 
     @DeleteMapping("/foods/{foodId}")
     public ResponseEntity<ApiResponse<Void>> deleteFood(@PathVariable UUID foodId, @CurrentUser UserPrincipal p) {
-        service.deleteFood(foodId);
+        service.deleteFood(foodId, p.getId());
         return ResponseEntity.ok(ApiResponse.success("Silindi", null));
     }
 
     // Meals
     @GetMapping("/meals/{childId}")
     public ResponseEntity<ApiResponse<List<NutritionMeal>>> getMeals(@PathVariable UUID childId, @CurrentUser UserPrincipal p) {
-        return ResponseEntity.ok(ApiResponse.success(service.getMeals(childId)));
+        return ResponseEntity.ok(ApiResponse.success(service.getMeals(childId, p.getId())));
     }
 
     @PostMapping("/meals/{childId}")
@@ -57,14 +57,14 @@ public class NutritionController {
 
     @DeleteMapping("/meals/{mealId}")
     public ResponseEntity<ApiResponse<Void>> deleteMeal(@PathVariable UUID mealId, @CurrentUser UserPrincipal p) {
-        service.deleteMeal(mealId);
+        service.deleteMeal(mealId, p.getId());
         return ResponseEntity.ok(ApiResponse.success("Silindi", null));
     }
 
     // Diet Preferences
     @GetMapping("/diet/{childId}")
     public ResponseEntity<ApiResponse<DietPreference>> getDiet(@PathVariable UUID childId, @CurrentUser UserPrincipal p) {
-        return ResponseEntity.ok(ApiResponse.success(service.getDiet(childId)));
+        return ResponseEntity.ok(ApiResponse.success(service.getDiet(childId, p.getId())));
     }
 
     @PutMapping("/diet/{childId}")

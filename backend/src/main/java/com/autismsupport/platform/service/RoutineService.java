@@ -2,6 +2,8 @@ package com.autismsupport.platform.service;
 
 import com.autismsupport.platform.dto.RoutineDto;
 import com.autismsupport.platform.dto.RoutineItemDto;
+import com.autismsupport.platform.exception.ResourceNotFoundException;
+import com.autismsupport.platform.exception.UnauthorizedException;
 import com.autismsupport.platform.model.Child;
 import com.autismsupport.platform.model.Routine;
 import com.autismsupport.platform.model.RoutineItem;
@@ -29,16 +31,18 @@ public class RoutineService {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     @Transactional(readOnly = true)
-    public List<RoutineDto> getActiveRoutinesForChild(UUID childId) {
+    public List<RoutineDto> getActiveRoutinesForChild(UUID childId, UUID userId) {
+        validateChildOwnership(childId, userId);
         return routineRepository.findByChildIdAndIsActiveTrueWithItems(childId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public RoutineDto createRoutine(RoutineDto dto) {
+    public RoutineDto createRoutine(RoutineDto dto, UUID userId) {
         Child child = childRepository.findById(dto.getChildId())
-                .orElseThrow(() -> new RuntimeException("Child not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cocuk profili bulunamadi"));
+        validateChildOwnership(child.getId(), userId);
 
         Routine routine = Routine.builder()
                 .child(child)
@@ -52,9 +56,8 @@ public class RoutineService {
     }
 
     @Transactional
-    public RoutineItemDto addRoutineItem(UUID routineId, RoutineItemDto dto) {
-        Routine routine = routineRepository.findById(routineId)
-                .orElseThrow(() -> new RuntimeException("Routine not found"));
+    public RoutineItemDto addRoutineItem(UUID routineId, RoutineItemDto dto, UUID userId) {
+        Routine routine = getOwnedRoutine(routineId, userId);
 
         LocalTime scheduledTime = null;
         if (dto.getScheduledTime() != null && !dto.getScheduledTime().isBlank()) {
@@ -78,13 +81,33 @@ public class RoutineService {
     }
 
     @Transactional
-    public void deleteRoutine(UUID routineId) {
-        routineRepository.deleteById(routineId);
+    public void deleteRoutine(UUID routineId, UUID userId) {
+        Routine routine = getOwnedRoutine(routineId, userId);
+        routineRepository.delete(routine);
     }
 
     @Transactional
-    public void deleteRoutineItem(UUID itemId) {
-        routineItemRepository.deleteById(itemId);
+    public void deleteRoutineItem(UUID routineId, UUID itemId, UUID userId) {
+        Routine routine = getOwnedRoutine(routineId, userId);
+        RoutineItem item = routineItemRepository.findById(itemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Rutin adimi bulunamadi"));
+        if (item.getRoutine() == null || !routine.getId().equals(item.getRoutine().getId())) {
+            throw new UnauthorizedException("Bu rutin adimina erisim yetkiniz yok");
+        }
+        routineItemRepository.delete(item);
+    }
+
+    private Routine getOwnedRoutine(UUID routineId, UUID userId) {
+        Routine routine = routineRepository.findById(routineId)
+                .orElseThrow(() -> new ResourceNotFoundException("Rutin bulunamadi"));
+        validateChildOwnership(routine.getChild().getId(), userId);
+        return routine;
+    }
+
+    private void validateChildOwnership(UUID childId, UUID userId) {
+        if (!childRepository.existsByIdAndParentId(childId, userId)) {
+            throw new UnauthorizedException("Bu cocuk profiline erisim yetkiniz yok");
+        }
     }
 
     private RoutineDto mapToDto(Routine routine) {

@@ -39,11 +39,9 @@ spring:
 
   flyway:
     enabled: ${SPRING_FLYWAY_ENABLED:true}
-    baseline-on-migrate: ${SPRING_FLYWAY_BASELINE_ON_MIGRATE:true}
+    baseline-on-migrate: ${SPRING_FLYWAY_BASELINE_ON_MIGRATE:false}
     baseline-version: ${SPRING_FLYWAY_BASELINE_VERSION:14}
-    out-of-order: true
-
-    ignore-migration-patterns: "*:missing,*:ignored,*:future,*:pending"
+    out-of-order: ${SPRING_FLYWAY_OUT_OF_ORDER:false}
 
   mail:
     host: ${MAIL_HOST:localhost}
@@ -116,3 +114,9 @@ logging:
   level:
     com.autismsupport: ${LOG_LEVEL:INFO}
     org.springframework.security: WARN
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_API_DOCS_ENABLED:true}
+  swagger-ui:
+    enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED:true}

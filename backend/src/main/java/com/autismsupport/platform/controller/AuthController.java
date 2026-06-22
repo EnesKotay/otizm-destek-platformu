@@ -52,11 +52,11 @@ public class AuthController {
 
     @RateLimit(limit = 5, duration = 60)
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        String token = passwordResetService.requestReset(request.getEmail());
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.getEmail());
         return ResponseEntity.ok(ApiResponse.success(
                 "Sifre sifirlama baglantisi e-posta adresinize gonderildiyse gelen kutunuza ulasacaktir.",
-                token
+                null
         ));
     }
 

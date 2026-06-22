@@ -1,6 +1,7 @@
 package com.autismsupport.platform.service;
 
 import com.autismsupport.platform.dto.AnalyticsTrendDto;
+import com.autismsupport.platform.exception.UnauthorizedException;
 import com.autismsupport.platform.model.ABCEntry;
 import com.autismsupport.platform.model.Milestone;
 import com.autismsupport.platform.model.MoodEntry;
@@ -25,8 +26,10 @@ public class AnalyticsService {
     private final MoodEntryRepository moodEntryRepository;
     private final SleepEntryRepository sleepEntryRepository;
     private final ABCEntryRepository abcEntryRepository;
+    private final PatientAccessService patientAccessService;
 
-    public AnalyticsTrendDto getChildTrends(UUID childId, int months) {
+    public AnalyticsTrendDto getChildTrends(UUID childId, int months, UUID userId, String role) {
+        validateChildAccess(childId, userId, role);
         LocalDate startDate = LocalDate.now().minusMonths(months).withDayOfMonth(1);
 
         List<Milestone> milestones = milestoneRepository.findByChildIdOrderByAchievedDateDesc(childId);
@@ -40,6 +43,12 @@ public class AnalyticsService {
                 .sleepTrends(calculateSleepTrends(sleeps, months))
                 .behaviorTrends(calculateABCTrends(abcs, months))
                 .build();
+    }
+
+    private void validateChildAccess(UUID childId, UUID userId, String role) {
+        if (!patientAccessService.canReadChild(userId, role, childId)) {
+            throw new UnauthorizedException("Bu cocuk profiline erisim yetkiniz yok");
+        }
     }
 
     private List<Map<String, Object>> calculateMilestoneTrends(List<Milestone> milestones, int months) {

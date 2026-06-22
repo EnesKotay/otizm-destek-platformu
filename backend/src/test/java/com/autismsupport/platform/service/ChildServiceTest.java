@@ -4,9 +4,7 @@ import com.autismsupport.platform.dto.ChildDto;
 import com.autismsupport.platform.model.Child;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.model.UserRole;
-import com.autismsupport.platform.repository.AppointmentRepository;
 import com.autismsupport.platform.repository.ChildRepository;
-import com.autismsupport.platform.repository.ExpertTaskRepository;
 import com.autismsupport.platform.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,8 +29,8 @@ class ChildServiceTest {
     @Mock ChildRepository childRepository;
     @Mock UserRepository userRepository;
     @Mock TagService tagService;
-    @Mock AppointmentRepository appointmentRepository;
-    @Mock ExpertTaskRepository expertTaskRepository;
+    @Mock PatientAccessService patientAccessService;
+    @Mock ClinicalDataShareService clinicalDataShareService;
 
     @InjectMocks ChildService childService;
 
@@ -77,7 +75,8 @@ class ChildServiceTest {
     @DisplayName("getChild: başka ebeveyne ait çocuğa erişim engellenir")
     void getChild_wrongParent_throwsException() {
         UUID otherParentId = UUID.randomUUID();
-        when(childRepository.findByIdWithTags(childId)).thenReturn(Optional.of(child));
+        when(childRepository.findById(childId)).thenReturn(Optional.of(child));
+        when(patientAccessService.canReadChild(otherParentId, "PARENT", childId)).thenReturn(false);
 
         assertThatThrownBy(() -> childService.getChild(childId, otherParentId))
                 .isInstanceOf(RuntimeException.class);
@@ -86,7 +85,8 @@ class ChildServiceTest {
     @Test
     @DisplayName("getChild: doğru ebeveyn kendi çocuğuna erişebilir")
     void getChild_correctParent_returnsChild() {
-        when(childRepository.findByIdWithTags(childId)).thenReturn(Optional.of(child));
+        when(childRepository.findById(childId)).thenReturn(Optional.of(child));
+        when(patientAccessService.canReadChild(parentId, "PARENT", childId)).thenReturn(true);
 
         ChildDto result = childService.getChild(childId, parentId);
 

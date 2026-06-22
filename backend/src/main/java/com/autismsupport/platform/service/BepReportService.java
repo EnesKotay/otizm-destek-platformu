@@ -1,8 +1,10 @@
 package com.autismsupport.platform.service;
 
 import com.autismsupport.platform.dto.BepReportDto;
+import com.autismsupport.platform.exception.ResourceNotFoundException;
+import com.autismsupport.platform.exception.UnauthorizedException;
 import com.autismsupport.platform.model.BepReport;
-import com.autismsupport.platform.model.Child; // needed for getChild return
+import com.autismsupport.platform.model.Child;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.repository.BepReportRepository;
 import com.autismsupport.platform.repository.ChildRepository;
@@ -21,19 +23,21 @@ public class BepReportService {
     private final BepReportRepository bepReportRepository;
     private final ChildRepository childRepository;
     private final UserRepository userRepository;
+    private final PatientAccessService patientAccessService;
 
     @Transactional(readOnly = true)
-    public List<BepReportDto> getByChild(UUID childId, UUID userId) {
-        getChild(childId);
+    public List<BepReportDto> getByChild(UUID childId, UUID userId, String role) {
+        validateReadAccess(childId, userId, role);
         return bepReportRepository.findByChildIdOrderBySharedAtDesc(childId).stream()
                 .map(this::toDto).toList();
     }
 
     @Transactional
-    public BepReportDto create(BepReportDto dto, UUID userId) {
+    public BepReportDto create(BepReportDto dto, UUID userId, String role) {
         Child child = getChild(dto.getChildId());
+        validateReadAccess(child.getId(), userId, role);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Kullanici bulunamadi"));
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanici bulunamadi"));
 
         BepReport report = BepReport.builder()
                 .child(child)
@@ -51,16 +55,23 @@ public class BepReportService {
     @Transactional
     public void delete(UUID reportId, UUID userId) {
         BepReport report = bepReportRepository.findById(reportId)
-                .orElseThrow(() -> new RuntimeException("BEP raporu bulunamadi"));
+                .orElseThrow(() -> new ResourceNotFoundException("BEP raporu bulunamadi"));
         if (!report.getCreatedBy().getId().equals(userId)) {
-            throw new RuntimeException("Bu raporu silme yetkiniz yok");
+            throw new UnauthorizedException("Bu raporu silme yetkiniz yok");
         }
         bepReportRepository.delete(report);
     }
 
     private Child getChild(UUID childId) {
         return childRepository.findById(childId)
-                .orElseThrow(() -> new RuntimeException("Cocuk profili bulunamadi"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cocuk profili bulunamadi"));
+    }
+
+    private void validateReadAccess(UUID childId, UUID userId, String role) {
+        getChild(childId);
+        if (!patientAccessService.canReadChild(userId, role, childId)) {
+            throw new UnauthorizedException("Bu cocuk profiline erisim yetkiniz yok");
+        }
     }
 
     private BepReportDto toDto(BepReport r) {

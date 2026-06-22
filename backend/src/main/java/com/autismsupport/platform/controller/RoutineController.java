@@ -23,19 +23,19 @@ public class RoutineController {
     @GetMapping("/child/{childId}")
     public ResponseEntity<ApiResponse<List<RoutineDto>>> getActiveRoutinesForChild(
             @PathVariable UUID childId, @CurrentUser UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.success(routineService.getActiveRoutinesForChild(childId)));
+        return ResponseEntity.ok(ApiResponse.success(routineService.getActiveRoutinesForChild(childId, principal.getId())));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<RoutineDto>> createRoutine(
             @RequestBody RoutineDto dto, @CurrentUser UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.success("Rutin olusturuldu", routineService.createRoutine(dto)));
+        return ResponseEntity.ok(ApiResponse.success("Rutin olusturuldu", routineService.createRoutine(dto, principal.getId())));
     }
 
     @DeleteMapping("/{routineId}")
     public ResponseEntity<ApiResponse<Void>> deleteRoutine(
             @PathVariable UUID routineId, @CurrentUser UserPrincipal principal) {
-        routineService.deleteRoutine(routineId);
+        routineService.deleteRoutine(routineId, principal.getId());
         return ResponseEntity.ok(ApiResponse.success("Rutin silindi", null));
     }
 
@@ -44,7 +44,7 @@ public class RoutineController {
             @PathVariable UUID routineId,
             @RequestBody RoutineItemDto dto,
             @CurrentUser UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.success("Adim eklendi", routineService.addRoutineItem(routineId, dto)));
+        return ResponseEntity.ok(ApiResponse.success("Adim eklendi", routineService.addRoutineItem(routineId, dto, principal.getId())));
     }
 
     @DeleteMapping("/{routineId}/items/{itemId}")
@@ -52,7 +52,7 @@ public class RoutineController {
             @PathVariable UUID routineId,
             @PathVariable UUID itemId,
             @CurrentUser UserPrincipal principal) {
-        routineService.deleteRoutineItem(itemId);
+        routineService.deleteRoutineItem(routineId, itemId, principal.getId());
         return ResponseEntity.ok(ApiResponse.success("Adim silindi", null));
     }
 }

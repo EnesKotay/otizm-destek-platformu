@@ -25,7 +25,7 @@ public class AnalyticsController {
             @PathVariable UUID childId,
             @RequestParam(defaultValue = "6") int months,
             @CurrentUser UserPrincipal principal) {
-        // Validation could be added here to check if the user is authorized for the child
-        return ResponseEntity.ok(ApiResponse.success(analyticsService.getChildTrends(childId, months)));
+        return ResponseEntity.ok(ApiResponse.success(
+                analyticsService.getChildTrends(childId, months, principal.getId(), principal.getRole())));
     }
 }

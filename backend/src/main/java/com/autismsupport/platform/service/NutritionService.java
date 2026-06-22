@@ -3,6 +3,9 @@ package com.autismsupport.platform.service;
 import com.autismsupport.platform.model.DietPreference;
 import com.autismsupport.platform.model.NutritionFood;
 import com.autismsupport.platform.model.NutritionMeal;
+import com.autismsupport.platform.exception.ResourceNotFoundException;
+import com.autismsupport.platform.exception.UnauthorizedException;
+import com.autismsupport.platform.repository.ChildRepository;
 import com.autismsupport.platform.repository.DietPreferenceRepository;
 import com.autismsupport.platform.repository.NutritionFoodRepository;
 import com.autismsupport.platform.repository.NutritionMealRepository;
@@ -24,14 +27,17 @@ public class NutritionService {
     private final NutritionFoodRepository foodRepo;
     private final NutritionMealRepository mealRepo;
     private final DietPreferenceRepository dietRepo;
+    private final ChildRepository childRepository;
     private final ObjectMapper objectMapper;
 
-    public List<NutritionFood> getFoods(UUID childId) {
+    public List<NutritionFood> getFoods(UUID childId, UUID userId) {
+        validateChildOwnership(childId, userId);
         return foodRepo.findByChildIdOrderByCreatedAtAsc(childId);
     }
 
     @Transactional
     public NutritionFood saveFood(UUID childId, UUID userId, NutritionFoodRequest request) {
+        validateChildOwnership(childId, userId);
         NutritionFood food = NutritionFood.builder()
                 .childId(childId)
                 .userId(userId)
@@ -43,16 +49,21 @@ public class NutritionService {
     }
 
     @Transactional
-    public void deleteFood(UUID foodId) {
-        foodRepo.deleteById(foodId);
+    public void deleteFood(UUID foodId, UUID userId) {
+        NutritionFood food = foodRepo.findById(foodId)
+                .orElseThrow(() -> new ResourceNotFoundException("Besin kaydi bulunamadi"));
+        validateChildOwnership(food.getChildId(), userId);
+        foodRepo.delete(food);
     }
 
-    public List<NutritionMeal> getMeals(UUID childId) {
+    public List<NutritionMeal> getMeals(UUID childId, UUID userId) {
+        validateChildOwnership(childId, userId);
         return mealRepo.findByChildIdOrderByDateDescCreatedAtDesc(childId);
     }
 
     @Transactional
     public NutritionMeal saveMeal(UUID childId, UUID userId, NutritionMealRequest request) throws Exception {
+        validateChildOwnership(childId, userId);
         NutritionMeal meal = NutritionMeal.builder()
                 .childId(childId)
                 .userId(userId)
@@ -66,16 +77,21 @@ public class NutritionService {
     }
 
     @Transactional
-    public void deleteMeal(UUID mealId) {
-        mealRepo.deleteById(mealId);
+    public void deleteMeal(UUID mealId, UUID userId) {
+        NutritionMeal meal = mealRepo.findById(mealId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ogun kaydi bulunamadi"));
+        validateChildOwnership(meal.getChildId(), userId);
+        mealRepo.delete(meal);
     }
 
-    public DietPreference getDiet(UUID childId) {
+    public DietPreference getDiet(UUID childId, UUID userId) {
+        validateChildOwnership(childId, userId);
         return dietRepo.findByChildId(childId).orElse(null);
     }
 
     @Transactional
     public DietPreference saveDiet(UUID childId, UUID userId, DietPreferenceRequest request) {
+        validateChildOwnership(childId, userId);
         DietPreference pref = dietRepo.findByChildId(childId)
                 .orElse(DietPreference.builder().childId(childId).userId(userId).build());
         if (request.getGfcfDiet() != null) pref.setGfcfDiet(request.getGfcfDiet());
@@ -89,5 +105,9 @@ public class NutritionService {
         return dietRepo.save(pref);
     }
 
-
+    private void validateChildOwnership(UUID childId, UUID userId) {
+        if (!childRepository.existsByIdAndParentId(childId, userId)) {
+            throw new UnauthorizedException("Bu cocuk profiline erisim yetkiniz yok");
+        }
+    }
 }

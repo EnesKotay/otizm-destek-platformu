@@ -6,7 +6,7 @@ COPY pom.xml .
 
 # Copy source and build
 COPY src ./src
-RUN mvn clean package -Dmaven.test.skip=true
+RUN mvn clean package
 
 # Run stage
 FROM eclipse-temurin:21-jre-alpine
@@ -15,4 +15,4 @@ WORKDIR /app
 
 COPY --from=builder /app/target/*.jar app.jar
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar app.jar"]

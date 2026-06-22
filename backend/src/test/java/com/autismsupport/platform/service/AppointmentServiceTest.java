@@ -35,9 +35,9 @@ class AppointmentServiceTest {
     @Mock ChildRepository childRepository;
     @Mock ExpertAvailabilityRepository availabilityRepository;
     @Mock CalendarEventRepository calendarEventRepository;
-    @Mock AppointmentStatusHistoryRepository historyRepository;
     @Mock NotificationService notificationService;
     @Mock AuditLogService auditLogService;
+    @Mock PatientService patientService;
 
     @InjectMocks AppointmentService appointmentService;
 

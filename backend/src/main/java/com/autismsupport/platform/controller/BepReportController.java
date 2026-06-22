@@ -23,13 +23,16 @@ public class BepReportController {
     @GetMapping("/child/{childId}")
     public ResponseEntity<ApiResponse<List<BepReportDto>>> getByChild(
             @PathVariable UUID childId, @CurrentUser UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.success(bepReportService.getByChild(childId, principal.getId())));
+        return ResponseEntity.ok(ApiResponse.success(
+                bepReportService.getByChild(childId, principal.getId(), principal.getRole())));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<BepReportDto>> create(
             @Valid @RequestBody BepReportDto dto, @CurrentUser UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.success("BEP raporu kaydedildi", bepReportService.create(dto, principal.getId())));
+        return ResponseEntity.ok(ApiResponse.success(
+                "BEP raporu kaydedildi",
+                bepReportService.create(dto, principal.getId(), principal.getRole())));
     }
 
     @DeleteMapping("/{id}")

@@ -1,8 +1,13 @@
 package com.autismsupport.platform.service;
 
 import com.autismsupport.platform.repository.ABCEntryRepository;
+import com.autismsupport.platform.repository.AppointmentRepository;
+import com.autismsupport.platform.repository.ChildRepository;
+import com.autismsupport.platform.repository.DevelopmentNoteRepository;
+import com.autismsupport.platform.repository.GoalRepository;
 import com.autismsupport.platform.repository.MilestoneRepository;
 import com.autismsupport.platform.repository.MoodEntryRepository;
+import com.autismsupport.platform.repository.ScreeningResultRepository;
 import com.autismsupport.platform.repository.SleepEntryRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +34,11 @@ class AiInsightsServiceTest {
     @Mock SleepEntryRepository sleepRepo;
     @Mock ABCEntryRepository abcRepo;
     @Mock MilestoneRepository milestoneRepo;
+    @Mock ChildRepository childRepository;
+    @Mock DevelopmentNoteRepository noteRepo;
+    @Mock ScreeningResultRepository screeningRepo;
+    @Mock AppointmentRepository appointmentRepo;
+    @Mock GoalRepository goalRepo;
 
     @InjectMocks AiInsightsService aiInsightsService;
 
@@ -36,24 +46,33 @@ class AiInsightsServiceTest {
     @DisplayName("generateCorrelations: veri yokken boş bölümleri prompt'a ekler ve Gemini yanıtını döner")
     void generateCorrelations_withNoEntries_returnsGeminiResponse() {
         UUID childId = UUID.randomUUID();
+        UUID parentId = UUID.randomUUID();
+        when(childRepository.existsByIdAndParentId(childId, parentId)).thenReturn(true);
         when(moodRepo.findByChildIdOrderByEntryDateDesc(childId)).thenReturn(List.of());
         when(sleepRepo.findByChildIdOrderBySleepDateDesc(childId)).thenReturn(List.of());
         when(abcRepo.findByChildIdOrderByEntryDateDescEntryTimeDescCreatedAtDesc(childId)).thenReturn(List.of());
+        when(milestoneRepo.findByChildIdOrderByAchievedDateDesc(childId)).thenReturn(List.of());
+        when(noteRepo.findByChildId(childId)).thenReturn(List.of());
+        when(screeningRepo.findByChildIdOrderByCreatedAtDesc(childId)).thenReturn(List.of());
         when(geminiService.sendMessage(
                 org.mockito.ArgumentMatchers.anyString(),
                 eq(null),
-                eq("AI Korelasyon Analizi Gorevi")
+                eq("Genel Korelasyon Analizi")
         )).thenReturn("Hazir analiz");
 
-        String result = aiInsightsService.generateCorrelations(childId);
+        String result = aiInsightsService.generateInsights(
+                childId,
+                AiInsightsService.AnalysisType.GENERAL,
+                parentId,
+                "PARENT");
 
         assertThat(result).isEqualTo("Hazir analiz");
 
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
-        verify(geminiService).sendMessage(promptCaptor.capture(), eq(null), eq("AI Korelasyon Analizi Gorevi"));
+        verify(geminiService).sendMessage(promptCaptor.capture(), eq(null), eq("Genel Korelasyon Analizi"));
         assertThat(promptCaptor.getValue())
-                .contains("RUH HALI KAYITLARI:\nYok")
-                .contains("UYKU KAYITLARI:\nYok")
-                .contains("DAVRANIS (ABC) KAYITLARI:\nYok");
+                .contains("RUH HALI KAYITLARI:\n  Kayit yok")
+                .contains("UYKU KAYITLARI:\n  Kayit yok")
+                .contains("DAVRANIS (ABC) KAYITLARI:\n  Kayit yok");
     }
 }
