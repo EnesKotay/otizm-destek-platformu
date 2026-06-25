@@ -60,6 +60,7 @@ export function AdminReportsPage() {
 
   useEffect(() => {
     if (!selectedReport) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetPreview(null);
       return;
     }

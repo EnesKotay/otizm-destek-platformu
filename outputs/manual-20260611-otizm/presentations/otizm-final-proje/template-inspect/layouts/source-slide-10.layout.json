@@ -1,0 +1,2857 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/29gr2p8n",
+    "id": "29gr2p8n",
+    "slide": 11,
+    "layoutId": "/ppt/slideLayouts/slideLayout6.xml",
+    "layoutName": "Main",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Blue",
+    "colors": {
+      "accent1": "#3B9ED8",
+      "accent2": "#358EC2",
+      "accent3": "#2F7EAC",
+      "accent4": "#296E97",
+      "accent5": "#235E81",
+      "accent6": "#1D4F6C",
+      "dk1": "#656D78",
+      "lt1": "#FFFFFF",
+      "dk2": "#8496B0",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Custom 1",
+      "majorFont": {
+        "latinTypeface": "Source Sans Pro Black"
+      },
+      "minorFont": {
+        "latinTypeface": "Source Sans Pro"
+      }
+    },
+    "typefaces": [
+      "Source Sans Pro",
+      "Source Sans Pro Black"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout6.xml",
+      "name": "Main",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/38",
+          "id": "38",
+          "name": "Shape 2",
+          "bbox": [
+            0,
+            147.09,
+            1280,
+            574
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "fillColor": "rgba(123, 141, 179, 0.04)",
+          "lineColor": "rgba(235, 235, 235, 0.1)",
+          "lineWidth": 2.67
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/39",
+          "id": "39",
+          "name": "Shape 2711",
+          "bbox": [
+            63.8,
+            58.88,
+            29.33,
+            29.33
+          ],
+          "geometry": "custom",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 2,
+              "right": 2,
+              "bottom": 2,
+              "left": 2
+            }
+          },
+          "fillColor": "accent1",
+          "lineWidth": 1.33
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/40",
+          "id": "40",
+          "name": "Rounded Rectangle 39",
+          "bbox": [
+            1182.74,
+            652.43,
+            33.15,
+            33.15
+          ],
+          "geometry": "roundRect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle"
+          },
+          "lineColor": "accent1"
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/41",
+          "id": "41",
+          "name": "TextBox 40",
+          "bbox": [
+            1181.42,
+            654.62,
+            36.22,
+            29.08
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "wrap": "none",
+            "autoFit": "resizeShapeToFitText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›",
+                  "fontSize": 16,
+                  "typeface": "Source Sans Pro",
+                  "color": "accent1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/26",
+          "id": "26",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            116.99,
+            47.93,
+            933.8,
+            51.06
+          ],
+          "text": "Put your main text here",
+          "textPreview": "Put your main text here",
+          "resolvedTextStyle": {
+            "autoFit": "none"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your main text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your main text here"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/27",
+          "id": "27",
+          "name": "Text Placeholder 4",
+          "bbox": [
+            118.9,
+            98.99,
+            931.89,
+            28.28
+          ],
+          "text": "Put your text here",
+          "textPreview": "Put your text here",
+          "resolvedTextStyle": {
+            "autoFit": "shrinkText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your text here"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/2",
+          "id": "2",
+          "name": "Title Placeholder 1",
+          "bbox": [
+            88,
+            38.33,
+            1104,
+            139.17
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master title style",
+          "textPreview": "Click to edit Master title style",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master title style",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master title style"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/3",
+          "id": "3",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            88,
+            191.67,
+            1104,
+            456.83
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "resolvedTextStyle": {
+            "vertical": 1,
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/4",
+          "id": "4",
+          "name": "Date Placeholder 3",
+          "bbox": [
+            88,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "6/2/2026",
+          "textPreview": "6/2/2026",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6/2/2026",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "6/2/2026"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/5",
+          "id": "5",
+          "name": "Footer Placeholder 4",
+          "bbox": [
+            424,
+            667.33,
+            432,
+            38.33
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          }
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/6",
+          "id": "6",
+          "name": "Slide Number Placeholder 5",
+          "bbox": [
+            904,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xobm58z2",
+      "id": "15",
+      "name": "Text Placeholder 4",
+      "bbox": [
+        100.38,
+        47.35,
+        966.93,
+        51.06
+      ],
+      "text": "PROJE ZAMAN PLANI (20p)",
+      "textPreview": "PROJE ZAMAN PLANI (20p)",
+      "resolvedFontSize": 42.67,
+      "resolvedTextStyle": {
+        "vertical": 1,
+        "fontSize": 42.67,
+        "typeface": "Source Sans Pro Black",
+        "color": "tx1",
+        "alignment": "left",
+        "autoFit": "none",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          },
+          {
+            "index": 2,
+            "text": "PROJE ZAMAN PLANI (20p)"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "PROJE ZAMAN PLANI (20p)",
+          "runs": [
+            {
+              "index": 1,
+              "text": "PROJE ",
+              "color": "accent5",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "ZAMAN ",
+              "color": "accent5",
+              "bold": true
+            },
+            {
+              "index": 3,
+              "text": "PLANI",
+              "color": "accent5",
+              "bold": true
+            },
+            {
+              "index": 4,
+              "text": " (20p)",
+              "color": "accent5",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0,
+          "indent": 0,
+          "lineSpacingPercent": 90000,
+          "spaceBefore": 1000
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "table",
+      "scope": "slide",
+      "aid": "tb/lwval87e",
+      "id": "16",
+      "name": "Tabella 17",
+      "bbox": [
+        42.97,
+        228.72,
+        1174.29,
+        460.12
+      ],
+      "text": "N0 | AKTİVİTE | ÖNCÜL | KAYNAK | SÜRE  | TARİH/ZAMAN\n0 | Doğum Günü Pastası Yapma Projesi  | - | - | 6 s 15 dk | 09:00 – 13:15\n1 | Tarif Araştırması | - | Ali | 1 saat  | 09:00 – 10:00\n2 | Tasarım hazırlaması | - | Bora | 2 saat | 09:00 – 11:00\n3 | Malzeme listesinin hazırlanması | 1 | Yılmaz | 0.5 saat | 10:00 – 10:30\n4 | Malzeme tedariği | 3 | Ahmet | 1.5 saat | 10:30 – 12:00\n5 | Pastanın Hazırlanması | - | - | 1.15 saat | 12:00 – 13:15\n5.1 | Kek hamurunun hazırlanması | 4 | Pastacı | 20 dk | 12:00 – 12:20\n5.2 | Kek hamurunun pişirilmesi | 5.1 | Yılmaz | 40 dk | 12:20 – 13:00\n5.3 | Puding hamurunun hazırlanması | 4 | Pastacı | 15 dk | 12:00 – 12:15\n5.4 | Puding hamurunun pişirilmesi | 5.3 | Ayşe | 15 dk | 12:15 – 12:30\n5.5 | Katların birleştirilmesi | 5.2 ; 5.4 | Pastacı | 15 dk | 13:00 – 13:15",
+      "textPreview": "N0 | AKTİVİTE | ÖNCÜL | KAYNAK | SÜRE  | TARİH/ZAMAN | 0 | Doğum Günü Pastası Yapma Projesi  | - | - | 6 s 15 dk | 09:00 – 13:15 | 1 | Ta...",
+      "rows": 12,
+      "cols": 6,
+      "cells": [
+        {
+          "index": 1,
+          "row": 1,
+          "column": 1,
+          "bbox": [
+            42.97,
+            228.72,
+            75.94,
+            38.93
+          ],
+          "text": "N0",
+          "textPreview": "N0",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "N0",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "N0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "row": 1,
+          "column": 2,
+          "bbox": [
+            118.91,
+            228.72,
+            416,
+            38.93
+          ],
+          "text": "AKTİVİTE",
+          "textPreview": "AKTİVİTE",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "AKTİVİTE",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "AKTİVİTE",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "row": 1,
+          "column": 3,
+          "bbox": [
+            534.91,
+            228.72,
+            183.53,
+            38.93
+          ],
+          "text": "ÖNCÜL",
+          "textPreview": "ÖNCÜL",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "ÖNCÜL",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "ÖNCÜL",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "row": 1,
+          "column": 4,
+          "bbox": [
+            718.44,
+            228.72,
+            164.71,
+            38.93
+          ],
+          "text": "KAYNAK",
+          "textPreview": "KAYNAK",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "KAYNAK",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "KAYNAK",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "row": 1,
+          "column": 5,
+          "bbox": [
+            883.14,
+            228.72,
+            143.06,
+            38.93
+          ],
+          "text": "SÜRE ",
+          "textPreview": "SÜRE",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "SÜRE ",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "SÜRE ",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "row": 1,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            228.72,
+            191.06,
+            38.93
+          ],
+          "text": "TARİH/ZAMAN",
+          "textPreview": "TARİH/ZAMAN",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "TARİH/ZAMAN",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "TARİH/ZAMAN",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "row": 2,
+          "column": 1,
+          "bbox": [
+            42.97,
+            267.65,
+            75.94,
+            25.79
+          ],
+          "text": "0",
+          "textPreview": "0",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "0",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "row": 2,
+          "column": 2,
+          "bbox": [
+            118.91,
+            267.65,
+            416,
+            25.79
+          ],
+          "text": "Doğum Günü Pastası Yapma Projesi ",
+          "textPreview": "Doğum Günü Pastası Yapma Projesi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Doğum Günü Pastası Yapma Projesi ",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Doğum",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Günü",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 4,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 5,
+                  "text": "Pastası",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 6,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 7,
+                  "text": "Yapma",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 8,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 9,
+                  "text": "Projesi",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 10,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "row": 2,
+          "column": 3,
+          "bbox": [
+            534.91,
+            267.65,
+            183.53,
+            25.79
+          ],
+          "text": "-",
+          "textPreview": "-",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "-",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "-",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "row": 2,
+          "column": 4,
+          "bbox": [
+            718.44,
+            267.65,
+            164.71,
+            25.79
+          ],
+          "text": "-",
+          "textPreview": "-",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "-",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "-",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 11,
+          "row": 2,
+          "column": 5,
+          "bbox": [
+            883.14,
+            267.65,
+            143.06,
+            25.79
+          ],
+          "text": "6 s 15 dk",
+          "textPreview": "6 s 15 dk",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6 s 15 dk",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "6 s 15 dk",
+                  "fontSize": 21.33,
+                  "color": "#FF0000",
+                  "bold": true,
+                  "italic": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 12,
+          "row": 2,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            267.65,
+            191.06,
+            25.79
+          ],
+          "text": "09:00 – 13:15",
+          "textPreview": "09:00 – 13:15",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "09:00 – 13:15",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "09:00 – 13:15",
+                  "fontSize": 21.33,
+                  "color": "#FF0000",
+                  "bold": true,
+                  "italic": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 13,
+          "row": 3,
+          "column": 1,
+          "bbox": [
+            42.97,
+            293.44,
+            75.94,
+            45.01
+          ],
+          "text": "1",
+          "textPreview": "1",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "1",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 14,
+          "row": 3,
+          "column": 2,
+          "bbox": [
+            118.91,
+            293.44,
+            416,
+            45.01
+          ],
+          "text": "Tarif Araştırması",
+          "textPreview": "Tarif Araştırması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Tarif Araştırması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Tarif Araştırması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 15,
+          "row": 3,
+          "column": 3,
+          "bbox": [
+            534.91,
+            293.44,
+            183.53,
+            45.01
+          ],
+          "text": "-",
+          "textPreview": "-",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "-",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "-"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 16,
+          "row": 3,
+          "column": 4,
+          "bbox": [
+            718.44,
+            293.44,
+            164.71,
+            45.01
+          ],
+          "text": "Ali",
+          "textPreview": "Ali",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Ali",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Ali"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 17,
+          "row": 3,
+          "column": 5,
+          "bbox": [
+            883.14,
+            293.44,
+            143.06,
+            45.01
+          ],
+          "text": "1 saat ",
+          "textPreview": "1 saat",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "1 saat ",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "1 saat "
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 18,
+          "row": 3,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            293.44,
+            191.06,
+            45.01
+          ],
+          "text": "09:00 – 10:00",
+          "textPreview": "09:00 – 10:00",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "09:00 – 10:00",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "09:00 – 10:00"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 19,
+          "row": 4,
+          "column": 1,
+          "bbox": [
+            42.97,
+            338.44,
+            75.94,
+            38.93
+          ],
+          "text": "2",
+          "textPreview": "2",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "2",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 20,
+          "row": 4,
+          "column": 2,
+          "bbox": [
+            118.91,
+            338.44,
+            416,
+            38.93
+          ],
+          "text": "Tasarım hazırlaması",
+          "textPreview": "Tasarım hazırlaması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Tasarım hazırlaması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Tasarım hazırlaması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 21,
+          "row": 4,
+          "column": 3,
+          "bbox": [
+            534.91,
+            338.44,
+            183.53,
+            38.93
+          ],
+          "text": "-",
+          "textPreview": "-",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "-",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "-"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 22,
+          "row": 4,
+          "column": 4,
+          "bbox": [
+            718.44,
+            338.44,
+            164.71,
+            38.93
+          ],
+          "text": "Bora",
+          "textPreview": "Bora",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Bora",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Bora"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 23,
+          "row": 4,
+          "column": 5,
+          "bbox": [
+            883.14,
+            338.44,
+            143.06,
+            38.93
+          ],
+          "text": "2 saat",
+          "textPreview": "2 saat",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "2 saat",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "2 saat"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 24,
+          "row": 4,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            338.44,
+            191.06,
+            38.93
+          ],
+          "text": "09:00 – 11:00",
+          "textPreview": "09:00 – 11:00",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "09:00 – 11:00",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "09:00 – 11:00"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 25,
+          "row": 5,
+          "column": 1,
+          "bbox": [
+            42.97,
+            377.38,
+            75.94,
+            38.93
+          ],
+          "text": "3",
+          "textPreview": "3",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "3",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 26,
+          "row": 5,
+          "column": 2,
+          "bbox": [
+            118.91,
+            377.38,
+            416,
+            38.93
+          ],
+          "text": "Malzeme listesinin hazırlanması",
+          "textPreview": "Malzeme listesinin hazırlanması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Malzeme listesinin hazırlanması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Malzeme listesinin hazırlanması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 27,
+          "row": 5,
+          "column": 3,
+          "bbox": [
+            534.91,
+            377.38,
+            183.53,
+            38.93
+          ],
+          "text": "1",
+          "textPreview": "1",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "1",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 28,
+          "row": 5,
+          "column": 4,
+          "bbox": [
+            718.44,
+            377.38,
+            164.71,
+            38.93
+          ],
+          "text": "Yılmaz",
+          "textPreview": "Yılmaz",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Yılmaz",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Yılmaz"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 29,
+          "row": 5,
+          "column": 5,
+          "bbox": [
+            883.14,
+            377.38,
+            143.06,
+            38.93
+          ],
+          "text": "0.5 saat",
+          "textPreview": "0.5 saat",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "0.5 saat",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "0.5 saat"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 30,
+          "row": 5,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            377.38,
+            191.06,
+            38.93
+          ],
+          "text": "10:00 – 10:30",
+          "textPreview": "10:00 – 10:30",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "10:00 – 10:30",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "10:00"
+                },
+                {
+                  "index": 2,
+                  "text": " – 10:30"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 31,
+          "row": 6,
+          "column": 1,
+          "bbox": [
+            42.97,
+            416.31,
+            75.94,
+            38.93
+          ],
+          "text": "4",
+          "textPreview": "4",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "4",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "4"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 32,
+          "row": 6,
+          "column": 2,
+          "bbox": [
+            118.91,
+            416.31,
+            416,
+            38.93
+          ],
+          "text": "Malzeme tedariği",
+          "textPreview": "Malzeme tedariği",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Malzeme tedariği",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Malzeme tedariği"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 33,
+          "row": 6,
+          "column": 3,
+          "bbox": [
+            534.91,
+            416.31,
+            183.53,
+            38.93
+          ],
+          "text": "3",
+          "textPreview": "3",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "3",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 34,
+          "row": 6,
+          "column": 4,
+          "bbox": [
+            718.44,
+            416.31,
+            164.71,
+            38.93
+          ],
+          "text": "Ahmet",
+          "textPreview": "Ahmet",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Ahmet",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Ahmet"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 35,
+          "row": 6,
+          "column": 5,
+          "bbox": [
+            883.14,
+            416.31,
+            143.06,
+            38.93
+          ],
+          "text": "1.5 saat",
+          "textPreview": "1.5 saat",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "1.5 saat",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "1.5 saat"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 36,
+          "row": 6,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            416.31,
+            191.06,
+            38.93
+          ],
+          "text": "10:30 – 12:00",
+          "textPreview": "10:30 – 12:00",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "10:30 – 12:00",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "10:"
+                },
+                {
+                  "index": 2,
+                  "text": "30"
+                },
+                {
+                  "index": 3,
+                  "text": " – 1"
+                },
+                {
+                  "index": 4,
+                  "text": "2:00"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 37,
+          "row": 7,
+          "column": 1,
+          "bbox": [
+            42.97,
+            455.24,
+            75.94,
+            38.93
+          ],
+          "text": "5",
+          "textPreview": "5",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 38,
+          "row": 7,
+          "column": 2,
+          "bbox": [
+            118.91,
+            455.24,
+            416,
+            38.93
+          ],
+          "text": "Pastanın Hazırlanması",
+          "textPreview": "Pastanın Hazırlanması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Pastanın Hazırlanması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Pastanın Hazırlanması",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 39,
+          "row": 7,
+          "column": 3,
+          "bbox": [
+            534.91,
+            455.24,
+            183.53,
+            38.93
+          ],
+          "text": "-",
+          "textPreview": "-",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "-",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "-",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 40,
+          "row": 7,
+          "column": 4,
+          "bbox": [
+            718.44,
+            455.24,
+            164.71,
+            38.93
+          ],
+          "text": "-",
+          "textPreview": "-",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "-",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "-",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 41,
+          "row": 7,
+          "column": 5,
+          "bbox": [
+            883.14,
+            455.24,
+            143.06,
+            38.93
+          ],
+          "text": "1.15 saat",
+          "textPreview": "1.15 saat",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "1.15 saat",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "1.15 saat",
+                  "color": "#FF0000",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 42,
+          "row": 7,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            455.24,
+            191.06,
+            38.93
+          ],
+          "text": "12:00 – 13:15",
+          "textPreview": "12:00 – 13:15",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "12:00 – 13:15",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "12:00 – 13:15",
+                  "fontSize": 24,
+                  "color": "#FF0000",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 43,
+          "row": 8,
+          "column": 1,
+          "bbox": [
+            42.97,
+            494.18,
+            75.94,
+            38.93
+          ],
+          "text": "5.1",
+          "textPreview": "5.1",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5.1",
+              "resolvedTextStyle": {
+                "alignment": "right"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5.1",
+                  "alignment": "right"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 44,
+          "row": 8,
+          "column": 2,
+          "bbox": [
+            118.91,
+            494.18,
+            416,
+            38.93
+          ],
+          "text": "Kek hamurunun hazırlanması",
+          "textPreview": "Kek hamurunun hazırlanması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Kek hamurunun hazırlanması",
+              "marginLeft": 457200,
+              "indent": 0,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Kek hamurunun hazırlanması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 45,
+          "row": 8,
+          "column": 3,
+          "bbox": [
+            534.91,
+            494.18,
+            183.53,
+            38.93
+          ],
+          "text": "4",
+          "textPreview": "4",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "4",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "4",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 46,
+          "row": 8,
+          "column": 4,
+          "bbox": [
+            718.44,
+            494.18,
+            164.71,
+            38.93
+          ],
+          "text": "Pastacı",
+          "textPreview": "Pastacı",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Pastacı",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Pastacı",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "#656D78",
+                  "textTransform": "none"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 47,
+          "row": 8,
+          "column": 5,
+          "bbox": [
+            883.14,
+            494.18,
+            143.06,
+            38.93
+          ],
+          "text": "20 dk",
+          "textPreview": "20 dk",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "20 dk",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "20 dk",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 48,
+          "row": 8,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            494.18,
+            191.06,
+            38.93
+          ],
+          "text": "12:00 – 12:20",
+          "textPreview": "12:00 – 12:20",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "12:00 – 12:20",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "12:00 – 12:20"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 49,
+          "row": 9,
+          "column": 1,
+          "bbox": [
+            42.97,
+            533.11,
+            75.94,
+            38.93
+          ],
+          "text": "5.2",
+          "textPreview": "5.2",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5.2",
+              "resolvedTextStyle": {
+                "alignment": "right"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5.2",
+                  "alignment": "right"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 50,
+          "row": 9,
+          "column": 2,
+          "bbox": [
+            118.91,
+            533.11,
+            416,
+            38.93
+          ],
+          "text": "Kek hamurunun pişirilmesi",
+          "textPreview": "Kek hamurunun pişirilmesi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Kek hamurunun pişirilmesi",
+              "marginLeft": 457200,
+              "indent": 0,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Kek hamurunun pişirilmesi"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 51,
+          "row": 9,
+          "column": 3,
+          "bbox": [
+            534.91,
+            533.11,
+            183.53,
+            38.93
+          ],
+          "text": "5.1",
+          "textPreview": "5.1",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5.1",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5.1",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 52,
+          "row": 9,
+          "column": 4,
+          "bbox": [
+            718.44,
+            533.11,
+            164.71,
+            38.93
+          ],
+          "text": "Yılmaz",
+          "textPreview": "Yılmaz",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Yılmaz",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Yılmaz",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "#656D78",
+                  "textTransform": "none"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 53,
+          "row": 9,
+          "column": 5,
+          "bbox": [
+            883.14,
+            533.11,
+            143.06,
+            38.93
+          ],
+          "text": "40 dk",
+          "textPreview": "40 dk",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "40 dk",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "4",
+                  "alignment": "center"
+                },
+                {
+                  "index": 2,
+                  "text": "0",
+                  "alignment": "center"
+                },
+                {
+                  "index": 3,
+                  "text": " dk",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 54,
+          "row": 9,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            533.11,
+            191.06,
+            38.93
+          ],
+          "text": "12:20 – 13:00",
+          "textPreview": "12:20 – 13:00",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "12:20 – 13:00",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "12:20 – "
+                },
+                {
+                  "index": 2,
+                  "text": "13:00",
+                  "color": "#FF0000"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 55,
+          "row": 10,
+          "column": 1,
+          "bbox": [
+            42.97,
+            572.04,
+            75.94,
+            38.93
+          ],
+          "text": "5.3",
+          "textPreview": "5.3",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5.3",
+              "resolvedTextStyle": {
+                "alignment": "right"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5.3",
+                  "alignment": "right"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 56,
+          "row": 10,
+          "column": 2,
+          "bbox": [
+            118.91,
+            572.04,
+            416,
+            38.93
+          ],
+          "text": "Puding hamurunun hazırlanması",
+          "textPreview": "Puding hamurunun hazırlanması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Puding hamurunun hazırlanması",
+              "marginLeft": 457200,
+              "indent": 0,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Puding hamurunun hazırlanması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 57,
+          "row": 10,
+          "column": 3,
+          "bbox": [
+            534.91,
+            572.04,
+            183.53,
+            38.93
+          ],
+          "text": "4",
+          "textPreview": "4",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "4",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "4",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 58,
+          "row": 10,
+          "column": 4,
+          "bbox": [
+            718.44,
+            572.04,
+            164.71,
+            38.93
+          ],
+          "text": "Pastacı",
+          "textPreview": "Pastacı",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Pastacı",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Pastacı",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "#656D78",
+                  "textTransform": "none"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 59,
+          "row": 10,
+          "column": 5,
+          "bbox": [
+            883.14,
+            572.04,
+            143.06,
+            38.93
+          ],
+          "text": "15 dk",
+          "textPreview": "15 dk",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "15 dk",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "15 dk",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 60,
+          "row": 10,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            572.04,
+            191.06,
+            38.93
+          ],
+          "text": "12:00 – 12:15",
+          "textPreview": "12:00 – 12:15",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "12:00 – 12:15",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "12:00 – 12:15"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 61,
+          "row": 11,
+          "column": 1,
+          "bbox": [
+            42.97,
+            610.98,
+            75.94,
+            38.93
+          ],
+          "text": "5.4",
+          "textPreview": "5.4",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5.4",
+              "resolvedTextStyle": {
+                "alignment": "right"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5.4",
+                  "alignment": "right"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 62,
+          "row": 11,
+          "column": 2,
+          "bbox": [
+            118.91,
+            610.98,
+            416,
+            38.93
+          ],
+          "text": "Puding hamurunun pişirilmesi",
+          "textPreview": "Puding hamurunun pişirilmesi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Puding hamurunun pişirilmesi",
+              "marginLeft": 457200,
+              "indent": 0,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Puding hamurunun pişirilmesi"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 63,
+          "row": 11,
+          "column": 3,
+          "bbox": [
+            534.91,
+            610.98,
+            183.53,
+            38.93
+          ],
+          "text": "5.3",
+          "textPreview": "5.3",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5.3",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5.3",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 64,
+          "row": 11,
+          "column": 4,
+          "bbox": [
+            718.44,
+            610.98,
+            164.71,
+            38.93
+          ],
+          "text": "Ayşe",
+          "textPreview": "Ayşe",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Ayşe",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Ayşe",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "#656D78",
+                  "textTransform": "none"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 65,
+          "row": 11,
+          "column": 5,
+          "bbox": [
+            883.14,
+            610.98,
+            143.06,
+            38.93
+          ],
+          "text": "15 dk",
+          "textPreview": "15 dk",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "15 dk",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "15",
+                  "alignment": "center"
+                },
+                {
+                  "index": 2,
+                  "text": " dk",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 66,
+          "row": 11,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            610.98,
+            191.06,
+            38.93
+          ],
+          "text": "12:15 – 12:30",
+          "textPreview": "12:15 – 12:30",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "12:15 – 12:30",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "12:15 – "
+                },
+                {
+                  "index": 2,
+                  "text": "12:30",
+                  "color": "#FF0000"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 67,
+          "row": 12,
+          "column": 1,
+          "bbox": [
+            42.97,
+            649.91,
+            75.94,
+            38.93
+          ],
+          "text": "5.5",
+          "textPreview": "5.5",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5.5",
+              "resolvedTextStyle": {
+                "alignment": "right"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5.5",
+                  "alignment": "right"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 68,
+          "row": 12,
+          "column": 2,
+          "bbox": [
+            118.91,
+            649.91,
+            416,
+            38.93
+          ],
+          "text": "Katların birleştirilmesi",
+          "textPreview": "Katların birleştirilmesi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Katların birleştirilmesi",
+              "marginLeft": 457200,
+              "indent": 0,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Katların birleştirilmesi"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 69,
+          "row": 12,
+          "column": 3,
+          "bbox": [
+            534.91,
+            649.91,
+            183.53,
+            38.93
+          ],
+          "text": "5.2 ; 5.4",
+          "textPreview": "5.2 ; 5.4",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5.2 ; 5.4",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5.2 ; 5.4",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 70,
+          "row": 12,
+          "column": 4,
+          "bbox": [
+            718.44,
+            649.91,
+            164.71,
+            38.93
+          ],
+          "text": "Pastacı",
+          "textPreview": "Pastacı",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Pastacı",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Pastacı",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "#656D78",
+                  "textTransform": "none"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 71,
+          "row": 12,
+          "column": 5,
+          "bbox": [
+            883.14,
+            649.91,
+            143.06,
+            38.93
+          ],
+          "text": "15 dk",
+          "textPreview": "15 dk",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "15 dk",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "15 dk",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 72,
+          "row": 12,
+          "column": 6,
+          "bbox": [
+            1026.2,
+            649.91,
+            191.06,
+            38.93
+          ],
+          "text": "13:00 – 13:15",
+          "textPreview": "13:00 – 13:15",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "13:00 – 13:15",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "13:00 – "
+                },
+                {
+                  "index": 2,
+                  "text": "13:15",
+                  "color": "#FF0000"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/94fu18jq",
+      "id": "6",
+      "name": "TextBox 5",
+      "bbox": [
+        42.97,
+        147.41,
+        1138.21,
+        77.55
+      ],
+      "geometry": "rect",
+      "text": "Bir önceki sayfadaki hazırladığınız İKY’ye göre takvimi hazırlayabilirsiniz. Dikkat Edilecekler: İlk satıra Projenizin ismini ve hesaplamalarınız sonrası çıkan toplam süreyi yazınız.  Öncül ve süre atamalarındaki bağlantılara ve hesaplamalara dikkat ediniz.  İş paketlerine (#5) öncül ve kaynak atamayınız. Toplam süre ve zamanı alt görevlerin toplamı olarak ifade ediniz. ",
+      "textPreview": "Bir önceki sayfadaki hazırladığınız İKY’ye göre takvimi hazırlayabilirsiniz. Dikkat Edilecekler: İlk satıra Projenizin ismini ve hesaplam...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Source Sans Pro",
+        "color": "tx1",
+        "alignment": "left",
+        "wrap": "square",
+        "autoFit": "resizeShapeToFitText",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Bir önceki sayfadaki hazırladığınız İKY’ye göre takvimi hazırlayabilirsiniz. Dikkat Edilecekler: İlk satıra Projenizin ismini ve"
+          },
+          {
+            "index": 2,
+            "text": "hesaplamalarınız sonrası çıkan toplam süreyi yazınız.  Öncül ve süre atamalarındaki bağlantılara ve hesaplamalara dikkat ediniz.  İş"
+          },
+          {
+            "index": 3,
+            "text": "paketlerine (#5) öncül ve kaynak atamayınız. Toplam süre ve zamanı alt görevlerin toplamı olarak ifade ediniz."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Bir önceki sayfadaki hazırladığınız İKY’ye göre takvimi hazırlayabilirsiniz. Dikkat Edilecekler: İlk satıra Projenizin ismini ve hesaplamalarınız sonrası çıkan toplam süreyi yazınız.  Öncül ve süre atamalarındaki bağlantılara ve hesaplamalara dikkat ediniz.  İş paketlerine (#5) öncül ve kaynak atamayınız. Toplam süre ve zamanı alt görevlerin toplamı olarak ifade ediniz. ",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Bir önceki sayfadaki hazırladığınız İKY’ye göre takvimi hazırlayabilirsiniz. Dikkat Edilecekler: İlk satıra Projenizin ismini ve hesaplamalarınız sonrası çıkan toplam süreyi yazınız.  Öncül ve süre atamalarındaki bağlantılara ve hesaplamalara dikkat ediniz.  İş paketlerine (#5) öncül ve kaynak atamayınız. Toplam süre ve zamanı alt görevlerin toplamı olarak ifade ediniz. ",
+              "fontSize": 18.67,
+              "color": "#FF0000"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/obm58z25",
+      "id": "17",
+      "name": "Picture 1",
+      "bbox": [
+        1069.5,
+        52.33,
+        173.75,
+        45.52
+      ],
+      "contentType": "image/x-wmf",
+      "asset": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      },
+      "fillImage": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      }
+    }
+  ],
+  "composeRuns": []
+}

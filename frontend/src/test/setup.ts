@@ -35,6 +35,7 @@ Object.defineProperty(globalTarget, 'matchMedia', {
 });
 
 // ResizeObserver mock
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalTarget as any).ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn(),
 }));

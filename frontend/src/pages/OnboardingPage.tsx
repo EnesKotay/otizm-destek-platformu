@@ -14,8 +14,9 @@ import { tagService } from '@/services/tagService';
 import { groupService } from '@/services/groupService';
 import { expertService } from '@/services/expertService';
 import { useAuthStore } from '@/store/authStore';
+import { useChildStore } from '@/store/childStore';
 import { toast } from '@/store/toastStore';
-import type { Tag, Group, User } from '@/types';
+import type { Tag, Group, User, Child } from '@/types';
 
 const CATEGORY_LABELS: Record<string, string> = {
   ILETISIM: 'İletişim',
@@ -24,6 +25,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   DAVRANIS: 'Davranış',
   MOTOR: 'Motor',
   EGITIM: 'Eğitim',
+};
+
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  ILETISIM: 'Konuşma, anlama ve kendini ifade etme',
+  SOSYAL: 'Göz teması, arkadaşlık, paylaşma',
+  DUYUSAL: 'Ses, ışık, dokunma ve hareket hassasiyeti',
+  DAVRANIS: 'Tekrarlayan hareketler, rutin ve uyum güçlükleri',
+  MOTOR: 'Yürüme, koşma, el ve parmak becerileri',
+  EGITIM: 'Dikkat, öğrenme ve okul becerileri',
 };
 
 const CATEGORY_SELECTED_COLORS: Record<string, string> = {
@@ -35,14 +45,6 @@ const CATEGORY_SELECTED_COLORS: Record<string, string> = {
   EGITIM: 'bg-gradient-to-r from-teal-600 to-teal-500 border-teal-600 text-white shadow-md shadow-teal-100',
 };
 
-const CATEGORY_IDLE_COLORS: Record<string, string> = {
-  ILETISIM: 'border-blue-100/80 bg-blue-50/30 text-blue-700 hover:bg-blue-50',
-  SOSYAL: 'border-emerald-100/80 bg-emerald-50/30 text-emerald-700 hover:bg-emerald-50',
-  DUYUSAL: 'border-purple-100/80 bg-purple-50/30 text-purple-700 hover:bg-purple-50',
-  DAVRANIS: 'border-orange-100/80 bg-orange-50/30 text-orange-700 hover:bg-orange-50',
-  MOTOR: 'border-rose-100/80 bg-rose-50/30 text-rose-700 hover:bg-rose-50',
-  EGITIM: 'border-teal-100/80 bg-teal-50/30 text-teal-700 hover:bg-teal-50',
-};
 
 const STEPS = [
   { label: 'Çocuk Profili',   icon: Baby,           color: 'text-indigo-600', bg: 'bg-indigo-100' },
@@ -52,16 +54,16 @@ const STEPS = [
   { label: 'Uzman Eşleştir',  icon: GraduationCap,  color: 'text-teal-600',   bg: 'bg-teal-100'   },
 ];
 
-const THERAPY_OPTIONS = [
-  'ABA Terapisi',
-  'Dil ve Konuşma Terapisi',
-  'Mesleki Terapi (OT)',
-  'Özel Eğitim',
-  'Duyu Bütünleme',
-  'Sosyal Beceri Eğitimi',
-  'Davranış Desteği',
-  'Müzik Terapisi',
-  'Spor ve Fizik Egzersiz',
+const THERAPY_OPTIONS: [string, string][] = [
+  ['ABA Terapisi', 'Ödüllendirme yoluyla davranış ve öğrenme desteği'],
+  ['Dil ve Konuşma Terapisi', 'Konuşma, anlama ve ifade etme becerileri'],
+  ['Mesleki Terapi (OT)', 'Günlük yaşam becerileri ve el-kol koordinasyonu'],
+  ['Özel Eğitim', 'Bireysel eğitim programı ile akademik destek'],
+  ['Duyu Bütünleme', 'Ses, dokunma ve ışık hassasiyetini dengeleme'],
+  ['Sosyal Beceri Eğitimi', 'Arkadaşlık kurma ve sosyal davranış pratiği'],
+  ['Davranış Desteği', 'Zorlayıcı davranışları azaltma ve yönetme'],
+  ['Müzik Terapisi', 'Müzik aracılığıyla duygusal ve sosyal gelişim'],
+  ['Spor ve Fizik Egzersiz', 'Motor gelişim ve beden koordinasyonu'],
 ];
 
 const FOCUS_OPTIONS = ['İletişim', 'Sosyal oyun', 'Duyusal düzenleme', 'Davranış takibi'];
@@ -69,28 +71,6 @@ const COMMUNICATION_OPTIONS = ['Tek sözcük', 'Kısa cümle', 'Jest/mimik', 'He
 const SUPPORT_OPTIONS = ['Görsel destek', 'Kısa yönerge', 'Rutin planı', 'Duyusal mola'];
 
 
-const SITE_AREAS = [
-  {
-    icon: Sparkles,
-    title: 'Ana Sayfa',
-    desc: 'Sıradaki 3 adımı önem sırasına göre gösterir.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'İlerleme Özeti',
-    desc: 'Kayıtları eğilim ve takip özetine dönüştürür.',
-  },
-  {
-    icon: MessageCircle,
-    title: 'Mesaj ve Randevu',
-    desc: 'Uzman iletişimi ve seans akışını toparlar.',
-  },
-  {
-    icon: BookOpen,
-    title: 'Rehberler',
-    desc: 'Zor anlar ve günlük yaşam için kısa yollar sunar.',
-  },
-];
 
 const ROLE_STARTS = {
   EXPERT: {
@@ -116,7 +96,7 @@ const ROLE_STARTS = {
         icon: ShieldCheck,
         title: 'Mahremiyet ve hızlı akış',
         desc: 'Paylaşılan ilerleme bilgilerini kontrol edip günlük işleri tek bakışta toparlayın.',
-        to: '/paylasimli-ilerleme',
+        to: '/ayarlar?view=sharing',
         cta: 'Paylaşımı gör',
       },
     ],
@@ -154,6 +134,7 @@ const ROLE_STARTS = {
 export function OnboardingPage() {
   const navigate = useNavigate();
   const { setOnboardingCompleted, user, isOnboardingCompleted } = useAuthStore();
+  const { addChild } = useChildStore();
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -169,6 +150,7 @@ export function OnboardingPage() {
   });
   const [nameError, setNameError] = useState('');
   const [createdChildId, setCreatedChildId] = useState<string | null>(null);
+  const [createdChild, setCreatedChild] = useState<Child | null>(null);
 
   // Step 2
   const [tagsByCategory, setTagsByCategory] = useState<Record<string, Tag[]>>({});
@@ -232,6 +214,7 @@ export function OnboardingPage() {
         },
       });
       setCreatedChildId(child.id);
+      setCreatedChild(child);
       setStep(2);
     } catch {
       toast.error('Profil oluşturulamadı. Lütfen tekrar deneyin.');
@@ -275,6 +258,7 @@ export function OnboardingPage() {
   };
 
   const handleFinish = () => {
+    if (createdChild) addChild(createdChild);
     setOnboardingCompleted();
     navigate('/', { replace: true });
   };
@@ -588,10 +572,12 @@ export function OnboardingPage() {
                       className="border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/40 rounded-xl h-11"
                     />
                     {nameError && (
-                      <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1.5 font-semibold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block shrink-0" />
-                        {nameError}
-                      </p>
+                      <div className="mt-2 flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+                        <span className="mt-0.5 w-5 h-5 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                          <span className="w-2 h-2 rounded-full bg-red-500 block" />
+                        </span>
+                        <p className="text-sm text-red-700 font-semibold">{nameError}</p>
+                      </div>
                     )}
                   </div>
                   <Input
@@ -704,13 +690,18 @@ export function OnboardingPage() {
                       )}
                       {Object.entries(filteredTagsByCategory).map(([cat, tags]) => (
                         <div key={cat} className="space-y-2">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{CATEGORY_LABELS[cat] || cat}</p>
+                          <div>
+                            <p className="text-xs font-bold text-slate-700">{CATEGORY_LABELS[cat] || cat}</p>
+                            {CATEGORY_DESCRIPTIONS[cat] && (
+                              <p className="text-[11px] text-slate-400 mt-0.5">{CATEGORY_DESCRIPTIONS[cat]}</p>
+                            )}
+                          </div>
                           <div className="flex flex-wrap gap-1.5">
                             {tags.map(tag => {
                               const sel = selectedTagIds.has(tag.id);
                               return (
                                 <button key={tag.id}
-                                  onClick={() => setSelectedTagIds(prev => { const n = new Set(prev); sel ? n.delete(tag.id) : n.add(tag.id); return n; })}
+                                  onClick={() => setSelectedTagIds(prev => { const n = new Set(prev); if (sel) { n.delete(tag.id); } else { n.add(tag.id); } return n; })}
                                   className={`px-3 py-1.5 rounded-full text-xs border font-bold transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${sel ? (CATEGORY_SELECTED_COLORS[cat] || 'bg-indigo-600 border-indigo-600 text-white') : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50/30'}`}
                                 >
                                   {sel ? <Check size={10} className="stroke-[3]" /> : <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />}
@@ -736,7 +727,7 @@ export function OnboardingPage() {
                     <ChevronLeft size={16} className="mr-1" /> Geri
                   </Button>
                   <Button onClick={handleStep2} loading={loading} className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 font-bold rounded-2xl shadow-md shadow-indigo-100 cursor-pointer text-white">
-                    {selectedTagIds.size === 0 ? 'Atla' : 'Devam Et'} <ChevronRight size={16} className="ml-1" />
+                    {selectedTagIds.size === 0 ? 'Şimdilik geç' : 'Devam Et'} <ChevronRight size={16} className="ml-1" />
                   </Button>
                 </div>
               </div>
@@ -857,18 +848,21 @@ export function OnboardingPage() {
               <div className="flex-1 flex flex-col min-w-0">
                 <div className="flex-1 px-7 py-6 space-y-5 overflow-y-auto">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Terapi türleri</p>
+                    <p className="text-sm font-bold text-slate-700 mb-3">Hangi terapiler alınıyor veya planlanıyor?</p>
                     <div className="relative">
-                      <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1 pb-8">
-                        {THERAPY_OPTIONS.map(t => {
-                          const sel = selectedTherapies.has(t);
+                      <div className="grid grid-cols-1 gap-2 max-h-[280px] overflow-y-auto pr-1 pb-8">
+                        {THERAPY_OPTIONS.map(([name, desc]) => {
+                          const sel = selectedTherapies.has(name);
                           return (
-                            <button key={t} type="button"
-                              onClick={() => setSelectedTherapies(prev => { const n = new Set(prev); sel ? n.delete(t) : n.add(t); return n; })}
-                              className={`px-3 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-between text-left cursor-pointer transition-all duration-200 ${sel ? 'bg-orange-500 border-orange-500 text-white shadow-sm' : 'bg-white border-slate-100 text-slate-700 hover:border-orange-300 hover:bg-orange-50/20'}`}>
-                              <span>{t}</span>
-                              <span className={`w-3 h-3 rounded-full border flex items-center justify-center shrink-0 ${sel ? 'border-white bg-white/20' : 'border-slate-300'}`}>
-                                {sel && <Check size={7} className="stroke-[3] text-white" />}
+                            <button key={name} type="button"
+                              onClick={() => setSelectedTherapies(prev => { const n = new Set(prev); if (sel) { n.delete(name); } else { n.add(name); } return n; })}
+                              className={`px-4 py-3 rounded-xl border text-left cursor-pointer transition-all duration-200 flex items-start gap-3 ${sel ? 'bg-orange-500 border-orange-500 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-700 hover:border-orange-300 hover:bg-orange-50/20'}`}>
+                              <span className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${sel ? 'border-white bg-white/20' : 'border-slate-300'}`}>
+                                {sel && <Check size={8} className="stroke-[3] text-white" />}
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-sm font-bold leading-tight">{name}</span>
+                                <span className={`block text-xs mt-0.5 leading-snug ${sel ? 'text-white/80' : 'text-slate-400'}`}>{desc}</span>
                               </span>
                             </button>
                           );
@@ -882,7 +876,7 @@ export function OnboardingPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Haftalık seans sıklığı</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Haftada kaç gün terapi yapılıyor?</label>
                     <div className="relative">
                       <select value={therapyFrequency} onChange={e => setTherapyFrequency(e.target.value)}
                         className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-orange-400 focus:ring-4 focus:ring-orange-100/30 transition-all outline-none cursor-pointer appearance-none">
@@ -898,7 +892,7 @@ export function OnboardingPage() {
                     <ChevronLeft size={16} className="mr-1" /> Geri
                   </Button>
                   <Button onClick={handleStep4} loading={loading} className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 font-bold rounded-2xl shadow-md shadow-indigo-100 cursor-pointer text-white">
-                    {selectedTherapies.size === 0 ? 'Atla' : 'Kaydet ve Devam'} <ChevronRight size={16} className="ml-1" />
+                    {selectedTherapies.size === 0 ? 'Şimdilik geç' : 'Kaydet ve Devam'} <ChevronRight size={16} className="ml-1" />
                   </Button>
                 </div>
               </div>

@@ -1,0 +1,1319 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/lwval87e",
+    "id": "lwval87e",
+    "slide": 14,
+    "layoutId": "/ppt/slideLayouts/slideLayout6.xml",
+    "layoutName": "Main",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Blue",
+    "colors": {
+      "accent1": "#3B9ED8",
+      "accent2": "#358EC2",
+      "accent3": "#2F7EAC",
+      "accent4": "#296E97",
+      "accent5": "#235E81",
+      "accent6": "#1D4F6C",
+      "dk1": "#656D78",
+      "lt1": "#FFFFFF",
+      "dk2": "#8496B0",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Custom 1",
+      "majorFont": {
+        "latinTypeface": "Source Sans Pro Black"
+      },
+      "minorFont": {
+        "latinTypeface": "Source Sans Pro"
+      }
+    },
+    "typefaces": [
+      "Source Sans Pro",
+      "Source Sans Pro Black"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout6.xml",
+      "name": "Main",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/38",
+          "id": "38",
+          "name": "Shape 2",
+          "bbox": [
+            0,
+            147.09,
+            1280,
+            574
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "fillColor": "rgba(123, 141, 179, 0.04)",
+          "lineColor": "rgba(235, 235, 235, 0.1)",
+          "lineWidth": 2.67
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/39",
+          "id": "39",
+          "name": "Shape 2711",
+          "bbox": [
+            63.8,
+            58.88,
+            29.33,
+            29.33
+          ],
+          "geometry": "custom",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 2,
+              "right": 2,
+              "bottom": 2,
+              "left": 2
+            }
+          },
+          "fillColor": "accent1",
+          "lineWidth": 1.33
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/40",
+          "id": "40",
+          "name": "Rounded Rectangle 39",
+          "bbox": [
+            1182.74,
+            652.43,
+            33.15,
+            33.15
+          ],
+          "geometry": "roundRect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle"
+          },
+          "lineColor": "accent1"
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/41",
+          "id": "41",
+          "name": "TextBox 40",
+          "bbox": [
+            1181.42,
+            654.62,
+            36.22,
+            29.08
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "wrap": "none",
+            "autoFit": "resizeShapeToFitText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›",
+                  "fontSize": 16,
+                  "typeface": "Source Sans Pro",
+                  "color": "accent1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/26",
+          "id": "26",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            116.99,
+            47.93,
+            933.8,
+            51.06
+          ],
+          "text": "Put your main text here",
+          "textPreview": "Put your main text here",
+          "resolvedTextStyle": {
+            "autoFit": "none"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your main text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your main text here"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/27",
+          "id": "27",
+          "name": "Text Placeholder 4",
+          "bbox": [
+            118.9,
+            98.99,
+            931.89,
+            28.28
+          ],
+          "text": "Put your text here",
+          "textPreview": "Put your text here",
+          "resolvedTextStyle": {
+            "autoFit": "shrinkText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your text here"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/2",
+          "id": "2",
+          "name": "Title Placeholder 1",
+          "bbox": [
+            88,
+            38.33,
+            1104,
+            139.17
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master title style",
+          "textPreview": "Click to edit Master title style",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master title style",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master title style"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/3",
+          "id": "3",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            88,
+            191.67,
+            1104,
+            456.83
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "resolvedTextStyle": {
+            "vertical": 1,
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/4",
+          "id": "4",
+          "name": "Date Placeholder 3",
+          "bbox": [
+            88,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "6/2/2026",
+          "textPreview": "6/2/2026",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6/2/2026",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "6/2/2026"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/5",
+          "id": "5",
+          "name": "Footer Placeholder 4",
+          "bbox": [
+            424,
+            667.33,
+            432,
+            38.33
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          }
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/6",
+          "id": "6",
+          "name": "Slide Number Placeholder 5",
+          "bbox": [
+            904,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xczed8v6",
+      "id": "15",
+      "name": "Text Placeholder 4",
+      "bbox": [
+        100.38,
+        47.35,
+        966.93,
+        51.06
+      ],
+      "text": "PROJE MALİYET PLANI (20p)",
+      "textPreview": "PROJE MALİYET PLANI (20p)",
+      "resolvedFontSize": 42.67,
+      "resolvedTextStyle": {
+        "vertical": 1,
+        "fontSize": 42.67,
+        "typeface": "Source Sans Pro Black",
+        "color": "tx1",
+        "alignment": "left",
+        "autoFit": "none",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          },
+          {
+            "index": 2,
+            "text": "PROJE MALİYET PLANI (20p)"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "PROJE MALİYET PLANI (20p)",
+          "runs": [
+            {
+              "index": 1,
+              "text": "PROJE MALİYET PLANI",
+              "color": "accent5",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": " (20p)",
+              "color": "accent5",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0,
+          "indent": 0,
+          "lineSpacingPercent": 90000,
+          "spaceBefore": 1000
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "table",
+      "scope": "slide",
+      "aid": "tb/58z25kb6",
+      "id": "16",
+      "name": "Tabella 17",
+      "bbox": [
+        67.28,
+        184.8,
+        1033.14,
+        350.4
+      ],
+      "text": "N0 | AKTİVİTE | TAHMİNİ MALİYETİ\n1 | Tarif Araştırması |  0 TL\n2 | Tasarım hazırlaması | 100 TL\n3 | Malzeme listesinin hazırlanması | 0 TL\n4 | Malzeme tedariği | 2000 TL\n5 | Kek hamurunun pirişilmesi | 250 TL \n6 | Beklenmedik durum yedeği  | 1500 TL\n7 | Yönetim Yedeği | 2500 TL\nTOPLAM MALİYET (BÜTÇE) | 6350 TL  !!!",
+      "textPreview": "N0 | AKTİVİTE | TAHMİNİ MALİYETİ | 1 | Tarif Araştırması |  0 TL | 2 | Tasarım hazırlaması | 100 TL | 3 | Malzeme listesinin hazırlanması...",
+      "rows": 9,
+      "cols": 3,
+      "cells": [
+        {
+          "index": 1,
+          "row": 1,
+          "column": 1,
+          "bbox": [
+            67.28,
+            184.8,
+            54.12,
+            38.93
+          ],
+          "text": "N0",
+          "textPreview": "N0",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "N0",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "N0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "row": 1,
+          "column": 2,
+          "bbox": [
+            121.4,
+            184.8,
+            590.29,
+            38.93
+          ],
+          "text": "AKTİVİTE",
+          "textPreview": "AKTİVİTE",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "AKTİVİTE",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "AKTİVİTE",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "row": 1,
+          "column": 3,
+          "bbox": [
+            711.69,
+            184.8,
+            388.73,
+            38.93
+          ],
+          "text": "TAHMİNİ MALİYETİ",
+          "textPreview": "TAHMİNİ MALİYETİ",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "TAHMİNİ MALİYETİ",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "TAHMİNİ MALİYETİ",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "row": 2,
+          "column": 1,
+          "bbox": [
+            67.28,
+            223.73,
+            54.12,
+            38.93
+          ],
+          "text": "1",
+          "textPreview": "1",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "1",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "row": 2,
+          "column": 2,
+          "bbox": [
+            121.4,
+            223.73,
+            590.29,
+            38.93
+          ],
+          "text": "Tarif Araştırması",
+          "textPreview": "Tarif Araştırması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Tarif Araştırması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Tarif Araştırması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "row": 2,
+          "column": 3,
+          "bbox": [
+            711.69,
+            223.73,
+            388.73,
+            38.93
+          ],
+          "text": " 0 TL",
+          "textPreview": "0 TL",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": " 0 TL",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": " 0 TL"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "row": 3,
+          "column": 1,
+          "bbox": [
+            67.28,
+            262.67,
+            54.12,
+            38.93
+          ],
+          "text": "2",
+          "textPreview": "2",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "2",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "row": 3,
+          "column": 2,
+          "bbox": [
+            121.4,
+            262.67,
+            590.29,
+            38.93
+          ],
+          "text": "Tasarım hazırlaması",
+          "textPreview": "Tasarım hazırlaması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Tasarım hazırlaması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Tasarım hazırlaması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "row": 3,
+          "column": 3,
+          "bbox": [
+            711.69,
+            262.67,
+            388.73,
+            38.93
+          ],
+          "text": "100 TL",
+          "textPreview": "100 TL",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "100 TL",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "100 TL"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "row": 4,
+          "column": 1,
+          "bbox": [
+            67.28,
+            301.6,
+            54.12,
+            38.93
+          ],
+          "text": "3",
+          "textPreview": "3",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "3",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 11,
+          "row": 4,
+          "column": 2,
+          "bbox": [
+            121.4,
+            301.6,
+            590.29,
+            38.93
+          ],
+          "text": "Malzeme listesinin hazırlanması",
+          "textPreview": "Malzeme listesinin hazırlanması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Malzeme listesinin hazırlanması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Malzeme listesinin hazırlanması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 12,
+          "row": 4,
+          "column": 3,
+          "bbox": [
+            711.69,
+            301.6,
+            388.73,
+            38.93
+          ],
+          "text": "0 TL",
+          "textPreview": "0 TL",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "0 TL",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "0 TL"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 13,
+          "row": 5,
+          "column": 1,
+          "bbox": [
+            67.28,
+            340.53,
+            54.12,
+            38.93
+          ],
+          "text": "4",
+          "textPreview": "4",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "4",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "4"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 14,
+          "row": 5,
+          "column": 2,
+          "bbox": [
+            121.4,
+            340.53,
+            590.29,
+            38.93
+          ],
+          "text": "Malzeme tedariği",
+          "textPreview": "Malzeme tedariği",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Malzeme tedariği",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Malzeme tedariği"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 15,
+          "row": 5,
+          "column": 3,
+          "bbox": [
+            711.69,
+            340.53,
+            388.73,
+            38.93
+          ],
+          "text": "2000 TL",
+          "textPreview": "2000 TL",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "2000 TL",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "2000 TL"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 16,
+          "row": 6,
+          "column": 1,
+          "bbox": [
+            67.28,
+            379.47,
+            54.12,
+            38.93
+          ],
+          "text": "5",
+          "textPreview": "5",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 17,
+          "row": 6,
+          "column": 2,
+          "bbox": [
+            121.4,
+            379.47,
+            590.29,
+            38.93
+          ],
+          "text": "Kek hamurunun pirişilmesi",
+          "textPreview": "Kek hamurunun pirişilmesi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Kek hamurunun pirişilmesi",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Kek hamurunun pirişilmesi"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 18,
+          "row": 6,
+          "column": 3,
+          "bbox": [
+            711.69,
+            379.47,
+            388.73,
+            38.93
+          ],
+          "text": "250 TL ",
+          "textPreview": "250 TL",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "250 TL ",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "250 TL "
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 19,
+          "row": 7,
+          "column": 1,
+          "bbox": [
+            67.28,
+            418.4,
+            54.12,
+            38.93
+          ],
+          "text": "6",
+          "textPreview": "6",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "6"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 20,
+          "row": 7,
+          "column": 2,
+          "bbox": [
+            121.4,
+            418.4,
+            590.29,
+            38.93
+          ],
+          "text": "Beklenmedik durum yedeği ",
+          "textPreview": "Beklenmedik durum yedeği",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Beklenmedik durum yedeği ",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Beklenmedik durum yedeği ",
+                  "color": "#FF0000"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 21,
+          "row": 7,
+          "column": 3,
+          "bbox": [
+            711.69,
+            418.4,
+            388.73,
+            38.93
+          ],
+          "text": "1500 TL",
+          "textPreview": "1500 TL",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "1500 TL",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "1"
+                },
+                {
+                  "index": 2,
+                  "text": "500 TL"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 22,
+          "row": 8,
+          "column": 1,
+          "bbox": [
+            67.28,
+            457.33,
+            54.12,
+            38.93
+          ],
+          "text": "7",
+          "textPreview": "7",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "7",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "7"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 23,
+          "row": 8,
+          "column": 2,
+          "bbox": [
+            121.4,
+            457.33,
+            590.29,
+            38.93
+          ],
+          "text": "Yönetim Yedeği",
+          "textPreview": "Yönetim Yedeği",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Yönetim Yedeği",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Yönetim Yedeği",
+                  "color": "#FF0000"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 24,
+          "row": 8,
+          "column": 3,
+          "bbox": [
+            711.69,
+            457.33,
+            388.73,
+            38.93
+          ],
+          "text": "2500 TL",
+          "textPreview": "2500 TL",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "2500 TL",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "2500 TL"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 25,
+          "row": 9,
+          "column": 1,
+          "bbox": [
+            67.28,
+            496.27,
+            54.12,
+            38.93
+          ]
+        },
+        {
+          "index": 26,
+          "row": 9,
+          "column": 2,
+          "bbox": [
+            121.4,
+            496.27,
+            590.29,
+            38.93
+          ],
+          "text": "TOPLAM MALİYET (BÜTÇE)",
+          "textPreview": "TOPLAM MALİYET (BÜTÇE)",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "TOPLAM MALİYET (BÜTÇE)",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "TOPLAM MALİYET (BÜTÇE)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 27,
+          "row": 9,
+          "column": 3,
+          "bbox": [
+            711.69,
+            496.27,
+            388.73,
+            38.93
+          ],
+          "text": "6350 TL  !!!",
+          "textPreview": "6350 TL  !!!",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6350 TL  !!!",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "63",
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": "50 TL",
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "  !!!",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/l0rqd4vm",
+      "id": "2",
+      "name": "Rectangle 1",
+      "bbox": [
+        102.07,
+        557.14,
+        993.37,
+        67.86
+      ],
+      "geometry": "rect",
+      "text": "Yönetim ve Durum Yedeği maliyetlerini eklemeyi ve en altta toplam bütçeyi vermeyi unutmayınız. ",
+      "textPreview": "Yönetim ve Durum Yedeği maliyetlerini eklemeyi ve en altta toplam bütçeyi vermeyi unutmayınız. ",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Source Sans Pro",
+        "color": "tx1",
+        "alignment": "left",
+        "wrap": "square",
+        "autoFit": "resizeShapeToFitText",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Yönetim ve Durum Yedeği maliyetlerini eklemeyi ve en altta toplam bütçeyi vermeyi"
+          },
+          {
+            "index": 2,
+            "text": "unutmayınız. "
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Yönetim ve Durum Yedeği maliyetlerini eklemeyi ve en altta toplam bütçeyi vermeyi unutmayınız. ",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Yönetim ve Durum Yedeği maliyetlerini eklemeyi ",
+              "color": "#FF0000"
+            },
+            {
+              "index": 2,
+              "text": "ve en altta toplam bütçeyi vermeyi ",
+              "color": "#FF0000"
+            },
+            {
+              "index": 3,
+              "text": "unutmayınız. ",
+              "color": "#FF0000"
+            },
+            {
+              "index": 4,
+              "text": "",
+              "color": "#FF0000"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    }
+  ],
+  "composeRuns": []
+}

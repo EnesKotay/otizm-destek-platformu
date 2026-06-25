@@ -132,8 +132,12 @@ function AudioPlayer({ url }: { url: string }) {
 }
 
 export function KnowledgePage() {
-  const user = useAuthStore(s => s.user);
   const location = useLocation();
+  return <KnowledgeContent location={location} />;
+}
+
+function KnowledgeContent({ location }: { location: ReturnType<typeof useLocation> }) {
+  const user = useAuthStore(s => s.user);
   const isExpert = user?.role === 'EXPERT' || user?.role === 'ADMIN';
 
   const [articles, setArticles] = useState<KnowledgeArticle[]>([]);
@@ -481,18 +485,18 @@ export function KnowledgePage() {
     <div className="space-y-6">
       <PageOnboarding
         pageId="knowledge"
-        title="Bilgi Bankasına Hoş Geldiniz"
-        description="Otizm, özel eğitim ve gelişim alanında uzmanlar tarafından hazırlanan makale, video ve podcast içeriklerini keşfedin."
+        title="Bilgi Bankası"
+        description="Uzmanların hazırladığı makaleleri, videoları ve rehberleri buradan okuyabilirsiniz. Otizm hakkında merak ettiğiniz her şeyi arayabilirsiniz."
         steps={[
           {
             icon: <BookOpen size={20} />,
-            title: "İçerikleri Keşfedin",
-            description: "Kategoriye veya içerik türüne göre filtreleyerek aradığınız bilgiye kolayca ulaşın."
+            title: "İstediğinizi Arayın",
+            description: "Konuya veya türe göre filtreleyebilirsiniz. Arama kutusuna yazmak da işe yarar."
           },
           {
             icon: <Eye size={20} />,
-            title: "Okuyun ve İzleyin",
-            description: "Makaleleri okuyun, eğitici videoları izleyin veya yoldayken podcast dinleyin."
+            title: "Okuyun veya İzleyin",
+            description: "Makale, video ya da podcast — size en uygun olanı seçebilirsiniz."
           }
         ]}
       />

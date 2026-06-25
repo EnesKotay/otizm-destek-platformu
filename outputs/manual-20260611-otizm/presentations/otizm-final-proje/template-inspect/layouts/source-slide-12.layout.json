@@ -1,0 +1,1302 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/4fu18jqh",
+    "id": "4fu18jqh",
+    "slide": 13,
+    "layoutId": "/ppt/slideLayouts/slideLayout6.xml",
+    "layoutName": "Main",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Blue",
+    "colors": {
+      "accent1": "#3B9ED8",
+      "accent2": "#358EC2",
+      "accent3": "#2F7EAC",
+      "accent4": "#296E97",
+      "accent5": "#235E81",
+      "accent6": "#1D4F6C",
+      "dk1": "#656D78",
+      "lt1": "#FFFFFF",
+      "dk2": "#8496B0",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Custom 1",
+      "majorFont": {
+        "latinTypeface": "Source Sans Pro Black"
+      },
+      "minorFont": {
+        "latinTypeface": "Source Sans Pro"
+      }
+    },
+    "typefaces": [
+      "Source Sans Pro",
+      "Source Sans Pro Black"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout6.xml",
+      "name": "Main",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/38",
+          "id": "38",
+          "name": "Shape 2",
+          "bbox": [
+            0,
+            147.09,
+            1280,
+            574
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "fillColor": "rgba(123, 141, 179, 0.04)",
+          "lineColor": "rgba(235, 235, 235, 0.1)",
+          "lineWidth": 2.67
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/39",
+          "id": "39",
+          "name": "Shape 2711",
+          "bbox": [
+            63.8,
+            58.88,
+            29.33,
+            29.33
+          ],
+          "geometry": "custom",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 2,
+              "right": 2,
+              "bottom": 2,
+              "left": 2
+            }
+          },
+          "fillColor": "accent1",
+          "lineWidth": 1.33
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/40",
+          "id": "40",
+          "name": "Rounded Rectangle 39",
+          "bbox": [
+            1182.74,
+            652.43,
+            33.15,
+            33.15
+          ],
+          "geometry": "roundRect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle"
+          },
+          "lineColor": "accent1"
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/41",
+          "id": "41",
+          "name": "TextBox 40",
+          "bbox": [
+            1181.42,
+            654.62,
+            36.22,
+            29.08
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "wrap": "none",
+            "autoFit": "resizeShapeToFitText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›",
+                  "fontSize": 16,
+                  "typeface": "Source Sans Pro",
+                  "color": "accent1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/26",
+          "id": "26",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            116.99,
+            47.93,
+            933.8,
+            51.06
+          ],
+          "text": "Put your main text here",
+          "textPreview": "Put your main text here",
+          "resolvedTextStyle": {
+            "autoFit": "none"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your main text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your main text here"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/27",
+          "id": "27",
+          "name": "Text Placeholder 4",
+          "bbox": [
+            118.9,
+            98.99,
+            931.89,
+            28.28
+          ],
+          "text": "Put your text here",
+          "textPreview": "Put your text here",
+          "resolvedTextStyle": {
+            "autoFit": "shrinkText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your text here"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/2",
+          "id": "2",
+          "name": "Title Placeholder 1",
+          "bbox": [
+            88,
+            38.33,
+            1104,
+            139.17
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master title style",
+          "textPreview": "Click to edit Master title style",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master title style",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master title style"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/3",
+          "id": "3",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            88,
+            191.67,
+            1104,
+            456.83
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "resolvedTextStyle": {
+            "vertical": 1,
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/4",
+          "id": "4",
+          "name": "Date Placeholder 3",
+          "bbox": [
+            88,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "6/2/2026",
+          "textPreview": "6/2/2026",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6/2/2026",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "6/2/2026"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/5",
+          "id": "5",
+          "name": "Footer Placeholder 4",
+          "bbox": [
+            424,
+            667.33,
+            432,
+            38.33
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          }
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/6",
+          "id": "6",
+          "name": "Slide Number Placeholder 5",
+          "bbox": [
+            904,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/a9w3m94f",
+      "id": "15",
+      "name": "Text Placeholder 4",
+      "bbox": [
+        100.38,
+        47.35,
+        966.93,
+        51.06
+      ],
+      "text": "PROJE RISK PLANI (20p)",
+      "textPreview": "PROJE RISK PLANI (20p)",
+      "resolvedFontSize": 42.67,
+      "resolvedTextStyle": {
+        "vertical": 1,
+        "fontSize": 42.67,
+        "typeface": "Source Sans Pro Black",
+        "color": "tx1",
+        "alignment": "left",
+        "autoFit": "none",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          },
+          {
+            "index": 2,
+            "text": "PROJE RISK PLANI (20p)"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "PROJE RISK PLANI (20p)",
+          "runs": [
+            {
+              "index": 1,
+              "text": "PROJE RISK PLANI",
+              "color": "accent5",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": " (20p)",
+              "color": "accent5",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0,
+          "indent": 0,
+          "lineSpacingPercent": 90000,
+          "spaceBefore": 1000
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "table",
+      "scope": "slide",
+      "aid": "tb/2lszqtcj",
+      "id": "16",
+      "name": "Tabella 17",
+      "bbox": [
+        37.38,
+        162.51,
+        1184.77,
+        249.28
+      ],
+      "text": "T# | AKTİVİTE | RİSK | RİSK YANITI\n1 | Tarif Araştırması | Tarifin malzeme tedariğinin zor olması | Yedek tarif belirlemek\n2 | Tasarım hazırlaması | Risk  beklenmemektedir.\n3 | Malzeme listesinin hazırlanması | Johny’nin içinde bulunduğu özel durumu nedeniyle malzeme listesinin eksik ve yanlış hazırlanma riski bulunmaktadır.  | Alice’in malzeme listesini gözden geçirmesi ve eksiklerini düzeltmesi sağlanacaktır. \n4 | Malzeme tedariği | Online marketin kullanılamaz durumda olması. | Farklı online marketin kullanılması\nYerel marketten yerinde tedarik edilmesi.\n5 | Kek hamurunun pirişilmesi | Kek hamurunun fırından çıktıktan sonra çökmesi | Çökmeyi engelleyici araç gereç kullanılması",
+      "textPreview": "T# | AKTİVİTE | RİSK | RİSK YANITI | 1 | Tarif Araştırması | Tarifin malzeme tedariğinin zor olması | Yedek tarif belirlemek | 2 | Tasarı...",
+      "rows": 6,
+      "cols": 4,
+      "cells": [
+        {
+          "index": 1,
+          "row": 1,
+          "column": 1,
+          "bbox": [
+            37.38,
+            162.51,
+            59.2,
+            63.97
+          ],
+          "text": "T#",
+          "textPreview": "T#",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "T#",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "T#"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "row": 1,
+          "column": 2,
+          "bbox": [
+            96.58,
+            162.51,
+            256.96,
+            63.97
+          ],
+          "text": "AKTİVİTE",
+          "textPreview": "AKTİVİTE",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "AKTİVİTE",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "AKTİVİTE",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "row": 1,
+          "column": 3,
+          "bbox": [
+            353.54,
+            162.51,
+            526.65,
+            63.97
+          ],
+          "text": "RİSK",
+          "textPreview": "RİSK",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "RİSK",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "RİSK",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "row": 1,
+          "column": 4,
+          "bbox": [
+            880.19,
+            162.51,
+            341.96,
+            63.97
+          ],
+          "text": "RİSK YANITI",
+          "textPreview": "RİSK YANITI",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "RİSK YANITI",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "RİSK YANITI",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "row": 2,
+          "column": 1,
+          "bbox": [
+            37.38,
+            226.48,
+            59.2,
+            37.06
+          ],
+          "text": "1",
+          "textPreview": "1",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "1",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "1",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "row": 2,
+          "column": 2,
+          "bbox": [
+            96.58,
+            226.48,
+            256.96,
+            37.06
+          ],
+          "text": "Tarif Araştırması",
+          "textPreview": "Tarif Araştırması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Tarif Araştırması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Tarif Araştırması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "row": 2,
+          "column": 3,
+          "bbox": [
+            353.54,
+            226.48,
+            526.65,
+            37.06
+          ],
+          "text": "Tarifin malzeme tedariğinin zor olması",
+          "textPreview": "Tarifin malzeme tedariğinin zor olması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Tarifin malzeme tedariğinin zor olması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Tarifin malzeme tedariğinin zor olması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "row": 2,
+          "column": 4,
+          "bbox": [
+            880.19,
+            226.48,
+            341.96,
+            37.06
+          ],
+          "text": "Yedek tarif belirlemek",
+          "textPreview": "Yedek tarif belirlemek",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Yedek tarif belirlemek",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Yedek tarif belirlemek"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "row": 3,
+          "column": 1,
+          "bbox": [
+            37.38,
+            263.54,
+            59.2,
+            37.06
+          ],
+          "text": "2",
+          "textPreview": "2",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "2",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "2",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "row": 3,
+          "column": 2,
+          "bbox": [
+            96.58,
+            263.54,
+            256.96,
+            37.06
+          ],
+          "text": "Tasarım hazırlaması",
+          "textPreview": "Tasarım hazırlaması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Tasarım hazırlaması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Tasarım hazırlaması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 11,
+          "row": 3,
+          "column": 3,
+          "bbox": [
+            353.54,
+            263.54,
+            526.65,
+            37.06
+          ],
+          "text": "Risk  beklenmemektedir.",
+          "textPreview": "Risk  beklenmemektedir.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Risk  beklenmemektedir.",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Risk  beklenmemektedir."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 12,
+          "row": 3,
+          "column": 4,
+          "bbox": [
+            880.19,
+            263.54,
+            341.96,
+            37.06
+          ]
+        },
+        {
+          "index": 13,
+          "row": 4,
+          "column": 1,
+          "bbox": [
+            37.38,
+            300.61,
+            59.2,
+            37.06
+          ],
+          "text": "3",
+          "textPreview": "3",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "3",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "3",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 14,
+          "row": 4,
+          "column": 2,
+          "bbox": [
+            96.58,
+            300.61,
+            256.96,
+            37.06
+          ],
+          "text": "Malzeme listesinin hazırlanması",
+          "textPreview": "Malzeme listesinin hazırlanması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Malzeme listesinin hazırlanması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Malzeme listesinin hazırlanması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 15,
+          "row": 4,
+          "column": 3,
+          "bbox": [
+            353.54,
+            300.61,
+            526.65,
+            37.06
+          ],
+          "text": "Johny’nin içinde bulunduğu özel durumu nedeniyle malzeme listesinin eksik ve yanlış hazırlanma riski bulunmaktadır. ",
+          "textPreview": "Johny’nin içinde bulunduğu özel durumu nedeniyle malzeme listesinin eksik ve yanlış hazırlanma riski bulunmaktadır.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Johny’nin içinde bulunduğu özel durumu nedeniyle malzeme listesinin eksik ve yanlış hazırlanma riski bulunmaktadır. ",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Johny’nin içinde bulunduğu özel durumu nedeniyle malzeme listesinin eksik ve yanlış hazırlanma riski bulunmaktadır. "
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 16,
+          "row": 4,
+          "column": 4,
+          "bbox": [
+            880.19,
+            300.61,
+            341.96,
+            37.06
+          ],
+          "text": "Alice’in malzeme listesini gözden geçirmesi ve eksiklerini düzeltmesi sağlanacaktır. ",
+          "textPreview": "Alice’in malzeme listesini gözden geçirmesi ve eksiklerini düzeltmesi sağlanacaktır.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Alice’in malzeme listesini gözden geçirmesi ve eksiklerini düzeltmesi sağlanacaktır. ",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Alice’in malzeme listesini gözden geçirmesi ve eksiklerini düzeltmesi sağlanacaktır. ",
+                  "alignment": "left"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 17,
+          "row": 5,
+          "column": 1,
+          "bbox": [
+            37.38,
+            337.67,
+            59.2,
+            37.06
+          ],
+          "text": "4",
+          "textPreview": "4",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "4",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "4",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 18,
+          "row": 5,
+          "column": 2,
+          "bbox": [
+            96.58,
+            337.67,
+            256.96,
+            37.06
+          ],
+          "text": "Malzeme tedariği",
+          "textPreview": "Malzeme tedariği",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Malzeme tedariği",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Malzeme tedariği"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 19,
+          "row": 5,
+          "column": 3,
+          "bbox": [
+            353.54,
+            337.67,
+            526.65,
+            37.06
+          ],
+          "text": "Online marketin kullanılamaz durumda olması.",
+          "textPreview": "Online marketin kullanılamaz durumda olması.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Online marketin kullanılamaz durumda olması.",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "O"
+                },
+                {
+                  "index": 2,
+                  "text": "nline marketin kullanılamaz durumda olması."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 20,
+          "row": 5,
+          "column": 4,
+          "bbox": [
+            880.19,
+            337.67,
+            341.96,
+            37.06
+          ],
+          "text": "Farklı online marketin kullanılması\nYerel marketten yerinde tedarik edilmesi.",
+          "textPreview": "Farklı online marketin kullanılması | Yerel marketten yerinde tedarik edilmesi.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Farklı online marketin kullanılması",
+              "marginLeft": 342900,
+              "indent": -342900,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Farklı"
+                },
+                {
+                  "index": 2,
+                  "text": " online"
+                },
+                {
+                  "index": 3,
+                  "text": " marketin"
+                },
+                {
+                  "index": 4,
+                  "text": " kullanılması"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Yerel marketten yerinde tedarik edilmesi.",
+              "marginLeft": 342900,
+              "indent": -342900,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Yerel marketten "
+                },
+                {
+                  "index": 2,
+                  "text": "yerinde tedarik edilmesi."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 21,
+          "row": 6,
+          "column": 1,
+          "bbox": [
+            37.38,
+            374.73,
+            59.2,
+            37.06
+          ],
+          "text": "5",
+          "textPreview": "5",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 22,
+          "row": 6,
+          "column": 2,
+          "bbox": [
+            96.58,
+            374.73,
+            256.96,
+            37.06
+          ],
+          "text": "Kek hamurunun pirişilmesi",
+          "textPreview": "Kek hamurunun pirişilmesi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Kek hamurunun pirişilmesi",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Kek hamurunun pirişilmesi"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 23,
+          "row": 6,
+          "column": 3,
+          "bbox": [
+            353.54,
+            374.73,
+            526.65,
+            37.06
+          ],
+          "text": "Kek hamurunun fırından çıktıktan sonra çökmesi",
+          "textPreview": "Kek hamurunun fırından çıktıktan sonra çökmesi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Kek hamurunun fırından çıktıktan sonra çökmesi",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Kek hamurunun fırından çıktıktan sonra çökmesi"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 24,
+          "row": 6,
+          "column": 4,
+          "bbox": [
+            880.19,
+            374.73,
+            341.96,
+            37.06
+          ],
+          "text": "Çökmeyi engelleyici araç gereç kullanılması",
+          "textPreview": "Çökmeyi engelleyici araç gereç kullanılması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Çökmeyi engelleyici araç gereç kullanılması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Çökmeyi engelleyici araç gereç kullanılması"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/3ylc7u54",
+      "id": "5",
+      "name": "TextBox 4",
+      "bbox": [
+        87.56,
+        633.88,
+        941.26,
+        38.78
+      ],
+      "geometry": "rect",
+      "text": "Proje başlatma belgesinde yer alan varsayım ve kısıtlarınızla tutarlı olarak hazırlayınız. ",
+      "textPreview": "Proje başlatma belgesinde yer alan varsayım ve kısıtlarınızla tutarlı olarak hazırlayınız.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Source Sans Pro",
+        "color": "tx1",
+        "alignment": "left",
+        "wrap": "square",
+        "autoFit": "resizeShapeToFitText",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Proje başlatma belgesinde yer alan varsayım ve kısıtlarınızla tutarlı olarak hazırlayınız."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Proje başlatma belgesinde yer alan varsayım ve kısıtlarınızla tutarlı olarak hazırlayınız. ",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Proje başlatma belgesinde yer alan varsayım ve kısıtlarınızla tutarlı olarak hazırlayınız. ",
+              "fontSize": 24,
+              "typeface": "Source Sans Pro",
+              "color": "#FF0000"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/ji5snelo",
+      "id": "17",
+      "name": "Picture 1",
+      "bbox": [
+        1069.5,
+        52.33,
+        173.75,
+        45.52
+      ],
+      "contentType": "image/x-wmf",
+      "asset": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      },
+      "fillImage": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      }
+    }
+  ],
+  "composeRuns": []
+}

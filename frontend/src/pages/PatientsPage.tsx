@@ -4,8 +4,8 @@ import {
   Users, Search, FileText, Calendar, Plus, CheckCircle,
   Clock, BarChart2, Printer, Target, AlertCircle,
   RefreshCw, MessageCircle, Trash2, Pencil, X, AlertTriangle,
-  ChevronDown, ChevronUp, Filter, User, Mail, Check, Info, ShieldCheck,
-  Heart, Smile, Activity, Sparkles, Brain, Loader2, Link as LinkIcon
+  ChevronDown, ChevronUp, Filter, User, ShieldCheck,
+  Activity, Sparkles, Loader2, Link as LinkIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -173,6 +173,7 @@ export function PatientsPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadPatients(controller.signal);
     loadSentRequests(controller.signal);
     return () => controller.abort();
@@ -180,6 +181,7 @@ export function PatientsPage() {
 
   // Danışan değişince görevleri yükle, submission cache'i sıfırla
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!selectedPatient) { setTasks([]); return; }
     const controller = new AbortController();
 
@@ -197,7 +199,7 @@ export function PatientsPage() {
       .finally(() => { if (!controller.signal.aborted) setTasksLoading(false); });
 
     return () => controller.abort();
-  }, [selectedPatient?.childId]);
+  }, [selectedPatient]);
 
   // Görev genişletilince submission'ları lazy yükle
   const handleExpandTask = useCallback(async (taskId: string, taskStatus: string) => {

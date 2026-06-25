@@ -1,0 +1,1147 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/mlkjm1cf",
+    "id": "mlkjm1cf",
+    "slide": 6,
+    "layoutId": "/ppt/slideLayouts/slideLayout6.xml",
+    "layoutName": "Main",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Blue",
+    "colors": {
+      "accent1": "#3B9ED8",
+      "accent2": "#358EC2",
+      "accent3": "#2F7EAC",
+      "accent4": "#296E97",
+      "accent5": "#235E81",
+      "accent6": "#1D4F6C",
+      "dk1": "#656D78",
+      "lt1": "#FFFFFF",
+      "dk2": "#8496B0",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Custom 1",
+      "majorFont": {
+        "latinTypeface": "Source Sans Pro Black"
+      },
+      "minorFont": {
+        "latinTypeface": "Source Sans Pro"
+      }
+    },
+    "typefaces": [
+      "Source Sans Pro",
+      "Source Sans Pro Black"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout6.xml",
+      "name": "Main",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/38",
+          "id": "38",
+          "name": "Shape 2",
+          "bbox": [
+            0,
+            147.09,
+            1280,
+            574
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "fillColor": "rgba(123, 141, 179, 0.04)",
+          "lineColor": "rgba(235, 235, 235, 0.1)",
+          "lineWidth": 2.67
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/39",
+          "id": "39",
+          "name": "Shape 2711",
+          "bbox": [
+            63.8,
+            58.88,
+            29.33,
+            29.33
+          ],
+          "geometry": "custom",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 2,
+              "right": 2,
+              "bottom": 2,
+              "left": 2
+            }
+          },
+          "fillColor": "accent1",
+          "lineWidth": 1.33
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/40",
+          "id": "40",
+          "name": "Rounded Rectangle 39",
+          "bbox": [
+            1182.74,
+            652.43,
+            33.15,
+            33.15
+          ],
+          "geometry": "roundRect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle"
+          },
+          "lineColor": "accent1"
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/41",
+          "id": "41",
+          "name": "TextBox 40",
+          "bbox": [
+            1181.42,
+            654.62,
+            36.22,
+            29.08
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "wrap": "none",
+            "autoFit": "resizeShapeToFitText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›",
+                  "fontSize": 16,
+                  "typeface": "Source Sans Pro",
+                  "color": "accent1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/26",
+          "id": "26",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            116.99,
+            47.93,
+            933.8,
+            51.06
+          ],
+          "text": "Put your main text here",
+          "textPreview": "Put your main text here",
+          "resolvedTextStyle": {
+            "autoFit": "none"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your main text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your main text here"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/27",
+          "id": "27",
+          "name": "Text Placeholder 4",
+          "bbox": [
+            118.9,
+            98.99,
+            931.89,
+            28.28
+          ],
+          "text": "Put your text here",
+          "textPreview": "Put your text here",
+          "resolvedTextStyle": {
+            "autoFit": "shrinkText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your text here"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/2",
+          "id": "2",
+          "name": "Title Placeholder 1",
+          "bbox": [
+            88,
+            38.33,
+            1104,
+            139.17
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master title style",
+          "textPreview": "Click to edit Master title style",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master title style",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master title style"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/3",
+          "id": "3",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            88,
+            191.67,
+            1104,
+            456.83
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "resolvedTextStyle": {
+            "vertical": 1,
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/4",
+          "id": "4",
+          "name": "Date Placeholder 3",
+          "bbox": [
+            88,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "6/2/2026",
+          "textPreview": "6/2/2026",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6/2/2026",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "6/2/2026"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/5",
+          "id": "5",
+          "name": "Footer Placeholder 4",
+          "bbox": [
+            424,
+            667.33,
+            432,
+            38.33
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          }
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/6",
+          "id": "6",
+          "name": "Slide Number Placeholder 5",
+          "bbox": [
+            904,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/yhgn29gr",
+      "id": "15",
+      "name": "Text Placeholder 4",
+      "bbox": [
+        100.38,
+        47.35,
+        966.93,
+        51.06
+      ],
+      "text": "BÖLÜMLER & NOTLANDIRMA",
+      "textPreview": "BÖLÜMLER & NOTLANDIRMA",
+      "resolvedFontSize": 42.67,
+      "resolvedTextStyle": {
+        "vertical": 1,
+        "fontSize": 42.67,
+        "typeface": "Source Sans Pro Black",
+        "color": "tx1",
+        "alignment": "left",
+        "autoFit": "none",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          },
+          {
+            "index": 2,
+            "text": "BÖLÜMLER & NOTLANDIRMA"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "BÖLÜMLER & NOTLANDIRMA",
+          "runs": [
+            {
+              "index": 1,
+              "text": "BÖLÜMLER & NOTLANDIRMA"
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0,
+          "indent": 0,
+          "lineSpacingPercent": 90000,
+          "spaceBefore": 1000
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "table",
+      "scope": "slide",
+      "aid": "tb/ih4byhgn",
+      "id": "16",
+      "name": "Tabella 17",
+      "bbox": [
+        100.38,
+        179.57,
+        1037.64,
+        249.28
+      ],
+      "text": "N0 | SINAVDA SORUMLU OLACAĞINIZ BAŞLIKLAR | PUANLAMA\n1 | Proje Başlatma Belgesi | 20 puan\n2 | Proje Zaman Planı | 20 puan\n3 | Proje Maliyet Planı | 20 puan\n4 | Proje Kalite Planı | 20 puan\n5 | Proje Risk Planı | 20 puan",
+      "textPreview": "N0 | SINAVDA SORUMLU OLACAĞINIZ BAŞLIKLAR | PUANLAMA | 1 | Proje Başlatma Belgesi | 20 puan | 2 | Proje Zaman Planı | 20 puan | 3 | Proje...",
+      "rows": 6,
+      "cols": 3,
+      "cells": [
+        {
+          "index": 1,
+          "row": 1,
+          "column": 1,
+          "bbox": [
+            100.38,
+            179.57,
+            92.3,
+            63.97
+          ],
+          "text": "N0",
+          "textPreview": "N0",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "N0",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "N0",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "row": 1,
+          "column": 2,
+          "bbox": [
+            192.69,
+            179.57,
+            563.88,
+            63.97
+          ],
+          "text": "SINAVDA SORUMLU OLACAĞINIZ BAŞLIKLAR",
+          "textPreview": "SINAVDA SORUMLU OLACAĞINIZ BAŞLIKLAR",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "SINAVDA SORUMLU OLACAĞINIZ BAŞLIKLAR",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "SINAVDA SORUMLU OLACAĞINIZ BAŞLIKLAR",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "row": 1,
+          "column": 3,
+          "bbox": [
+            756.56,
+            179.57,
+            381.46,
+            63.97
+          ],
+          "text": "PUANLAMA",
+          "textPreview": "PUANLAMA",
+          "fillColor": "#FFC000",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "PUANLAMA",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "PUANLAMA",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "row": 2,
+          "column": 1,
+          "bbox": [
+            100.38,
+            243.54,
+            92.3,
+            37.06
+          ],
+          "text": "1",
+          "textPreview": "1",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "1",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "1",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "row": 2,
+          "column": 2,
+          "bbox": [
+            192.69,
+            243.54,
+            563.88,
+            37.06
+          ],
+          "text": "Proje Başlatma Belgesi",
+          "textPreview": "Proje Başlatma Belgesi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Başlatma Belgesi",
+              "lineSpacingPercent": 200000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje Başlatma Belgesi",
+                  "fontSize": 26.67,
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "row": 2,
+          "column": 3,
+          "bbox": [
+            756.56,
+            243.54,
+            381.46,
+            37.06
+          ],
+          "text": "20 puan",
+          "textPreview": "20 puan",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "20 puan",
+              "lineSpacingPercent": 200000,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "20 puan",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "row": 3,
+          "column": 1,
+          "bbox": [
+            100.38,
+            280.6,
+            92.3,
+            37.06
+          ],
+          "text": "2",
+          "textPreview": "2",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "2",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "2",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "row": 3,
+          "column": 2,
+          "bbox": [
+            192.69,
+            280.6,
+            563.88,
+            37.06
+          ],
+          "text": "Proje Zaman Planı",
+          "textPreview": "Proje Zaman Planı",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Zaman Planı",
+              "lineSpacingPercent": 200000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje ",
+                  "fontSize": 26.67,
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": "Zaman ",
+                  "fontSize": 26.67,
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Planı",
+                  "fontSize": 26.67,
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "row": 3,
+          "column": 3,
+          "bbox": [
+            756.56,
+            280.6,
+            381.46,
+            37.06
+          ],
+          "text": "20 puan",
+          "textPreview": "20 puan",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "20 puan",
+              "lineSpacingPercent": 200000,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "20 puan",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "row": 4,
+          "column": 1,
+          "bbox": [
+            100.38,
+            317.67,
+            92.3,
+            37.06
+          ],
+          "text": "3",
+          "textPreview": "3",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "3",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "3",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 11,
+          "row": 4,
+          "column": 2,
+          "bbox": [
+            192.69,
+            317.67,
+            563.88,
+            37.06
+          ],
+          "text": "Proje Maliyet Planı",
+          "textPreview": "Proje Maliyet Planı",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Maliyet Planı",
+              "lineSpacingPercent": 200000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje",
+                  "fontSize": 26.67,
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 26.67,
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Maliyet Planı",
+                  "fontSize": 26.67,
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 12,
+          "row": 4,
+          "column": 3,
+          "bbox": [
+            756.56,
+            317.67,
+            381.46,
+            37.06
+          ],
+          "text": "20 puan",
+          "textPreview": "20 puan",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "20 puan",
+              "lineSpacingPercent": 200000,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "20 puan",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 13,
+          "row": 5,
+          "column": 1,
+          "bbox": [
+            100.38,
+            354.73,
+            92.3,
+            37.06
+          ],
+          "text": "4",
+          "textPreview": "4",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "4",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "4",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 14,
+          "row": 5,
+          "column": 2,
+          "bbox": [
+            192.69,
+            354.73,
+            563.88,
+            37.06
+          ],
+          "text": "Proje Kalite Planı",
+          "textPreview": "Proje Kalite Planı",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Kalite Planı",
+              "lineSpacingPercent": 200000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje",
+                  "fontSize": 26.67,
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 26.67,
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Kalite Planı",
+                  "fontSize": 26.67,
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 15,
+          "row": 5,
+          "column": 3,
+          "bbox": [
+            756.56,
+            354.73,
+            381.46,
+            37.06
+          ],
+          "text": "20 puan",
+          "textPreview": "20 puan",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "20 puan",
+              "lineSpacingPercent": 200000,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "20 puan",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 16,
+          "row": 6,
+          "column": 1,
+          "bbox": [
+            100.38,
+            391.79,
+            92.3,
+            37.06
+          ],
+          "text": "5",
+          "textPreview": "5",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 17,
+          "row": 6,
+          "column": 2,
+          "bbox": [
+            192.69,
+            391.79,
+            563.88,
+            37.06
+          ],
+          "text": "Proje Risk Planı",
+          "textPreview": "Proje Risk Planı",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Risk Planı",
+              "lineSpacingPercent": 200000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje",
+                  "fontSize": 26.67,
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 26.67,
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Risk Planı",
+                  "fontSize": 26.67,
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 18,
+          "row": 6,
+          "column": 3,
+          "bbox": [
+            756.56,
+            391.79,
+            381.46,
+            37.06
+          ],
+          "text": "20 puan",
+          "textPreview": "20 puan",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "20 puan",
+              "lineSpacingPercent": 200000,
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "20 puan",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/r65wjudg",
+      "id": "17",
+      "name": "Picture 1",
+      "bbox": [
+        1069.5,
+        52.33,
+        173.75,
+        45.52
+      ],
+      "contentType": "image/x-wmf",
+      "asset": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      },
+      "fillImage": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      }
+    }
+  ],
+  "composeRuns": []
+}

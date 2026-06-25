@@ -84,6 +84,7 @@ export function NotesPage() {
 
   useEffect(() => {
     if (notes.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDemoMode(false);
     }
   }, [notes]);
@@ -217,31 +218,31 @@ export function NotesPage() {
     <div className="space-y-6">
       <PageOnboarding
         pageId="notes"
-        title="Gelişim Notlarına Hoş Geldiniz"
-        description="Çocuğunuzun günlük gelişimini, yeni kelimelerini ve sosyal becerilerini burada not edebilirsiniz."
+        title="Notlarınızı Buraya Yazın"
+        description="Çocuğunuzla ilgili aklınıza gelen her şeyi buraya yazabilirsiniz. Uzun yazmak zorunda değilsiniz, tek cümle bile yeterli."
         steps={[
           {
             icon: <Plus size={20} />,
             title: "Not Ekle",
-            description: "Hızlı şablonları kullanarak veya kendi cümlelerinizle gözlemlerinizi kaydedin."
+            description: "Ne gördüğünüzü, ne hissettiğinizi kısaca yazın. Hazır şablonlar da var, onları da kullanabilirsiniz."
           },
           {
             icon: <Smile size={20} />,
-            title: "Ruh Hali",
-            description: "Günün nasıl geçtiğini ruh hali emojileriyle takip edin."
+            title: "Ruh Halini İşaretle",
+            description: "Bugün nasıl geçti? Bir emoji seçerek günü kayıt altına alın."
           },
           {
             icon: <ImageIcon size={20} />,
             title: "Fotoğraf Ekle",
-            description: "Özel anları ve başarıları fotoğraflarla ölümsüzleştirin."
+            description: "Güzel bir an olduysa fotoğraf da ekleyebilirsiniz."
           }
         ]}
       />
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gelişim Notları</h1>
-          <p className="text-gray-500 mt-1">Çocuğunuzun gelişimiyle ilgili gözlemleriniz</p>
+          <h1 className="text-2xl font-bold text-gray-900">Notlarım</h1>
+          <p className="text-gray-500 mt-1">Çocuğunuzla ilgili gözlemleriniz ve notlarınız</p>
         </div>
         <Button onClick={() => setShowModal(true)} disabled={children.length === 0}>
           <Plus size={18} className="mr-2" /> Not Ekle

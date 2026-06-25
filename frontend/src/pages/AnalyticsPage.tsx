@@ -91,11 +91,11 @@ function ProgressMetric({ label, value, detail, color }: { label: string; value:
   return (
     <div>
       <div className="flex items-center justify-between gap-3 text-xs">
-        <span className="font-medium text-gray-600">{label}</span>
-        <span className="text-gray-400">{detail}</span>
+        <span className="font-semibold text-slate-700">{label}</span>
+        <span className="text-slate-400 font-medium">{detail}</span>
       </div>
-      <div className="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+      <div className="mt-2.5 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+        <div className={`h-full rounded-full ${color} transition-all duration-500`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
       </div>
     </div>
   );
@@ -181,6 +181,7 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
   const { from, to } = dateRangeOf(rangeDays);
 
   const [demoMode, setDemoMode] = useState(false);
+  const [activeChartTab, setActiveChartTab] = useState<'daily' | 'development' | 'clinical'>('daily');
 
   const { data: moodData = [] } = useQuery({
     queryKey: ['mood-range', child.id, from, to],
@@ -205,6 +206,7 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
 
   useEffect(() => {
     if (moodData.length > 0 || sleepData.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDemoMode(false);
     }
   }, [moodData, sleepData]);
@@ -384,7 +386,7 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
     !effectiveSleepData.length && { to: '/gunluk-takip', icon: Moon, label: 'Uyku kaydı ekle', detail: 'Uyku grafiğini düzenli veriyle güçlendirin.' },
     !effectiveNotes.length && { to: '/notlar', icon: BookOpen, label: 'Gelişim notu yaz', detail: 'Gözlemleri kısa notlarla biriktirin.' },
     !effectiveMilestones.length && { to: '/tedavi', icon: Award, label: 'Kilometre taşı ekle', detail: 'Yeni becerileri gelişim akışına bağlayın.' },
-    !screeningResults.length && { to: '/tarama', icon: ClipboardList, label: 'Tarama başlat', detail: 'Dönemsel değerlendirme verisi oluşturun.' },
+    !screeningResults.length && { to: '/cocuklarim?view=screening', icon: ClipboardList, label: 'Tarama başlat', detail: 'Dönemsel değerlendirme verisi oluşturun.' },
   ].filter(Boolean).slice(0, 3) as Array<{ to: string; icon: ElementType; label: string; detail: string }>;
   const latestMoodDate = latestDateLabel(effectiveMoodData.map(e => e.entryDate));
   const latestSleepDate = latestDateLabel(effectiveSleepData.map(e => e.sleepDate));
@@ -422,55 +424,74 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
       )}
 
       {!compact && (
-        <div className="grid gap-4 xl:grid-cols-[1fr_1.15fr_1fr]">
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Genel durum</p>
-                <h2 className="mt-1 text-lg font-bold text-gray-950">Takip özeti</h2>
+        <div className="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+          {/* Takip Özeti */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm flex flex-col justify-between min-h-[260px]">
+            <div>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Genel Durum</p>
+                  <h2 className="mt-1 text-lg font-bold text-gray-950">Takip Özeti</h2>
+                </div>
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-semibold whitespace-nowrap ${scoreMeta.className}`}>
+                  {scoreMeta.label}
+                </span>
               </div>
-              <span className={`inline-flex items-center px-3 py-1.5 rounded-full border text-xs font-semibold whitespace-nowrap ${scoreMeta.className}`}>
-                {scoreMeta.label}
-              </span>
-            </div>
 
-            <div className="mt-5 flex items-center gap-5">
-              <div
-                className="w-24 h-24 rounded-full p-2 shrink-0"
-                style={{ background: `conic-gradient(${scoreMeta.color} ${wellbeingScore * 3.6}deg, #eef2f7 0deg)` }}
-              >
-                <div className="w-full h-full rounded-full bg-white flex flex-col items-center justify-center shadow-inner">
-                  <span className="text-2xl font-bold text-gray-950">{wellbeingScore}</span>
-                  <span className="text-[11px] font-medium text-gray-400">/100</span>
+              <div className="mt-4 flex items-center gap-5">
+                <div className="relative w-20 h-20 shrink-0 flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" stroke="#f1f5f9" strokeWidth="8" fill="transparent" />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      stroke={scoreMeta.color}
+                      strokeWidth="8"
+                      fill="transparent"
+                      strokeDasharray="251.2"
+                      strokeDashoffset={251.2 - (251.2 * wellbeingScore) / 100}
+                      strokeLinecap="round"
+                      className="transition-all duration-500 ease-out"
+                    />
+                  </svg>
+                  <div className="absolute flex flex-col items-center justify-center">
+                    <span className="text-xl font-extrabold text-gray-950 leading-none">{wellbeingScore}</span>
+                    <span className="text-[9px] font-bold text-gray-400 mt-0.5">/100</span>
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-gray-900">Son {rangeDays} gün</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-gray-500">Kayıt yoğunluğu ve temel göstergelerden hesaplandı.</p>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-500 border border-slate-100">{dataTypesWithRecords}/6 alan aktif</span>
+                    <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-500 border border-slate-100">{rangeDays} günlük görünüm</span>
+                  </div>
                 </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900">Son {rangeDays} gün</p>
-                <p className="mt-1 text-xs leading-5 text-gray-500">Kayıt yoğunluğu ve temel göstergelerden hesaplandı.</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-500">{dataTypesWithRecords}/6 alan aktif</span>
-                  <span className="rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-500">{rangeDays} günlük görünüm</span>
-                </div>
-              </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-3 gap-2">
+            <div className="mt-5 grid grid-cols-3 gap-2 border-t border-gray-100/70 pt-4">
               {[
-                { label: 'Ruh hali', value: latestMoodDate },
-                { label: 'Uyku', value: latestSleepDate },
-                { label: 'Not', value: latestNoteDate },
+                { label: 'Ruh Hali', value: latestMoodDate, dotColor: 'bg-yellow-500' },
+                { label: 'Uyku', value: latestSleepDate, dotColor: 'bg-indigo-500' },
+                { label: 'Notlar', value: latestNoteDate, dotColor: 'bg-primary-500' },
               ].map(item => (
-                <div key={item.label} className="rounded-xl bg-gray-50 px-3 py-2 min-w-0">
-                  <p className="text-[11px] font-medium text-gray-400 truncate">{item.label}</p>
-                  <p className="mt-1 text-xs font-semibold leading-tight text-gray-800 truncate">{item.value}</p>
+                <div key={item.label} className="min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full ${item.dotColor}`} />
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider truncate">{item.label}</p>
+                  </div>
+                  <p className="mt-1.5 text-xs font-bold text-gray-700 truncate">{item.value}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
+          {/* Takip Kalitesi */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm flex flex-col justify-between min-h-[260px]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0">
                 <Activity size={18} />
               </div>
               <div>
@@ -478,16 +499,17 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
                 <p className="text-xs text-gray-400">{dataTypesWithRecords}/6 veri alanı dolu</p>
               </div>
             </div>
-            <div className="space-y-5">
+            <div className="space-y-4 my-auto">
               <ProgressMetric label="Ruh hali" value={moodScore} detail={Number.isFinite(avgMoodNumber) ? `${avgMood}/5` : 'Veri yok'} color="bg-yellow-500" />
               <ProgressMetric label="Uyku" value={sleepScore} detail={avgSleepHours} color="bg-indigo-500" />
               <ProgressMetric label="Aktivite" value={activityScore} detail={`${notes.length + milestones.length + completedAppointments + screeningResults.length} kayıt`} color="bg-emerald-500" />
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center">
+          {/* Sıradaki İyi Adım */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm flex flex-col justify-between min-h-[260px]">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
                 <Target size={18} />
               </div>
               <div>
@@ -496,28 +518,28 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
               </div>
             </div>
             {actionItems.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-2 flex-1 flex flex-col justify-center">
                 {actionItems.map(item => (
                   <Link
                     key={item.label}
                     to={item.to}
-                    className="group flex items-center gap-3 rounded-xl bg-gray-50 px-3 py-3 hover:bg-primary-50/70 transition-colors"
+                    className="group flex items-center gap-3 rounded-xl bg-gray-50/50 border border-gray-100/50 px-3 py-2 hover:bg-primary-50/50 hover:border-primary-100 transition-all duration-150"
                   >
-                    <div className="w-9 h-9 rounded-xl bg-white text-gray-500 flex items-center justify-center group-hover:text-primary-600 shrink-0">
-                      <item.icon size={16} />
+                    <div className="w-8 h-8 rounded-lg bg-white text-gray-500 flex items-center justify-center group-hover:text-primary-600 shrink-0 border border-gray-100/60 shadow-sm">
+                      <item.icon size={15} />
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-800">{item.label}</p>
-                      <p className="text-xs text-gray-400 truncate">{item.detail}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-gray-800">{item.label}</p>
+                      <p className="text-[10px] text-gray-400 truncate mt-0.5">{item.detail}</p>
                     </div>
-                    <ArrowRight size={15} className="ml-auto text-gray-300 group-hover:text-primary-500 shrink-0" />
+                    <ArrowRight size={14} className="ml-auto text-gray-350 group-hover:text-primary-500 shrink-0 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 ))}
               </div>
             ) : (
-              <div className="rounded-xl bg-emerald-50 px-3 py-3">
-                <p className="text-sm font-semibold text-emerald-800">Veri kapsamı iyi görünüyor.</p>
-                <p className="mt-1 text-xs leading-5 text-emerald-700">Düzeni koruyarak haftalık karşılaştırmaları takip edebilirsiniz.</p>
+              <div className="rounded-xl bg-emerald-50/50 border border-emerald-100/50 px-4 py-4 my-auto">
+                <p className="text-xs font-bold text-emerald-800">Veri kapsamı iyi görünüyor.</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-emerald-700">Düzeni koruyarak haftalık karşılaştırmaları takip edebilirsiniz.</p>
               </div>
             )}
           </div>
@@ -525,120 +547,134 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
       )}
 
       {/* AI Analiz Paneli */}
-      <div className="bg-gradient-to-br from-indigo-50 via-white to-sky-50 border border-indigo-100 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-5 space-y-4">
-          {/* Başlık */}
-          <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="bg-gradient-to-br from-indigo-50/70 via-white to-sky-50/50 border border-indigo-100/80 rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-5">
+          {/* Header */}
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-4 border-b border-indigo-100/50">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center shadow-md shadow-indigo-200">
                 <Brain size={17} />
               </div>
               <div>
-                <p className="text-sm font-bold text-indigo-900">Yapay Zeka Analisti</p>
-                <p className="text-xs text-indigo-400">Gemini ile güçlendirilmiş</p>
+                <h3 className="text-sm font-bold text-indigo-900">Yapay Zeka Analisti</h3>
+                <p className="text-xs text-indigo-400">Gemini ile güçlendirilmiş gelişim analizi</p>
               </div>
             </div>
             {analysisTimestamp && (
-              <span className="text-xs text-indigo-400 bg-white border border-indigo-100 rounded-full px-2.5 py-1">
+              <span className="text-xs text-indigo-500 bg-white border border-indigo-100/80 rounded-full px-2.5 py-1 font-semibold">
                 Son analiz: {analysisTimestamp}
               </span>
             )}
           </div>
 
-          {/* Analiz tipi seçici */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {ANALYSIS_TYPES.map(opt => {
-              const Icon = opt.icon;
-              const active = analysisType === opt.type;
-              return (
-                <button
-                  key={opt.type}
-                  onClick={() => { setAnalysisType(opt.type); setAiAnalysis(null); }}
-                  className={`flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                    active
-                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-200'
-                      : 'bg-white border-gray-100 text-gray-600 hover:border-indigo-200 hover:bg-indigo-50/50'
-                  }`}
-                >
-                  <Icon size={15} className={active ? 'text-white' : 'text-indigo-400'} />
-                  <span className={`text-xs font-semibold ${active ? 'text-white' : 'text-gray-800'}`}>{opt.label}</span>
-                  <span className={`text-[10px] leading-tight ${active ? 'text-indigo-200' : 'text-gray-400'}`}>{opt.desc}</span>
-                </button>
-              );
-            })}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-4">
+            {/* Left Controls & Insights */}
+            <div className="lg:col-span-5 space-y-4">
+              <div>
+                <p className="text-xs font-bold text-indigo-900/60 uppercase tracking-wider mb-2">Analiz Türü</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {ANALYSIS_TYPES.map(opt => {
+                    const Icon = opt.icon;
+                    const active = analysisType === opt.type;
+                    return (
+                      <button
+                        key={opt.type}
+                        onClick={() => { setAnalysisType(opt.type); setAiAnalysis(null); }}
+                        className={`flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all duration-150 cursor-pointer ${
+                          active
+                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100'
+                            : 'bg-white border-gray-100 text-gray-600 hover:border-indigo-200 hover:bg-indigo-50/30'
+                        }`}
+                      >
+                        <Icon size={14} className={active ? 'text-white' : 'text-indigo-500'} />
+                        <span className={`text-xs font-bold ${active ? 'text-white' : 'text-gray-800'}`}>{opt.label}</span>
+                        <span className={`text-[9px] leading-tight ${active ? 'text-indigo-200' : 'text-gray-400'}`}>{opt.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                onClick={handleAiAnalysis}
+                disabled={aiStreaming || aiLoading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold transition-all duration-150 shadow-md shadow-indigo-600/10 cursor-pointer active:scale-[0.98]"
+              >
+                {(aiStreaming || aiLoading) ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Analiz ediliyor…
+                  </>
+                ) : (
+                  <>
+                    <Lightbulb size={15} />
+                    {ANALYSIS_TYPES.find(t => t.type === analysisType)?.label} Analizini Başlat
+                  </>
+                )}
+              </button>
+
+              {/* Hızlı içgörüler */}
+              {insights.length > 0 && (
+                <div className="pt-2">
+                  <p className="text-xs font-bold text-indigo-900/60 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Lightbulb size={13} className="text-indigo-500" /> Otomatik Tespitler
+                  </p>
+                  <ul className="space-y-1.5">
+                    {insights.map((ins, i) => (
+                      <li key={i} className="flex items-start gap-2 rounded-xl bg-white/60 border border-white/40 p-2.5 text-[11px] leading-normal text-indigo-950 font-medium">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                        <span>{ins}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Right Results Pane */}
+            <div className="lg:col-span-7 flex flex-col">
+              {aiAnalysis !== null ? (
+                <div className="bg-white rounded-xl border border-indigo-100 shadow-sm flex flex-col flex-1 min-h-[250px]">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+                    <span className="text-xs font-bold text-indigo-600">
+                      {ANALYSIS_TYPES.find(t => t.type === analysisType)?.label} Sonucu
+                    </span>
+                    {aiAnalysis && !aiStreaming && (
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(aiAnalysis).then(() => {
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          });
+                        }}
+                        className="flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                      >
+                        {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                        {copied ? 'Kopyalandı' : 'Kopyala'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="p-4 flex-1 overflow-y-auto max-h-[350px] leading-relaxed text-xs text-slate-700">
+                    {renderMarkdown(aiAnalysis)}
+                    {aiStreaming && (
+                      <span className="inline-block w-0.5 h-4 bg-indigo-500 ml-0.5 animate-pulse align-middle" />
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="border border-dashed border-indigo-100 rounded-xl flex flex-col items-center justify-center p-8 text-center flex-1 min-h-[220px] bg-white/20">
+                  <Brain className="text-indigo-300 mb-3 animate-pulse-slow" size={32} />
+                  <p className="text-sm font-semibold text-indigo-900">Analiz Raporu Hazır Değil</p>
+                  <p className="text-xs text-indigo-400 mt-1 max-w-sm">Sol taraftan analiz türünü seçip "Analizi Başlat" butonuna tıklayarak akıllı çıkarımları görebilirsiniz.</p>
+                </div>
+              )}
+            </div>
           </div>
-
-          {/* Analiz başlat butonu */}
-          <button
-            onClick={handleAiAnalysis}
-            disabled={aiStreaming || aiLoading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold transition-colors shadow-sm cursor-pointer"
-          >
-            {(aiStreaming || aiLoading) ? (
-              <>
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Analiz ediliyor…
-              </>
-            ) : (
-              <>
-                <Lightbulb size={15} />
-                {ANALYSIS_TYPES.find(t => t.type === analysisType)?.label} Analizini Başlat
-              </>
-            )}
-          </button>
-
-          {/* Analiz sonucu */}
-          {aiAnalysis !== null && (
-            <div className="bg-white rounded-xl border border-indigo-100 shadow-sm">
-              <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-gray-50">
-                <span className="text-xs font-semibold text-indigo-600">
-                  {ANALYSIS_TYPES.find(t => t.type === analysisType)?.label} Sonucu
-                </span>
-                {aiAnalysis && !aiStreaming && (
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(aiAnalysis).then(() => {
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      });
-                    }}
-                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer"
-                  >
-                    {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-                    {copied ? 'Kopyalandı' : 'Kopyala'}
-                  </button>
-                )}
-              </div>
-              <div className="p-4 min-h-[60px]">
-                {renderMarkdown(aiAnalysis)}
-                {aiStreaming && (
-                  <span className="inline-block w-0.5 h-4 bg-indigo-500 ml-0.5 animate-pulse align-middle" />
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Hızlı içgörüler */}
-          {insights.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-indigo-500 mb-2 flex items-center gap-1.5">
-                <Lightbulb size={12} /> Otomatik Tespitler
-              </p>
-              <ul className="grid gap-2 md:grid-cols-2">
-                {insights.map((ins, i) => (
-                  <li key={i} className="flex items-start gap-2 rounded-xl bg-white/70 border border-white px-3 py-2 text-sm leading-6 text-indigo-950">
-                    <span className="mt-2.5 w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                    {ins}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </div>
 
       {/* stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard icon={Smile} label={`Ort. Ruh Hali (${rangeDays}g)`} value={avgMood} color="bg-yellow-500" tone="hover:border-yellow-100" />
         <StatCard icon={Moon} label={`Ort. Uyku (${rangeDays}g)`} value={avgSleepHours} color="bg-indigo-500" tone="hover:border-indigo-100" />
         <StatCard icon={Award} label="Kilometre Taşı" value={effectiveMilestones.length} color="bg-emerald-500" tone="hover:border-emerald-100" />
@@ -647,223 +683,275 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
         <StatCard icon={ClipboardList} label="Tarama Sayısı" value={screeningResults.length} color="bg-rose-500" tone="hover:border-rose-100" />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        {/* mood chart */}
-        <ChartCard icon={Smile} iconClass="text-yellow-500" title={`Ruh Hali Trendi (Son ${rangeDays} Gün)`}>
-          {moodChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={moodChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 10 }}
-                  tickFormatter={v => MOOD_EMOJI[v] || String(v)} />
-                <Tooltip
-                  formatter={(value) => {
-                    const v = Number(value ?? 0);
-                    return [`${MOOD_EMOJI[v]} ${v}/5`, 'Ruh Hali'];
-                  }}
-                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                />
-                <Line type="monotone" dataKey="ruhHali" stroke="#eab308" strokeWidth={2}
-                  dot={{ fill: '#eab308', r: 4 }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart>
-              <div className="flex flex-col items-center gap-1.5">
-                <span>Henüz ruh hali verisi yok</span>
-                <button
-                  type="button"
-                  onClick={() => setDemoMode(true)}
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
-                >
-                  Örnek Grafik Verisini Göster
-                </button>
-              </div>
-            </EmptyChart>
-          )}
-        </ChartCard>
-
-        {/* sleep chart */}
-        <ChartCard icon={Moon} iconClass="text-indigo-500" title={`Uyku Düzeni (Son ${rangeDays} Gün)`}>
-          {sleepChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={sleepChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip
-                  formatter={(value, name) => {
-                    const v = Number(value ?? 0);
-                    return [
-                      name === 'süre' ? `${v} saat` : `${v}/5 ★`,
-                      name === 'süre' ? 'Süre' : 'Kalite',
-                    ];
-                  }}
-                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                />
-                <Bar dataKey="süre" fill="#818cf8" radius={[4, 4, 0, 0]} name="süre" />
-                <Bar dataKey="kalite" fill="#6ee7b7" radius={[4, 4, 0, 0]} name="kalite" />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart>
-              <div className="flex flex-col items-center gap-1.5">
-                <span>Henüz uyku verisi yok</span>
-                <button
-                  type="button"
-                  onClick={() => setDemoMode(true)}
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
-                >
-                  Örnek Grafik Verisini Göster
-                </button>
-              </div>
-            </EmptyChart>
-          )}
-        </ChartCard>
-
-        {/* milestones radar */}
-        <ChartCard icon={Award} iconClass="text-emerald-500" title="Kilometre Taşları (Kategoriye Göre)">
-          {radarData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <RadarChart data={radarData}>
-                <PolarGrid stroke="#f3f4f6" />
-                <PolarAngleAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <PolarRadiusAxis tick={{ fontSize: 9 }} />
-                <Radar name="Kilometre Taşı" dataKey="value" stroke="#10b981" fill="#10b981" fillOpacity={0.25} />
-              </RadarChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart>Henüz kilometre taşı yok</EmptyChart>
-          )}
-        </ChartCard>
-
-        {/* milestone timeline */}
-        <ChartCard icon={Award} iconClass="text-emerald-500" title="Kilometre Taşı Zaman Çizgisi">
-          {milestoneTimelineData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={milestoneTimelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="ay" tick={{ fontSize: 10 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value) => [Number(value ?? 0), 'Kilometre Taşı']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="taş" fill="#10b981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart>Henüz kilometre taşı kaydedilmemiş</EmptyChart>
-          )}
-        </ChartCard>
-
-        {/* notes bar */}
-        <ChartCard icon={BookOpen} iconClass="text-primary-500" title="Not Aktivitesi (Aylık)">
-          {notesChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={notesChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="ay" tick={{ fontSize: 10 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value) => [Number(value ?? 0), 'Not']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="not" fill="#7c3aed" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart>Henüz not girilmemiş</EmptyChart>
-          )}
-        </ChartCard>
-
-        {/* appointment + screening */}
-        <ChartCard icon={Calendar} iconClass="text-teal-500" title="Aylık Randevu Aktivitesi">
-          {appointmentChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={appointmentChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="ay" tick={{ fontSize: 10 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value) => [Number(value ?? 0), 'Randevu']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="randevu" fill="#14b8a6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart>Henüz randevu verisi yok</EmptyChart>
-          )}
-          {appointments.length > 0 && (
-            <div className="flex gap-4 mt-3 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />
-                {completedAppointments} tamamlandı
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-                {pendingAppointments} aktif
-              </span>
-            </div>
-          )}
-        </ChartCard>
-
-        <ChartCard icon={ClipboardList} iconClass="text-rose-500" title="Tarama Skoru Trendi">
-          {screeningChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={screeningChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="tarih" tick={{ fontSize: 10 }} />
-                <YAxis domain={[0, 20]} ticks={[0, 5, 10, 15, 20]} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value) => [`${Number(value ?? 0)}/20`, 'Skor']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Line type="monotone" dataKey="skor" stroke="#f43f5e" strokeWidth={2}
-                  dot={{ fill: '#f43f5e', r: 4 }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart>Henüz tarama verisi yok</EmptyChart>
-          )}
-        </ChartCard>
-
-        {/* ABC Davranış Kategorileri */}
-        <ChartCard icon={Zap} iconClass="text-amber-500" title="Davranış Kategorileri (Sıklık & Yoğunluk)" className="xl:col-span-2">
-          {abcCategoryData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={abcCategoryData} layout="vertical" margin={{ left: 8, right: 24 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
-                <YAxis dataKey="kategori" type="category" tick={{ fontSize: 10 }} width={90} />
-                <Tooltip
-                  formatter={(value, name) => [
-                    name === 'adet' ? `${value} kayıt` : `${value}/5 ort. yoğunluk`,
-                    name === 'adet' ? 'Sıklık' : 'Yoğunluk',
-                  ]}
-                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                />
-                <Bar dataKey="adet" name="adet" radius={[0, 4, 4, 0]}>
-                  {abcCategoryData.map((_, i) => (
-                    <Cell key={i} fill={ABC_COLORS[i % ABC_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart>Davranış günlüğünde henüz kayıt yok</EmptyChart>
-          )}
-        </ChartCard>
+      {/* Grafik Sekmeleri */}
+      <div className="border-b border-gray-200/50 pb-4 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { id: 'daily', label: 'Günlük Gözlemler', desc: 'Ruh hali, uyku ve davranışlar', icon: Activity, activeBg: 'from-blue-500 to-indigo-650 shadow-blue-105' },
+            { id: 'development', label: 'Gelişim & Başarılar', desc: 'Kilometre taşları ve notlar', icon: Award, activeBg: 'from-emerald-500 to-teal-600 shadow-emerald-105' },
+            { id: 'clinical', label: 'Klinik ve Taramalar', desc: 'Randevular ve test skorları', icon: ClipboardList, activeBg: 'from-rose-500 to-rose-600 shadow-rose-105' },
+          ].map(tab => {
+            const Icon = tab.icon;
+            const active = activeChartTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveChartTab(tab.id as 'daily' | 'development' | 'clinical')}
+                className={`relative flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5 ${
+                  active
+                    ? `bg-gradient-to-r ${tab.activeBg} border-transparent text-white shadow-lg`
+                    : 'bg-white dark:bg-gray-900 border-slate-200/70 hover:border-slate-300 hover:bg-slate-50/50 text-slate-650 dark:text-slate-400'
+                }`}
+              >
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  active ? 'bg-white/20 text-white' : 'bg-slate-100/70 dark:bg-gray-800 text-slate-500'
+                }`}>
+                  <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
+                </div>
+                <div className="min-w-0">
+                  <div className={`text-xs font-bold leading-tight ${active ? 'text-white' : 'text-slate-800 dark:text-slate-200'}`}>
+                    {tab.label}
+                  </div>
+                  <div className={`text-[10px] leading-snug mt-0.5 font-semibold ${active ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
+                    {tab.desc}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* milestone list */}
-      {milestones.length > 0 && (
-        <ChartCard icon={Award} iconClass="text-emerald-500" title="Son Kilometre Taşları" className="min-h-0">
-          <div className="space-y-2">
-            {milestones.slice(0, 5).map(m => (
-              <div key={m.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{m.title}</p>
-                  {m.category && <span className="text-xs text-gray-400">{m.category}</span>}
+      {/* Grafikler Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        {activeChartTab === 'daily' && (
+          <>
+            {/* mood chart */}
+            <ChartCard icon={Smile} iconClass="text-yellow-500" title={`Ruh Hali Trendi (Son ${rangeDays} Gün)`}>
+              {moodChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={moodChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                    <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 10 }}
+                      tickFormatter={v => MOOD_EMOJI[v] || String(v)} />
+                    <Tooltip
+                      formatter={(value) => {
+                        const v = Number(value ?? 0);
+                        return [`${MOOD_EMOJI[v]} ${v}/5`, 'Ruh Hali'];
+                      }}
+                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                    />
+                    <Line type="monotone" dataKey="ruhHali" stroke="#eab308" strokeWidth={2}
+                      dot={{ fill: '#eab308', r: 4 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <span>Henüz ruh hali verisi yok</span>
+                    <button
+                      type="button"
+                      onClick={() => setDemoMode(true)}
+                      className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                    >
+                      Örnek Grafik Verisini Göster
+                    </button>
+                  </div>
+                </EmptyChart>
+              )}
+            </ChartCard>
+
+            {/* sleep chart */}
+            <ChartCard icon={Moon} iconClass="text-indigo-500" title={`Uyku Düzeni (Son ${rangeDays} Gün)`}>
+              {sleepChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={sleepChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} />
+                    <Tooltip
+                      formatter={(value, name) => {
+                        const v = Number(value ?? 0);
+                        return [
+                          name === 'süre' ? `${v} saat` : `${v}/5 ★`,
+                          name === 'süre' ? 'Süre' : 'Kalite',
+                        ];
+                      }}
+                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                    />
+                    <Bar dataKey="süre" fill="#818cf8" radius={[4, 4, 0, 0]} name="süre" />
+                    <Bar dataKey="kalite" fill="#6ee7b7" radius={[4, 4, 0, 0]} name="kalite" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <span>Henüz uyku verisi yok</span>
+                    <button
+                      type="button"
+                      onClick={() => setDemoMode(true)}
+                      className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                    >
+                      Örnek Grafik Verisini Göster
+                    </button>
+                  </div>
+                </EmptyChart>
+              )}
+            </ChartCard>
+
+            {/* ABC Davranış Kategorileri */}
+            <ChartCard icon={Zap} iconClass="text-amber-500" title="Davranış Kategorileri (Sıklık & Yoğunluk)" className="xl:col-span-2">
+              {abcCategoryData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={abcCategoryData} layout="vertical" margin={{ left: 8, right: 24 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
+                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                    <YAxis dataKey="kategori" type="category" tick={{ fontSize: 10 }} width={90} />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        name === 'adet' ? `${value} kayıt` : `${value}/5 ort. yoğunluk`,
+                        name === 'adet' ? 'Sıklık' : 'Yoğunluk',
+                      ]}
+                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                    />
+                    <Bar dataKey="adet" name="adet" radius={[0, 4, 4, 0]}>
+                      {abcCategoryData.map((_, i) => (
+                        <Cell key={i} fill={ABC_COLORS[i % ABC_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart>Davranış günlüğünde henüz kayıt yok</EmptyChart>
+              )}
+            </ChartCard>
+          </>
+        )}
+
+        {activeChartTab === 'development' && (
+          <>
+            {/* milestones radar */}
+            <ChartCard icon={Award} iconClass="text-emerald-500" title="Kilometre Taşları (Kategoriye Göre)">
+              {radarData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke="#f3f4f6" />
+                    <PolarAngleAxis dataKey="name" tick={{ fontSize: 10 }} />
+                    <PolarRadiusAxis tick={{ fontSize: 9 }} />
+                    <Radar name="Kilometre Taşı" dataKey="value" stroke="#10b981" fill="#10b981" fillOpacity={0.25} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart>Henüz kilometre taşı yok</EmptyChart>
+              )}
+            </ChartCard>
+
+            {/* milestone timeline */}
+            <ChartCard icon={Award} iconClass="text-emerald-500" title="Kilometre Taşı Zaman Çizgisi">
+              {milestoneTimelineData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={milestoneTimelineData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="ay" tick={{ fontSize: 10 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                    <Tooltip formatter={(value) => [Number(value ?? 0), 'Kilometre Taşı']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    <Bar dataKey="taş" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart>Henüz kilometre taşı kaydedilmemiş</EmptyChart>
+              )}
+            </ChartCard>
+
+            {/* notes bar */}
+            <ChartCard icon={BookOpen} iconClass="text-primary-500" title="Not Aktivitesi (Aylık)" className="xl:col-span-2">
+              {notesChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={notesChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="ay" tick={{ fontSize: 10 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                    <Tooltip formatter={(value) => [Number(value ?? 0), 'Not']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    <Bar dataKey="not" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart>Henüz not girilmemiş</EmptyChart>
+              )}
+            </ChartCard>
+
+            {/* milestone list */}
+            {milestones.length > 0 && (
+              <ChartCard icon={Award} iconClass="text-emerald-500" title="Son Kilometre Taşları" className="xl:col-span-2 min-h-0">
+                <div className="space-y-2">
+                  {milestones.slice(0, 5).map(m => (
+                    <div key={m.id} className="flex items-center justify-between py-2 border-b border-gray-55 last:border-0">
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{m.title}</p>
+                        {m.category && <span className="text-xs text-gray-400">{m.category}</span>}
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {new Date(m.achievedDate).toLocaleDateString('tr-TR')}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <span className="text-xs text-gray-400">
-                  {new Date(m.achievedDate).toLocaleDateString('tr-TR')}
-                </span>
-              </div>
-            ))}
-          </div>
-        </ChartCard>
-      )}
+              </ChartCard>
+            )}
+          </>
+        )}
+
+        {activeChartTab === 'clinical' && (
+          <>
+            {/* appointment + screening */}
+            <ChartCard icon={Calendar} iconClass="text-teal-500" title="Aylık Randevu Aktivitesi">
+              {appointmentChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={appointmentChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="ay" tick={{ fontSize: 10 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                    <Tooltip formatter={(value) => [Number(value ?? 0), 'Randevu']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    <Bar dataKey="randevu" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart>Henüz randevu verisi yok</EmptyChart>
+              )}
+              {appointments.length > 0 && (
+                <div className="flex gap-4 mt-3 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />
+                    {completedAppointments} tamamlandı
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+                    {pendingAppointments} aktif
+                  </span>
+                </div>
+              )}
+            </ChartCard>
+
+            <ChartCard icon={ClipboardList} iconClass="text-rose-500" title="Tarama Skoru Trendi">
+              {screeningChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={screeningChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="tarih" tick={{ fontSize: 10 }} />
+                    <YAxis domain={[0, 20]} ticks={[0, 5, 10, 15, 20]} tick={{ fontSize: 10 }} />
+                    <Tooltip formatter={(value) => [`${Number(value ?? 0)}/20`, 'Skor']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    <Line type="monotone" dataKey="skor" stroke="#f43f5e" strokeWidth={2}
+                      dot={{ fill: '#f43f5e', r: 4 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart>Henüz tarama verisi yok</EmptyChart>
+              )}
+            </ChartCard>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -932,8 +1020,21 @@ export function AnalyticsPage() {
             <TrendingUp size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold leading-tight text-gray-950">Gelişim Paneli</h1>
-            <p className="text-sm text-gray-500 mt-1">Ruh hali, uyku, not, randevu ve tarama verileri tek ekranda.</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold leading-tight text-gray-950">Nasıl İlerliyoruz?</h1>
+              {activeChild && !compareMode && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-400 text-xs font-bold ring-1 ring-primary-100/50 dark:ring-primary-900/30">
+                  <Baby size={12} className="text-primary-500" />
+                  <span>{activeChild.name}</span>
+                  {activeChild.diagnosisInfo && (
+                    <span className="text-[10px] opacity-75 font-semibold leading-none border-l border-primary-200 dark:border-primary-800 pl-1.5 ml-0.5">
+                      {activeChild.diagnosisInfo}
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-500 mt-1">Çocuğunuzun zaman içinde nasıl geliştiğini buradan görebilirsiniz.</p>
           </div>
         </div>
 
@@ -1010,21 +1111,7 @@ export function AnalyticsPage() {
           </div>
         </div>
       ) : activeChild ? (
-        <>
-          <div className="flex items-center gap-3 p-4 bg-primary-50 rounded-2xl border border-primary-100">
-            <div className="w-9 h-9 rounded-xl bg-white border border-primary-100 flex items-center justify-center shrink-0">
-              <Baby size={17} className="text-primary-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary-500">Aktif profil</p>
-              <p className="text-sm font-semibold text-primary-800 truncate">{activeChild.name}</p>
-            </div>
-            {activeChild.diagnosisInfo && (
-              <span className="text-xs text-primary-600 bg-white/80 border border-primary-100 rounded-full px-2.5 py-1">{activeChild.diagnosisInfo}</span>
-            )}
-          </div>
-          <ChildAnalytics child={activeChild} rangeDays={rangeDays} />
-        </>
+        <ChildAnalytics child={activeChild} rangeDays={rangeDays} />
       ) : null}
     </div>
   );

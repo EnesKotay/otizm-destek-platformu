@@ -23,7 +23,6 @@ import { WeeklyTopicWidget } from '@/components/WeeklyTopicWidget';
 import type { WeeklyTopic } from '@/components/WeeklyTopicWidget';
 import type { ForumPost, ForumComment, Tag, PostPrivacySettings } from '@/types';
 import { toast } from '@/store/toastStore';
-import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import { htmlToPlainText, sanitizeHtml } from '@/utils/sanitizeHtml';
 type TabType = 'DENEYIM' | 'QUESTION' | 'TAVSIYE' | 'BASARI_HIKAYESI';
 
@@ -65,8 +64,12 @@ function emptyForm(postType: string) {
 }
 
 export function ForumPage() {
-  const user = useAuthStore(s => s.user);
   const location = useLocation();
+  return <ForumContent location={location} />;
+}
+
+function ForumContent({ location }: { location: ReturnType<typeof useLocation> }) {
+  const user = useAuthStore(s => s.user);
   const navigate = useNavigate();
   const openPostId = (location.state as { openPostId?: string } | null)?.openPostId;
   const [activeTab, setActiveTab] = useState<TabType>('DENEYIM');
@@ -83,6 +86,18 @@ export function ForumPage() {
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
   const [sortMode, setSortMode] = useState<'new' | 'hot' | 'unanswered' | 'expert'>('new');
+  const [showIntro, setShowIntro] = useState(() => {
+    const stored = localStorage.getItem('forum_intro_visible');
+    return stored === 'true';
+  });
+
+  const toggleIntro = () => {
+    setShowIntro(prev => {
+      const next = !prev;
+      localStorage.setItem('forum_intro_visible', String(next));
+      return next;
+    });
+  };
 
   const [form, setForm] = useState(emptyForm('DENEYIM'));
 
@@ -728,38 +743,24 @@ export function ForumPage() {
   // Main list view
   return (
     <div className="space-y-6">
-      <PageOnboarding
-        pageId="forum"
-        title="Topluluğa Hoş Geldiniz"
-        description="Diğer ailelerle deneyimlerinizi paylaşın, sorular sorun ve destek bulun."
-        steps={[
-          {
-            icon: <MessageSquare size={20} />,
-            title: "Gönderi Paylaşın",
-            description: "Sorularınızı veya başarı hikayelerinizi yazarak diğer ailelere ulaşın."
-          },
-          {
-            icon: <ShieldCheck size={20} />,
-            title: "Uzman Onaylı Cevaplar",
-            description: "Uzmanlar tarafından onaylanmış doğru bilgilere güvenle erişin."
-          },
-          {
-            icon: <Heart size={20} />,
-            title: "Dayanışma",
-            description: "Benzer süreçlerden geçen ailelerle etkileşime girin ve yalnız olmadığınızı hissedin."
-          }
-        ]}
-      />
-
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Topluluk</h1>
-          <p className="text-gray-500 mt-1">Deneyimlerinizi paylaşın, sorular sorun</p>
+          <h1 className="text-2xl font-bold text-gray-900">Forum</h1>
+          <p className="text-gray-500 mt-0.5 text-sm">Diğer ailelerle soru sorun, deneyim paylaşın</p>
         </div>
-        <Button onClick={() => openCreatePost(activeTab)}>
-          <Plus size={18} className="mr-2" />
-          {activeTab === 'QUESTION' ? 'Soru Sor' : 'Gönderi Paylaş'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleIntro}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100 transition-colors"
+          >
+            <HelpCircle size={13} />
+            {showIntro ? 'Kılavuzu Gizle' : 'Nasıl çalışır?'}
+          </button>
+          <Button onClick={() => openCreatePost(activeTab)}>
+            <Plus size={18} className="mr-2" />
+            {activeTab === 'QUESTION' ? 'Soru Sor' : 'Gönderi Paylaş'}
+          </Button>
+        </div>
       </div>
 
       {posts.length === 0 && !loading && !loadError && (
@@ -777,113 +778,107 @@ export function ForumPage() {
       {/* Haftanın Konusu */}
       <WeeklyTopicWidget variant="forum" onJoin={handleJoinWeeklyTopic} />
 
-      <div className="grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
-        <Card className="overflow-hidden border-slate-200">
-          <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-primary-600">Topluluğa giriş</p>
-                <h2 className="mt-1 text-lg font-black text-slate-950">Sadece akış değil, doğru kapıdan başlama alanı</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-center sm:flex">
-                <div className="rounded-xl border border-white bg-white px-3 py-2 shadow-sm">
-                  <p className="text-base font-black text-slate-900">{communityStats.unansweredQuestions}</p>
-                  <p className="text-[11px] font-semibold text-slate-500">Cevap bekleyen</p>
-                </div>
-                <div className="rounded-xl border border-white bg-white px-3 py-2 shadow-sm">
-                  <p className="text-base font-black text-slate-900">{communityStats.answeredQuestions}</p>
-                  <p className="text-[11px] font-semibold text-slate-500">Yanıtlanmış</p>
-                </div>
-                <div className="rounded-xl border border-white bg-white px-3 py-2 shadow-sm">
-                  <p className="text-base font-black text-slate-900">{communityStats.anonymousPosts}</p>
-                  <p className="text-[11px] font-semibold text-slate-500">Anonim</p>
-                </div>
-                <div className="rounded-xl border border-white bg-white px-3 py-2 shadow-sm">
-                  <p className="text-base font-black text-slate-900">{communityStats.activeTags}</p>
-                  <p className="text-[11px] font-semibold text-slate-500">Aktif etiket</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="grid gap-3 p-4 md:grid-cols-2">
-            <button
-              onClick={() => openCreatePost('QUESTION')}
-              className="group flex min-h-28 items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-left transition-all hover:border-blue-200 hover:bg-blue-50"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm">
-                <HelpCircle size={18} />
-              </div>
-              <div>
-                <p className="font-bold text-slate-900">Uzman cevaplı sorular</p>
-                <p className="mt-1 text-sm leading-5 text-slate-600">Sorunuzu Soru-Cevap alanına taşıyın; cevaplar oy, kabul ve uzman onayıyla öne çıkar.</p>
-              </div>
-            </button>
-            <button
-              onClick={openAnonymousShare}
-              className="group flex min-h-28 items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4 text-left transition-all hover:border-emerald-200 hover:bg-emerald-50"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
-                <EyeOff size={18} />
-              </div>
-              <div>
-                <p className="font-bold text-slate-900">Güvenli anonim paylaşım</p>
-                <p className="mt-1 text-sm leading-5 text-slate-600">Ad, tanı detayı ve eşleştirme görünürlüğünü paylaşmadan önce seçin.</p>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate('/benzer-aileler')}
-              className="group flex min-h-28 items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/70 p-4 text-left transition-all hover:border-violet-200 hover:bg-violet-50"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
-                <Users size={18} />
-              </div>
-              <div>
-                <p className="font-bold text-slate-900">Benzer aile önerileri</p>
-                <p className="mt-1 text-sm leading-5 text-slate-600">Etiketler ve yaş aralığı üzerinden benzer süreçteki ailelerle kontrollü tanışın.</p>
-              </div>
-            </button>
-            <button
-              onClick={() => setSortMode('expert')}
-              className="group flex min-h-28 items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/70 p-4 text-left transition-all hover:border-amber-200 hover:bg-amber-50"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
-                <ShieldCheck size={18} />
-              </div>
-              <div>
-                <p className="font-bold text-slate-900">Güven ve moderasyon akışı</p>
-                <p className="mt-1 text-sm leading-5 text-slate-600">Şikayet edilen içerikler incelemeye düşer; uzmanlı ve onaylı katkıları öne alın.</p>
-              </div>
-            </button>
-          </div>
-        </Card>
-
-        <Card className="border-slate-200 p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600">
-              <Flag size={18} />
-            </div>
-            <div>
-              <p className="text-sm font-black text-slate-900">Raporlama/moderasyon</p>
-              <p className="text-xs font-medium text-slate-500">Kırılgan paylaşımlar için görünür güven hattı</p>
-            </div>
-          </div>
-          <div className="mt-5 space-y-3">
-            {[
-              ['1', 'İçerik işaretlenir', 'Gönderi veya yorumdan şikayet oluşturulur.'],
-              ['2', 'Ekip inceler', 'Uygunsuz içerik ve kişisel veri riski kontrol edilir.'],
-              ['3', 'Aksiyon alınır', 'Gerekirse içerik kaldırılır ya da kullanıcı bilgilendirilir.'],
-            ].map(([step, title, description]) => (
-              <div key={step} className="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-black text-slate-700 shadow-sm">{step}</span>
+      {showIntro && (
+        <div className="grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
+          <Card className="overflow-hidden border-slate-200">
+            <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-bold text-slate-900">{title}</p>
-                  <p className="mt-0.5 text-xs leading-5 text-slate-500">{description}</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-primary-600">Topluluğa giriş</p>
+                  <h2 className="mt-1 text-lg font-black text-slate-950">Sadece akış değil, doğru kapıdan başlama alanı</h2>
+                </div>
+                <div className="flex flex-wrap gap-2 text-center">
+                  {[
+                    [communityStats.unansweredQuestions, 'Cevap bekleyen'],
+                    [communityStats.answeredQuestions, 'Yanıtlanmış'],
+                    [communityStats.anonymousPosts, 'Anonim'],
+                    [communityStats.activeTags, 'Etiket'],
+                  ].map(([val, label]) => (
+                    <div key={String(label)} className="rounded-xl border border-white bg-white px-3 py-1.5 shadow-sm min-w-[64px]">
+                      <p className="text-sm font-black text-slate-900">{val}</p>
+                      <p className="text-[10px] font-semibold text-slate-500">{label}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+            </div>
+            <div className="grid gap-2 p-4 md:grid-cols-2">
+              <button
+                onClick={() => openCreatePost('QUESTION')}
+                className="group flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-left transition-all hover:border-blue-200 hover:bg-blue-50"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm">
+                  <HelpCircle size={16} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Uzman cevaplı sorular</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Sorunuzu Soru-Cevap'ta uzman onaylı cevap alın</p>
+                </div>
+              </button>
+              <button
+                onClick={openAnonymousShare}
+                className="group flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-left transition-all hover:border-emerald-200 hover:bg-emerald-50"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
+                  <EyeOff size={16} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Anonim paylaşım</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Adınızı gizleyerek rahatça paylaşın</p>
+                </div>
+              </button>
+              <button
+                onClick={() => navigate('/benzer-aileler')}
+                className="group flex items-center gap-3 rounded-xl border border-violet-100 bg-violet-50/70 p-3 text-left transition-all hover:border-violet-200 hover:bg-violet-50"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
+                  <Users size={16} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Benzer aileler</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Aynı süreci yaşayan ailelerle tanışın</p>
+                </div>
+              </button>
+              <button
+                onClick={() => setSortMode('expert')}
+                className="group flex items-center gap-3 rounded-xl border border-amber-100 bg-amber-50/70 p-3 text-left transition-all hover:border-amber-200 hover:bg-amber-50"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
+                  <ShieldCheck size={16} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Moderasyon akışı</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Uzman onaylı içerikleri öne al</p>
+                </div>
+              </button>
+            </div>
+          </Card>
+
+          <Card className="border-slate-200 p-4">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                <Flag size={16} />
+              </div>
+              <p className="text-sm font-bold text-slate-900">Güvenli topluluk nasıl çalışır?</p>
+            </div>
+            <div className="space-y-2">
+              {[
+                ['1', 'İçerik işaretlenir', 'Gönderi veya yorumdan şikayet oluşturulur.'],
+                ['2', 'Ekip inceler', 'Uygunsuz içerik ve kişisel veri riski kontrol edilir.'],
+                ['3', 'Aksiyon alınır', 'Gerekirse içerik kaldırılır ya da kullanıcı bilgilendirilir.'],
+              ].map(([step, title, description]) => (
+                <div key={step} className="flex gap-2.5 rounded-xl border border-slate-100 bg-slate-50/70 p-2.5">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-black text-slate-600 shadow-sm">{step}</span>
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">{title}</p>
+                    <p className="text-xs text-slate-500 leading-4 mt-0.5">{description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm md:flex-row md:items-center">
         <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">

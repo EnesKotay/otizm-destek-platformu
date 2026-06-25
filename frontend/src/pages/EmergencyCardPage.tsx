@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Printer, ShieldAlert, Phone, Heart, AlertTriangle, CheckCircle, User } from 'lucide-react';
+import { Save, Printer, ShieldAlert, Phone, Heart, AlertTriangle, CheckCircle, User, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 import { useChildStore } from '@/store/childStore';
@@ -150,18 +150,18 @@ export function EmergencyCardPage() {
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
       <PageOnboarding
         pageId="emergency-card-empty"
-        title="Acil Durum Kartı Sistemi"
-        description="Çocuğunuzun tıbbi durumunu, kriz tetikleyicilerini ve acil durum kontaklarını içeren cüzdan boyutu katlanabilir kartlar hazırlayın."
+        title="Acil Durum Kartı"
+        description="Acil bir durumda çocuğunuzla karşılaşan kişilere gösterebileceğiniz bir kart hazırlayın. Önce çocuğunuzu eklemeniz yeterli."
         steps={[
           {
             icon: <ShieldAlert size={20} className="text-red-500" />,
-            title: "Tıbbi Kimlik Kartı",
-            description: "Alerjiler, kriz anı talimatları ve kan grubu gibi hayati bilgileri tek bir kartta toplayın."
+            title: "Önemli Bilgileri Girin",
+            description: "Alerjiler, ilaçlar ve acil durumda aranacak kişiler gibi bilgileri doldurun."
           },
           {
             icon: <Printer size={20} className="text-indigo-500" />,
-            title: "Katlanabilir Cüzdan Tasarımı",
-            description: "Yazdırıp keserek çocuğunuzun çantasında, cebinde veya cüzdanında taşıyabileceğiniz standart boyutlarda kart çıktısı alın."
+            title: "Yazdırın ve Yanınızda Taşıyın",
+            description: "Kartı yazdırıp çocuğunuzun çantasına veya cebine koyabilirsiniz."
           }
         ]}
       />
@@ -171,9 +171,9 @@ export function EmergencyCardPage() {
           <ShieldAlert size={32} className="text-red-500 animate-pulse" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-lg font-extrabold text-gray-800">Çocuk Profili Bulunmadı</h2>
+          <h2 className="text-lg font-extrabold text-gray-800">Önce çocuğunuzu ekleyin</h2>
           <p className="text-sm text-gray-500 leading-relaxed max-w-sm mx-auto">
-            Acil durum kartı oluşturabilmeniz için en az 1 adet çocuk profili bulunmalıdır. Sistemi hemen keşfetmek için **Demo Kartı** ile başlayabilirsiniz.
+            Acil durum kartı oluşturmak için önce çocuğunuzu eklemeniz gerekiyor. Nasıl göründüğünü merak ediyorsanız demo kartına bakabilirsiniz.
           </p>
         </div>
         
@@ -225,18 +225,18 @@ export function EmergencyCardPage() {
     <div className="space-y-6">
       <PageOnboarding
         pageId="emergency-card"
-        title="Acil Durum Kartına Hoş Geldiniz"
-        description="Çocuğunuzla ilgilenen kişiler ve acil servisler için hayati önem taşıyan bilgileri hazırlayın."
+        title="Acil Durum Kartı"
+        description="Çocuğunuzla karşılaşan herkesin anlayabileceği bir kart hazırlayın. Okulda, dışarıda veya acil serviste gösterebilirsiniz."
         steps={[
           {
             icon: <ShieldAlert size={20} />,
-            title: "Profil Oluşturun",
-            description: "Tıbbi bilgileri, alerjileri ve acil durumda ulaşılacak kişileri ekleyin."
+            title: "Bilgileri Doldurun",
+            description: "İlaçlar, alerjiler ve aranacak kişileri girin. İstediğiniz zaman değiştirebilirsiniz."
           },
           {
             icon: <Printer size={20} />,
-            title: "Yazdırın",
-            description: "Oluşturduğunuz kartı yazdırarak çocuğunuzun çantasında veya üzerinizde taşıyın."
+            title: "Yazdırın ve Taşıyın",
+            description: "Kartı yazdırıp çocuğunuzun çantasına veya üzerinize koyun."
           }
         ]}
       />
@@ -244,8 +244,8 @@ export function EmergencyCardPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap bg-white/80 backdrop-blur-xl p-6 sm:p-8 rounded-[32px] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-red-400/10 via-indigo-400/5 to-transparent rounded-bl-full pointer-events-none" />
         <div className="relative z-10">
-          <h1 className="text-3xl font-black bg-gradient-to-r from-red-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Acil Durum Profil Kartı</h1>
-          <p className="text-slate-500 mt-2 font-medium">Okul, bakıcı ve acil servis için yazdırılabilir güvenli tıbbi kimlik</p>
+          <h1 className="text-3xl font-black bg-gradient-to-r from-red-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Acil Durum Kartım</h1>
+          <p className="text-slate-500 mt-2 font-medium">Okul, bakıcı veya acil servis için yazdırıp taşıyabileceğiniz kart</p>
         </div>
         <div className="flex gap-3 relative z-10">
           <Button variant="outline" onClick={handlePrint} className="rounded-xl font-bold bg-white hover:bg-slate-50 border-slate-200 shadow-sm hover:shadow transition-all"><Printer size={16} className="mr-2 text-indigo-500" />Kartı Yazdır</Button>
@@ -401,16 +401,46 @@ export function EmergencyCardPage() {
             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-indigo-50 mb-4">
               <ShieldAlert size={24} className="text-indigo-600" />
             </div>
-            <h2 className="text-xl font-black text-slate-900 mb-2">NFC / QR Halka Açık Acil Profil</h2>
+            <h2 className="text-xl font-black text-slate-900 mb-2">QR Kod ile Paylaş</h2>
             <p className="text-sm font-semibold text-slate-500 max-w-lg mb-6 leading-relaxed">
-              Bu QR kodu taratarak, belirlediğiniz tıbbi bilgilerin bulunduğu halka açık profil sayfanıza ulaşabilirsiniz. Kodu yazdırıp bir bilekliğe, künyeye veya çantaya yapıştırabilirsiniz.
+              Bu QR kodu telefon kamerasıyla okutunca çocuğunuzun bilgileri açılır. Kodu yazdırıp bilekliğe, çantaya veya okul kartına yapıştırabilirsiniz.
             </p>
             <div className="bg-white p-5 rounded-[24px] shadow-lg shadow-indigo-200/50 border border-indigo-50 mb-6 group hover:scale-105 transition-transform duration-300">
               <QRCodeComp value={`${window.location.origin}/acil-profil/${selectedChildId}`} size={160} className="rounded-xl" />
             </div>
-            <a href={`/acil-profil/${selectedChildId}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-extrabold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-700 px-5 py-2.5 rounded-xl transition-all border border-indigo-100">
-              Halka Açık Profili Görüntüle →
-            </a>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <a
+                href={`/acil-profil/${selectedChildId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-extrabold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-700 px-5 py-2.5 rounded-xl transition-all border border-indigo-100"
+              >
+                Profili Görüntüle →
+              </a>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`Çocuğumun acil durum kartını buradan görüntüleyebilirsiniz:\n${window.location.origin}/acil-profil/${selectedChildId}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-extrabold text-white bg-[#25D366] hover:bg-[#1fbd5a] px-5 py-2.5 rounded-xl transition-all shadow-sm shadow-green-200"
+              >
+                <Share2 size={16} />
+                WhatsApp'ta Paylaş
+              </a>
+              {navigator.share && (
+                <button
+                  type="button"
+                  onClick={() => navigator.share({
+                    title: `${profile.childName} — Acil Durum Kartı`,
+                    text: 'Çocuğumun acil durum kartını buradan görüntüleyebilirsiniz.',
+                    url: `${window.location.origin}/acil-profil/${selectedChildId}`,
+                  }).catch(() => {})}
+                  className="inline-flex items-center gap-2 text-sm font-extrabold text-slate-700 bg-slate-100 hover:bg-slate-200 px-5 py-2.5 rounded-xl transition-all border border-slate-200"
+                >
+                  <Share2 size={16} />
+                  Paylaş
+                </button>
+              )}
+            </div>
           </section>
         )}
       </div>

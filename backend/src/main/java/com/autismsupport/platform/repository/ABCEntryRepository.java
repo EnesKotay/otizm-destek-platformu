@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface ABCEntryRepository extends JpaRepository<ABCEntry, UUID> {
     List<ABCEntry> findByChildIdOrderByEntryDateDescEntryTimeDescCreatedAtDesc(UUID childId);
+    List<ABCEntry> findByChildIdAndEntryDateBetweenOrderByEntryDateDesc(UUID childId, java.time.LocalDate from, java.time.LocalDate to);
 }

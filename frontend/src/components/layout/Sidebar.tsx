@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { ChevronDown, HeartHandshake, HelpCircle, LockKeyhole, LogOut, PlusCircle, Search, Settings, Sparkles } from 'lucide-react';
+import { ChevronDown, HeartHandshake, LockKeyhole, LogOut, PlusCircle, Search, Settings, Sparkles } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { appointmentService } from '@/services/appointmentService';
 import { childService } from '@/services/childService';
@@ -35,28 +35,6 @@ function NavBadge({ value }: { value?: number | string }) {
   );
 }
 
-function NavHelpIcon({ label, description }: { label: string; description?: string }) {
-  if (!description) return null;
-
-  return (
-    <span
-      className="group/help relative inline-flex shrink-0 cursor-help align-middle"
-      title={`${label}: ${description}`}
-      aria-label={`${label} hakkında bilgi: ${description}`}
-    >
-      <HelpCircle
-        size={13}
-        className="text-slate-400 transition-colors group-hover/help:text-primary-600"
-        aria-hidden="true"
-      />
-      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden w-56 -translate-x-1/2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-[11px] font-semibold leading-5 text-slate-600 shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/5 group-hover/help:block">
-        <span className="mb-0.5 block text-xs font-extrabold text-slate-900">{label}</span>
-        {description}
-      </span>
-    </span>
-  );
-}
-
 function NavItem({
   badge,
   compact,
@@ -81,37 +59,30 @@ function NavItem({
     <>
       <span
         className={cn(
-          'absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full transition-all duration-200',
-          isActive ? 'bg-primary-600 opacity-100' : 'opacity-0'
-        )}
-      />
-      <span
-        className={cn(
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-200',
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200',
           isActive
-            ? 'bg-primary-600 text-white'
-            : 'bg-transparent text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600'
+            ? 'bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400'
+            : 'bg-transparent text-slate-400 dark:text-slate-500 group-hover:bg-slate-100/60 dark:group-hover:bg-slate-800/60 group-hover:text-slate-600 dark:group-hover:text-slate-300'
         )}
       >
-        <Icon size={17} strokeWidth={isActive ? 2.2 : 1.8} aria-hidden="true" />
+        <Icon size={18} strokeWidth={isActive ? 2 : 1.75} aria-hidden="true" />
       </span>
       {!compact && (
         <span className="min-w-0 flex-1">
-          <span className="flex min-w-0 items-start gap-1.5">
-            <span className={cn("block min-w-0 whitespace-normal break-words leading-snug [overflow-wrap:anywhere] transition-colors", isActive ? "font-bold text-primary-700" : "font-semibold text-slate-700 group-hover:text-slate-950")}>{label}</span>
-            <NavHelpIcon label={label} description={description} />
+          <span className="flex min-w-0 items-center">
+            <span className={cn("block min-w-0 whitespace-normal break-words leading-snug [overflow-wrap:anywhere] transition-colors", isActive ? "font-bold text-primary-700 dark:text-primary-300" : "font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-950 dark:group-hover:text-white")}>{label}</span>
           </span>
           {description && showDescriptions && !reason && (
             <span className={cn(
               "mt-1 block text-[11px] font-medium leading-4 transition-colors",
               "whitespace-normal break-words",
-              isActive ? "text-primary-700/85" : "text-slate-500 group-hover:text-slate-600"
+              isActive ? "text-primary-600/85 dark:text-primary-400/85" : "text-slate-500 dark:text-slate-400 group-hover:text-slate-600"
             )}>
               {description}
             </span>
           )}
           {reason && (
-            <span className="mt-1 flex min-w-0 items-center gap-1 text-[11px] font-semibold leading-4 text-slate-500">
+            <span className="mt-1 flex min-w-0 items-center gap-1 text-[11px] font-semibold leading-4 text-slate-500 dark:text-slate-400">
               <LockKeyhole size={11} className="shrink-0" aria-hidden="true" />
               <span className="min-w-0 whitespace-normal break-words">{reason}</span>
             </span>
@@ -158,11 +129,11 @@ function NavItem({
       onMouseEnter={() => prefetchRoute(to)}
       className={({ isActive }) =>
         cn(
-          'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200',
+          'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-150',
           compact && 'justify-center px-2',
           isActive
-            ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-100'
-            : 'text-slate-700 hover:bg-slate-50 hover:text-slate-950'
+            ? 'bg-primary-50/60 dark:bg-primary-950/20 text-primary-700 dark:text-primary-400 ring-1 ring-primary-100/50 dark:ring-primary-900/30'
+            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50/80 dark:hover:bg-gray-800/40 hover:text-slate-900 dark:hover:text-slate-100'
         )
       }
     >
@@ -173,54 +144,6 @@ function NavItem({
 
 function buildInitialOpenState(groups: NavGroupConfig[]) {
   return Object.fromEntries(groups.map((group) => [group.label, group.defaultOpen !== false]));
-}
-
-function buildSimpleParentGroups(groups: NavGroupConfig[]): NavGroupConfig[] {
-  const allItems = groups.flatMap((group) => group.items);
-  const byPath = (path: string) => allItems.find((item) => item.to === path);
-  const today = ['/kullanici-rehberi', '/anasayfa', '/gunluk-takip', '/kriz-rehberi']
-    .map(byPath)
-    .filter(Boolean) as NavItemConfig[];
-  const childAndProgress = ['/cocuklarim', '/gelisim-paneli', '/notlar']
-    .map(byPath)
-    .filter(Boolean) as NavItemConfig[];
-  const treatmentAndPlanning = ['/randevular', '/tedavi', '/gorevler', '/takvim']
-    .map(byPath)
-    .filter(Boolean) as NavItemConfig[];
-  const communication = ['/mesajlar', '/forum', '/gruplar']
-    .map(byPath)
-    .filter(Boolean) as NavItemConfig[];
-  const resources = ['/bilgi-bankasi', '/uzmanlar', '/yardim']
-    .map(byPath)
-    .filter(Boolean) as NavItemConfig[];
-
-  return [
-    {
-      label: 'Bugün',
-      defaultOpen: true,
-      items: today,
-    },
-    {
-      label: 'Çocuk ve Gelişim',
-      defaultOpen: true,
-      items: childAndProgress,
-    },
-    {
-      label: 'Tedavi ve Takip',
-      defaultOpen: false,
-      items: treatmentAndPlanning,
-    },
-    {
-      label: 'İletişim',
-      defaultOpen: false,
-      items: communication,
-    },
-    {
-      label: 'Kaynaklar',
-      defaultOpen: false,
-      items: resources,
-    },
-  ].filter((group) => group.items.length > 0);
 }
 
 function filterNavGroupsByChildState(groups: NavGroupConfig[], hasChild: boolean) {
@@ -267,9 +190,9 @@ const ONBOARDING_HELP_COMMANDS = [
     icon: Sparkles,
   },
   {
-    to: '/kullanici-rehberi',
-    label: 'Platform Rehberi ve Sayfa Haritası',
-    description: 'Platformdaki hangi modülün ne işe yaradığını tek ekranda öğrenin.',
+    to: '/yardim',
+    label: 'Yardım Merkezi',
+    description: 'Platformdaki temel akışları ve destek seçeneklerini tek yerde görün.',
     group: 'Yardım & Başlangıç',
     kind: 'nav' as const,
     icon: Sparkles,
@@ -436,7 +359,6 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   const location = useLocation();
   const role = user?.role || 'PARENT';
   const navGroups = useMemo(() => getNavGroups(user?.role), [user?.role]);
-  const [simpleMode, setSimpleMode] = useState(() => localStorage.getItem('sidebar-simple-mode') !== 'false');
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [badges, setBadges] = useState<BadgeMap>({});
   const [hasChild, setHasChild] = useState(true);
@@ -447,8 +369,8 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   const [rememberGroups, setRememberGroups] = useState(() => localStorage.getItem('sidebar-remember-groups') !== 'false');
   const context = { hasChild: user?.role !== 'PARENT' || !childrenLoaded || hasChild, isExpertVerified: Boolean(user?.verified) };
   const baseDisplayNavGroups = useMemo(
-    () => (role === 'PARENT' && simpleMode ? buildSimpleParentGroups(navGroups) : navGroups),
-    [navGroups, role, simpleMode]
+    () => navGroups,
+    [navGroups]
   );
   const displayNavGroups = useMemo(
     () => filterNavGroupsByChildState(baseDisplayNavGroups, context.hasChild),
@@ -458,7 +380,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
     () => filterNavGroupsByChildState(navGroups, context.hasChild),
     [navGroups, context.hasChild]
   );
-  const storageRole = `${role}:${role === 'PARENT' && simpleMode ? 'simple' : 'full'}:${context.hasChild ? 'child' : 'no-child'}`;
+  const storageRole = `${role}:full:${context.hasChild ? 'child' : 'no-child'}`;
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => getStoredOpenState(storageRole, displayNavGroups));
   const effectiveShowDescriptions = showDescriptions;
 
@@ -520,10 +442,6 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
       queueMicrotask(() => setOpenGroups(buildInitialOpenState(displayNavGroups)));
     }
   }, [displayNavGroups, rememberGroups]);
-
-  useEffect(() => {
-    localStorage.setItem('sidebar-simple-mode', String(simpleMode));
-  }, [simpleMode]);
 
   useEffect(() => {
     if (user?.role !== 'PARENT') {
@@ -637,7 +555,6 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   };
 
   const recommendedItems = useMemo(() => {
-    if (user?.role === 'PARENT' && simpleMode) return [];
 
     const allItems = navGroups.flatMap((group) => group.items);
     // Zaten açık grupta görünen path'ler — bunları duplike etme (badge olmadıkça)
@@ -653,7 +570,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
       if (childrenLoaded && !hasChild) paths.push('/cocuklarim');
       if (badges.appointments) paths.push('/randevular');
       if (badges.messages) paths.push('/mesajlar');
-      if (!simpleMode) paths.push(hasChild ? '/uzmanlar' : '/anasayfa', '/bilgi-bankasi', '/tarama');
+      paths.push(hasChild ? '/uzmanlar' : '/anasayfa', '/bilgi-bankasi', '/cocuklarim');
     } else if (user?.role === 'EXPERT') {
       if (badges.appointments) paths.push('/randevular');
       if (badges.messages) paths.push('/mesajlar');
@@ -668,7 +585,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
       .map((path) => allItems.find((item) => item.to === path))
       .filter(Boolean)
       .slice(0, 3) as NavItemConfig[];
-  }, [badges.appointments, badges.messages, childrenLoaded, displayNavGroups, hasChild, navGroups, simpleMode, user?.role]);
+  }, [badges.appointments, badges.messages, childrenLoaded, displayNavGroups, hasChild, navGroups, user?.role]);
 
   const childRequiredAction = { label: 'Çocuk ekle', to: '/cocuklarim' };
   const showRecommendedItems = user?.role !== 'PARENT' && recommendedItems.length > 0;
@@ -702,8 +619,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
           className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:border-slate-200 hover:bg-slate-100/70 hover:text-slate-700"
         >
           <Search size={18} aria-hidden="true" className="transition-transform group-hover:scale-105" />
-          {!isCompact && <span className="min-w-0 flex-1 truncate text-left font-medium">Ara...</span>}
-          {!isCompact && <kbd className="rounded-md bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-400 ring-1 ring-slate-100/60 shadow-sm">⌘K</kbd>}
+          {!isCompact && <span className="min-w-0 flex-1 truncate text-left font-medium">Sayfa veya konu arayın...</span>}
         </button>
       </div>
 
@@ -746,10 +662,10 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
                 onClick={() => toggleGroup(group.label)}
                 aria-expanded={isOpen}
                 className={cn(
-                  'mb-1 flex w-full items-center justify-between rounded-lg px-1.5 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] transition-colors',
-                  'focus:outline-none focus-visible:bg-slate-50',
+                  'mb-1 flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors',
+                  'focus:outline-none focus-visible:bg-slate-50/50',
                   isCompact && 'justify-center px-1',
-                  isGroupActive ? 'text-primary-700' : 'text-slate-500 hover:text-slate-700'
+                  isGroupActive ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                 )}
               >
                 {!isCompact && <span>{group.label}</span>}
@@ -785,28 +701,11 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
 
       <div className="space-y-1 border-t border-slate-100 px-4 py-4">
         {user?.role !== 'ADMIN' && (
-          <NavItem item={{ to: '/settings', icon: Settings, label: 'Ayarlar', description: 'Profil ve görünüm tercihleri' }} compact={isCompact} showBadges={showBadges} showDescriptions={effectiveShowDescriptions} />
+          <NavItem item={{ to: '/ayarlar', icon: Settings, label: 'Ayarlar', description: 'Profil ve görünüm tercihleri' }} compact={isCompact} showBadges={showBadges} showDescriptions={effectiveShowDescriptions} />
         )}
 
-        {user?.role === 'PARENT' && !isCompact && (
-          <button
-            type="button"
-            onClick={() => setSimpleMode((value) => !value)}
-            aria-pressed={simpleMode}
-            className={cn(
-              'flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-[11px] font-bold transition-colors',
-              simpleMode
-                ? 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                : 'text-primary-600 hover:bg-primary-50'
-            )}
-          >
-            <span>{simpleMode ? 'Tüm sayfaları göster' : 'Görev odaklı menüye geç'}</span>
-            <span>{simpleMode ? 'Tam' : 'Sade'}</span>
-          </button>
-        )}
-
-        <div className="mt-2 flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 transition-colors hover:bg-slate-100/70">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-primary-500 to-indigo-600 ring-2 ring-primary-100/50">
+        <div className="mt-2 flex items-center gap-2.5 rounded-xl border border-slate-100/80 dark:border-gray-800 bg-slate-50/50 dark:bg-gray-800/30 p-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-primary-500 to-indigo-600 ring-2 ring-primary-100/50 dark:ring-primary-950/50">
             {user?.profileImageUrl ? (
               <img src={user.profileImageUrl} alt="Profil" className="h-full w-full object-cover" />
             ) : (
@@ -816,16 +715,17 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
             )}
           </div>
           {!isCompact && <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-bold text-slate-800 tracking-tight leading-tight">{user?.fullName}</p>
-            <p className="truncate text-[11px] font-medium text-slate-500 leading-tight mt-0.5">{user?.email}</p>
+            <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight leading-tight">{user?.fullName}</p>
+            <p className="truncate text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-tight mt-0.5">{user?.email}</p>
           </div>}
           <button
             type="button"
             onClick={handleLogout}
-            className="shrink-0 cursor-pointer rounded-xl p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
+            className="shrink-0 cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/20 transition-all duration-150"
             title="Çıkış Yap"
+            aria-label="Çıkış Yap"
           >
-            <LogOut size={16} aria-hidden="true" />
+            <LogOut size={15} aria-hidden="true" />
           </button>
         </div>
       </div>

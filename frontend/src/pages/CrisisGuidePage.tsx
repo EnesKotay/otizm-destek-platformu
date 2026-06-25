@@ -256,18 +256,18 @@ export function CrisisGuidePage() {
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
       <PageOnboarding
         pageId="crisis-guide"
-        title="Kriz Rehberine Hoş Geldiniz"
-        description="Zor anlarda sakin kalmanızı ve doğru adımları atmanızı sağlayacak hızlı kriz müdahale rehberi."
+        title="Zor Anlarda Ne Yapmalı?"
+        description="Çocuğunuz bunaldığında veya zor bir an yaşandığında ne yapacağınızı adım adım bulabilirsiniz."
         steps={[
           {
             icon: <AlertTriangle size={20} />,
-            title: "Hızlı Müdahale",
-            description: "Meltdown, öfke nöbeti veya duyusal kriz anlarında yapmanız ve yapmamanız gerekenleri hızlıca görün."
+            title: "Adımları Takip Edin",
+            description: "Sakin kalın ve sayfadaki adımları sırayla uygulayın. Her durum için ayrı rehber var."
           },
           {
             icon: <Phone size={20} />,
-            title: "Acil Durum Numaraları",
-            description: "Acil durumlarda tek tıkla gerekli kurumlara ulaşın."
+            title: "Acil Numaralar",
+            description: "Gerekirse tek tıkla ilgili kurumlara ulaşabilirsiniz."
           }
         ]}
       />

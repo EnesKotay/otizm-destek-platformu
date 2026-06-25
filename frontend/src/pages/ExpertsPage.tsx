@@ -414,6 +414,10 @@ function useFavorites() {
 }
 
 export function ExpertsPage() {
+  return <ExpertsContent />;
+}
+
+function ExpertsContent() {
   const navigate = useNavigate();
   const user = useAuthStore(s => s.user);
   const [experts, setExperts] = useState<User[]>([]);
@@ -718,7 +722,7 @@ export function ExpertsPage() {
 
           {/* Harita Görünümü Butonu */}
           <button
-            onClick={() => navigate('/uzman-harita')}
+            onClick={() => navigate('/uzmanlar?view=map')}
             className="flex items-center justify-center gap-2 px-4 py-2.5 border border-indigo-100 rounded-xl text-sm font-semibold text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-200 transition-all cursor-pointer shrink-0 active:scale-[0.98]"
           >
             <MapPin size={16} />

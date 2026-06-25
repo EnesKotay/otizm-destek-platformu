@@ -142,6 +142,10 @@ function PasswordVisibilityButton({
 }
 
 export function SettingsPage() {
+  return <SettingsCore />;
+}
+
+function SettingsCore() {
   const { user, setUser, logout } = useAuthStore();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);

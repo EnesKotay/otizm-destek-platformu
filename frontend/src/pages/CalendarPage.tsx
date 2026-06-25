@@ -397,7 +397,7 @@ export function CalendarPage() {
     );
   };
 
-  const UpcomingEmptyState = () => (
+  const renderUpcomingEmptyState = () => (
     <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
       <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
         <div className="flex items-start gap-3">
@@ -606,7 +606,7 @@ export function CalendarPage() {
                 </div>
               </CardHeader>
               {upcomingEvents.length === 0 ? (
-                <UpcomingEmptyState />
+                renderUpcomingEmptyState()
               ) : (
                 <div className="space-y-2">
                   {upcomingEvents.map(event => (

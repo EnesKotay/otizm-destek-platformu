@@ -192,6 +192,10 @@ function readSharedBepReports(childId: string): SharedBepReport[] {
 }
 
 export function ChildDetailPage() {
+  return <ChildDetailContent />;
+}
+
+function ChildDetailContent() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const accessToken = useAuthStore(s => s.accessToken);
@@ -602,6 +606,42 @@ export function ChildDetailPage() {
     return Object.entries(map).slice(-6).map(([ay, v]) => ({ ay, saat: parseFloat((v.total / v.count).toFixed(1)) }));
   })();
 
+  // Aktivite ısı haritası — son 16 haftalık günlük not/aktivite sayısı
+  const activityHeatmap = (() => {
+    const dayCounts: Record<string, number> = {};
+    notes.forEach(n => {
+      const key = (n.noteDate || n.createdAt || '').slice(0, 10);
+      if (key) dayCounts[key] = (dayCounts[key] || 0) + 1;
+    });
+    milestones.forEach(m => {
+      const key = (m.achievedDate || '').slice(0, 10);
+      if (key) dayCounts[key] = (dayCounts[key] || 0) + 1;
+    });
+    // Son 16 hafta = 112 gün, Pazartesi'den başla
+    const today = new Date();
+    const startDay = new Date(today);
+    startDay.setDate(today.getDate() - 111);
+    // Haftanın başına (Pazartesi) hizala
+    const dow = startDay.getDay(); // 0=Pazar
+    startDay.setDate(startDay.getDate() - ((dow + 6) % 7));
+
+    const weeks: { date: string; count: number; iso: string }[][] = [];
+    let week: { date: string; count: number; iso: string }[] = [];
+    const cursor = new Date(startDay);
+    while (cursor <= today) {
+      const iso = cursor.toISOString().slice(0, 10);
+      week.push({ date: iso, count: dayCounts[iso] || 0, iso });
+      if (week.length === 7) { weeks.push(week); week = []; }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    if (week.length > 0) {
+      while (week.length < 7) week.push({ date: '', count: 0, iso: '' });
+      weeks.push(week);
+    }
+    const max = Math.max(1, ...Object.values(dayCounts));
+    return { weeks, max };
+  })();
+
   const genderLabel = child.gender === 'ERKEK' ? 'Erkek' : child.gender === 'KIZ' ? 'Kız' : null;
   const sortedScreenings = [...screeningResults].sort((a, b) =>
     new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
@@ -697,12 +737,6 @@ export function ChildDetailPage() {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2 shrink-0">
-              <Link to="/tarama">
-                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/8 hover:bg-white/15 border border-white/10 text-white/80 hover:text-white text-sm font-semibold transition-all duration-200 backdrop-blur-sm">
-                  <ClipboardList size={15} />
-                  Tarama
-                </button>
-              </Link>
               <Link to="/tedavi">
                 <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-indigo-700 hover:bg-indigo-50 text-sm font-bold transition-all duration-200 shadow-lg shadow-white/10">
                   <HeartPulse size={15} />
@@ -760,18 +794,13 @@ export function ChildDetailPage() {
               )}
             </div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Son Tarama</p>
-            {latestScreening ? (
+            {latestScreening && (
               <>
                 <p className="mt-1.5 text-base font-bold text-gray-900">Skor {latestScreening.score}/20</p>
                 <span className={`inline-block mt-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${RISK_LABELS[latestScreening.riskLevel].className}`}>
                   {RISK_LABELS[latestScreening.riskLevel].label}
                 </span>
               </>
-            ) : (
-              <Link to="/tarama" className="mt-3 inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition-colors group/link">
-                Tarama Başlat
-                <ArrowLeft size={12} className="rotate-180 group-hover/link:translate-x-0.5 transition-transform" />
-              </Link>
             )}
           </div>
 
@@ -869,7 +898,6 @@ export function ChildDetailPage() {
         {[
           { label: 'Not Ekle', desc: 'Gelişim gözlemi', icon: FileText, to: `/notlar?child=${id}&new=1`, color: 'text-blue-600', bg: 'bg-blue-50/80', gradient: 'from-blue-500 to-cyan-500' },
           { label: 'Randevu', desc: 'Uzman görüşmesi', icon: CalendarDays, to: '/randevular', color: 'text-violet-600', bg: 'bg-violet-50/80', gradient: 'from-violet-500 to-purple-500' },
-          { label: 'Tarama Yap', desc: 'Değerlendirme', icon: ClipboardList, to: '/tarama', color: 'text-emerald-600', bg: 'bg-emerald-50/80', gradient: 'from-emerald-500 to-teal-500' },
           { label: 'BEP Oluştur', desc: 'Eğitim planı', icon: GraduationCap, to: `/bep-raporu?child=${id}`, color: 'text-orange-600', bg: 'bg-orange-50/80', gradient: 'from-orange-500 to-amber-500' },
         ].map(item => {
           const Icon = item.icon;
@@ -1708,6 +1736,63 @@ export function ChildDetailPage() {
                       <Area type="monotone" dataKey="saat" name="Uyku Süresi" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill="url(#colorSleep)" dot={{ r: 3.5, fill: '#ffffff', stroke: '#06b6d4', strokeWidth: 2 }} activeDot={{ r: 5, strokeWidth: 0 }} />
                     </AreaChart>
                   </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* Aktivite Isı Haritası */}
+              {notes.length > 0 && (
+                <div className="mt-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-4 rounded-full bg-teal-500" />
+                      <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Aktivite Takvimi (Son 16 Hafta)</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                      <span>Az</span>
+                      {[0.15, 0.35, 0.6, 0.85, 1].map((o, i) => (
+                        <span key={i} className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: `rgba(20,184,166,${o})` }} />
+                      ))}
+                      <span>Çok</span>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto pb-1">
+                    <div className="flex gap-1 min-w-max">
+                      {/* Gün etiketi sütunu */}
+                      <div className="flex flex-col gap-1 mr-1 justify-around pt-5">
+                        {['Pzt', '', 'Çrş', '', 'Cum', '', 'Paz'].map((d, i) => (
+                          <span key={i} className="text-[9px] text-gray-400 leading-none h-2.5 flex items-center">{d}</span>
+                        ))}
+                      </div>
+                      {activityHeatmap.weeks.map((week, wi) => {
+                        const firstDayOfMonth = week.find(d => d.iso.slice(8, 10) === '01');
+                        return (
+                          <div key={wi} className="flex flex-col gap-1">
+                            {/* Ay etiketi */}
+                            <span className="text-[9px] text-gray-400 leading-none h-4 flex items-end">
+                              {firstDayOfMonth
+                                ? new Date(firstDayOfMonth.iso).toLocaleDateString('tr-TR', { month: 'short' })
+                                : wi === 0 ? new Date(week[0].iso).toLocaleDateString('tr-TR', { month: 'short' }) : ''}
+                            </span>
+                            {week.map((day, di) => {
+                              if (!day.iso) return <div key={di} className="w-2.5 h-2.5 rounded-sm" />;
+                              const intensity = day.count === 0 ? 0 : Math.max(0.15, Math.min(1, day.count / activityHeatmap.max));
+                              const isToday = day.iso === new Date().toISOString().slice(0, 10);
+                              return (
+                                <div
+                                  key={di}
+                                  title={`${day.iso}: ${day.count} aktivite`}
+                                  className={`w-2.5 h-2.5 rounded-sm transition-transform hover:scale-125 cursor-default ${isToday ? 'ring-1 ring-teal-600 ring-offset-1' : ''}`}
+                                  style={{
+                                    backgroundColor: day.count === 0 ? '#f3f4f6' : `rgba(20,184,166,${intensity})`,
+                                  }}
+                                />
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
 

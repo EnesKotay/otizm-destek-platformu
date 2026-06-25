@@ -37,7 +37,7 @@ const schema = z.object({
   email: z.string().email('Geçerli bir e-posta adresi giriniz'),
   phone: z.string()
     .refine(
-      (val) => !val || /^(\+90|0)?\d{10,11}$/.test(val.replace(/[\s\-\(\)]/g, '')),
+      (val) => !val || /^(\+90|0)?\d{10,11}$/.test(val.replace(/[\s\-()]/g, '')),
       { message: 'Geçerli bir telefon numarası giriniz (Örn: 05XX XXX XX XX)' }
     )
     .optional(),

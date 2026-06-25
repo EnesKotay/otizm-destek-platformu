@@ -672,7 +672,7 @@ export function TreatmentToolsTab({
                   {/* Actions to map / experts pages */}
                   <div className="mt-4 flex gap-2 border-t border-slate-100 pt-3 flex-wrap">
                     <a 
-                      href="/uzman-harita"
+                      href="/uzmanlar?view=map"
                       className="flex-1 text-center rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] py-2 px-3 shadow-sm shadow-indigo-200/50 transition-colors uppercase tracking-wider flex items-center justify-center gap-1"
                     >
                       🗺️ Konum Bazlı Haritayı Aç

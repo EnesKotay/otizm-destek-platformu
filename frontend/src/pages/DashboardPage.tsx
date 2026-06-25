@@ -29,6 +29,7 @@ import { formatDateTime } from '@/utils/date';
 import type { AdminStats, AppointmentRecord, CalendarEvent, DevelopmentNote, ExpertStats, ExpertTask, Medication, MoodEntry, PatientSummary, Report, ExpertConnectionRequest } from '@/types';
 
 type FollowUpSuggestion = {
+  id?: string;
   to: string;
   icon: ElementType;
   title: string;
@@ -43,14 +44,7 @@ type FollowUpSuggestion = {
 // Fix: parse gerçek adı — "Dr. Kemal Aydın" → "Kemal"
 const HONORIFICS = new Set(['Dr.', 'Prof.', 'Av.', 'Doç.', 'Op.', 'Uzm.', 'Yrd.', 'Fzt.']);
 
-const PARENT_THERAPY_TIPS = [
-  "Çocuğunuza komut verirken göz hizasına inin. Bu, dikkati toplamayı ve işbirliğini kolaylaştırır.",
-  "Sorular yerine iki net seçenek sunun (örn. 'Mavi bardak mı kırmızı bardak mı?'). Bu, dil gelişimini teşvik eder.",
-  "Duyusal taşkınlık durumunda sesi azaltın, ışıkları kısın ve bedenine derin basınç (sarılma) uygulayın.",
-  "Rutin geçişlerinden önce geri sayım yapın (örn. '5 dakika sonra parka gideceğiz'). Geçiş kaygısını azaltır.",
-  "İstenen davranışı hemen pekiştirin. Sözel övgü veya alkış, motivasyonu artırır.",
-  "Çocuğunuzun oyununa liderlik etmeye çalışmak yerine onun başlattığı oyuna katılarak dahil olun."
-];
+
 
 function getFirstName(fullName?: string): string {
   if (!fullName) return '';
@@ -64,13 +58,7 @@ function getLocalDateString(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-function splitTherapies(raw?: string) {
-  if (!raw) return [];
-  return raw
-    .split(/[\n,;]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
+
 
 function normalizeText(value: string) {
   return value
@@ -83,81 +71,7 @@ function normalizeText(value: string) {
     .replace(/ü/g, 'u');
 }
 
-function buildDashboardTodayPlan(
-  therapies: string[],
-  notes: DevelopmentNote[],
-  eventCount: number,
-  todayMood?: MoodEntry | null,
-  medications?: Medication[],
-) {
-  const source = normalizeText(
-    `${therapies.join(' ')} ${notes.slice(0, 2).map((note) => `${note.title} ${note.content || ''}`).join(' ')}`
-  );
 
-  const hasCommunication = source.includes('iletisim') || source.includes('konus') || source.includes('dil') || source.includes('istek');
-  const hasSocial = source.includes('sosyal') || source.includes('goz temasi') || source.includes('aba') || source.includes('davran');
-  const hasSensory = source.includes('duyu') || source.includes('ergoter') || source.includes('hassas') || source.includes('regul');
-  const steps: Array<{ title: string; detail: string; duration: string }> = [];
-
-  // Eğer bugün ruh hali kötüyse (1-2) duyusal düzenlemeyi öne çek
-  const moodLevel = todayMood?.moodLevel ?? 0;
-  const hasLowMood = moodLevel > 0 && moodLevel <= 2;
-
-  if (hasLowMood || hasSensory || therapies.length === 0) {
-    steps.push({
-      title: hasLowMood ? 'Sakinleştirici duyusal mola' : 'Kısa duyusal hazırlık',
-      detail: hasLowMood
-        ? 'Ruh hali düşük görünüyor — ağır battaniye, derin baskı veya ritimli sallanma ile düzenleme yapın.'
-        : 'Geçişlerden önce nefes, baskı ya da minder itme ile bedeni hazırlayın.',
-      duration: '4 dk',
-    });
-  }
-
-  // Alınmamış ilaç varsa hatırlat
-  const pendingMeds = medications?.filter(m =>
-    (m.scheduledTimes ?? []).some(t => !(m.todayLogs ?? []).find(l => l.scheduledTime === t && l.taken))
-  );
-  if (pendingMeds && pendingMeds.length > 0) {
-    steps.push({
-      title: `İlaç kontrolü — ${pendingMeds.map(m => m.name).join(', ')}`,
-      detail: `${pendingMeds.length} ilacın bugünkü dozu henüz alınmamış olarak görünüyor.`,
-      duration: '2 dk',
-    });
-  }
-
-  if (hasCommunication || therapies.length === 0) {
-    steps.push({
-      title: 'İki seçenekle iletişim başlat',
-      detail: 'Açık uçlu soru yerine iki net seçenek sunup isteme becerisini destekleyin.',
-      duration: '5 dk',
-    });
-  }
-
-  if (hasSocial || therapies.length === 0) {
-    steps.push({
-      title: 'Sıra alma oyunu oynayın',
-      detail: 'Top, blok ya da kartla önce ben sonra sen ritmi kurun.',
-      duration: '6 dk',
-    });
-  }
-
-  if (steps.length < 3) {
-    steps.push({
-      title: 'Görsel hikâye ile kapanış',
-      detail: 'Kısa bir görsel rutinle günün akışını tamamlayın.',
-      duration: '3 dk',
-    });
-  }
-
-  const moodNote = hasLowMood ? ' Bugünün ruh hali verisi dikkate alındı.' : '';
-  return {
-    title: eventCount > 0 ? 'Bugün için kısa plan hazır' : 'Evde uygulanabilir günlük destek akışı',
-    summary: eventCount > 0
-      ? `Takvimde yaklaşan etkinlik olduğu için bugünkü akış kısa ve düzenleyici tutuldu.${moodNote}`
-      : `Bugünün odağı kısa tekrarlar, net yönergeler ve baskısız oyun akışı.${moodNote}`,
-    steps: steps.slice(0, 3),
-  };
-}
 
 function getProfileCompleteness(u?: { fullName?: string; bio?: string; expertTitle?: string; profileImageUrl?: string; institution?: string } | null): number {
   if (!u) return 0;
@@ -181,29 +95,7 @@ const EVENT_TYPE_META: Record<string, { label: string; textColor: string; bgColo
   DIGER:       { label: 'Etkinlik',  textColor: 'text-slate-600',   bgColor: 'bg-slate-100' },
 };
 
-const STARTER_DEMO_CARDS = [
-  {
-    icon: Heart,
-    title: 'Bugünün kaydı',
-    value: 'Ruh hali: sakin',
-    detail: 'Uyku ve ilaç bilgisiyle günlük akış netleşir.',
-    tone: 'bg-rose-50 text-rose-700 ring-rose-100',
-  },
-  {
-    icon: Target,
-    title: 'Sıradaki adım',
-    value: 'Kısa duyusal mola',
-    detail: 'Evde uygulanabilir küçük hedefler önerilir.',
-    tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
-  },
-  {
-    icon: TrendingUp,
-    title: 'İlerleme',
-    value: '%67 tamamlandı',
-    detail: 'Kayıtlar arttıkça haftalık örüntüler görünür.',
-    tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-  },
-];
+
 
 function getEventCountdown(startTime: string): { label: string; timeLabel: string; urgent: boolean } {
   const start = new Date(startTime);
@@ -312,88 +204,7 @@ export function DashboardPage() {
   const [discoveryTab, setDiscoveryTab] = useState<'quests' | 'library'>('quests');
   const [libraryFilter, setLibraryFilter] = useState<'all' | 'growth' | 'social' | 'safety' | 'wellbeing'>('all');
 
-  // ── Bugünün Mini Seansı (Interactive Session States) ──
-  const [sessionActive, setSessionActive] = useState(false);
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
-  const [sessionTimeLeft, setSessionTimeLeft] = useState(0);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [sessionCompletedState, setSessionCompletedState] = useState(false);
-  const [sessionNoteText, setSessionNoteText] = useState('');
-  const [savingSessionNote, setSavingSessionNote] = useState(false);
 
-  // Timer Countdown Effect
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (timerRunning && sessionTimeLeft > 0) {
-      interval = setInterval(() => {
-        setSessionTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (sessionTimeLeft === 0 && timerRunning) {
-      setTimerRunning(false);
-      toast.success('Adım süresi tamamlandı! Sıradaki adıma geçebilirsiniz.');
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [timerRunning, sessionTimeLeft]);
-
-  const startSession = () => {
-    if (!dashboardTodayPlan?.steps?.length) return;
-    setActiveStepIndex(0);
-    const durationStr = dashboardTodayPlan.steps[0]?.duration || '5 dk';
-    const mins = parseInt(durationStr.match(/\d+/)?.[0] || '5', 10);
-    setSessionTimeLeft(mins * 60);
-    setSessionActive(true);
-    setTimerRunning(true);
-    setSessionCompletedState(false);
-    setSessionNoteText('');
-  };
-
-  const toggleTimer = () => setTimerRunning(!timerRunning);
-  const addOneMinute = () => setSessionTimeLeft((prev) => prev + 60);
-
-  const nextStep = () => {
-    const nextIdx = activeStepIndex + 1;
-    if (nextIdx < dashboardTodayPlan.steps.length) {
-      setActiveStepIndex(nextIdx);
-      const durationStr = dashboardTodayPlan.steps[nextIdx]?.duration || '5 dk';
-      const mins = parseInt(durationStr.match(/\d+/)?.[0] || '5', 10);
-      setSessionTimeLeft(mins * 60);
-      setTimerRunning(true);
-    } else {
-      setTimerRunning(false);
-      setSessionActive(false);
-      setSessionCompletedState(true);
-    }
-  };
-
-  const saveSessionNote = async () => {
-    if (!activeChild) return;
-    setSavingSessionNote(true);
-    try {
-      const content = sessionNoteText.trim() 
-        ? `Bugünün mini seansı başarıyla tamamlandı. Ebeveyn notu: ${sessionNoteText.trim()}`
-        : 'Bugünün mini seansı başarıyla tamamlandı.';
-      await noteService.create({
-        childId: activeChild.id,
-        title: 'Günlük Mini Seans Notu',
-        content,
-      });
-      toast.success('Seans notu kaydedildi!');
-      setSessionCompletedState(false);
-      setSessionNoteText('');
-    } catch {
-      toast.error('Not kaydedilemedi.');
-    } finally {
-      setSavingSessionNote(false);
-    }
-  };
-
-  const formatSeconds = (totalSecs: number) => {
-    const m = Math.floor(totalSecs / 60);
-    const s = totalSecs % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  };
   
   // Admin-specific stats
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
@@ -459,6 +270,7 @@ export function DashboardPage() {
     if (user?.role !== 'PARENT') return;
     try {
       const visited = new Set(JSON.parse(localStorage.getItem('guide-visited-routes') ?? '[]') as string[]);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisitedRoutes(visited);
     } catch {
       // ignore
@@ -468,6 +280,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     if (!loading && user?.role === 'PARENT' && children.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowWelcomeWizard(true);
     }
   }, [loading, children, user?.role]);
@@ -540,8 +353,8 @@ export function DashboardPage() {
   const activeChildEvents = activeChild
     ? upcomingEvents.filter((event) => !event.childId || event.childId === activeChild.id).slice(0, 3)
     : [];
-  const activeChildTherapies = splitTherapies(activeChild?.therapies);
-  const dashboardTodayPlan = buildDashboardTodayPlan(activeChildTherapies, recentNotes, activeChildEvents.length, todayMood, todayMeds);
+
+
   const firstName = getFirstName(user?.fullName);
   const quickCaptureActions = [
     {
@@ -577,7 +390,14 @@ export function DashboardPage() {
   const nextEvent = activeChildEvents[0];
   const nextEventCountdown = nextEvent ? getEventCountdown(nextEvent.startTime) : null;
   const nextEventType = nextEvent ? (EVENT_TYPE_META[nextEvent.eventType] ?? EVENT_TYPE_META.DIGER) : null;
-  const planTotalMinutes = dashboardTodayPlan.steps.reduce((total, step) => total + (Number.parseInt(step.duration, 10) || 0), 0);
+  const nextAppointment = activeChild
+    ? upcomingEvents.find(
+        (event) =>
+          (!event.childId || event.childId === activeChild.id) &&
+          ['APPOINTMENT', 'TERAPI', 'DOKTOR'].includes(event.eventType)
+      )
+    : null;
+
   const todayTasks = activeChild ? (() => {
     type Task = {
       to: string; icon: React.ElementType; title: string; detail: string;
@@ -755,7 +575,7 @@ export function DashboardPage() {
       doneCta: 'Uzman bul',
     },
   ];
-  const firstPendingTaskIndex = todayTasks.findIndex((task) => !task.done);
+
   let pendingCount = 0;
   let stepCounter = 0;
   const guidedTodayTasks = todayTasks.map((task) => {
@@ -789,6 +609,7 @@ export function DashboardPage() {
   const priorityGuidanceItems: FollowUpSuggestion[] = activeChild ? [
     todayMood
       ? {
+          id: 'mood',
           to: '/gunluk-takip',
           icon: Heart,
           title: 'Bugünün kaydını kontrol et',
@@ -800,6 +621,7 @@ export function DashboardPage() {
           iconTone: 'bg-emerald-100 text-emerald-700',
         }
       : {
+          id: 'mood',
           to: '/gunluk-takip',
           icon: Heart,
           title: 'Bugünün kaydını gir',
@@ -812,6 +634,7 @@ export function DashboardPage() {
         },
     pendingMedicationSlots > 0
       ? {
+          id: 'meds',
           to: '/gunluk-takip',
           icon: Pill,
           title: 'İlaç kontrolünü bitir',
@@ -823,6 +646,7 @@ export function DashboardPage() {
           iconTone: 'bg-amber-100 text-amber-700',
         }
       : {
+          id: 'plan',
           to: '/tedavi',
           icon: Target,
           title: 'Günlük planı uygula',
@@ -835,6 +659,7 @@ export function DashboardPage() {
         },
     !hasSensoryProfile
       ? {
+          id: 'sensory',
           to: '/duyusal-profil',
           icon: Brain,
           title: 'Rahatlatan ve zorlayan şeyleri ekle',
@@ -847,6 +672,7 @@ export function DashboardPage() {
         }
       : !hasEmergencyCard
         ? {
+            id: 'emergency',
             to: '/acil-kart',
             icon: ShieldCheck,
             title: 'Acil kartı hazırla',
@@ -858,6 +684,7 @@ export function DashboardPage() {
             iconTone: 'bg-teal-100 text-teal-700',
           }
         : {
+            id: 'analytics',
             to: '/gelisim-paneli',
             icon: TrendingUp,
             title: 'Gelişimi yorumla',
@@ -868,30 +695,46 @@ export function DashboardPage() {
             tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-950 hover:border-emerald-300',
             iconTone: 'bg-emerald-100 text-emerald-700',
           },
-    activeConnections.length > 0
+    nextAppointment
       ? {
-          to: '/paylasimli-ilerleme',
-          icon: ShieldCheck,
-          title: 'Uzmanla paylaşımı yönet',
-          detail: 'Hiçbir kayıt sen onaylamadan paylaşılmaz; neyi göstereceğini sen seç.',
-          cta: 'Paylaşımı aç',
-          badge: 'Uzman',
-          priorityLabel: '4. Destek',
-          tone: 'border-blue-200 bg-blue-50/70 text-blue-950 hover:border-blue-300',
-          iconTone: 'bg-blue-100 text-blue-700',
-        }
-      : {
-          to: '/uzmanlar',
+          id: 'experts',
+          to: '/takvim',
           icon: GraduationCap,
-          title: 'Uzman desteğini keşfet',
-          detail: 'Randevu almadan önce uzman profillerini ve seçenekleri incele.',
-          cta: 'Uzman bul',
-          badge: 'Destek',
-          priorityLabel: '4. Destek',
-          tone: 'border-sky-200 bg-sky-50/70 text-sky-950 hover:border-sky-300',
-          iconTone: 'bg-sky-100 text-sky-700',
-        },
+          title: 'Yaklaşan randevunuz var',
+          detail: `${nextAppointment.title} — ${getEventCountdown(nextAppointment.startTime).label}`,
+          cta: 'Takvimi aç',
+          badge: 'Randevu',
+          priorityLabel: '4. Randevu',
+          tone: 'border-indigo-200 bg-indigo-50/70 text-indigo-950 hover:border-indigo-300',
+          iconTone: 'bg-indigo-100 text-indigo-700',
+        }
+      : activeConnections.length > 0
+        ? {
+            id: 'connections',
+            to: '/paylasimli-ilerleme',
+            icon: ShieldCheck,
+            title: 'Uzmanla paylaşımı yönet',
+            detail: 'Hiçbir kayıt sen onaylamadan paylaşılmaz; neyi göstereceğini sen seç.',
+            cta: 'Paylaşımı aç',
+            badge: 'Uzman',
+            priorityLabel: '4. Destek',
+            tone: 'border-blue-200 bg-blue-50/70 text-blue-950 hover:border-blue-300',
+            iconTone: 'bg-blue-100 text-blue-700',
+          }
+        : {
+            id: 'experts',
+            to: '/uzmanlar',
+            icon: GraduationCap,
+            title: 'Yaklaşan randevunuz yok',
+            detail: 'Planlanmış randevu yok. Uzman profillerini ve seçenekleri incele.',
+            cta: 'Uzman bul',
+            badge: 'Destek',
+            priorityLabel: '4. Destek',
+            tone: 'border-sky-200 bg-sky-50/70 text-sky-950 hover:border-sky-300',
+            iconTone: 'bg-sky-100 text-sky-700',
+          },
     {
+      id: 'knowledge',
       to: '/bilgi-bankasi',
       icon: BookOpen,
       title: 'Kaynaklarla güçlendir',
@@ -904,6 +747,7 @@ export function DashboardPage() {
     },
   ] : [
     {
+      id: 'profile',
       to: '/cocuklarim',
       icon: Baby,
       title: 'Çocuk profilini oluştur',
@@ -915,6 +759,7 @@ export function DashboardPage() {
       iconTone: 'bg-indigo-100 text-indigo-700',
     },
     {
+      id: 'guide',
       to: '/kullanici-rehberi',
       icon: Sparkles,
       title: 'Platformu tanı',
@@ -926,6 +771,7 @@ export function DashboardPage() {
       iconTone: 'bg-violet-100 text-violet-700',
     },
     {
+      id: 'experts',
       to: '/uzmanlar',
       icon: GraduationCap,
       title: 'Uzmanları incele',
@@ -950,6 +796,7 @@ export function DashboardPage() {
     const nextAction = (() => {
       if (children.length === 0) {
         return {
+          id: 'profile',
           title: "Önce çocuk profilini oluştur",
           detail: "Profil olmadan günlük plan, takip, uzman paylaşımı ve öneriler kişiselleşmez. İlk gün için sadece bu adımla başla.",
           badge: "1. İlk adım",
@@ -960,6 +807,7 @@ export function DashboardPage() {
       }
       if (!todayMood) {
         return {
+          id: 'mood',
           title: "Bugünün kısa kaydını gir",
           detail: "Önce kayıt girilir; günlük plan ve öneriler bu bilgiye göre anlam kazanır.",
           badge: "1. Bugün",
@@ -971,6 +819,7 @@ export function DashboardPage() {
       }
       if (pendingMedicationSlots > 0) {
         return {
+          id: 'meds',
           title: "İlaç Kontrolünü Tamamlayın",
           detail: `Bugün için bekleyen ${pendingMedicationSlots} doz ilaç var. İşaretleme yapın.`,
           badge: "Sağlık 💊",
@@ -982,6 +831,7 @@ export function DashboardPage() {
       }
       if (!hasSensoryProfile) {
         return {
+          id: 'sensory',
           title: "Rahatlatan ve zorlayan şeyleri ekle",
           detail: "Ses, ışık, temas ve geçişlerde neyin iyi geldiğini kısa anketle belirle.",
           badge: "3. Temel",
@@ -993,6 +843,7 @@ export function DashboardPage() {
       }
       if (!hasEmergencyCard) {
         return {
+          id: 'emergency',
           title: "Acil Durum Kartını Doldurun",
           detail: "Çocuğunuzun özel durumunu gösteren ve QR kodla paylaşılabilen acil durum kartını hazırlayın.",
           badge: "3. Güvenlik",
@@ -1003,6 +854,7 @@ export function DashboardPage() {
         };
       }
       return {
+        id: 'wellbeing',
         title: "Bugünün temeli tamam",
         detail: "Şimdi gelişim özeti, rutinler, uzman paylaşımı veya kaynaklarla devam edebilirsin.",
         badge: "Sonra",
@@ -1075,8 +927,11 @@ export function DashboardPage() {
               </Link>
             </div>
             <div className="mt-3 grid gap-2">
-              {priorityGuidanceItems.slice(0, 3).map((suggestion) => {
-                const SuggestionIcon = suggestion.icon;
+              {priorityGuidanceItems
+                .filter((suggestion) => suggestion.id !== nextAction.id)
+                .slice(0, 3)
+                .map((suggestion) => {
+                  const SuggestionIcon = suggestion.icon;
                 return (
                   <Link
                     key={suggestion.to}

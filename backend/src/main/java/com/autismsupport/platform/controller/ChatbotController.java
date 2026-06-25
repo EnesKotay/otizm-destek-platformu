@@ -35,6 +35,8 @@ public class ChatbotController {
     private final MilestoneRepository milestoneRepository;
     private final MoodEntryRepository moodEntryRepository;
     private final RoutineRepository routineRepository;
+    private final ABCEntryRepository abcEntryRepository;
+    private final SleepEntryRepository sleepEntryRepository;
 
     /* ─── Normal (non-streaming) endpoint ─────────────────── */
     @RateLimit(limit = 20, duration = 60)
@@ -73,6 +75,11 @@ public class ChatbotController {
                 userId,
                 childContext
         );
+    }
+
+    private static String truncate(String s, int max) {
+        if (s == null) return "";
+        return s.length() <= max ? s : s.substring(0, max) + "…";
     }
 
     /* ─── Zengin cocuk baglami ─────────────────────────────── */
@@ -138,6 +145,55 @@ public class ChatbotController {
                         sb.append(String.format("- Son 7 gunluk ortalama ruh hali: %.1f/5\n", avgMood));
                     }
                 } catch (Exception e) { log.debug("Ruh hali alinamadi: {}", e.getMessage()); }
+
+                // Son 7 gunluk uyku verileri
+                try {
+                    LocalDate weekAgo = LocalDate.now().minusDays(7);
+                    List<SleepEntry> sleepEntries = sleepEntryRepository
+                            .findByChildIdAndSleepDateBetweenOrderBySleepDateAsc(childId, weekAgo, LocalDate.now());
+                    if (!sleepEntries.isEmpty()) {
+                        double avgSleep = sleepEntries.stream()
+                                .filter(s -> s.getDurationMinutes() != null)
+                                .mapToInt(SleepEntry::getDurationMinutes)
+                                .average().orElse(0);
+                        long poorSleepCount = sleepEntries.stream()
+                                .filter(s -> s.getDurationMinutes() != null && s.getDurationMinutes() < 420)
+                                .count();
+                        sb.append(String.format("- Son 7 gunluk ortalama uyku: %.0f dakika (%.1f saat)\n",
+                                avgSleep, avgSleep / 60));
+                        if (poorSleepCount > 2) {
+                            sb.append(String.format("  (Dikkat: %d gecede uyku suresi 7 saatin altinda)\n", poorSleepCount));
+                        }
+                        long wakingNights = sleepEntries.stream()
+                                .filter(s -> s.getNightWakings() > 0)
+                                .count();
+                        if (wakingNights > 0) {
+                            sb.append(String.format("  (%d gecede gece uyanmasi yasandi)\n", wakingNights));
+                        }
+                    }
+                } catch (Exception e) { log.debug("Uyku verileri alinamadi: {}", e.getMessage()); }
+
+                // Son 7 gunluk ABC davranis kayitlari
+                try {
+                    LocalDate weekAgo = LocalDate.now().minusDays(7);
+                    List<ABCEntry> abcEntries = abcEntryRepository
+                            .findByChildIdAndEntryDateBetweenOrderByEntryDateDesc(childId, weekAgo, LocalDate.now());
+                    if (!abcEntries.isEmpty()) {
+                        sb.append(String.format("- Son 7 gunde %d davranis kaydi:\n", abcEntries.size()));
+                        abcEntries.stream().limit(3).forEach(a -> {
+                            sb.append(String.format("  • [%s] Tetikleyici: %s | Davranis: %s | Sonuc: %s (Siddeti: %d/5)\n",
+                                    a.getEntryDate(),
+                                    truncate(a.getAntecedent(), 60),
+                                    truncate(a.getBehavior(), 60),
+                                    truncate(a.getConsequence(), 60),
+                                    a.getIntensity()));
+                        });
+                        double avgIntensity = abcEntries.stream().mapToInt(ABCEntry::getIntensity).average().orElse(0);
+                        if (avgIntensity > 3.5) {
+                            sb.append(String.format("  (Bu hafta ortalama davranis siddeti yuksel: %.1f/5)\n", avgIntensity));
+                        }
+                    }
+                } catch (Exception e) { log.debug("ABC kayitlari alinamadi: {}", e.getMessage()); }
 
                 // Aktif rutinler
                 try {

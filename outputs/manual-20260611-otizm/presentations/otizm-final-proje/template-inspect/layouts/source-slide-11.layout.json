@@ -1,0 +1,1372 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/re1w7mp0",
+    "id": "re1w7mp0",
+    "slide": 12,
+    "layoutId": "/ppt/slideLayouts/slideLayout6.xml",
+    "layoutName": "Main",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Blue",
+    "colors": {
+      "accent1": "#3B9ED8",
+      "accent2": "#358EC2",
+      "accent3": "#2F7EAC",
+      "accent4": "#296E97",
+      "accent5": "#235E81",
+      "accent6": "#1D4F6C",
+      "dk1": "#656D78",
+      "lt1": "#FFFFFF",
+      "dk2": "#8496B0",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Custom 1",
+      "majorFont": {
+        "latinTypeface": "Source Sans Pro Black"
+      },
+      "minorFont": {
+        "latinTypeface": "Source Sans Pro"
+      }
+    },
+    "typefaces": [
+      "Source Sans Pro",
+      "Source Sans Pro Black"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout6.xml",
+      "name": "Main",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/38",
+          "id": "38",
+          "name": "Shape 2",
+          "bbox": [
+            0,
+            147.09,
+            1280,
+            574
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "fillColor": "rgba(123, 141, 179, 0.04)",
+          "lineColor": "rgba(235, 235, 235, 0.1)",
+          "lineWidth": 2.67
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/39",
+          "id": "39",
+          "name": "Shape 2711",
+          "bbox": [
+            63.8,
+            58.88,
+            29.33,
+            29.33
+          ],
+          "geometry": "custom",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 2,
+              "right": 2,
+              "bottom": 2,
+              "left": 2
+            }
+          },
+          "fillColor": "accent1",
+          "lineWidth": 1.33
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/40",
+          "id": "40",
+          "name": "Rounded Rectangle 39",
+          "bbox": [
+            1182.74,
+            652.43,
+            33.15,
+            33.15
+          ],
+          "geometry": "roundRect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle"
+          },
+          "lineColor": "accent1"
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/41",
+          "id": "41",
+          "name": "TextBox 40",
+          "bbox": [
+            1181.42,
+            654.62,
+            36.22,
+            29.08
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "wrap": "none",
+            "autoFit": "resizeShapeToFitText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›",
+                  "fontSize": 16,
+                  "typeface": "Source Sans Pro",
+                  "color": "accent1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/26",
+          "id": "26",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            116.99,
+            47.93,
+            933.8,
+            51.06
+          ],
+          "text": "Put your main text here",
+          "textPreview": "Put your main text here",
+          "resolvedTextStyle": {
+            "autoFit": "none"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your main text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your main text here"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/27",
+          "id": "27",
+          "name": "Text Placeholder 4",
+          "bbox": [
+            118.9,
+            98.99,
+            931.89,
+            28.28
+          ],
+          "text": "Put your text here",
+          "textPreview": "Put your text here",
+          "resolvedTextStyle": {
+            "autoFit": "shrinkText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your text here"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/2",
+          "id": "2",
+          "name": "Title Placeholder 1",
+          "bbox": [
+            88,
+            38.33,
+            1104,
+            139.17
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master title style",
+          "textPreview": "Click to edit Master title style",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master title style",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master title style"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/3",
+          "id": "3",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            88,
+            191.67,
+            1104,
+            456.83
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "resolvedTextStyle": {
+            "vertical": 1,
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/4",
+          "id": "4",
+          "name": "Date Placeholder 3",
+          "bbox": [
+            88,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "6/2/2026",
+          "textPreview": "6/2/2026",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6/2/2026",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "6/2/2026"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/5",
+          "id": "5",
+          "name": "Footer Placeholder 4",
+          "bbox": [
+            424,
+            667.33,
+            432,
+            38.33
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          }
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/6",
+          "id": "6",
+          "name": "Slide Number Placeholder 5",
+          "bbox": [
+            904,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/s72x4nap",
+      "id": "15",
+      "name": "Text Placeholder 4",
+      "bbox": [
+        100.38,
+        47.35,
+        966.93,
+        51.06
+      ],
+      "text": "PROJE KALİTE PLANI (20p)",
+      "textPreview": "PROJE KALİTE PLANI (20p)",
+      "resolvedFontSize": 42.67,
+      "resolvedTextStyle": {
+        "vertical": 1,
+        "fontSize": 42.67,
+        "typeface": "Source Sans Pro Black",
+        "color": "tx1",
+        "alignment": "left",
+        "autoFit": "none",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          },
+          {
+            "index": 2,
+            "text": "PROJE KALİTE PLANI (20p)"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "PROJE KALİTE PLANI (20p)",
+          "runs": [
+            {
+              "index": 1,
+              "text": "PROJE KALİTE PLANI",
+              "color": "accent5",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": " (20p)",
+              "color": "accent5",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0,
+          "indent": 0,
+          "lineSpacingPercent": 90000,
+          "spaceBefore": 1000
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "table",
+      "scope": "slide",
+      "aid": "tb/cj6tovah",
+      "id": "16",
+      "name": "Tabella 17",
+      "bbox": [
+        56.55,
+        168.52,
+        1129.11,
+        272.53
+      ],
+      "text": "N0 | AKTİVİTE (GEREKSİNİM) | KALİTE KONTROLÜ (KALİTE METRİKLERİ)\n1 | Tarif Araştırması | En az 3 farklı pasta sitesi ziyaret edilerek karar verilecek.\n2 | Tasarım hazırlaması | Pdf formatında «malzeme listesi, görsel, tarif bilgilerini» içeren bir tasarım dokümanı hazırlanmalı.\n3 | Malzeme listesinin hazırlanması | Tasarım dokümanında yer verilecek.\n4 | Malzeme tedariği | Online marketten tedarik edilecektir.\n5 | Pastanın kalite gereksinimleri | Kek hamurunun parmakla orta sertlikte bastırıldığında 2 cm kadar derine inmesi.\nPastanın 23x30 cm2 ebatlarını geçmemesi\nŞeker oranı %5-%10 arasında olması\n6",
+      "textPreview": "N0 | AKTİVİTE (GEREKSİNİM) | KALİTE KONTROLÜ (KALİTE METRİKLERİ) | 1 | Tarif Araştırması | En az 3 farklı pasta sitesi ziyaret edilerek k...",
+      "rows": 7,
+      "cols": 3,
+      "cells": [
+        {
+          "index": 1,
+          "row": 1,
+          "column": 1,
+          "bbox": [
+            56.55,
+            168.52,
+            59.15,
+            38.93
+          ],
+          "text": "N0",
+          "textPreview": "N0",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "N0",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "N0",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "row": 1,
+          "column": 2,
+          "bbox": [
+            115.7,
+            168.52,
+            406.77,
+            38.93
+          ],
+          "text": "AKTİVİTE (GEREKSİNİM)",
+          "textPreview": "AKTİVİTE (GEREKSİNİM)",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "AKTİVİTE (GEREKSİNİM)",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "AKTİVİTE (GEREKSİNİM)",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "row": 1,
+          "column": 3,
+          "bbox": [
+            522.46,
+            168.52,
+            663.2,
+            38.93
+          ],
+          "text": "KALİTE KONTROLÜ (KALİTE METRİKLERİ)",
+          "textPreview": "KALİTE KONTROLÜ (KALİTE METRİKLERİ)",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "KALİTE KONTROLÜ (KALİTE METRİKLERİ)",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "KALİTE KONTROLÜ (KALİTE METRİKLERİ)",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "row": 2,
+          "column": 1,
+          "bbox": [
+            56.55,
+            207.45,
+            59.15,
+            38.93
+          ],
+          "text": "1",
+          "textPreview": "1",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "1",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "1",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "row": 2,
+          "column": 2,
+          "bbox": [
+            115.7,
+            207.45,
+            406.77,
+            38.93
+          ],
+          "text": "Tarif Araştırması",
+          "textPreview": "Tarif Araştırması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Tarif Araştırması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Tarif Araştırması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "row": 2,
+          "column": 3,
+          "bbox": [
+            522.46,
+            207.45,
+            663.2,
+            38.93
+          ],
+          "text": "En az 3 farklı pasta sitesi ziyaret edilerek karar verilecek.",
+          "textPreview": "En az 3 farklı pasta sitesi ziyaret edilerek karar verilecek.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "En az 3 farklı pasta sitesi ziyaret edilerek karar verilecek.",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "En az 3 farklı pasta sitesi ziyaret edilerek karar verilecek."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "row": 3,
+          "column": 1,
+          "bbox": [
+            56.55,
+            246.38,
+            59.15,
+            38.93
+          ],
+          "text": "2",
+          "textPreview": "2",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "2",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "2",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "row": 3,
+          "column": 2,
+          "bbox": [
+            115.7,
+            246.38,
+            406.77,
+            38.93
+          ],
+          "text": "Tasarım hazırlaması",
+          "textPreview": "Tasarım hazırlaması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Tasarım hazırlaması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Tasarım hazırlaması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "row": 3,
+          "column": 3,
+          "bbox": [
+            522.46,
+            246.38,
+            663.2,
+            38.93
+          ],
+          "text": "Pdf formatında «malzeme listesi, görsel, tarif bilgilerini» içeren bir tasarım dokümanı hazırlanmalı.",
+          "textPreview": "Pdf formatında «malzeme listesi, görsel, tarif bilgilerini» içeren bir tasarım dokümanı hazırlanmalı.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Pdf formatında «malzeme listesi, görsel, tarif bilgilerini» içeren bir tasarım dokümanı hazırlanmalı.",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Pdf formatında «",
+                  "alignment": "left"
+                },
+                {
+                  "index": 2,
+                  "text": "malzeme listesi, görsel, tarif bilgilerini",
+                  "alignment": "left"
+                },
+                {
+                  "index": 3,
+                  "text": "»",
+                  "alignment": "left"
+                },
+                {
+                  "index": 4,
+                  "text": " içeren bir tasarım ",
+                  "alignment": "left"
+                },
+                {
+                  "index": 5,
+                  "text": "dokümanı ",
+                  "alignment": "left"
+                },
+                {
+                  "index": 6,
+                  "text": "hazırlan",
+                  "alignment": "left"
+                },
+                {
+                  "index": 7,
+                  "text": "malı.",
+                  "alignment": "left"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "row": 4,
+          "column": 1,
+          "bbox": [
+            56.55,
+            285.32,
+            59.15,
+            38.93
+          ],
+          "text": "3",
+          "textPreview": "3",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "3",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "3",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 11,
+          "row": 4,
+          "column": 2,
+          "bbox": [
+            115.7,
+            285.32,
+            406.77,
+            38.93
+          ],
+          "text": "Malzeme listesinin hazırlanması",
+          "textPreview": "Malzeme listesinin hazırlanması",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Malzeme listesinin hazırlanması",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Malzeme listesinin hazırlanması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 12,
+          "row": 4,
+          "column": 3,
+          "bbox": [
+            522.46,
+            285.32,
+            663.2,
+            38.93
+          ],
+          "text": "Tasarım dokümanında yer verilecek.",
+          "textPreview": "Tasarım dokümanında yer verilecek.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Tasarım dokümanında yer verilecek.",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Tasarım dokümanında yer verilecek.",
+                  "alignment": "left"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 13,
+          "row": 5,
+          "column": 1,
+          "bbox": [
+            56.55,
+            324.25,
+            59.15,
+            38.93
+          ],
+          "text": "4",
+          "textPreview": "4",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "4",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "4",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 14,
+          "row": 5,
+          "column": 2,
+          "bbox": [
+            115.7,
+            324.25,
+            406.77,
+            38.93
+          ],
+          "text": "Malzeme tedariği",
+          "textPreview": "Malzeme tedariği",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Malzeme tedariği",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Malzeme tedariği"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 15,
+          "row": 5,
+          "column": 3,
+          "bbox": [
+            522.46,
+            324.25,
+            663.2,
+            38.93
+          ],
+          "text": "Online marketten tedarik edilecektir.",
+          "textPreview": "Online marketten tedarik edilecektir.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Online marketten tedarik edilecektir.",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "O"
+                },
+                {
+                  "index": 2,
+                  "text": "nline "
+                },
+                {
+                  "index": 3,
+                  "text": "marketten "
+                },
+                {
+                  "index": 4,
+                  "text": "tedarik edilecektir."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 16,
+          "row": 6,
+          "column": 1,
+          "bbox": [
+            56.55,
+            363.18,
+            59.15,
+            38.93
+          ],
+          "text": "5",
+          "textPreview": "5",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "5",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "5",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 17,
+          "row": 6,
+          "column": 2,
+          "bbox": [
+            115.7,
+            363.18,
+            406.77,
+            38.93
+          ],
+          "text": "Pastanın kalite gereksinimleri",
+          "textPreview": "Pastanın kalite gereksinimleri",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Pastanın kalite gereksinimleri",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Pastanın kalite gereksinimleri"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 18,
+          "row": 6,
+          "column": 3,
+          "bbox": [
+            522.46,
+            363.18,
+            663.2,
+            38.93
+          ],
+          "text": "Kek hamurunun parmakla orta sertlikte bastırıldığında 2 cm kadar derine inmesi.\nPastanın 23x30 cm2 ebatlarını geçmemesi\nŞeker oranı %5-%10 arasında olması",
+          "textPreview": "Kek hamurunun parmakla orta sertlikte bastırıldığında 2 cm kadar derine inmesi. | Pastanın 23x30 cm2 ebatlarını geçmemesi | Şeker oranı %...",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Kek hamurunun parmakla orta sertlikte bastırıldığında 2 cm kadar derine inmesi.",
+              "bulletCharacter": "•",
+              "marginLeft": 285750,
+              "indent": -285750,
+              "lineSpacingPercent": 150000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Kek "
+                },
+                {
+                  "index": 2,
+                  "text": "hamurunun"
+                },
+                {
+                  "index": 3,
+                  "text": " "
+                },
+                {
+                  "index": 4,
+                  "text": "parmakla"
+                },
+                {
+                  "index": 5,
+                  "text": " "
+                },
+                {
+                  "index": 6,
+                  "text": "orta"
+                },
+                {
+                  "index": 7,
+                  "text": " "
+                },
+                {
+                  "index": 8,
+                  "text": "sertlikte"
+                },
+                {
+                  "index": 9,
+                  "text": " "
+                },
+                {
+                  "index": 10,
+                  "text": "bastırıldığında"
+                },
+                {
+                  "index": 11,
+                  "text": " 2 cm "
+                },
+                {
+                  "index": 12,
+                  "text": "kadar"
+                },
+                {
+                  "index": 13,
+                  "text": " "
+                },
+                {
+                  "index": 14,
+                  "text": "derine"
+                },
+                {
+                  "index": 15,
+                  "text": " "
+                },
+                {
+                  "index": 16,
+                  "text": "inmesi"
+                },
+                {
+                  "index": 17,
+                  "text": "."
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Pastanın 23x30 cm2 ebatlarını geçmemesi",
+              "bulletCharacter": "•",
+              "marginLeft": 285750,
+              "indent": -285750,
+              "lineSpacingPercent": 150000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Pastanın "
+                },
+                {
+                  "index": 2,
+                  "text": "23x30 cm2 "
+                },
+                {
+                  "index": 3,
+                  "text": "ebatlarını"
+                },
+                {
+                  "index": 4,
+                  "text": " "
+                },
+                {
+                  "index": 5,
+                  "text": "geçmemesi"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Şeker oranı %5-%10 arasında olması",
+              "bulletCharacter": "•",
+              "marginLeft": 285750,
+              "indent": -285750,
+              "lineSpacingPercent": 150000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Şeker "
+                },
+                {
+                  "index": 2,
+                  "text": "oranı"
+                },
+                {
+                  "index": 3,
+                  "text": " "
+                },
+                {
+                  "index": 4,
+                  "text": "%5-%10 ar"
+                },
+                {
+                  "index": 5,
+                  "text": "asında"
+                },
+                {
+                  "index": 6,
+                  "text": " "
+                },
+                {
+                  "index": 7,
+                  "text": "olması"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 19,
+          "row": 7,
+          "column": 1,
+          "bbox": [
+            56.55,
+            402.12,
+            59.15,
+            38.93
+          ],
+          "text": "6",
+          "textPreview": "6",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "6",
+                  "alignment": "center"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 20,
+          "row": 7,
+          "column": 2,
+          "bbox": [
+            115.7,
+            402.12,
+            406.77,
+            38.93
+          ]
+        },
+        {
+          "index": 21,
+          "row": 7,
+          "column": 3,
+          "bbox": [
+            522.46,
+            402.12,
+            663.2,
+            38.93
+          ]
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/d8v6psfi",
+      "id": "5",
+      "name": "TextBox 4",
+      "bbox": [
+        85.23,
+        638.72,
+        1076.92,
+        67.86
+      ],
+      "geometry": "rect",
+      "text": "Metriklerinizin okunduğunda her tarafından aynı şekilde anlaşılabilmesi için genel, ucu açık, yorumlanabilir ifadeler yerine ölçülebilir ve net ifadeler yazınız. ",
+      "textPreview": "Metriklerinizin okunduğunda her tarafından aynı şekilde anlaşılabilmesi için genel, ucu açık, yorumlanabilir ifadeler yerine ölçülebilir ...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Source Sans Pro",
+        "color": "tx1",
+        "alignment": "left",
+        "wrap": "square",
+        "autoFit": "resizeShapeToFitText",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Metriklerinizin okunduğunda her tarafından aynı şekilde anlaşılabilmesi için genel, ucu açık,"
+          },
+          {
+            "index": 2,
+            "text": "yorumlanabilir ifadeler yerine ölçülebilir ve net ifadeler yazınız."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Metriklerinizin okunduğunda her tarafından aynı şekilde anlaşılabilmesi için genel, ucu açık, yorumlanabilir ifadeler yerine ölçülebilir ve net ifadeler yazınız. ",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Metriklerinizin okunduğunda her tarafından aynı şekilde anlaşılabilmesi için genel, ucu açık, yorumlanabilir ifadeler yerine ölçülebilir ve net ifadeler yazınız. ",
+              "color": "#FF0000"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/d0z61032",
+      "id": "17",
+      "name": "Picture 1",
+      "bbox": [
+        1069.5,
+        52.33,
+        173.75,
+        45.52
+      ],
+      "contentType": "image/x-wmf",
+      "asset": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      },
+      "fillImage": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      }
+    }
+  ],
+  "composeRuns": []
+}

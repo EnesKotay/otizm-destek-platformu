@@ -1,0 +1,1344 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/s72x4nap",
+    "id": "s72x4nap",
+    "slide": 4,
+    "layoutId": "/ppt/slideLayouts/slideLayout6.xml",
+    "layoutName": "Main",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Blue",
+    "colors": {
+      "accent1": "#3B9ED8",
+      "accent2": "#358EC2",
+      "accent3": "#2F7EAC",
+      "accent4": "#296E97",
+      "accent5": "#235E81",
+      "accent6": "#1D4F6C",
+      "dk1": "#656D78",
+      "lt1": "#FFFFFF",
+      "dk2": "#8496B0",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Custom 1",
+      "majorFont": {
+        "latinTypeface": "Source Sans Pro Black"
+      },
+      "minorFont": {
+        "latinTypeface": "Source Sans Pro"
+      }
+    },
+    "typefaces": [
+      "Source Sans Pro",
+      "Source Sans Pro Black"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout6.xml",
+      "name": "Main",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/38",
+          "id": "38",
+          "name": "Shape 2",
+          "bbox": [
+            0,
+            147.09,
+            1280,
+            574
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "fillColor": "rgba(123, 141, 179, 0.04)",
+          "lineColor": "rgba(235, 235, 235, 0.1)",
+          "lineWidth": 2.67
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/39",
+          "id": "39",
+          "name": "Shape 2711",
+          "bbox": [
+            63.8,
+            58.88,
+            29.33,
+            29.33
+          ],
+          "geometry": "custom",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 2,
+              "right": 2,
+              "bottom": 2,
+              "left": 2
+            }
+          },
+          "fillColor": "accent1",
+          "lineWidth": 1.33
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/40",
+          "id": "40",
+          "name": "Rounded Rectangle 39",
+          "bbox": [
+            1182.74,
+            652.43,
+            33.15,
+            33.15
+          ],
+          "geometry": "roundRect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle"
+          },
+          "lineColor": "accent1"
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/41",
+          "id": "41",
+          "name": "TextBox 40",
+          "bbox": [
+            1181.42,
+            654.62,
+            36.22,
+            29.08
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "wrap": "none",
+            "autoFit": "resizeShapeToFitText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›",
+                  "fontSize": 16,
+                  "typeface": "Source Sans Pro",
+                  "color": "accent1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/26",
+          "id": "26",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            116.99,
+            47.93,
+            933.8,
+            51.06
+          ],
+          "text": "Put your main text here",
+          "textPreview": "Put your main text here",
+          "resolvedTextStyle": {
+            "autoFit": "none"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your main text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your main text here"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/27",
+          "id": "27",
+          "name": "Text Placeholder 4",
+          "bbox": [
+            118.9,
+            98.99,
+            931.89,
+            28.28
+          ],
+          "text": "Put your text here",
+          "textPreview": "Put your text here",
+          "resolvedTextStyle": {
+            "autoFit": "shrinkText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your text here"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/2",
+          "id": "2",
+          "name": "Title Placeholder 1",
+          "bbox": [
+            88,
+            38.33,
+            1104,
+            139.17
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master title style",
+          "textPreview": "Click to edit Master title style",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master title style",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master title style"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/3",
+          "id": "3",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            88,
+            191.67,
+            1104,
+            456.83
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "resolvedTextStyle": {
+            "vertical": 1,
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/4",
+          "id": "4",
+          "name": "Date Placeholder 3",
+          "bbox": [
+            88,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "6/2/2026",
+          "textPreview": "6/2/2026",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6/2/2026",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "6/2/2026"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/5",
+          "id": "5",
+          "name": "Footer Placeholder 4",
+          "bbox": [
+            424,
+            667.33,
+            432,
+            38.33
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          }
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/6",
+          "id": "6",
+          "name": "Slide Number Placeholder 5",
+          "bbox": [
+            904,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vy90je9c",
+      "id": "5",
+      "name": "Text Placeholder 4",
+      "bbox": [
+        116.99,
+        47.93,
+        933.8,
+        51.06
+      ],
+      "text": "ÖN BİLGİLENDİRME",
+      "textPreview": "ÖN BİLGİLENDİRME",
+      "resolvedFontSize": 42.67,
+      "resolvedTextStyle": {
+        "vertical": 1,
+        "fontSize": 42.67,
+        "typeface": "Source Sans Pro Black",
+        "color": "tx1",
+        "alignment": "left",
+        "autoFit": "none",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          },
+          {
+            "index": 2,
+            "text": "ÖN BİLGİLENDİRME"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ÖN BİLGİLENDİRME",
+          "runs": [
+            {
+              "index": 1,
+              "text": "ÖN BİLGİLENDİRME"
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0,
+          "indent": 0,
+          "lineSpacingPercent": 90000,
+          "spaceBefore": 1000
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/d4vmtwra",
+      "id": "12",
+      "name": "TextBox 11",
+      "bbox": [
+        59.47,
+        133.97,
+        1100.06,
+        528.4
+      ],
+      "geometry": "rect",
+      "text": "Final sınavı için hazırlayacağınız  proje konusu için Örnek Proje Konuları Listesi’nden faydalanabilirsiniz. \nProjenizin tüm detaylarını kendiniz senaryolaştırabilirsiniz. Önemli olan tutarlı ve anlaşılır olması. Kısıtları belirlemekte zorlanıyorsanız hazırladığınız kadarıyla bana yazın, üzerinden birlikte geçelim.\nBu şablonda yer alan başlıklara ve içeriklere sadık kalarak çalışmanızı word, excel, powerpoint formatlarında hazırlayabilirsiniz. Sınavda bu başlıkların yer aldığı boş sayfalara proje detaylarınızı sıfırdan elle yazmanız gerekecek. Dolayısıyla zorlansanız da kendi projenizi kendinizin hazırlaması yararınıza olur  Detayları ezberlemeyin, mantığını anlamaya çalışın. Sınavda daha rahat yazarsınız.\nÇalışma aşamasında proje detaylarınızı istediğiniz kadar uzun tasarlayabilirsiniz. Sınavda her başlık için en az 5-6 satır tutarlı veri girmeniz yeterli olacak. \nAncak notlandırmada en dolu olan teslimlere biraz daha iltimas geçmem gerekecek. Yani ne kadar fazla detay o kadar fazla fırsat ",
+      "textPreview": "Final sınavı için hazırlayacağınız  proje konusu için Örnek Proje Konuları Listesi’nden faydalanabilirsiniz.  | Projenizin tüm detayların...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Source Sans Pro",
+        "color": "tx1",
+        "alignment": "left",
+        "wrap": "square",
+        "autoFit": "resizeShapeToFitText",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 13,
+        "lines": [
+          {
+            "index": 1,
+            "text": "1. Final sınavı için hazırlayacağınız  proje konusu için Örnek Proje Konuları Listesi’nden"
+          },
+          {
+            "index": 2,
+            "text": "faydalanabilirsiniz."
+          },
+          {
+            "index": 3,
+            "text": "2. Projenizin tüm detaylarını kendiniz senaryolaştırabilirsiniz. Önemli olan tutarlı ve anlaşılır olması."
+          },
+          {
+            "index": 4,
+            "text": "Kısıtları belirlemekte zorlanıyorsanız hazırladığınız kadarıyla bana yazın, üzerinden birlikte geçelim."
+          },
+          {
+            "index": 5,
+            "text": "3. Bu şablonda yer alan başlıklara ve içeriklere sadık kalarak çalışmanızı word, excel, powerpoint"
+          },
+          {
+            "index": 6,
+            "text": "formatlarında hazırlayabilirsiniz. Sınavda bu başlıkların yer aldığı boş sayfalara proje detaylarınızı"
+          },
+          {
+            "index": 7,
+            "text": "sıfırdan elle yazmanız gerekecek. Dolayısıyla zorlansanız da kendi projenizi kendinizin hazırlaması"
+          },
+          {
+            "index": 8,
+            "text": "yararınıza olur  Detayları ezberlemeyin, mantığını anlamaya çalışın. Sınavda daha rahat"
+          },
+          {
+            "index": 9,
+            "text": "yazarsınız."
+          },
+          {
+            "index": 10,
+            "text": "4. Çalışma aşamasında proje detaylarınızı istediğiniz kadar uzun tasarlayabilirsiniz. Sınavda her başlık"
+          },
+          {
+            "index": 11,
+            "text": "için en az 5-6 satır tutarlı veri girmeniz yeterli olacak."
+          },
+          {
+            "index": 12,
+            "text": "5. Ancak notlandırmada en dolu olan teslimlere biraz daha iltimas geçmem gerekecek. Yani ne kadar"
+          },
+          {
+            "index": 13,
+            "text": "fazla detay o kadar fazla fırsat "
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Final sınavı için hazırlayacağınız  proje konusu için Örnek Proje Konuları Listesi’nden faydalanabilirsiniz. ",
+          "marginLeft": 342900,
+          "indent": -342900,
+          "lineSpacingPercent": 150000,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Final sınavı için hazırlayacağınız  proje konusu için "
+            },
+            {
+              "index": 2,
+              "text": "Örnek Proje Konuları Listesi’",
+              "bold": true
+            },
+            {
+              "index": 3,
+              "text": "nden"
+            },
+            {
+              "index": 4,
+              "text": " faydalanabilirsiniz. "
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "text": "Projenizin tüm detaylarını kendiniz senaryolaştırabilirsiniz. Önemli olan tutarlı ve anlaşılır olması. Kısıtları belirlemekte zorlanıyorsanız hazırladığınız kadarıyla bana yazın, üzerinden birlikte geçelim.",
+          "marginLeft": 342900,
+          "indent": -342900,
+          "lineSpacingPercent": 150000,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Projenizin"
+            },
+            {
+              "index": 2,
+              "text": " "
+            },
+            {
+              "index": 3,
+              "text": "tüm"
+            },
+            {
+              "index": 4,
+              "text": " "
+            },
+            {
+              "index": 5,
+              "text": "detaylarını"
+            },
+            {
+              "index": 6,
+              "text": " "
+            },
+            {
+              "index": 7,
+              "text": "kendiniz"
+            },
+            {
+              "index": 8,
+              "text": " "
+            },
+            {
+              "index": 9,
+              "text": "senaryolaştırabilirsiniz"
+            },
+            {
+              "index": 10,
+              "text": ". "
+            },
+            {
+              "index": 11,
+              "text": "Önemli"
+            },
+            {
+              "index": 12,
+              "text": " "
+            },
+            {
+              "index": 13,
+              "text": "olan"
+            },
+            {
+              "index": 14,
+              "text": " "
+            },
+            {
+              "index": 15,
+              "text": "tutarlı",
+              "bold": true
+            },
+            {
+              "index": 16,
+              "text": " "
+            },
+            {
+              "index": 17,
+              "text": "ve"
+            },
+            {
+              "index": 18,
+              "text": " "
+            },
+            {
+              "index": 19,
+              "text": "anlaşılır",
+              "bold": true
+            },
+            {
+              "index": 20,
+              "text": " "
+            },
+            {
+              "index": 21,
+              "text": "olması"
+            },
+            {
+              "index": 22,
+              "text": ". "
+            },
+            {
+              "index": 23,
+              "text": "Kısıtları"
+            },
+            {
+              "index": 24,
+              "text": " "
+            },
+            {
+              "index": 25,
+              "text": "belirlemekte"
+            },
+            {
+              "index": 26,
+              "text": " "
+            },
+            {
+              "index": 27,
+              "text": "zorlanıyorsanız"
+            },
+            {
+              "index": 28,
+              "text": " "
+            },
+            {
+              "index": 29,
+              "text": "hazırladığınız"
+            },
+            {
+              "index": 30,
+              "text": " "
+            },
+            {
+              "index": 31,
+              "text": "kadarıyla"
+            },
+            {
+              "index": 32,
+              "text": " "
+            },
+            {
+              "index": 33,
+              "text": "bana"
+            },
+            {
+              "index": 34,
+              "text": " "
+            },
+            {
+              "index": 35,
+              "text": "yazın"
+            },
+            {
+              "index": 36,
+              "text": ", "
+            },
+            {
+              "index": 37,
+              "text": "üzerinden"
+            },
+            {
+              "index": 38,
+              "text": " "
+            },
+            {
+              "index": 39,
+              "text": "birlikte"
+            },
+            {
+              "index": 40,
+              "text": " "
+            },
+            {
+              "index": 41,
+              "text": "geçelim"
+            },
+            {
+              "index": 42,
+              "text": "."
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "text": "Bu şablonda yer alan başlıklara ve içeriklere sadık kalarak çalışmanızı word, excel, powerpoint formatlarında hazırlayabilirsiniz. Sınavda bu başlıkların yer aldığı boş sayfalara proje detaylarınızı sıfırdan elle yazmanız gerekecek. Dolayısıyla zorlansanız da kendi projenizi kendinizin hazırlaması yararınıza olur  Detayları ezberlemeyin, mantığını anlamaya çalışın. Sınavda daha rahat yazarsınız.",
+          "marginLeft": 342900,
+          "indent": -342900,
+          "lineSpacingPercent": 150000,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Bu "
+            },
+            {
+              "index": 2,
+              "text": "şablonda"
+            },
+            {
+              "index": 3,
+              "text": " "
+            },
+            {
+              "index": 4,
+              "text": "yer"
+            },
+            {
+              "index": 5,
+              "text": " "
+            },
+            {
+              "index": 6,
+              "text": "alan"
+            },
+            {
+              "index": 7,
+              "text": " "
+            },
+            {
+              "index": 8,
+              "text": "başlıklara",
+              "bold": true
+            },
+            {
+              "index": 9,
+              "text": " ve ",
+              "bold": true
+            },
+            {
+              "index": 10,
+              "text": "içeriklere",
+              "bold": true
+            },
+            {
+              "index": 11,
+              "text": " ",
+              "bold": true
+            },
+            {
+              "index": 12,
+              "text": "sadık"
+            },
+            {
+              "index": 13,
+              "text": " "
+            },
+            {
+              "index": 14,
+              "text": "kalarak"
+            },
+            {
+              "index": 15,
+              "text": " "
+            },
+            {
+              "index": 16,
+              "text": "çalışmanızı"
+            },
+            {
+              "index": 17,
+              "text": " word,"
+            },
+            {
+              "index": 18,
+              "text": " "
+            },
+            {
+              "index": 19,
+              "text": "excel,"
+            },
+            {
+              "index": 20,
+              "text": " "
+            },
+            {
+              "index": 21,
+              "text": "powerpoint"
+            },
+            {
+              "index": 22,
+              "text": " "
+            },
+            {
+              "index": 23,
+              "text": "formatlarında"
+            },
+            {
+              "index": 24,
+              "text": " "
+            },
+            {
+              "index": 25,
+              "text": "hazırlayabilirsiniz"
+            },
+            {
+              "index": 26,
+              "text": "."
+            },
+            {
+              "index": 27,
+              "text": " "
+            },
+            {
+              "index": 28,
+              "text": "Sınavda"
+            },
+            {
+              "index": 29,
+              "text": " "
+            },
+            {
+              "index": 30,
+              "text": "bu"
+            },
+            {
+              "index": 31,
+              "text": " "
+            },
+            {
+              "index": 32,
+              "text": "başlıkların"
+            },
+            {
+              "index": 33,
+              "text": " "
+            },
+            {
+              "index": 34,
+              "text": "yer"
+            },
+            {
+              "index": 35,
+              "text": " "
+            },
+            {
+              "index": 36,
+              "text": "aldığı"
+            },
+            {
+              "index": 37,
+              "text": " "
+            },
+            {
+              "index": 38,
+              "text": "boş",
+              "bold": true
+            },
+            {
+              "index": 39,
+              "text": " ",
+              "bold": true
+            },
+            {
+              "index": 40,
+              "text": "sayfalara",
+              "bold": true
+            },
+            {
+              "index": 41,
+              "text": " "
+            },
+            {
+              "index": 42,
+              "text": "proje"
+            },
+            {
+              "index": 43,
+              "text": " "
+            },
+            {
+              "index": 44,
+              "text": "detaylarınızı"
+            },
+            {
+              "index": 45,
+              "text": " "
+            },
+            {
+              "index": 46,
+              "text": "sıfırdan elle ",
+              "bold": true
+            },
+            {
+              "index": 47,
+              "text": "yazmanız",
+              "bold": true
+            },
+            {
+              "index": 48,
+              "text": " ",
+              "bold": true
+            },
+            {
+              "index": 49,
+              "text": "gerekecek",
+              "bold": true
+            },
+            {
+              "index": 50,
+              "text": ". "
+            },
+            {
+              "index": 51,
+              "text": "Dolayısıyla"
+            },
+            {
+              "index": 52,
+              "text": " "
+            },
+            {
+              "index": 53,
+              "text": "zorlansanız da"
+            },
+            {
+              "index": 54,
+              "text": " "
+            },
+            {
+              "index": 55,
+              "text": "kendi"
+            },
+            {
+              "index": 56,
+              "text": " "
+            },
+            {
+              "index": 57,
+              "text": "projenizi"
+            },
+            {
+              "index": 58,
+              "text": " "
+            },
+            {
+              "index": 59,
+              "text": "kendinizin"
+            },
+            {
+              "index": 60,
+              "text": " "
+            },
+            {
+              "index": 61,
+              "text": "hazırlaması"
+            },
+            {
+              "index": 62,
+              "text": " "
+            },
+            {
+              "index": 63,
+              "text": "yararınıza"
+            },
+            {
+              "index": 64,
+              "text": " "
+            },
+            {
+              "index": 65,
+              "text": "olur"
+            },
+            {
+              "index": 66,
+              "text": " "
+            },
+            {
+              "index": 67,
+              "text": ""
+            },
+            {
+              "index": 68,
+              "text": " Detayları ezberlemeyin, mantığını anlamaya çalışın. Sınavda daha rahat yazarsınız."
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "text": "Çalışma aşamasında proje detaylarınızı istediğiniz kadar uzun tasarlayabilirsiniz. Sınavda her başlık için en az 5-6 satır tutarlı veri girmeniz yeterli olacak. ",
+          "marginLeft": 342900,
+          "indent": -342900,
+          "lineSpacingPercent": 150000,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Çalışma aşamasında proje detaylarınızı "
+            },
+            {
+              "index": 2,
+              "text": "istediğiniz"
+            },
+            {
+              "index": 3,
+              "text": " "
+            },
+            {
+              "index": 4,
+              "text": "kadar"
+            },
+            {
+              "index": 5,
+              "text": " "
+            },
+            {
+              "index": 6,
+              "text": "uzun"
+            },
+            {
+              "index": 7,
+              "text": " "
+            },
+            {
+              "index": 8,
+              "text": "tasarlayabilirsiniz"
+            },
+            {
+              "index": 9,
+              "text": ". "
+            },
+            {
+              "index": 10,
+              "text": "Sınavda"
+            },
+            {
+              "index": 11,
+              "text": " her "
+            },
+            {
+              "index": 12,
+              "text": "başlı"
+            },
+            {
+              "index": 13,
+              "text": "k"
+            },
+            {
+              "index": 14,
+              "text": " "
+            },
+            {
+              "index": 15,
+              "text": "için"
+            },
+            {
+              "index": 16,
+              "text": " "
+            },
+            {
+              "index": 17,
+              "text": "en az",
+              "bold": true
+            },
+            {
+              "index": 18,
+              "text": " 5-6 ",
+              "bold": true
+            },
+            {
+              "index": 19,
+              "text": "satır",
+              "bold": true
+            },
+            {
+              "index": 20,
+              "text": " ",
+              "bold": true
+            },
+            {
+              "index": 21,
+              "text": "tutarlı",
+              "bold": true
+            },
+            {
+              "index": 22,
+              "text": " ",
+              "bold": true
+            },
+            {
+              "index": 23,
+              "text": "veri",
+              "bold": true
+            },
+            {
+              "index": 24,
+              "text": " ",
+              "bold": true
+            },
+            {
+              "index": 25,
+              "text": "girmeniz",
+              "bold": true
+            },
+            {
+              "index": 26,
+              "text": " ",
+              "bold": true
+            },
+            {
+              "index": 27,
+              "text": "yeterli",
+              "bold": true
+            },
+            {
+              "index": 28,
+              "text": " ",
+              "bold": true
+            },
+            {
+              "index": 29,
+              "text": "olacak",
+              "bold": true
+            },
+            {
+              "index": 30,
+              "text": ". ",
+              "bold": true
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "text": "Ancak notlandırmada en dolu olan teslimlere biraz daha iltimas geçmem gerekecek. Yani ne kadar fazla detay o kadar fazla fırsat ",
+          "marginLeft": 342900,
+          "indent": -342900,
+          "lineSpacingPercent": 150000,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Ancak notlandırmada en dolu olan teslimlere biraz daha iltimas geçmem gerekecek. Yani "
+            },
+            {
+              "index": 2,
+              "text": "ne "
+            },
+            {
+              "index": 3,
+              "text": "kadar"
+            },
+            {
+              "index": 4,
+              "text": " "
+            },
+            {
+              "index": 5,
+              "text": "fazla"
+            },
+            {
+              "index": 6,
+              "text": " "
+            },
+            {
+              "index": 7,
+              "text": "detay "
+            },
+            {
+              "index": 8,
+              "text": "o "
+            },
+            {
+              "index": 9,
+              "text": "kadar"
+            },
+            {
+              "index": 10,
+              "text": " "
+            },
+            {
+              "index": 11,
+              "text": "fazla fırsat "
+            },
+            {
+              "index": 12,
+              "text": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/z25kb6xk",
+      "id": "13",
+      "name": "Picture 1",
+      "bbox": [
+        1069.5,
+        52.33,
+        173.75,
+        45.52
+      ],
+      "contentType": "image/x-wmf",
+      "asset": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      },
+      "fillImage": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      }
+    }
+  ],
+  "composeRuns": []
+}

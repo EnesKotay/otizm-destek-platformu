@@ -1,0 +1,2258 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/0z61032l",
+    "id": "0z61032l",
+    "slide": 8,
+    "layoutId": "/ppt/slideLayouts/slideLayout6.xml",
+    "layoutName": "Main",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Blue",
+    "colors": {
+      "accent1": "#3B9ED8",
+      "accent2": "#358EC2",
+      "accent3": "#2F7EAC",
+      "accent4": "#296E97",
+      "accent5": "#235E81",
+      "accent6": "#1D4F6C",
+      "dk1": "#656D78",
+      "lt1": "#FFFFFF",
+      "dk2": "#8496B0",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Custom 1",
+      "majorFont": {
+        "latinTypeface": "Source Sans Pro Black"
+      },
+      "minorFont": {
+        "latinTypeface": "Source Sans Pro"
+      }
+    },
+    "typefaces": [
+      "Source Sans Pro",
+      "Source Sans Pro Black"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout6.xml",
+      "name": "Main",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/38",
+          "id": "38",
+          "name": "Shape 2",
+          "bbox": [
+            0,
+            147.09,
+            1280,
+            574
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "fillColor": "rgba(123, 141, 179, 0.04)",
+          "lineColor": "rgba(235, 235, 235, 0.1)",
+          "lineWidth": 2.67
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/39",
+          "id": "39",
+          "name": "Shape 2711",
+          "bbox": [
+            63.8,
+            58.88,
+            29.33,
+            29.33
+          ],
+          "geometry": "custom",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 2,
+              "right": 2,
+              "bottom": 2,
+              "left": 2
+            }
+          },
+          "fillColor": "accent1",
+          "lineWidth": 1.33
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/40",
+          "id": "40",
+          "name": "Rounded Rectangle 39",
+          "bbox": [
+            1182.74,
+            652.43,
+            33.15,
+            33.15
+          ],
+          "geometry": "roundRect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "verticalAlignment": "middle"
+          },
+          "lineColor": "accent1"
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/41",
+          "id": "41",
+          "name": "TextBox 40",
+          "bbox": [
+            1181.42,
+            654.62,
+            36.22,
+            29.08
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "wrap": "none",
+            "autoFit": "resizeShapeToFitText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "resolvedTextStyle": {
+                "alignment": "center"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›",
+                  "fontSize": 16,
+                  "typeface": "Source Sans Pro",
+                  "color": "accent1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/26",
+          "id": "26",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            116.99,
+            47.93,
+            933.8,
+            51.06
+          ],
+          "text": "Put your main text here",
+          "textPreview": "Put your main text here",
+          "resolvedTextStyle": {
+            "autoFit": "none"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your main text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your main text here"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/27",
+          "id": "27",
+          "name": "Text Placeholder 4",
+          "bbox": [
+            118.9,
+            98.99,
+            931.89,
+            28.28
+          ],
+          "text": "Put your text here",
+          "textPreview": "Put your text here",
+          "resolvedTextStyle": {
+            "autoFit": "shrinkText"
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Put your text here",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Put your text here"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/2",
+          "id": "2",
+          "name": "Title Placeholder 1",
+          "bbox": [
+            88,
+            38.33,
+            1104,
+            139.17
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master title style",
+          "textPreview": "Click to edit Master title style",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master title style",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master title style"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/3",
+          "id": "3",
+          "name": "Text Placeholder 2",
+          "bbox": [
+            88,
+            191.67,
+            1104,
+            456.83
+          ],
+          "geometry": "rect",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "resolvedTextStyle": {
+            "vertical": 1,
+            "autoFit": "shrinkText",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Click to edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Click to edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/4",
+          "id": "4",
+          "name": "Date Placeholder 3",
+          "bbox": [
+            88,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "6/2/2026",
+          "textPreview": "6/2/2026",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6/2/2026",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "6/2/2026"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/5",
+          "id": "5",
+          "name": "Footer Placeholder 4",
+          "bbox": [
+            424,
+            667.33,
+            432,
+            38.33
+          ],
+          "geometry": "rect",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          }
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/6",
+          "id": "6",
+          "name": "Slide Number Placeholder 5",
+          "bbox": [
+            904,
+            667.33,
+            288,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 4.8,
+              "right": 9.6,
+              "bottom": 4.8,
+              "left": 9.6
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qpg3ex0n",
+      "id": "5",
+      "name": "Text Placeholder 4",
+      "bbox": [
+        116.99,
+        47.93,
+        933.8,
+        51.06
+      ],
+      "text": "PROJE BAŞLATMA BELGESİ (20p)",
+      "textPreview": "PROJE BAŞLATMA BELGESİ (20p)",
+      "resolvedFontSize": 42.67,
+      "resolvedTextStyle": {
+        "vertical": 1,
+        "fontSize": 42.67,
+        "typeface": "Source Sans Pro Black",
+        "color": "tx1",
+        "alignment": "left",
+        "autoFit": "none",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          },
+          {
+            "index": 2,
+            "text": "PROJE BAŞLATMA BELGESİ (20p)"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "PROJE BAŞLATMA BELGESİ (20p)",
+          "runs": [
+            {
+              "index": 1,
+              "text": "PROJE ",
+              "color": "accent5",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "BAŞLATMA BELGESİ (20p)",
+              "color": "accent5",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0,
+          "indent": 0,
+          "lineSpacingPercent": 90000,
+          "spaceBefore": 1000
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "table",
+      "scope": "slide",
+      "aid": "tb/orytsvu9",
+      "id": "6",
+      "name": "Table 6",
+      "bbox": [
+        48,
+        160.26,
+        1139.08,
+        436.11
+      ],
+      "text": "Proje Adı | Doğum Günü Pastası Yapma Projesi (Projenizin Adını Yazınız)\nProje Hedefi | Proje kapsamında Ayşe’nin 25.yaş günü kutlaması nedeniyle Aylin’in evinin salonunda verilecek olan süpriz partide sunulmak amacıyla bir doğum günü pastasının yapılması hedeflenmektedir.  (Projenizin amacını ve hedefini birkaç cümle ile ifade ediniz.\nProje Sponsoru | Ahmet Bulut (Projenin sponsorunu yazınız) ! Sponsor  belirli bir kişi olmak zorunda, kurum ya da grup olamaz. \nProje Yöneticisi | Kübra Nur Bulut (Proje yöneticisi olarak kendi adınızı yazınız)  Proje Yöneticisi bir kişi olmak zorunda. Grup ya da kurum olamaz.\nProje Başlangıç Tarihi | 01.06.2026 (Proje başlangıç tarihinizi yazınız. Saat bazında takvimleyecekseniz saat bilgisi veriniz.\nProje Bitiş Tarihi | 30.07.2026 (Buraya proje bitiş tarihinizi yazınız. Saat bazında takvimleyecekseniz saat bilgisi veriniz.)\nProje Paydaşları | Ali, Mehmet, Bora, Yılmaz, Market ABC, Pastane Gül.\n(Projenizde paydaş olarak  yer alacak kurum veya kişilerin isimlerini yazınız)\nProje Bütçesi | 6000 TL  (Proje bütçenizi yazınız. TL veya farklı para birimleri kullanabilirsiniz.)",
+      "textPreview": "Proje Adı | Doğum Günü Pastası Yapma Projesi (Projenizin Adını Yazınız) | Proje Hedefi | Proje kapsamında Ayşe’nin 25.yaş günü kutlaması ...",
+      "rows": 8,
+      "cols": 2,
+      "cells": [
+        {
+          "index": 1,
+          "row": 1,
+          "column": 1,
+          "bbox": [
+            48,
+            160.26,
+            252,
+            54.51
+          ],
+          "text": "Proje Adı",
+          "textPreview": "Proje Adı",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Adı",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Adı",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "row": 1,
+          "column": 2,
+          "bbox": [
+            300,
+            160.26,
+            887.08,
+            54.51
+          ],
+          "text": "Doğum Günü Pastası Yapma Projesi (Projenizin Adını Yazınız)",
+          "textPreview": "Doğum Günü Pastası Yapma Projesi (Projenizin Adını Yazınız)",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Doğum Günü Pastası Yapma Projesi (Projenizin Adını Yazınız)",
+              "marginLeft": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Doğum",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 3,
+                  "text": "Günü",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 4,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 5,
+                  "text": "Pastası",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 6,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 7,
+                  "text": "Yapma",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 8,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 9,
+                  "text": "Projesi",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 10,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 11,
+                  "text": "(Proje",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 12,
+                  "text": "nizin",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 13,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 14,
+                  "text": "Adını",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 15,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 16,
+                  "text": "Yazınız",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 17,
+                  "text": ")",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "row": 2,
+          "column": 1,
+          "bbox": [
+            48,
+            214.78,
+            252,
+            54.51
+          ],
+          "text": "Proje Hedefi",
+          "textPreview": "Proje Hedefi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Hedefi",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Hedefi",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "row": 2,
+          "column": 2,
+          "bbox": [
+            300,
+            214.78,
+            887.08,
+            54.51
+          ],
+          "text": "Proje kapsamında Ayşe’nin 25.yaş günü kutlaması nedeniyle Aylin’in evinin salonunda verilecek olan süpriz partide sunulmak amacıyla bir doğum günü pastasının yapılması hedeflenmektedir.  (Projenizin amacını ve hedefini birkaç cümle ile ifade ediniz.",
+          "textPreview": "Proje kapsamında Ayşe’nin 25.yaş günü kutlaması nedeniyle Aylin’in evinin salonunda verilecek olan süpriz partide sunulmak amacıyla bir d...",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje kapsamında Ayşe’nin 25.yaş günü kutlaması nedeniyle Aylin’in evinin salonunda verilecek olan süpriz partide sunulmak amacıyla bir doğum günü pastasının yapılması hedeflenmektedir.  (Projenizin amacını ve hedefini birkaç cümle ile ifade ediniz.",
+              "marginLeft": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 2,
+                  "text": "kapsamında",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 3,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 4,
+                  "text": "Ayşe’nin",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 5,
+                  "text": " 25.yaş ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 6,
+                  "text": "günü",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 7,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 8,
+                  "text": "kutlaması",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 9,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 10,
+                  "text": "nedeniyle",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 11,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 12,
+                  "text": "Aylin’in",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 13,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 14,
+                  "text": "evinin",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 15,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 16,
+                  "text": "salonunda",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 17,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 18,
+                  "text": "verilecek",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 19,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 20,
+                  "text": "olan",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 21,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 22,
+                  "text": "süpriz",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 23,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 24,
+                  "text": "partide",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 25,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 26,
+                  "text": "sunulmak",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 27,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 28,
+                  "text": "amacıyla",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 29,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 30,
+                  "text": "bir",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 31,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 32,
+                  "text": "doğum",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 33,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 34,
+                  "text": "günü",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 35,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 36,
+                  "text": "pastasının",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 37,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 38,
+                  "text": "yapılması",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 39,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 40,
+                  "text": "hedeflenmektedir",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 41,
+                  "text": ".  ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 42,
+                  "text": "(",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 43,
+                  "text": "Pr",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 44,
+                  "text": "ojenizin",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 45,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 46,
+                  "text": "amacını",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 47,
+                  "text": " ve ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 48,
+                  "text": "hedefini",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 49,
+                  "text": " birkaç cümle ile ifade ediniz.",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "row": 3,
+          "column": 1,
+          "bbox": [
+            48,
+            269.29,
+            252,
+            54.51
+          ],
+          "text": "Proje Sponsoru",
+          "textPreview": "Proje Sponsoru",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Sponsoru",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Sponsoru",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "row": 3,
+          "column": 2,
+          "bbox": [
+            300,
+            269.29,
+            887.08,
+            54.51
+          ],
+          "text": "Ahmet Bulut (Projenin sponsorunu yazınız) ! Sponsor  belirli bir kişi olmak zorunda, kurum ya da grup olamaz. ",
+          "textPreview": "Ahmet Bulut (Projenin sponsorunu yazınız) ! Sponsor  belirli bir kişi olmak zorunda, kurum ya da grup olamaz.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Ahmet Bulut (Projenin sponsorunu yazınız) ! Sponsor  belirli bir kişi olmak zorunda, kurum ya da grup olamaz. ",
+              "marginLeft": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Ahmet Bulut ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 2,
+                  "text": "(",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 3,
+                  "text": "Projenin sponsorunu",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 4,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 5,
+                  "text": "yazınız",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 6,
+                  "text": ")",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 7,
+                  "text": " ! Sponsor  belirli bir kişi olmak zorunda, kurum ya da grup olamaz. ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "row": 4,
+          "column": 1,
+          "bbox": [
+            48,
+            323.8,
+            252,
+            54.51
+          ],
+          "text": "Proje Yöneticisi",
+          "textPreview": "Proje Yöneticisi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Yöneticisi",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Yöneticisi",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "row": 4,
+          "column": 2,
+          "bbox": [
+            300,
+            323.8,
+            887.08,
+            54.51
+          ],
+          "text": "Kübra Nur Bulut (Proje yöneticisi olarak kendi adınızı yazınız)  Proje Yöneticisi bir kişi olmak zorunda. Grup ya da kurum olamaz.",
+          "textPreview": "Kübra Nur Bulut (Proje yöneticisi olarak kendi adınızı yazınız)  Proje Yöneticisi bir kişi olmak zorunda. Grup ya da kurum olamaz.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Kübra Nur Bulut (Proje yöneticisi olarak kendi adınızı yazınız)  Proje Yöneticisi bir kişi olmak zorunda. Grup ya da kurum olamaz.",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Kübra Nur Bulut ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 2,
+                  "text": "(",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 3,
+                  "text": "Proje yöneticisi olarak",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 4,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 5,
+                  "text": "kendi",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 6,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 7,
+                  "text": "adınızı",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 8,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 9,
+                  "text": "yazınız",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 10,
+                  "text": ")",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 11,
+                  "text": "  Proje Yöneticisi bir kişi olmak zorunda. Grup ya da kurum olamaz.",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "row": 5,
+          "column": 1,
+          "bbox": [
+            48,
+            378.32,
+            252,
+            54.51
+          ],
+          "text": "Proje Başlangıç Tarihi",
+          "textPreview": "Proje Başlangıç Tarihi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Başlangıç Tarihi",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Başlangıç",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 4,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 5,
+                  "text": "Tarihi",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "row": 5,
+          "column": 2,
+          "bbox": [
+            300,
+            378.32,
+            887.08,
+            54.51
+          ],
+          "text": "01.06.2026 (Proje başlangıç tarihinizi yazınız. Saat bazında takvimleyecekseniz saat bilgisi veriniz.",
+          "textPreview": "01.06.2026 (Proje başlangıç tarihinizi yazınız. Saat bazında takvimleyecekseniz saat bilgisi veriniz.",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "01.06.2026 (Proje başlangıç tarihinizi yazınız. Saat bazında takvimleyecekseniz saat bilgisi veriniz.",
+              "marginLeft": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "01.06.2026",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 3,
+                  "text": "(",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 4,
+                  "text": "P",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 5,
+                  "text": "roje",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 6,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 7,
+                  "text": "başlangıç",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 8,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 9,
+                  "text": "tarihinizi",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 10,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 11,
+                  "text": "yazınız",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 12,
+                  "text": ". Saat bazında ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 13,
+                  "text": "takvimleyecekseniz",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 14,
+                  "text": " saat bilgisi veriniz.",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 11,
+          "row": 6,
+          "column": 1,
+          "bbox": [
+            48,
+            432.83,
+            252,
+            54.51
+          ],
+          "text": "Proje Bitiş Tarihi",
+          "textPreview": "Proje Bitiş Tarihi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Bitiş Tarihi",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Bitiş",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 4,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 5,
+                  "text": "Tarihi",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 12,
+          "row": 6,
+          "column": 2,
+          "bbox": [
+            300,
+            432.83,
+            887.08,
+            54.51
+          ],
+          "text": "30.07.2026 (Buraya proje bitiş tarihinizi yazınız. Saat bazında takvimleyecekseniz saat bilgisi veriniz.)",
+          "textPreview": "30.07.2026 (Buraya proje bitiş tarihinizi yazınız. Saat bazında takvimleyecekseniz saat bilgisi veriniz.)",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "30.07.2026 (Buraya proje bitiş tarihinizi yazınız. Saat bazında takvimleyecekseniz saat bilgisi veriniz.)",
+              "marginLeft": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "30.07.2026",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 3,
+                  "text": "(",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 4,
+                  "text": "Buraya",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 5,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 6,
+                  "text": "proje",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 7,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 8,
+                  "text": "bitiş",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 9,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 10,
+                  "text": "tarihinizi",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 11,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 12,
+                  "text": "yazınız",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 13,
+                  "text": ". Saat bazında ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 14,
+                  "text": "takvimleyecekseniz",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 15,
+                  "text": " saat bilgisi veriniz.",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 16,
+                  "text": ")",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 13,
+          "row": 7,
+          "column": 1,
+          "bbox": [
+            48,
+            487.34,
+            252,
+            54.51
+          ],
+          "text": "Proje Paydaşları",
+          "textPreview": "Proje Paydaşları",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Paydaşları",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 2,
+                  "text": " ",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                },
+                {
+                  "index": 3,
+                  "text": "Paydaşları",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 14,
+          "row": 7,
+          "column": 2,
+          "bbox": [
+            300,
+            487.34,
+            887.08,
+            54.51
+          ],
+          "text": "Ali, Mehmet, Bora, Yılmaz, Market ABC, Pastane Gül.\n(Projenizde paydaş olarak  yer alacak kurum veya kişilerin isimlerini yazınız)",
+          "textPreview": "Ali, Mehmet, Bora, Yılmaz, Market ABC, Pastane Gül. | (Projenizde paydaş olarak  yer alacak kurum veya kişilerin isimlerini yazınız)",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Ali, Mehmet, Bora, Yılmaz, Market ABC, Pastane Gül.",
+              "marginLeft": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Ali, Mehmet, Bora, Yılmaz, Market ABC, Pastane Gül.",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "(Projenizde paydaş olarak  yer alacak kurum veya kişilerin isimlerini yazınız)",
+              "marginLeft": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "(",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 2,
+                  "text": "P",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 3,
+                  "text": "rojenizde",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 4,
+                  "text": " paydaş olarak ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 5,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 6,
+                  "text": "yer",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 7,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 8,
+                  "text": "alacak",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 9,
+                  "text": " ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 10,
+                  "text": "kurum",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 11,
+                  "text": " veya ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 12,
+                  "text": "kişi",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 13,
+                  "text": "lerin",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 14,
+                  "text": " isimlerini ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 15,
+                  "text": "yazınız",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 16,
+                  "text": ")",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 15,
+          "row": 8,
+          "column": 1,
+          "bbox": [
+            48,
+            541.86,
+            252,
+            54.51
+          ],
+          "text": "Proje Bütçesi",
+          "textPreview": "Proje Bütçesi",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Proje Bütçesi",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Proje Bütçesi",
+                  "fontSize": 24,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "bold": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 16,
+          "row": 8,
+          "column": 2,
+          "bbox": [
+            300,
+            541.86,
+            887.08,
+            54.51
+          ],
+          "text": "6000 TL  (Proje bütçenizi yazınız. TL veya farklı para birimleri kullanabilirsiniz.)",
+          "textPreview": "6000 TL  (Proje bütçenizi yazınız. TL veya farklı para birimleri kullanabilirsiniz.)",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "6000 TL  (Proje bütçenizi yazınız. TL veya farklı para birimleri kullanabilirsiniz.)",
+              "marginLeft": 0,
+              "indent": 0,
+              "lineSpacingPercent": 100000,
+              "spaceBefore": 0,
+              "spaceAfter": 0,
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "6000 TL  ",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "tx1",
+                  "italic": true
+                },
+                {
+                  "index": 2,
+                  "text": "(",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 3,
+                  "text": "Proje bütçenizi yazınız. TL veya farklı para birimleri kullanabilirsiniz.",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                },
+                {
+                  "index": 4,
+                  "text": ")",
+                  "fontSize": 21.33,
+                  "typeface": "Source Sans Pro",
+                  "color": "#FF0000",
+                  "italic": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/lkjm1cfa",
+      "id": "7",
+      "name": "Picture 1",
+      "bbox": [
+        1069.5,
+        52.33,
+        173.75,
+        45.52
+      ],
+      "contentType": "image/x-wmf",
+      "asset": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      },
+      "fillImage": {
+        "assetId": "/ppt/media/image2.wmf",
+        "contentType": "image/x-wmf",
+        "byteLength": 9768
+      }
+    }
+  ],
+  "composeRuns": []
+}

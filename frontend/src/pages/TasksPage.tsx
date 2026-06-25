@@ -49,6 +49,7 @@ function TaskSubmissionModal({ isOpen, onClose, onSubmit, taskTitle, isSubmittin
   // Reset fields when opened
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNote('');
       setEvidenceUrl('');
     }
@@ -120,6 +121,7 @@ function TaskCard({ task, onCompleteRequest, completing }: TaskCardProps) {
 
   useEffect(() => {
     if (expanded && done && submissions.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadingSubmissions(true);
       patientService.getTaskSubmissions(task.id)
         .then(data => setSubmissions(data))
@@ -149,7 +151,7 @@ function TaskCard({ task, onCompleteRequest, completing }: TaskCardProps) {
           onClick={() => setExpanded(v => !v)}
         >
           <button
-            onClick={(e) => { e.stopPropagation(); !done && onCompleteRequest(task); }}
+            onClick={(e) => { e.stopPropagation(); if (!done) onCompleteRequest(task); }}
             disabled={done || completing}
             title={done ? 'Tamamlandı' : 'Görev Teslimini Başlat'}
             className={`mt-1 shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-sm ${
@@ -298,6 +300,10 @@ function TaskCard({ task, onCompleteRequest, completing }: TaskCardProps) {
 }
 
 export function TasksPage() {
+  return <TasksCore />;
+}
+
+function TasksCore() {
   const { user } = useAuthStore();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
@@ -360,11 +366,11 @@ export function TasksPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8 animate-in fade-in duration-500 pb-20">
       <PageOnboarding
         pageId="tasks_premium"
-        title="Ev Ödevi & Görev Merkezi"
-        description="Uzmanınız tarafından atanan geliştirici etkinlikleri takip edin. Görevleri tamamladıkça çocuğunuzun profili güçlenecektir."
+        title="Uzmanın Verdiği Ödevler"
+        description="Uzmanınızın size verdiği çalışmalar ve ödevler burada görünür. Tamamladıkça işaretleyebilirsiniz."
         steps={[
-          { icon: <ClipboardCheck size={20} />, title: "Görevleri Keşfedin", description: "Atanan ödevlerin detaylarına inin ve gerekli materyallere tek tıkla ulaşın." },
-          { icon: <CheckCircle2 size={20} />, title: "Teslim ve Geri Bildirim", description: "Görevleri tamamlarken uzmana notlar yazın, video bağlantısı ekleyin ve uzmandan gelecek değerlendirmeleri bekleyin." }
+          { icon: <ClipboardCheck size={20} />, title: "Ödevlere Bakın", description: "Her ödevin ne yapmanız gerektiğini açıkça yazar. Tıklayarak detayları görebilirsiniz." },
+          { icon: <CheckCircle2 size={20} />, title: "Tamamlayıp Bildirin", description: "Ödevi yaptıktan sonra 'Tamamlandı' deyin. İsterseniz uzmanınıza kısa bir not da bırakabilirsiniz." }
         ]}
       />
 
@@ -378,8 +384,8 @@ export function TasksPage() {
               <ClipboardCheck size={28} className="text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Ev Ödevi Paneli</h1>
-              <p className="text-sm font-medium text-slate-500 mt-1.5">Uzman onaylı destek hedefleriniz ve ödevleriniz</p>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Ödevlerim</h1>
+              <p className="text-sm font-medium text-slate-500 mt-1.5">Uzmanınızın size atadığı çalışmalar</p>
             </div>
           </div>
           
@@ -400,7 +406,7 @@ export function TasksPage() {
         {tasks.length > 0 && (
           <div className="mt-8 pt-6 border-t border-slate-100 relative z-10">
             <div className="flex items-center justify-between text-xs mb-2">
-              <span className="font-bold text-slate-500 uppercase tracking-widest text-[10px]">Genel Gelişim İlerlemesi</span>
+              <span className="font-bold text-slate-500 uppercase tracking-widest text-[10px]">Ne Kadar Tamamlandı</span>
               <span className="font-black text-indigo-600 text-sm">{progressPct}%</span>
             </div>
             <div className="h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/50 shadow-inner">

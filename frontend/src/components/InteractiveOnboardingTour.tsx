@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import {
-  Sparkles,
   Heart,
   Activity,
-  Calendar,
   Users,
   ArrowRight,
   ShieldCheck,
@@ -238,7 +236,6 @@ export function InteractiveOnboardingTour({ onStartWizard }: { onStartWizard: ()
                 { id: 'task3', title: 'Gözlem Notu Ekle', duration: '2 dk', icon: FileText, detail: 'Gün içindeki önemli bir anı (örn. göz teması veya reaksiyon) not et.' },
               ].map((task) => {
                 const isCompleted = completedMockTasks[task.id];
-                const TaskIcon = task.icon;
                 return (
                   <button
                     key={task.id}

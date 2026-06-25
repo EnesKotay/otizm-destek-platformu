@@ -70,7 +70,7 @@ const deserializeSleepNotes = (serialized = '') => {
     return { ...defaultFlags, notesText: serialized };
   }
   const parts = serialized.split('|');
-  const flags: any = {};
+  const flags: Record<string, string | boolean> = {};
   parts.forEach(p => {
     const idx = p.indexOf(':');
     if (idx !== -1) {
@@ -93,6 +93,10 @@ const deserializeSleepNotes = (serialized = '') => {
 };
 
 export function DailyTrackerPage() {
+  return <DailyTrackerCore />;
+}
+
+function DailyTrackerCore() {
   const [tab, setTab] = useState<'medication' | 'mood' | 'sleep'>('mood');
   const { children, setChildren, selectedChild, setSelectedChild } = useChildStore();
   const selectedChildId = selectedChild?.id ?? '';
@@ -209,6 +213,7 @@ export function DailyTrackerPage() {
       if (hasMood && hasSleep) completedDays++;
     });
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setWeeklyInsights({
       avgSleep: avgSleepStr,
       mostFrequentMood: topMoodOption ? { label: topMoodOption.label, emoji: topMoodOption.emoji } : null,
@@ -323,19 +328,6 @@ export function DailyTrackerPage() {
 
     return () => timers.forEach(clearTimeout);
   }, [medications]);
-
-  const toggleMedLog = async (medId: string, time: string) => {
-    try {
-      const log = await medicationService.toggle(medId, TODAY, time);
-      setMedications(prev => prev.map(m => {
-        if (m.id !== medId) return m;
-        const logs = m.todayLogs ?? [];
-        const existing = logs.findIndex(l => l.scheduledTime === time);
-        if (existing >= 0) return { ...m, todayLogs: logs.map((l, i) => i === existing ? { ...l, taken: log.taken } : l) };
-        return { ...m, todayLogs: [...logs, log] };
-      }));
-    } catch { toast.error('İşlem başarısız.'); }
-  };
 
   const openLogModal = (med: Medication, time: string) => {
     const existingLog = med.todayLogs?.find(l => l.scheduledTime === time);
@@ -585,12 +577,32 @@ export function DailyTrackerPage() {
               </div>
               <button
                 onClick={() => {
-                  if ('Notification' in window && Notification.permission === 'default') {
-                    Notification.requestPermission();
+                  if (!('Notification' in window)) return;
+                  if (Notification.permission === 'default') {
+                    Notification.requestPermission().then(() => {
+                      // Force re-render to update button state
+                      setMedications(prev => [...prev]);
+                    });
+                  } else if (Notification.permission === 'granted') {
+                    new Notification('✅ Bildirimler Aktif', {
+                      body: 'İlaç hatırlatmaları açık. Her sabah bildirim alacaksınız.',
+                      tag: 'notif-test',
+                    });
                   }
                 }}
-                title="İlaç hatırlatmalarına izin ver"
-                className="shrink-0 p-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
+                title={
+                  !('Notification' in window) ? 'Tarayıcınız bildirimleri desteklemiyor' :
+                  Notification.permission === 'granted' ? 'Bildirimler açık — test bildirimi gönder' :
+                  Notification.permission === 'denied' ? 'Bildirimler kapatılmış — tarayıcı ayarlarından açın' :
+                  'Sabah ilaç hatırlatması için bildirime izin ver'
+                }
+                className={`shrink-0 p-2 rounded-xl transition-colors cursor-pointer ${
+                  !('Notification' in window) || Notification.permission === 'denied'
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : Notification.permission === 'granted'
+                    ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                    : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 animate-pulse'
+                }`}
               >
                 <Bell size={18} />
               </button>

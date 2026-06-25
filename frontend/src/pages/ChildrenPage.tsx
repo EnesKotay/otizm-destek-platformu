@@ -140,19 +140,19 @@ export function ChildrenPage() {
     <div className="space-y-6">
       <PageOnboarding
         pageId="children"
-        title="Çocuk Profillerine Hoş Geldiniz"
-        description="Çocuğunuzun gelişimini ve tedavi sürecini buradan yönetebilirsiniz."
+        title="Çocuğunuzu Buraya Ekleyin"
+        description="Çocuğunuzun adını ve bilgilerini girdikten sonra ilaç, randevu ve gelişim takibini kolayca yapabilirsiniz."
         steps={[
           {
             icon: <Plus size={20} />,
-            title: "Profil Ekleyin",
-            description: "İlk adım olarak çocuğunuzun yaş, tanı ve terapi bilgilerini girin.",
+            title: "Çocuğunuzu Ekleyin",
+            description: "Sadece adını ve doğum tarihini girerek başlayabilirsiniz. Diğer bilgileri sonra ekleyebilirsiniz.",
             onClick: () => setShowModal(true)
           },
           {
             icon: <Baby size={20} />,
-            title: "Profili Güncel Tutun",
-            description: "Eğitim ve terapi programları değiştikçe profili güncelleyin.",
+            title: "Bilgileri Güncel Tutun",
+            description: "Bir şey değiştiğinde (yeni ilaç, yeni terapi gibi) buraya gelip güncelleyebilirsiniz.",
             onClick: handleProfileUpdateGuideClick
           }
         ]}
@@ -160,11 +160,11 @@ export function ChildrenPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Çocuklarım</h1>
-          <p className="text-gray-500 mt-1">Çocuklarınızın gelişim profillerini yönetin</p>
+          <h1 className="text-2xl font-bold text-gray-900">Çocuğumun Bilgileri</h1>
+          <p className="text-gray-500 mt-1">Çocuğunuzun bilgilerini buradan ekleyip güncelleyebilirsiniz</p>
         </div>
         <Button onClick={() => setShowModal(true)}>
-          <Plus size={18} className="mr-2" /> Profil Ekle
+          <Plus size={18} className="mr-2" /> Çocuğumu Ekle
         </Button>
       </div>
 
@@ -260,14 +260,14 @@ export function ChildrenPage() {
         ) : children.length === 0 ? (
           <EmptyState
             icon={<Baby size={32} />}
-            title="Henüz çocuk profili eklenmemiş"
-            description="İlk profil; günlük takip, BEP planı, randevu ve uzman paylaşımı için güvenli başlangıç noktasıdır."
-            steps={['Ad ve yaş bilgisini girin.', 'Tanı, eğitim veya hassasiyet notu ekleyin.', 'Profil oluşunca ana sayfa günlük adımları gösterir.']}
+            title="Henüz çocuk eklenmemiş"
+            description="Başlamak için çocuğunuzun adını ve doğum tarihini girin. Sadece bu iki bilgi yeterli, gerisini sonra ekleyebilirsiniz."
+            steps={['Adını ve doğum tarihini girin.', 'İsterseniz tanı ve ilaç bilgisi ekleyin.', 'Ekledikten sonra ilaç ve randevu takibi yapabilirsiniz.']}
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <Button onClick={() => setShowModal(true)}>
                   <Plus size={15} className="mr-1" />
-                  Profil Oluştur
+                  Çocuğumu Ekle
                 </Button>
                 <Link to="/gunluk-takip">
                   <Button variant="outline">

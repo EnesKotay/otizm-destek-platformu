@@ -7,7 +7,6 @@ import { pushNotificationService } from '@/services/pushNotificationService';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useAuthStore } from '@/store/authStore';
 import { formatRelative } from '@/utils/date';
-import { toast } from '@/store/toastStore';
 import { patientService } from '@/services/patientService';
 import type { Notification, ExpertConnectionRequest } from '@/types';
 
@@ -68,7 +67,7 @@ export function NotificationBell() {
             type: 'LOCAL_REMINDER',
             title: `${child.name} için kısa aktivite zamanı`,
             body: 'Bugün tarama aktivitelerinden kısa bir oyun kaydı henüz görünmüyor.',
-            link: '/tarama',
+            link: '/cocuklarim?view=screening',
             read: readIds.has(id),
             createdAt: new Date().toISOString(),
           };
@@ -76,7 +75,7 @@ export function NotificationBell() {
     } catch {
       return [];
     }
-  }, [accessToken, user?.role]);
+  }, [accessToken, user]);
 
   // Fetch initial unread count on mount
   const fetchUnread = useCallback(async () => {
@@ -96,7 +95,7 @@ export function NotificationBell() {
       setConnectionRequests(validReqs);
       setUnreadCount(count + local.filter(n => !n.read).length + validReqs.length);
     } catch { /* ignore auth errors on startup */ }
-  }, [accessToken, buildLocalReminders, user?.role]);
+  }, [accessToken, buildLocalReminders, user]);
 
   const fetchNotifications = useCallback(async () => {
     if (!accessToken) {
@@ -120,7 +119,7 @@ export function NotificationBell() {
       setUnreadCount(merged.filter(n => !n.read).length + validReqs.length);
     } catch { /* ignore */ }
     setLoading(false);
-  }, [accessToken, buildLocalReminders, user?.role]);
+  }, [accessToken, buildLocalReminders, user]);
 
   // Initial load
   useEffect(() => {
