@@ -41,6 +41,7 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   '/paylasimli-ilerleme': () => import('@/pages/SharedProgressPage'),
   '/uzman-harita': () => import('@/pages/ExpertMapPage'),
   '/ebeveyn-refahi': () => import('@/pages/WellbeingPage'),
+  '/kullanici-rehberi': () => import('@/pages/UserGuidePage'),
   '/yardim': () => import('@/pages/HelpPage'),
   '/admin': () => import('@/pages/admin/AdminOverviewPage'),
   '/admin/analytics': () => import('@/pages/admin/AdminAnalyticsPage'),

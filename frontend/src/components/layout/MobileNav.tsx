@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
+import { useChildStore } from '@/store/childStore';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { messagingService } from '@/services/messagingService';
 import { notificationService } from '@/services/notificationService';
@@ -14,8 +15,10 @@ const MESSAGE_UNREAD_REFRESH_EVENT = 'message-unread-refresh';
 export function MobileNav() {
   const role = useAuthStore(s => s.user?.role);
   const accessToken = useAuthStore(s => s.accessToken);
+  const childCount = useChildStore(s => s.children.length);
   const { subscribe, unsubscribe } = useWebSocket();
-  const mobileItems = getMobileNavItems(role);
+  const hasChild = role !== 'PARENT' || childCount > 0;
+  const mobileItems = getMobileNavItems(role, hasChild);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
 

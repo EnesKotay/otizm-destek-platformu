@@ -62,8 +62,9 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       label: 'Bugün',
       defaultOpen: true,
       items: [
-        { to: '/', icon: Home, label: 'Ana Sayfa', mobileLabel: 'Ana', description: 'Bugünün kısa yol haritası', keywords: ['dashboard', 'özet', 'başlangıç'], mobile: true, simple: true },
-        { to: '/cocuklarim', icon: Baby, label: 'Çocuk Profili', description: 'İlk kurulacak temel bilgiler', keywords: ['profil', 'çocuk', 'bilgi'], simple: true },
+        { to: '/kullanici-rehberi', icon: BookCheck, label: 'Kullanıcı Rehberi', description: 'Yeni başlayanlar için ilk adımlar', keywords: ['başlangıç', 'rehber', 'kullanım', 'yardım'], simple: true },
+        { to: '/anasayfa', icon: Home, label: 'Ana Sayfa', mobileLabel: 'Ana', description: 'Bugünün kısa yol haritası', keywords: ['dashboard', 'özet', 'başlangıç'], mobile: true, simple: true },
+        { to: '/cocuklarim', icon: Baby, label: 'Çocuk Profili', mobileLabel: 'Profil', description: 'İlk kurulacak temel bilgiler', keywords: ['profil', 'çocuk', 'bilgi'], mobile: true, simple: true },
         { to: '/gunluk-takip', icon: Pill, label: 'Bugünün Kaydı', mobileLabel: 'Kayıt', description: 'Duygu, uyku, ilaç ve kısa not', keywords: ['ilaç', 'uyku', 'günlük', 'kayıt'], requiresChild: true, mobile: true, simple: true },
         { to: '/randevular', icon: CalendarCheck, label: 'Randevu ve Uzman', mobileLabel: 'Randevu', description: 'Görüşme talebi ve seans takibi', keywords: ['uzman', 'seans', 'görüşme', 'doktor', 'terapist', 'müsaitlik'], requiresChild: true, mobile: true, simple: true },
         { to: '/mesajlar', icon: MessageCircle, label: 'Mesajlar', description: 'Uzman ve aile yazışmaları', keywords: ['chat', 'iletişim', 'sohbet'], badgeKey: 'messages', mobile: true, simple: true },
@@ -125,7 +126,8 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       label: 'Danışan & Takvim',
       defaultOpen: true,
       items: [
-        { to: '/', icon: Home, label: 'Ana Sayfa', description: 'Bugünkü iş akışı ve özetler', keywords: ['özet', 'başlangıç', 'dashboard'], mobile: true },
+        { to: '/kullanici-rehberi', icon: BookCheck, label: 'Kullanıcı Rehberi', description: 'Platform başlangıç akışı', keywords: ['başlangıç', 'rehber', 'kullanım', 'yardım'] },
+        { to: '/anasayfa', icon: Home, label: 'Ana Sayfa', description: 'Bugünkü iş akışı ve özetler', keywords: ['özet', 'başlangıç', 'dashboard'], mobile: true },
         { to: '/danisanlarim', icon: Users, label: 'Danışanlarım', description: 'Danışan profilleri, görevler ve notlar', keywords: ['hasta', 'çocuk', 'görev'], mobile: true },
         { to: '/randevular', icon: CalendarCheck, label: 'Randevularım', description: 'Talepler, müsaitlik ve seans takvimi', keywords: ['seans', 'müsaitlik', 'takvim'], mobile: true },
         { to: '/bep-raporu', icon: FileText, label: 'BEP Raporu Yaz', description: 'BEP raporu hazırlama alanı', keywords: ['rapor', 'bep', 'belge'], requiresVerifiedExpert: true },
@@ -154,7 +156,8 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       label: 'Yönetim',
       defaultOpen: true,
       items: [
-        { to: '/', icon: Home, label: 'Karşılama', description: 'Yönetim paneli özeti', keywords: ['özet', 'admin'], mobile: true },
+        { to: '/kullanici-rehberi', icon: BookCheck, label: 'Kullanıcı Rehberi', description: 'Yeni kullanıcı başlangıç akışı', keywords: ['başlangıç', 'rehber', 'kullanım', 'yardım'] },
+        { to: '/anasayfa', icon: Home, label: 'Ana Sayfa', description: 'Yönetim paneli özeti', keywords: ['özet', 'admin'], mobile: true },
         { to: '/admin/analytics', icon: TrendingUp, label: 'Analitik', description: 'Kullanım ve sistem metrikleri', keywords: ['grafik', 'metrik', 'istatistik'], mobile: true },
         { to: '/admin/experts', icon: GraduationCap, label: 'Uzman Başvuruları', description: 'Uzman onay ve doğrulama süreci', keywords: ['başvuru', 'onay', 'uzman'], mobile: true },
         { to: '/admin/users', icon: Users, label: 'Kullanıcı Yönetimi', description: 'Kullanıcı hesapları ve roller', keywords: ['kullanıcı', 'rol', 'hesap'] },
@@ -190,8 +193,11 @@ export function getNavGroups(role?: string) {
   return NAV_GROUPS.PARENT;
 }
 
-export function getMobileNavItems(role?: string) {
-  return getNavGroups(role).flatMap((group) => group.items).filter((item) => item.mobile).slice(0, 4);
+export function getMobileNavItems(role?: string, hasChild = true) {
+  return getNavGroups(role)
+    .flatMap((group) => group.items)
+    .filter((item) => item.mobile && (hasChild || !item.requiresChild))
+    .slice(0, 4);
 }
 
 export function isNavItemActive(pathname: string, to: string) {

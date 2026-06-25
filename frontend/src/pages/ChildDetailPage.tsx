@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Star, TrendingUp, Tag as TagIcon, Check, X,
@@ -25,10 +25,12 @@ import { calendarService } from '@/services/calendarService';
 import { appointmentService } from '@/services/appointmentService';
 import { moodService } from '@/services/moodService';
 import { sleepService } from '@/services/sleepService';
+import { behaviorJournalService } from '@/services/behaviorJournalService';
+import { medicationService } from '@/services/medicationService';
 
 import { formatDate } from '@/utils/date';
 import { toast } from '@/store/toastStore';
-import type { ActivityResult, AppointmentRecord, CalendarEvent, Child, DevelopmentNote, Milestone, MoodEntry, SleepEntry, Tag } from '@/types';
+import type { ActivityResult, AppointmentRecord, CalendarEvent, Child, DevelopmentNote, Milestone, MoodEntry, SleepEntry, Tag, MedicationLog, ABCEntry } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, AreaChart, Area } from 'recharts';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -205,6 +207,8 @@ export function ChildDetailPage() {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
+  const [medicationLogs, setMedicationLogs] = useState<MedicationLog[]>([]);
+  const [abcEntries, setAbcEntries] = useState<ABCEntry[]>([]);
   const [screeningResults, setScreeningResults] = useState<ScreeningResultDto[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
@@ -263,6 +267,8 @@ export function ChildDetailPage() {
       milestoneService.getByChild(id).then(setMilestones).catch(() => {}),
       moodService.getByChild(id).then(data => setMoodEntries(data || [])).catch(() => {}),
       sleepService.getByChild(id).then(data => setSleepEntries(data || [])).catch(() => {}),
+      behaviorJournalService.getByChild(id).then(data => setAbcEntries(data || [])).catch(() => {}),
+      medicationService.getLogs(id).then(data => setMedicationLogs(data || [])).catch(() => {}),
       screeningService.getByChild(id).then(setScreeningResults).catch(() => setScreeningResults([])),
       calendarService.getByChild(id).then(setEvents).catch(() => setEvents([])),
       appointmentService.getAll()
@@ -298,6 +304,57 @@ export function ChildDetailPage() {
       });
     }
   }, [child]);
+
+  const correlationData = useMemo(() => {
+    const behaviorByDate: Record<string, number> = {};
+    abcEntries.forEach(entry => {
+      const dateStr = entry.date;
+      if (dateStr) {
+        behaviorByDate[dateStr] = (behaviorByDate[dateStr] || 0) + 1;
+      }
+    });
+
+    const medByDate: Record<string, { taken: number; total: number; sideEffects: string[] }> = {};
+    medicationLogs.forEach(log => {
+      const dateStr = log.logDate;
+      if (dateStr) {
+        if (!medByDate[dateStr]) {
+          medByDate[dateStr] = { taken: 0, total: 0, sideEffects: [] };
+        }
+        medByDate[dateStr].total += 1;
+        if (log.taken) {
+          medByDate[dateStr].taken += 1;
+        }
+        if (log.sideEffects) {
+          log.sideEffects.forEach(se => {
+            if (!medByDate[dateStr].sideEffects.includes(se)) {
+              medByDate[dateStr].sideEffects.push(se);
+            }
+          });
+        }
+      }
+    });
+
+    const allDates = Array.from(new Set([...Object.keys(behaviorByDate), ...Object.keys(medByDate)]));
+    allDates.sort((a, b) => a.localeCompare(b));
+
+    return allDates.slice(-30).map(dateStr => {
+      const formattedDate = new Date(dateStr).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+      const behaviorCount = behaviorByDate[dateStr] || 0;
+      const medInfo = medByDate[dateStr] || { taken: 0, total: 0, sideEffects: [] };
+      const adherence = medInfo.total > 0 ? Math.round((medInfo.taken / medInfo.total) * 100) : null;
+
+      return {
+        date: dateStr,
+        displayDate: formattedDate,
+        behaviorCount,
+        takenCount: medInfo.taken,
+        totalCount: medInfo.total,
+        adherence,
+        sideEffects: medInfo.sideEffects,
+      };
+    });
+  }, [abcEntries, medicationLogs]);
 
   const handleLoadMoreNotes = async () => {
     if (!id) return;
@@ -1389,6 +1446,105 @@ export function ChildDetailPage() {
             )}
             </div>
           </Card>
+
+          {/* İlaç & Davranış Korelasyon Analizi */}
+          {(abcEntries.length > 0 || medicationLogs.length > 0) && (
+            <Card>
+              <CardHeader className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center">
+                    <HeartPulse size={16} className="text-rose-500" />
+                  </div>
+                  <div>
+                    <CardTitle>İlaç Uyum & Davranış Korelasyon Grafiği</CardTitle>
+                    <p className="text-[11px] font-bold text-slate-400 mt-0.5">İlaç dozu uyum yüzdesi, gözlemlenen yan etkiler ve davranış problemlerinin ilişkisi</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <div className="px-5 pb-5">
+                {correlationData.length === 0 ? (
+                  <div className="py-6 text-center text-xs font-semibold text-slate-400">
+                    Korelasyon analizi için yeterli veri bulunmuyor.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 flex-wrap text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />
+                        <span>Davranış Problemi Sayısı (Sol Aks)</span>
+                      </div>
+                      <div className="flex-1" />
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                        <span>İlaç Doz Uyumu (%, Sağ Aks)</span>
+                      </div>
+                    </div>
+
+                    <ResponsiveContainer width="100%" height={260}>
+                      <AreaChart data={correlationData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorAdherence" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
+                          </linearGradient>
+                          <linearGradient id="colorBehavior" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.15}/>
+                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="4 4" stroke="#f3f4f6" vertical={false} />
+                        <XAxis dataKey="displayDate" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                        <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#9ca3af' }} allowDecimals={false} axisLine={false} tickLine={false} />
+                        <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-white border border-slate-200 p-3 rounded-2xl shadow-xl text-xs flex flex-col gap-1.5 min-w-[200px]">
+                                  <p className="font-extrabold text-slate-800 border-b border-slate-100 pb-1">{data.date}</p>
+                                  <p className="font-bold text-rose-600 flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
+                                    Davranış Problemleri: {data.behaviorCount} adet
+                                  </p>
+                                  <p className="font-bold text-emerald-600 flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                                    İlaç Uyum Oranı: {data.adherence !== null ? `%${data.adherence}` : 'Kayıt Yok'}
+                                  </p>
+                                  {data.totalCount > 0 && (
+                                    <p className="text-[10px] font-bold text-slate-400 pl-3.5">
+                                      Alınan Doz: {data.takenCount} / {data.totalCount}
+                                    </p>
+                                  )}
+                                  {data.sideEffects && data.sideEffects.length > 0 && (
+                                    <div className="border-t border-slate-100 pt-1.5 mt-1">
+                                      <p className="text-[10px] font-black text-amber-500 uppercase tracking-wide flex items-center gap-1">
+                                        <AlertCircle size={10} /> Yan Etkiler
+                                      </p>
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {data.sideEffects.map((se: string) => (
+                                          <span key={se} className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/50 rounded-md text-[10px] font-bold">
+                                            {se}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Area yAxisId="right" type="monotone" dataKey="adherence" name="Doz Uyum Oranı" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorAdherence)" dot={{ r: 3.5, fill: '#ffffff', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 5, strokeWidth: 0 }} />
+                        <Area yAxisId="left" type="monotone" dataKey="behaviorCount" name="Davranış Problemi" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorBehavior)" dot={{ r: 3.5, fill: '#ffffff', stroke: '#ef4444', strokeWidth: 2 }} activeDot={{ r: 5, strokeWidth: 0 }} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
 
           {/* Gelişim Analizi */}
           {notes.length > 0 && (

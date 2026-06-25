@@ -7,6 +7,7 @@ import {
   BookOpen,
   CalendarCheck,
   CheckCircle2,
+  ClipboardCheck,
   HeartHandshake,
   Layers,
   LineChart,
@@ -16,11 +17,13 @@ import {
   NotebookTabs,
   Share2,
   ShieldCheck,
+  Sparkles,
   Stethoscope,
   TrendingUp,
   UserCheck,
   X,
 } from 'lucide-react';
+import landingHeroSupport from '@/assets/landing-hero-support.jpg';
 
 const guideSteps = [
   {
@@ -114,6 +117,12 @@ const platformFeatures = [
   },
 ];
 
+const heroStats = [
+  { value: '3 dk', label: 'ilk kayıt' },
+  { value: '6 adım', label: 'başlangıç planı' },
+  { value: 'rol bazlı', label: 'güvenli erişim' },
+];
+
 const safeguards = [
   {
     icon: ShieldCheck,
@@ -156,7 +165,7 @@ export function PublicLandingPage() {
   return (
     <main className="min-h-screen bg-white text-slate-950">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-5">
           <Link to="/tanitim" className="flex min-w-0 items-center gap-3">
             <BrandMark />
@@ -166,17 +175,17 @@ export function PublicLandingPage() {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-6 text-sm font-semibold text-slate-600 lg:flex">
-            <a href="#rehber"  className="transition-colors hover:text-primary-700">Nasıl başlarım?</a>
+          <nav className="hidden items-center gap-6 text-sm font-bold text-slate-600 lg:flex">
+            <a href="#rehber" className="transition-colors hover:text-primary-700">Başlangıç</a>
             <a href="#moduller" className="transition-colors hover:text-primary-700">Araçlar</a>
-            <a href="#guven"   className="transition-colors hover:text-primary-700">Güven</a>
+            <a href="#guven" className="transition-colors hover:text-primary-700">Güven</a>
           </nav>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Link to="/giris" className="hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:inline-flex sm:px-4">
+            <Link to="/giris" className="hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 sm:inline-flex sm:px-4">
               Giriş
             </Link>
-            <Link to="/kayit" className="rounded-xl bg-primary-600 px-3 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-700 sm:px-4">
+            <Link to="/kayit" className="rounded-xl bg-primary-600 px-3 py-2 text-sm font-bold text-white shadow-lg shadow-primary-600/20 transition-colors hover:bg-primary-700 sm:px-4">
               Hesap Aç
             </Link>
             <button
@@ -194,7 +203,7 @@ export function PublicLandingPage() {
         {mobileMenuOpen && (
           <div className="border-t border-slate-100 bg-white px-5 py-4 lg:hidden">
             <nav className="flex flex-col gap-3 text-sm font-semibold text-slate-700">
-              <a href="#rehber"   className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Nasıl başlarım?</a>
+              <a href="#rehber"   className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Başlangıç</a>
               <a href="#moduller" className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Araçlar</a>
               <a href="#guven"    className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Güven</a>
               <Link to="/giris"  className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Giriş yap</Link>
@@ -204,138 +213,147 @@ export function PublicLandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section id="rehber" className="relative overflow-hidden border-b border-slate-200 bg-slate-50">
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 lg:min-h-[calc(100vh-145px)] lg:grid-cols-[0.9fr_1.1fr] lg:py-14">
+      <section className="relative isolate overflow-hidden border-b border-slate-200 bg-white">
+        <img
+          src={landingHeroSupport}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
+        />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(255,255,255,0.98)_0%,rgba(255,255,255,0.93)_38%,rgba(255,255,255,0.48)_68%,rgba(255,255,255,0.12)_100%)]" />
+
+        <div className="mx-auto flex min-h-[calc(100vh-220px)] max-w-6xl items-center px-5 py-16 sm:py-20 lg:min-h-[640px]">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white px-4 py-1.5 text-xs font-bold text-primary-700 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white/90 px-4 py-1.5 text-xs font-bold text-primary-700 shadow-sm backdrop-blur">
               <CheckCircle2 size={14} />
               İlk adım ekranda hazır
             </div>
 
-            <h1 className="mt-7 text-4xl font-extrabold leading-tight text-slate-950 sm:text-5xl lg:text-6xl">
+            <h1 className="mt-7 max-w-xl text-4xl font-black leading-[1.03] text-slate-950 sm:text-5xl lg:text-6xl">
               Otizm Destek Platformu
             </h1>
 
-            <p className="mt-5 text-lg leading-8 text-slate-600">
-              Çocuk profili, bugünün kaydı, randevular ve uzman paylaşımı için sade bir çalışma alanı. Nereden başlayacağınızı adım adım gösterir.
+            <p className="mt-5 max-w-xl text-lg font-medium leading-8 text-slate-700">
+              Çocuk profili, bugünün kaydı, randevular ve uzman paylaşımı için sakin, anlaşılır ve güvenli bir çalışma alanı.
             </p>
 
-            <div className="mt-7 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/kayit"
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-sm font-bold text-white shadow-md transition-colors hover:bg-primary-700"
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-sm font-bold text-white shadow-lg shadow-primary-600/20 transition-colors hover:bg-primary-700"
               >
                 Aile hesabı aç
                 <ArrowRight size={16} />
               </Link>
               <Link
                 to="/kayit/uzman"
-                className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
+                className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-6 text-sm font-bold text-slate-800 shadow-sm backdrop-blur transition-colors hover:bg-white"
               >
                 Uzman başvurusu
                 <ArrowRight size={16} />
               </Link>
             </div>
 
-            {/* Platform özellikleri şeridi */}
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-              {[
-                'Kontrollü paylaşım',
-                'Rol bazlı erişim',
-                'Tıbbi karar değildir',
-              ].map((item) => (
-                <span key={item} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500">
-                  <CheckCircle2 size={14} className="text-emerald-500" />
+            <div className="mt-8 grid max-w-xl gap-3 sm:grid-cols-3">
+              {heroStats.map((item) => (
+                <div key={item.label} className="rounded-xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
+                  <p className="text-xl font-black leading-none text-slate-950">{item.value}</p>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">{item.label}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+              {['Kontrollü paylaşım', 'Rol bazlı erişim', 'Tıbbi karar değildir'].map((item) => (
+                <span key={item} className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
+                  <CheckCircle2 size={14} className="text-emerald-600" />
                   {item}
                 </span>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              {[
-                ['1', 'Profil oluştur'],
-                ['2', 'Bugünü kaydet'],
-                ['3', 'Gerekirse paylaş'],
-              ].map(([number, label]) => (
-                <div key={label} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-sm font-black text-primary-700">
-                    {number}
+      {/* ── Başlangıç rehberi ── */}
+      <section id="rehber" className="border-b border-slate-200 bg-slate-50">
+        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-14 lg:grid-cols-[0.44fr_0.56fr] lg:items-start">
+          <div className="lg:sticky lg:top-24">
+            <p className="text-xs font-black uppercase tracking-widest text-primary-700">Başlangıç planı</p>
+            <h2 className="mt-3 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
+              İlk gününüzü 6 küçük adıma böldük.
+            </h2>
+            <p className="mt-4 text-sm font-medium leading-7 text-slate-600">
+              Kayıt olduktan sonra hangi ekrana gideceğinizi düşünmeniz gerekmez. Platform önce temel bilgiyi toplar, sonra günlük akışı sadeleştirir.
+            </p>
+            <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              {guideSteps.map((step, index) => (
+                <button
+                  key={step.title}
+                  type="button"
+                  onClick={() => setActiveStepIndex(index)}
+                  className={`flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3.5 text-left transition-all last:border-b-0 ${
+                    activeStepIndex === index
+                      ? 'bg-primary-50 text-primary-900'
+                      : 'bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black ${
+                    activeStepIndex === index ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {index + 1}
                   </span>
-                  <span className="text-sm font-extrabold text-slate-700">{label}</span>
-                </div>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-extrabold leading-tight">{step.title}</span>
+                    <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{step.screen}</span>
+                  </span>
+                </button>
               ))}
             </div>
           </div>
 
-          {/* ── Step Guide Card ── */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/60 ring-1 ring-slate-100">
-            <div className="border-b border-slate-100 bg-gradient-to-r from-white to-primary-50/30 p-5">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
+            <div className="border-b border-slate-100 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Başlangıç planı</p>
-                  <h2 className="mt-1 text-xl font-extrabold text-slate-950">İlk gün ne yapacağım?</h2>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">{activeStep.screen}</p>
+                  <h3 className="mt-1 text-2xl font-black leading-tight text-slate-950">{activeStep.title}</h3>
                 </div>
                 <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
                   {activeStepIndex + 1}/{guideSteps.length}
                 </span>
               </div>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+              <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-700 transition-all duration-500"
+                  className="h-full rounded-full bg-primary-600 transition-all duration-500"
                   style={{ width: `${progress}%` }}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-6 border-b border-slate-100">
-              {guideSteps.map((step, index) => {
-                const isActive = activeStepIndex === index;
-                const isDone = index < activeStepIndex;
-                return (
-                  <button
-                    key={step.title}
-                    type="button"
-                    onClick={() => setActiveStepIndex(index)}
-                    className={`relative h-14 border-r border-slate-100 text-sm font-black transition-colors last:border-r-0 ${
-                      isActive
-                        ? 'bg-primary-600 text-white'
-                        : isDone
-                        ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                        : 'bg-white text-slate-400 hover:bg-slate-50 hover:text-primary-700'
-                    }`}
-                    aria-label={`${index + 1}. adım: ${step.title}`}
-                  >
-                    {isDone ? <CheckCircle2 size={15} className="mx-auto" /> : index + 1}
-                  </button>
-                );
-              })}
-            </div>
-
             <div className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-700 ring-4 ring-primary-50/60">
+              <div className="flex items-start gap-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm ring-1 ring-primary-100">
                   <ActiveIcon size={25} />
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">{activeStep.screen}</p>
-                  <h3 className="mt-1 text-2xl font-extrabold leading-tight text-slate-950">{activeStep.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{activeStep.intro}</p>
+                  <p className="text-sm font-semibold leading-7 text-slate-700">{activeStep.intro}</p>
                 </div>
               </div>
 
-              <div className="mt-6 border-t border-slate-100 pt-5">
-                <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Bu adımda</p>
+              <div className="mt-6">
+                <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Bu adımda</p>
                 <div className="mt-3 grid gap-3">
                   {activeStep.tasks.map((task) => (
-                    <div key={task} className="flex items-start gap-3 text-sm font-bold leading-6 text-slate-700">
-                      <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-emerald-500" />
+                    <div key={task} className="flex items-start gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5 text-sm font-bold leading-6 text-slate-700">
+                      <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-emerald-600" />
                       {task}
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="mt-6 rounded-xl bg-gradient-to-r from-primary-50 to-slate-50 px-4 py-3 text-sm font-extrabold leading-6 text-slate-800 ring-1 ring-primary-100/50">
+              <div className="mt-6 rounded-xl bg-primary-50 px-4 py-3 text-sm font-extrabold leading-6 text-primary-900 ring-1 ring-primary-100">
                 {activeStep.result}
               </div>
 
@@ -375,28 +393,48 @@ export function PublicLandingPage() {
 
       {/* ── Neden bu platform? ── */}
       <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-5 py-16">
-          <div className="mb-10 text-center">
+        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div>
             <p className="text-xs font-black uppercase tracking-widest text-primary-700">Platform avantajları</p>
-            <h2 className="mt-2 text-3xl font-extrabold text-slate-950">Günlük yükü sadeleştirir</h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
-              Otizm destek sürecinde sık yaşanan takip, hatırlama ve paylaşım yükünü azaltmak için tasarlandı.
+            <h2 className="mt-3 max-w-lg text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
+              Günlük yükü daha düzenli bir akışa çevirir.
+            </h2>
+            <p className="mt-4 max-w-xl text-sm font-medium leading-7 text-slate-600">
+              Otizm destek sürecinde bilgi farklı yerlere dağılır: defterler, mesajlar, randevu notları, hatırlatmalar. Bu sayfa aileye önce temel yolu gösterir, sonra detayları açar.
             </p>
+
+            <div className="mt-7 grid max-w-xl gap-3 sm:grid-cols-2">
+              {[
+                { icon: ClipboardCheck, label: 'Bugün yapılacaklar', value: 'öncelikli' },
+                { icon: Sparkles, label: 'Öneriler', value: 'profile göre' },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <Icon size={20} className="text-primary-700" />
+                  <p className="mt-3 text-lg font-black text-slate-950">{value}</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-3">
-            {platformFeatures.map(({ icon: Icon, title, description, color }) => {
+          <div className="grid gap-4">
+            {platformFeatures.map(({ icon: Icon, title, description, color }, index) => {
               const c = colorMap[color];
               return (
                 <div
                   key={title}
-                  className={`group rounded-2xl border bg-white p-7 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${c.border}`}
+                  className={`group grid gap-4 rounded-2xl border bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg sm:grid-cols-[auto_1fr_auto] ${c.border}`}
                 >
                   <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${c.iconBg}`}>
                     <Icon size={24} className={c.iconText} />
                   </div>
-                  <h3 className="mt-5 text-lg font-extrabold text-slate-950">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-950">{title}</h3>
+                    <p className="mt-1.5 text-sm font-medium leading-6 text-slate-600">{description}</p>
+                  </div>
+                  <span className="hidden h-9 w-9 items-center justify-center rounded-full bg-slate-50 text-xs font-black text-slate-500 ring-1 ring-slate-100 sm:flex">
+                    {index + 1}
+                  </span>
                 </div>
               );
             })}
@@ -407,12 +445,12 @@ export function PublicLandingPage() {
       {/* ── Modüller ── */}
       <section id="moduller" className="bg-slate-50">
         <div className="mx-auto max-w-6xl px-5 py-16">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div className="mx-auto max-w-3xl text-center">
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-primary-700">Araçlar</p>
-              <h2 className="mt-2 text-3xl font-extrabold text-slate-950">Önce temel akış, sonra detaylar</h2>
+              <h2 className="mt-2 text-3xl font-black text-slate-950">Temel işler tek yerde</h2>
             </div>
-            <p className="max-w-xl text-sm leading-6 text-slate-600">
+            <p className="mx-auto mt-3 max-w-xl text-sm font-medium leading-7 text-slate-600">
               Kullanıcı önce profil, bugünün kaydı, randevu ve mesajlaşmaya yönlenir; ihtiyaç oldukça detay modüller açılır.
             </p>
           </div>
@@ -423,13 +461,13 @@ export function PublicLandingPage() {
               return (
                 <div
                   key={title}
-                  className={`group rounded-2xl border bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${c.border}`}
+                  className={`rounded-2xl border bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${c.border}`}
                 >
                   <div className={`inline-flex h-11 w-11 items-center justify-center rounded-xl ${c.iconBg}`}>
                     <Icon size={22} className={c.iconText} />
                   </div>
-                  <h3 className="mt-4 text-sm font-extrabold text-slate-950">{title}</h3>
-                  <p className="mt-1.5 text-sm leading-6 text-slate-600">{text}</p>
+                  <h3 className="mt-4 text-base font-black text-slate-950">{title}</h3>
+                  <p className="mt-1.5 text-sm font-medium leading-6 text-slate-600">{text}</p>
                 </div>
               );
             })}
@@ -440,13 +478,13 @@ export function PublicLandingPage() {
       {/* ── Güven sınırı ── */}
       <section id="guven" className="border-y border-slate-200 bg-white">
         <div className="mx-auto max-w-6xl px-5 py-16">
-          <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+          <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-primary-700">Güven sınırı</p>
-              <h2 className="mt-2 text-3xl font-extrabold leading-tight text-slate-950">
+              <h2 className="mt-2 text-3xl font-black leading-tight text-slate-950">
                 Destek sağlar, tıbbi kararın yerine geçmez.
               </h2>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
+              <p className="mt-4 text-sm font-medium leading-7 text-slate-600">
                 Platform kayıtları düzenler, aile ve uzman iletişimini kolaylaştırır, gelişimi görünür kılar. Bunun ötesinde herhangi bir iddiada bulunmaz.
               </p>
             </div>
@@ -456,7 +494,7 @@ export function PublicLandingPage() {
                 return (
                   <div
                     key={title}
-                    className={`rounded-2xl border bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${c.border}`}
+                    className={`rounded-2xl border bg-slate-50 p-5 transition-all duration-200 hover:bg-white hover:shadow-md ${c.border}`}
                   >
                     <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${c.iconBg}`}>
                       <Icon size={20} className={c.iconText} />

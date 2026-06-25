@@ -58,6 +58,12 @@ export function RegisterPage() {
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
 
+  const [emailCheckedStatus, setEmailCheckedStatus] = useState<{ checked: boolean; exists: boolean; email: string }>({
+    checked: false,
+    exists: false,
+    email: '',
+  });
+
   const { register, handleSubmit, formState: { errors }, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
@@ -65,6 +71,16 @@ export function RegisterPage() {
   // eslint-disable-next-line react-hooks/incompatible-library
   const watchedPassword = watch('password', '');
   const strength = getPasswordStrength(watchedPassword || passwordValue);
+
+  const handleEmailBlur = async (email: string) => {
+    if (!email || errors.email) return;
+    try {
+      const res = await authService.checkEmail(email);
+      setEmailCheckedStatus({ checked: true, exists: !res.available, email });
+    } catch {
+      // Ignore network check-email error silently
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -82,6 +98,9 @@ export function RegisterPage() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Kayıt olurken bir hata oluştu';
       setError(message);
+      if (message.includes('zaten') || message.includes('kullanılıyor')) {
+        setEmailCheckedStatus({ checked: true, exists: true, email: data.email });
+      }
     } finally {
       setLoading(false);
     }
@@ -176,12 +195,40 @@ export function RegisterPage() {
             </p>
           </div>
 
-          {error && (
+          {emailCheckedStatus.exists ? (
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100/80 text-amber-900 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0 text-amber-600 font-extrabold text-lg">⚠️</div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-amber-950">Bu E-posta Zaten Kayıtlı</h3>
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    <span className="font-semibold">{emailCheckedStatus.email}</span> adresiyle zaten bir hesap oluşturulmuş. Şifrenizi sıfırlayabilir veya doğrudan giriş yapabilirsiniz.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2.5 pt-1 pl-13">
+                <Link
+                  to="/giris"
+                  state={{ email: emailCheckedStatus.email }}
+                  className="px-4 py-2 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-md shadow-primary-200 text-xs transition-all"
+                >
+                  Giriş Yap
+                </Link>
+                <Link
+                  to="/sifremi-unuttum"
+                  state={{ email: emailCheckedStatus.email }}
+                  className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-all"
+                >
+                  Şifremi Sıfırla
+                </Link>
+              </div>
+            </div>
+          ) : error ? (
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-700 animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 text-red-600 font-bold">!</div>
               <p className="text-sm font-medium">{error}</p>
             </div>
-          )}
+          ) : null}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Ad Soyad */}
@@ -214,9 +261,15 @@ export function RegisterPage() {
                   type="email"
                   placeholder="ornek@email.com"
                   className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
-                    errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
+                    errors.email || emailCheckedStatus.exists ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
                   }`}
-                  {...register('email')}
+                  {...register('email', {
+                    onBlur: (e) => handleEmailBlur(e.target.value),
+                    onChange: () => {
+                      setEmailCheckedStatus({ checked: false, exists: false, email: '' });
+                      setError('');
+                    }
+                  })}
                 />
               </div>
               {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}

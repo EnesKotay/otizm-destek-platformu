@@ -701,7 +701,7 @@ export function TreatmentToolsTab({
               </div>
               <div>
                 <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Ölçüm Kartları</span>
-                <h3 className="text-base font-extrabold text-slate-800 leading-none mt-1">Duyusal Profil Ayarları</h3>
+                <h3 className="text-base font-extrabold text-slate-800 leading-none mt-1">Rahatlatan Şeyler Ayarları</h3>
               </div>
             </div>
             <button

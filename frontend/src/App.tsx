@@ -5,6 +5,17 @@ import { useAuthStore } from '@/store/authStore';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ToastContainer } from '@/components/ui/Toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import {
+  ADMIN_ONLY,
+  ALL_ROLES,
+  EXPERT_ADMIN,
+  EXPERT_ONLY,
+  PARENT_EXPERT,
+  PARENT_ONLY,
+  ROLE_HOME_PATH,
+  canAccessRole,
+} from '@/config/roleAccess';
+import type { UserRole } from '@/config/roleAccess';
 import type { ComponentType, ReactNode } from 'react';
 
 // Eagerly loaded — critical auth path
@@ -74,6 +85,7 @@ const SharedProgressPage = lazyNamed(() => import('@/pages/SharedProgressPage'),
 const ExpertMapPage = lazyNamed(() => import('@/pages/ExpertMapPage'), 'ExpertMapPage');
 const WellbeingPage = lazyNamed(() => import('@/pages/WellbeingPage'), 'WellbeingPage');
 const HelpPage = lazyNamed(() => import('@/pages/HelpPage'), 'HelpPage');
+const UserGuidePage = lazyNamed(() => import('@/pages/UserGuidePage'), 'UserGuidePage');
 const ExpertConsultationPage = lazyNamed(() => import('@/pages/ExpertConsultationPage'), 'ExpertConsultationPage');
 const ConnectionManagementPage = lazyNamed(() => import('@/pages/ConnectionManagementPage'), 'ConnectionManagementPage');
 
@@ -103,18 +115,21 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-function AdminRoute({ children }: { children: ReactNode }) {
+function RoleRoute({ allowedRoles, children }: { allowedRoles: readonly UserRole[]; children: ReactNode }) {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/giris" replace />;
-  if (user?.role !== 'ADMIN') return <Navigate to="/" replace />;
+  if (!canAccessRole(user?.role, allowedRoles)) {
+    return <Navigate to={user?.role ? ROLE_HOME_PATH[user.role] : '/'} replace />;
+  }
   return <>{children}</>;
 }
 
+function AdminRoute({ children }: { children: ReactNode }) {
+  return <RoleRoute allowedRoles={ADMIN_ONLY}>{children}</RoleRoute>;
+}
+
 function ExpertRoute({ children }: { children: ReactNode }) {
-  const { isAuthenticated, user } = useAuthStore();
-  if (!isAuthenticated) return <Navigate to="/giris" replace />;
-  if (user?.role !== 'EXPERT' && user?.role !== 'ADMIN') return <Navigate to="/" replace />;
-  return <>{children}</>;
+  return <RoleRoute allowedRoles={EXPERT_ADMIN}>{children}</RoleRoute>;
 }
 
 function PublicRoute({ children }: { children: ReactNode }) {
@@ -152,38 +167,39 @@ export default function App() {
             <Route path="/baslangic" element={<OnboardingRoute><Suspense fallback={<PageLoader />}><OnboardingPage /></Suspense></OnboardingRoute>} />
 
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                <Route index element={<DashboardPage />} />
-                <Route path="/cocuklarim" element={<ChildrenPage />} />
-                <Route path="/cocuklarim/:id" element={<ChildDetailPage />} />
-                <Route path="/tedavi" element={<TreatmentPage />} />
-                <Route path="/notlar" element={<NotesPage />} />
-                <Route path="/takvim" element={<CalendarPage />} />
-                <Route path="/mesajlar" element={<MessagesPage />} />
-                <Route path="/gruplar" element={<GroupsPage />} />
-                <Route path="/forum" element={<ForumPage />} />
-                <Route path="/dertlesme-duvari" element={<SupportWallPage />} />
-                <Route path="/benzer-aileler" element={<SimilarFamiliesPage />} />
-                <Route path="/similar-families" element={<SimilarFamiliesPage />} />
-                <Route path="/ayarlar" element={<SettingsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/bilgi-bankasi" element={<KnowledgePage />} />
-                <Route path="/uzmanlar" element={<ExpertsPage />} />
-                <Route path="/arama" element={<SearchPage />} />
-                <Route path="/randevular" element={<AppointmentPage />} />
-                <Route path="/appointments" element={<AppointmentPage />} />
-                <Route path="/danisanlarim" element={<PatientsPage />} />
-                <Route path="/patients" element={<PatientsPage />} />
-                <Route path="/expert/patients" element={<PatientsPage />} />
-                <Route path="/bep-raporu" element={<BepGeneratorPage />} />
-                <Route path="/tarama" element={<ScreeningPage />} />
-                <Route path="/gunluk-takip" element={<DailyTrackerPage />} />
-                <Route path="/gelisim-paneli" element={<AnalyticsPage />} />
-                <Route path="/sosyal-hikayeler" element={<SocialStoriesPage />} />
-                <Route path="/kriz-rehberi" element={<CrisisGuidePage />} />
-                <Route path="/gorevler" element={<TasksPage />} />
-                <Route path="/tasks" element={<TasksPage />} />
-                <Route path="/rutinler" element={<RoutinesPage />} />
-                <Route path="/mekanlar" element={<VenueMapPage />} />
+                <Route index element={<UserGuidePage />} />
+                <Route path="/anasayfa" element={<DashboardPage />} />
+                <Route path="/cocuklarim" element={<RoleRoute allowedRoles={PARENT_ONLY}><ChildrenPage /></RoleRoute>} />
+                <Route path="/cocuklarim/:id" element={<RoleRoute allowedRoles={PARENT_EXPERT}><ChildDetailPage /></RoleRoute>} />
+                <Route path="/tedavi" element={<RoleRoute allowedRoles={PARENT_ONLY}><TreatmentPage /></RoleRoute>} />
+                <Route path="/notlar" element={<RoleRoute allowedRoles={PARENT_EXPERT}><NotesPage /></RoleRoute>} />
+                <Route path="/takvim" element={<RoleRoute allowedRoles={PARENT_ONLY}><CalendarPage /></RoleRoute>} />
+                <Route path="/mesajlar" element={<RoleRoute allowedRoles={ALL_ROLES}><MessagesPage /></RoleRoute>} />
+                <Route path="/gruplar" element={<RoleRoute allowedRoles={ALL_ROLES}><GroupsPage /></RoleRoute>} />
+                <Route path="/forum" element={<RoleRoute allowedRoles={ALL_ROLES}><ForumPage /></RoleRoute>} />
+                <Route path="/dertlesme-duvari" element={<RoleRoute allowedRoles={PARENT_ONLY}><SupportWallPage /></RoleRoute>} />
+                <Route path="/benzer-aileler" element={<RoleRoute allowedRoles={PARENT_ONLY}><SimilarFamiliesPage /></RoleRoute>} />
+                <Route path="/similar-families" element={<RoleRoute allowedRoles={PARENT_ONLY}><SimilarFamiliesPage /></RoleRoute>} />
+                <Route path="/ayarlar" element={<RoleRoute allowedRoles={ALL_ROLES}><SettingsPage /></RoleRoute>} />
+                <Route path="/settings" element={<RoleRoute allowedRoles={ALL_ROLES}><SettingsPage /></RoleRoute>} />
+                <Route path="/bilgi-bankasi" element={<RoleRoute allowedRoles={ALL_ROLES}><KnowledgePage /></RoleRoute>} />
+                <Route path="/uzmanlar" element={<RoleRoute allowedRoles={PARENT_ONLY}><ExpertsPage /></RoleRoute>} />
+                <Route path="/arama" element={<RoleRoute allowedRoles={ALL_ROLES}><SearchPage /></RoleRoute>} />
+                <Route path="/randevular" element={<RoleRoute allowedRoles={PARENT_EXPERT}><AppointmentPage /></RoleRoute>} />
+                <Route path="/appointments" element={<RoleRoute allowedRoles={PARENT_EXPERT}><AppointmentPage /></RoleRoute>} />
+                <Route path="/danisanlarim" element={<RoleRoute allowedRoles={EXPERT_ONLY}><PatientsPage /></RoleRoute>} />
+                <Route path="/patients" element={<RoleRoute allowedRoles={EXPERT_ONLY}><PatientsPage /></RoleRoute>} />
+                <Route path="/expert/patients" element={<RoleRoute allowedRoles={EXPERT_ONLY}><PatientsPage /></RoleRoute>} />
+                <Route path="/bep-raporu" element={<RoleRoute allowedRoles={EXPERT_ONLY}><BepGeneratorPage /></RoleRoute>} />
+                <Route path="/tarama" element={<RoleRoute allowedRoles={PARENT_ONLY}><ScreeningPage /></RoleRoute>} />
+                <Route path="/gunluk-takip" element={<RoleRoute allowedRoles={PARENT_ONLY}><DailyTrackerPage /></RoleRoute>} />
+                <Route path="/gelisim-paneli" element={<RoleRoute allowedRoles={PARENT_ONLY}><AnalyticsPage /></RoleRoute>} />
+                <Route path="/sosyal-hikayeler" element={<RoleRoute allowedRoles={PARENT_ONLY}><SocialStoriesPage /></RoleRoute>} />
+                <Route path="/kriz-rehberi" element={<RoleRoute allowedRoles={PARENT_ONLY}><CrisisGuidePage /></RoleRoute>} />
+                <Route path="/gorevler" element={<RoleRoute allowedRoles={PARENT_EXPERT}><TasksPage /></RoleRoute>} />
+                <Route path="/tasks" element={<RoleRoute allowedRoles={PARENT_EXPERT}><TasksPage /></RoleRoute>} />
+                <Route path="/rutinler" element={<RoleRoute allowedRoles={PARENT_ONLY}><RoutinesPage /></RoleRoute>} />
+                <Route path="/mekanlar" element={<RoleRoute allowedRoles={PARENT_ONLY}><VenueMapPage /></RoleRoute>} />
                 <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
                   <Route index element={<AdminOverviewPage />} />
                   <Route path="analytics" element={<AdminAnalyticsPage />} />
@@ -194,20 +210,21 @@ export default function App() {
                   <Route path="auditlog" element={<AdminAuditLogPage />} />
                   <Route path="settings" element={<AdminSettingsPage />} />
                 </Route>
-                <Route path="/profil/:id" element={<ProfilePage />} />
-                <Route path="/davranis-gunlugu" element={<BehaviorJournalPage />} />
-                <Route path="/duyusal-profil" element={<SensoryProfilePage />} />
-                <Route path="/haklar-rehberi" element={<RightsGuidePage />} />
-                <Route path="/okul-defteri" element={<SchoolDiaryPage />} />
-                <Route path="/hedef-token" element={<GoalTokenPage />} />
-                <Route path="/acil-kart" element={<EmergencyCardPage />} />
-                <Route path="/beslenme" element={<NutritionPage />} />
-                <Route path="/paylasimli-ilerleme" element={<SharedProgressPage />} />
-                <Route path="/uzman-harita" element={<ExpertMapPage />} />
-                <Route path="/ebeveyn-refahi" element={<WellbeingPage />} />
-                <Route path="/yardim" element={<HelpPage />} />
+                <Route path="/profil/:id" element={<RoleRoute allowedRoles={ALL_ROLES}><ProfilePage /></RoleRoute>} />
+                <Route path="/davranis-gunlugu" element={<RoleRoute allowedRoles={PARENT_ONLY}><BehaviorJournalPage /></RoleRoute>} />
+                <Route path="/duyusal-profil" element={<RoleRoute allowedRoles={PARENT_ONLY}><SensoryProfilePage /></RoleRoute>} />
+                <Route path="/haklar-rehberi" element={<RoleRoute allowedRoles={PARENT_ONLY}><RightsGuidePage /></RoleRoute>} />
+                <Route path="/okul-defteri" element={<RoleRoute allowedRoles={PARENT_ONLY}><SchoolDiaryPage /></RoleRoute>} />
+                <Route path="/hedef-token" element={<RoleRoute allowedRoles={PARENT_ONLY}><GoalTokenPage /></RoleRoute>} />
+                <Route path="/acil-kart" element={<RoleRoute allowedRoles={PARENT_ONLY}><EmergencyCardPage /></RoleRoute>} />
+                <Route path="/beslenme" element={<RoleRoute allowedRoles={PARENT_ONLY}><NutritionPage /></RoleRoute>} />
+                <Route path="/paylasimli-ilerleme" element={<RoleRoute allowedRoles={PARENT_EXPERT}><SharedProgressPage /></RoleRoute>} />
+                <Route path="/uzman-harita" element={<RoleRoute allowedRoles={PARENT_ONLY}><ExpertMapPage /></RoleRoute>} />
+                <Route path="/ebeveyn-refahi" element={<RoleRoute allowedRoles={PARENT_ONLY}><WellbeingPage /></RoleRoute>} />
+                <Route path="/kullanici-rehberi" element={<RoleRoute allowedRoles={ALL_ROLES}><UserGuidePage /></RoleRoute>} />
+                <Route path="/yardim" element={<RoleRoute allowedRoles={ALL_ROLES}><HelpPage /></RoleRoute>} />
                 <Route path="/uzman-odasi" element={<ExpertRoute><ExpertConsultationPage /></ExpertRoute>} />
-                <Route path="/uzman-erisim" element={<ConnectionManagementPage />} />
+                <Route path="/uzman-erisim" element={<RoleRoute allowedRoles={PARENT_ONLY}><ConnectionManagementPage /></RoleRoute>} />
               </Route>
 
                 <Route path="*" element={<NotFoundPage />} />

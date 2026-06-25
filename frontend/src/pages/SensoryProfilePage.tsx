@@ -170,7 +170,7 @@ export function SensoryProfilePage() {
 
   const handleEmailShare = () => {
     const text = buildTextSummary();
-    const subject = encodeURIComponent(`${selectedChild?.name} — Duyusal Profil Raporu`);
+    const subject = encodeURIComponent(`${selectedChild?.name} — Rahatlatan Şeyler Raporu`);
     const body = encodeURIComponent(text);
     window.open(`mailto:?subject=${subject}&body=${body}`);
   };
@@ -182,7 +182,7 @@ export function SensoryProfilePage() {
       <div className="print:hidden space-y-6">
         <PageOnboarding
           pageId="sensory-profile"
-          title="Duyusal Profile Hoş Geldiniz"
+          title="Rahatlatan Şeyler'e Hoş Geldiniz"
           description="Çocuğunuzun duyusal tetikleyicilerini ve onu sakinleştiren stratejileri detaylıca kaydedin."
           steps={[
             {
@@ -200,7 +200,7 @@ export function SensoryProfilePage() {
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Duyusal Profil Haritası</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Rahatlatan Şeyler Haritası</h1>
             <p className="text-gray-500 mt-1">Her duyusal alandaki hassasiyeti ve düzenlemeleri kaydedin</p>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -241,7 +241,7 @@ export function SensoryProfilePage() {
                     📈 Değerlendirme Durumu
                   </div>
                   <div>
-                    <h3 className="text-base font-extrabold text-gray-900 tracking-tight">{selectedChild?.name} — Duyusal Profil Tamamlanma</h3>
+                    <h3 className="text-base font-extrabold text-gray-900 tracking-tight">{selectedChild?.name} — Rahatlatan Şeyler Tamamlanma</h3>
                     <p className="text-xs text-gray-500 mt-1">Her duyu alanı doldurulduğunda yapay zeka haritası şekillenir.</p>
                   </div>
                   <div className="space-y-2">
@@ -256,7 +256,7 @@ export function SensoryProfilePage() {
                 </div>
                 {saved && (
                   <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold mt-4 pt-3 border-t border-gray-50">
-                    <CheckCircle size={14} /> Profil Kaydedildi ve Güncel
+                    <CheckCircle size={14} /> Bilgiler Kaydedildi ve Güncel
                   </div>
                 )}
               </div>
@@ -264,7 +264,7 @@ export function SensoryProfilePage() {
               {/* Sensory Wheel Card */}
               <div className="bg-white rounded-3xl border border-gray-100 p-5 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
                 <div className="absolute -left-16 -top-16 w-36 h-36 rounded-full bg-indigo-50/40 blur-2xl pointer-events-none" />
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Duyusal Profil Haritası (Çarkı)</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Rahatlatan Şeyler Haritası</p>
                 <p className="text-[10px] text-gray-400 mb-4">Etkileşimli çark ile duyu alanlarını inceleyin</p>
                 
                 {/* Interactive SVG Sensory Wheel */}
@@ -499,7 +499,7 @@ export function SensoryProfilePage() {
           {/* Beautiful Clinic Style Header */}
           <div className="flex justify-between items-start border-b pb-6 mb-6">
             <div>
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{selectedChild?.name} — Duyusal Profil Raporu</h1>
+              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{selectedChild?.name} — Rahatlatan Şeyler Raporu</h1>
               <p className="text-sm text-slate-500 mt-1">Otizm Destek Platformu • Bireysel Duyusal Değerlendirme</p>
             </div>
             <div className="text-right">

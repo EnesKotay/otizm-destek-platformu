@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -28,6 +28,7 @@ const ROUTE_HELP: Array<{ match: string; title: string; steps: string[] }> = [
   { match: '/acil-kart', title: 'Acil durumda paylaşılacak bilgileri hazır tutun.', steps: ['İletişim bilgilerini kontrol edin.', 'Duyusal hassasiyetleri yazın.', 'Paylaşım bağlantısını yalnızca gerektiğinde kullanın.'] },
   { match: '/notlar', title: 'Kısa gözlem notları ekleyin.', steps: ['Bugün fark ettiğiniz bir şeyi yazın.', 'Kısa cümleler yeterli.', 'İsterseniz uzmanla paylaşılacak özete ekleyin.'] },
   { match: '/tedavi', title: 'Günlük plan ve gelişim hedefleri burada.', steps: ['Bugünkü küçük adıma bakın.', 'Zor gelirse süreyi kısaltın.', 'Tamamlanan adımları işaretleyin.'] },
+  { match: '/kullanici-rehberi', title: 'Yeni kullanıcılar için en kısa başlangıç yolu.', steps: ['Önce ilk gün adımlarına bakın.', 'İhtiyacınıza göre sayfa haritasını kullanın.', 'Güvenli paylaşım notlarını okuyun.'] },
   { match: '/yardim', title: 'Takıldığınız yerde buradan başlayın.', steps: ['Aradığınız konuyu seçin.', 'İlk adımı okuyun.', 'Gerekirse destek alanına geçin.'] },
   { match: '/', title: 'Bugün neye ihtiyacınız varsa onu seçin.', steps: ['Bugünün kaydını girebilirsiniz.', 'Randevu ve mesajlara bakabilirsiniz.', 'Zor bir an varsa rehbere geçebilirsiniz.'] },
 ];
@@ -38,7 +39,10 @@ function getRouteHelp(pathname: string) {
 
 export function AppLayout() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  const user = useAuthStore(s => s.user);
+  const isOnboardingCompleted = useAuthStore(s => s.isOnboardingCompleted);
   const location = useLocation();
+  const navigate = useNavigate();
   const isAdminRoute = location.pathname === '/admin';
   const [isSidebarCompact, setIsSidebarCompact] = useState(() => localStorage.getItem('sidebar-compact') === 'true');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -92,6 +96,12 @@ export function AppLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
+    if (isAuthenticated && user?.role === 'PARENT' && !isOnboardingCompleted()) {
+      navigate('/baslangic', { replace: true });
+    }
+  }, [isAuthenticated, user, isOnboardingCompleted, navigate]);
+
+  useEffect(() => {
     const handleCompactChange = (event: Event) => {
       setIsSidebarCompact(Boolean((event as CustomEvent<boolean>).detail));
     };
@@ -128,7 +138,7 @@ export function AppLayout() {
             onClick={closeMobileMenu}
           />
           {/* Slide-out Sidebar container */}
-          <div className="relative flex h-full w-full max-w-[288px] flex-col bg-white dark:bg-gray-900 transition-transform duration-300 ease-out shadow-2xl animate-in slide-in-from-left">
+          <div className="relative flex h-full w-full max-w-[320px] flex-col bg-white dark:bg-gray-900 transition-transform duration-300 ease-out shadow-2xl animate-in slide-in-from-left">
             <button
               onClick={closeMobileMenu}
               className="absolute right-4 top-4 z-50 p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-gray-800 cursor-pointer"
@@ -141,7 +151,7 @@ export function AppLayout() {
         </div>
       )}
 
-      <main className={cn('min-h-screen pb-20 transition-[margin] lg:pb-0', isSidebarCompact ? 'lg:ml-20' : 'lg:ml-72')}>
+      <main className={cn('min-h-screen pb-20 transition-[margin] lg:pb-0', isSidebarCompact ? 'lg:ml-20' : 'lg:ml-80')}>
         <div
           className={cn(
             'mx-auto p-4 sm:p-6 lg:p-8',
@@ -172,17 +182,17 @@ export function AppLayout() {
               <button
                 type="button"
                 onClick={openCommandPalette}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-500 hover:bg-white dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 hover:shadow-sm transition-all text-sm border border-transparent hover:border-gray-100 dark:hover:border-gray-700"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-slate-600 transition-all hover:border-gray-100 hover:bg-white hover:text-slate-800 hover:shadow-sm dark:text-slate-300 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200 border border-transparent"
               >
                 <Search size={16} />
                 <span className="hidden sm:inline">Ara veya komut ver...</span>
-                <kbd className="hidden rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-400 sm:inline">⌘K</kbd>
+                <kbd className="hidden rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 sm:inline">⌘K</kbd>
               </button>
               {isAuthenticated && routeHelp && (
                 <button
                   type="button"
                   onClick={() => setIsHelpOpen((value) => !value)}
-                  className="flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm text-gray-500 transition-all hover:border-gray-100 hover:bg-white hover:text-gray-700 hover:shadow-sm dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                  className="flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:border-gray-100 hover:bg-white hover:text-slate-800 hover:shadow-sm dark:text-slate-300 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                   aria-expanded={isHelpOpen}
                 >
                   <HelpCircle size={16} />

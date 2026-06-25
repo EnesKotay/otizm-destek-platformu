@@ -417,6 +417,7 @@ export interface MedicationLog {
   taken: boolean;
   takenAt?: string;
   notes?: string;
+  sideEffects?: string[];
 }
 
 export interface MoodEntry {

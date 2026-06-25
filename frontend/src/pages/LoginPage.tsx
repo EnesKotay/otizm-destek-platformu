@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
 import { toast } from '@/store/toastStore';
@@ -68,6 +68,7 @@ export function LoginPage() {
   const [quoteFade, setQuoteFade]       = useState(true);
   const { setAuth }                     = useAuthStore();
   const navigate                        = useNavigate();
+  const location                        = useLocation();
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -77,9 +78,11 @@ export function LoginPage() {
     return () => clearInterval(t);
   }, []);
 
+  const initialEmail = location.state?.email || '';
+
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { rememberMe: false },
+    defaultValues: { email: initialEmail, rememberMe: false },
   });
 
   const onSubmit = async (data: FormData) => {
@@ -193,15 +196,15 @@ export function LoginPage() {
       {/* ══════════════════════════════════════
           SAĞ PANEL
       ══════════════════════════════════════ */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 md:p-16 overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-slate-50 p-5 sm:p-8 md:p-12 overflow-y-auto">
         <div className={cn(
-          'w-full max-w-md my-8',
+          'w-full max-w-lg my-6',
           shake && 'animate-[shake_0.45s_ease-in-out]',
         )}>
 
           {/* Mobil logo */}
-          <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-primary-200/50">
+          <div className="lg:hidden flex items-center gap-3 mb-7">
+            <div className="w-11 h-11 rounded-2xl bg-primary-600 flex items-center justify-center shadow-lg shadow-primary-200/50">
               <HeartHandshake size={22} className="text-white" />
             </div>
             <div>
@@ -211,49 +214,56 @@ export function LoginPage() {
           </div>
 
           {/* Başlık */}
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 border border-primary-100 mb-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse inline-block" />
-              <span className="text-xs font-semibold text-primary-600 tracking-wide">Tekrar hoş geldiniz</span>
+          <div className="mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white px-3 py-1.5 shadow-sm">
+              <CheckCircle2 size={14} className="text-primary-600" />
+              <span className="text-xs font-bold text-primary-700">Tekrar hoş geldiniz</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">
-              Çocuğunuzun yanında<br />
-              <span className="bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">
-                kaldığınız yerden devam edin.
-              </span>
+            <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+              Hesabınıza giriş yapın
             </h1>
-            <p className="text-gray-400 text-sm mt-3 leading-relaxed">
-              Bugünün kaydına, randevulara ve mesajlara güvenli şekilde ulaşın.
+            <p className="mt-3 max-w-md text-sm font-medium leading-6 text-slate-600">
+              Bugünün kaydı, randevular ve mesajlar tek düzenli alanda sizi bekliyor.
             </p>
           </div>
 
           {/* Hata */}
           {errorMsg && (
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-700 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-red-700 mb-5 animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 text-red-600 font-bold">!</div>
               <p className="text-sm font-medium">{errorMsg}</p>
             </div>
           )}
 
           {/* Form Kartı */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-6 sm:p-8 mb-4">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70 sm:p-6">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-slate-950">Giriş bilgileri</h2>
+                <p className="mt-1 text-sm font-medium text-slate-500">E-posta ve şifrenizle devam edin.</p>
+              </div>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-100">
+                Güvenli
+              </span>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
               {/* E-posta */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">E-posta</label>
-                <div className="relative">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">E-posta</label>
+                <div className="group relative">
+                  <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary-600">
                     <Mail size={18} />
                   </div>
                   <input
                     type="email"
                     autoComplete="email"
                     placeholder="ornek@email.com"
-                    className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
+                    className={`h-12 w-full rounded-2xl border pl-11 pr-4 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
                       errors.email
-                        ? 'border-red-400 bg-red-50/30 focus:ring-red-400'
-                        : 'border-gray-200 bg-white hover:border-gray-300 focus:bg-white shadow-sm'
+                        ? 'border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100'
+                        : 'border-slate-200 bg-slate-50/60 hover:border-slate-300 hover:bg-white focus:border-primary-300 focus:bg-white focus:ring-primary-100'
                     }`}
                     {...register('email')}
                   />
@@ -264,30 +274,31 @@ export function LoginPage() {
               {/* Şifre */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre</label>
-                  <Link to="/sifremi-unuttum" className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Şifre</label>
+                  <Link to="/sifremi-unuttum" className="text-xs font-bold text-primary-600 transition-colors hover:text-primary-700">
                     Şifremi Unuttum
                   </Link>
                 </div>
-                <div className="relative">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                <div className="group relative">
+                  <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary-600">
                     <Lock size={18} />
                   </div>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     placeholder="En az 8 karakter"
-                    className={`w-full pl-11 pr-10 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
+                    className={`h-12 w-full rounded-2xl border pl-11 pr-12 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
                       errors.password
-                        ? 'border-red-400 bg-red-50/30 focus:ring-red-400'
-                        : 'border-gray-200 bg-white hover:border-gray-300 focus:bg-white shadow-sm'
+                        ? 'border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100'
+                        : 'border-slate-200 bg-slate-50/60 hover:border-slate-300 hover:bg-white focus:border-primary-300 focus:bg-white focus:ring-primary-100'
                     }`}
                     {...register('password')}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(p => !p)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors cursor-pointer"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none cursor-pointer"
+                    aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -296,23 +307,23 @@ export function LoginPage() {
               </div>
 
               {/* Beni hatırla */}
-              <label className="flex items-center gap-3 cursor-pointer select-none group w-fit">
+              <label className="flex w-fit cursor-pointer select-none items-center gap-3 group">
                 <div className="relative w-5 h-5 shrink-0">
                   <input type="checkbox" className="peer sr-only" {...register('rememberMe')} />
-                  <div className="w-5 h-5 rounded-md border-2 border-gray-300 bg-white peer-checked:bg-primary-600 peer-checked:border-primary-600 transition-all duration-200 shadow-sm" />
+                  <div className="h-5 w-5 rounded-lg border-2 border-slate-300 bg-white shadow-sm transition-all duration-200 peer-checked:border-primary-600 peer-checked:bg-primary-600" />
                   <CheckCircle2 size={12} className="absolute inset-0 m-auto text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
                 </div>
-                <span className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">Beni hatırla</span>
+                <span className="text-sm font-semibold text-slate-600 transition-colors group-hover:text-slate-800">Beni hatırla</span>
               </label>
 
               {/* Buton */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700
-                           disabled:from-slate-300 disabled:to-slate-400 disabled:cursor-not-allowed
-                           text-white font-bold text-sm rounded-xl
-                           shadow-lg shadow-primary-200/50 hover:shadow-primary-300/50
+                className="w-full h-12 bg-primary-600 hover:bg-primary-700
+                           disabled:bg-slate-300 disabled:cursor-not-allowed
+                           text-white font-black text-sm rounded-2xl
+                           shadow-lg shadow-primary-200/60 hover:shadow-primary-300/60
                            flex items-center justify-center gap-2 group
                            hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]
                            transition-all duration-150 cursor-pointer mt-2"
@@ -326,83 +337,74 @@ export function LoginPage() {
             </form>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-5">
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {TRUST_ITEMS.map((item) => (
-              <div key={item.label} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-600 shadow-sm">
+              <div key={item.label} className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-slate-700 shadow-sm">
                 <item.icon size={15} className="shrink-0 text-primary-600" />
-                <span className="text-[11px] font-semibold leading-snug">{item.label}</span>
+                <span className="text-xs font-bold leading-snug">{item.label}</span>
               </div>
             ))}
           </div>
 
-          {/* Ayırıcı */}
-          <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-3 bg-slate-50 text-xs text-gray-400">veya hesap oluşturun</span>
-            </div>
-          </div>
-
-          <Link
-            to="/tanitim"
-            className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-primary-100 bg-primary-50/70 px-4 py-3 text-primary-800 transition-all hover:border-primary-200 hover:bg-primary-50"
-          >
-            <span className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-primary-600 shadow-sm">
-                <PlayCircle size={18} />
-              </span>
-              <span>
-                <span className="block text-sm font-bold">Platformu önce keşfedin</span>
-                <span className="block text-xs text-primary-600">Örnek akışlar, güvenlik ve uzman ağı</span>
-              </span>
-            </span>
-            <ArrowRight size={16} className="shrink-0" />
-          </Link>
-
-          {/* Kayıt kartları */}
-          <div className="grid grid-cols-2 gap-3">
-            <Link to="/kayit"
-              className="group flex flex-col items-center gap-3 p-4 rounded-2xl bg-white border border-gray-200
-                         hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5
-                         shadow-sm transition-all duration-200 text-center"
-            >
-              <div className="w-10 h-10 rounded-xl bg-primary-50 group-hover:bg-primary-100 flex items-center justify-center transition-colors border border-primary-100">
-                <Users size={18} className="text-primary-600" />
-              </div>
+          {/* ── Kaydol bölümü ── */}
+          <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold text-gray-800 group-hover:text-primary-700 transition-colors">Veli Hesabı</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">Ücretsiz kaydol</p>
+                <h2 className="text-base font-black text-slate-950">Hesabınız yok mu?</h2>
+                <p className="mt-1 text-sm font-medium text-slate-500">Size uygun hesap türünü seçin.</p>
               </div>
-            </Link>
+              <Link to="/tanitim" className="hidden text-xs font-black text-primary-600 hover:text-primary-700 sm:inline-flex">
+                Keşfet
+              </Link>
+            </div>
 
-            <Link to="/kayit/uzman"
-              className="group flex flex-col items-center gap-3 p-4 rounded-2xl bg-white border border-gray-200
-                         hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5
-                         shadow-sm transition-all duration-200 text-center"
+            {/* Kartlar */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Link to="/kayit"
+                className="group flex items-center gap-3 rounded-2xl border border-primary-100 bg-primary-50/50 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50 hover:shadow-md"
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-primary-700 ring-1 ring-primary-100">
+                  <Users size={18} className="text-primary-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black text-slate-900">Veli hesabı</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-500">Ücretsiz kaydol</p>
+                </div>
+                <ArrowRight size={16} className="shrink-0 text-primary-600 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+
+              <Link to="/kayit/uzman"
+                className="group flex items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-indigo-50 hover:shadow-md"
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-indigo-700 ring-1 ring-indigo-100">
+                  <Brain size={18} className="text-indigo-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black text-slate-900">Uzman hesabı</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-500">Başvuru yap</p>
+                </div>
+                <ArrowRight size={16} className="shrink-0 text-indigo-600 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
+
+            {/* Platform keşfet — kompakt */}
+            <Link
+              to="/tanitim"
+              className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 transition-all hover:border-primary-100 hover:bg-white group sm:hidden"
             >
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 group-hover:bg-indigo-100 flex items-center justify-center transition-colors border border-indigo-100">
-                <Brain size={18} className="text-indigo-600" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-800 group-hover:text-indigo-700 transition-colors">Uzman Hesabı</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">Başvuru yap</p>
-              </div>
+              <span className="flex items-center gap-2.5">
+                <PlayCircle size={15} className="text-primary-500 shrink-0" />
+                <span className="text-xs font-bold text-slate-700 group-hover:text-primary-700 transition-colors">Platformu önce keşfedin</span>
+              </span>
+              <ArrowRight size={13} className="text-slate-400 group-hover:text-primary-500 group-hover:translate-x-0.5 transition-all shrink-0" />
             </Link>
           </div>
 
           {/* SSL */}
-          <div className="flex items-center justify-center gap-2 border-t border-gray-100 pt-6 mt-6">
-            <Shield size={14} className="text-gray-400" />
-            <p className="text-center text-xs text-gray-400">Verileriniz 256-bit SSL ile korunmaktadır.</p>
+          <div className="mt-5 flex items-center justify-center gap-2">
+            <Shield size={13} className="text-slate-400" />
+            <p className="text-center text-xs font-semibold text-slate-400">Verileriniz SSL ile korunur.</p>
           </div>
-          <p className="mt-3 text-center text-xs text-gray-400">
-            İlk kez mi geldiniz?{' '}
-            <Link to="/tanitim" className="font-bold text-primary-600 hover:text-primary-700">
-              Platformu tanıyın
-            </Link>
-          </p>
         </div>
       </div>
 

@@ -56,4 +56,19 @@ public class MedicationController {
             @CurrentUser UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.success(medicationService.toggleLog(id, date, time, principal.getId())));
     }
+
+    @PostMapping("/{id}/log")
+    public ResponseEntity<ApiResponse<MedicationLogDto>> saveLog(
+            @PathVariable UUID id,
+            @Valid @RequestBody MedicationLogDto logDto,
+            @CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success("Ilac gunlugu kaydedildi", medicationService.saveLog(id, logDto, principal.getId())));
+    }
+
+    @GetMapping("/child/{childId}/logs")
+    public ResponseEntity<ApiResponse<List<MedicationLogDto>>> getMedicationLogs(
+            @PathVariable UUID childId,
+            @CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(medicationService.getMedicationLogs(childId, principal.getId())));
+    }
 }

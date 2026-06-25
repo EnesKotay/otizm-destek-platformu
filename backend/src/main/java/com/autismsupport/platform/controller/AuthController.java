@@ -23,6 +23,13 @@ public class AuthController {
     private final PasswordResetService passwordResetService;
     private final UserRepository userRepository;
 
+    @RateLimit(limit = 30, duration = 60)
+    @GetMapping("/check-email")
+    public ResponseEntity<ApiResponse<EmailAvailabilityResponse>> checkEmail(@RequestParam String email) {
+        boolean available = !userRepository.existsByEmail(email);
+        return ResponseEntity.ok(ApiResponse.success(new EmailAvailabilityResponse(available)));
+    }
+
     @RateLimit(limit = 20, duration = 60)
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {

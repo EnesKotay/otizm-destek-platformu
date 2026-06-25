@@ -106,11 +106,12 @@ public class MatchingService {
 
         // Sort
         Comparator<ScoredFamily> comparator = switch (normalizedSortBy) {
-            case "tags"  -> Comparator.comparingInt(sf -> -sf.commonTags.size());
-            case "age"   -> Comparator.comparingInt(sf ->
+            case "tags"    -> Comparator.comparingInt(sf -> -sf.commonTags.size());
+            case "age"     -> Comparator.comparingInt(sf ->
                                sf.child.getBirthDate() == null ? Integer.MAX_VALUE :
                                Period.between(sf.child.getBirthDate(), LocalDate.now()).getYears());
-            default      -> (a, b) -> Double.compare(b.score, a.score);
+            case "therapy" -> (a, b) -> Double.compare(b.therapyScore, a.therapyScore);
+            default        -> (a, b) -> Double.compare(b.score, a.score);
         };
         scored.sort(comparator);
 
@@ -186,7 +187,7 @@ public class MatchingService {
             return "score";
         }
         String normalized = sortBy.trim().toLowerCase(Locale.ROOT);
-        if (!Set.of("score", "tags", "age").contains(normalized)) {
+        if (!Set.of("score", "tags", "age", "therapy").contains(normalized)) {
             throw new ValidationException("Geçersiz sıralama tipi");
         }
         return normalized;
@@ -212,8 +213,8 @@ public class MatchingService {
 
     private double textSimilarity(String a, String b) {
         if (a == null || b == null || a.isBlank() || b.isBlank()) return 0;
-        Set<String> wordsA = Set.of(a.toLowerCase().split("[,;\\s]+"));
-        Set<String> wordsB = Set.of(b.toLowerCase().split("[,;\\s]+"));
+        Set<String> wordsA = new HashSet<>(Arrays.asList(a.toLowerCase().split("[,;\\s]+")));
+        Set<String> wordsB = new HashSet<>(Arrays.asList(b.toLowerCase().split("[,;\\s]+")));
         Set<String> intersection = new HashSet<>(wordsA);
         intersection.retainAll(wordsB);
         Set<String> union = new HashSet<>(wordsA);

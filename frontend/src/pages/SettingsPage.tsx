@@ -223,7 +223,7 @@ export function SettingsPage() {
 
   const [sidebarCompact, setSidebarCompact] = useState(() => localStorage.getItem('sidebar-compact') === 'true');
   const [sidebarBadges, setSidebarBadges] = useState(() => localStorage.getItem('sidebar-show-badges') !== 'false');
-  const [sidebarDescriptions, setSidebarDescriptions] = useState(() => localStorage.getItem('sidebar-show-descriptions') !== 'false');
+  const [sidebarDescriptions, setSidebarDescriptions] = useState(() => localStorage.getItem('sidebar-show-descriptions') === 'true');
   const [rememberGroups, setRememberGroups] = useState(() => localStorage.getItem('sidebar-remember-groups') !== 'false');
   const [focusMode, setFocusMode] = useState(() => localStorage.getItem('settings-focus-mode') === 'true');
 

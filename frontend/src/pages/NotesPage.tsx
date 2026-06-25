@@ -44,9 +44,50 @@ const moods = [
 
 const emptyForm = { title: '', content: '', category: '', mood: '', noteDate: new Date().toISOString().split('T')[0], imageUrl: '' };
 
+const MOCK_NOTES: DevelopmentNote[] = [
+  {
+    id: 'mock-1',
+    childId: 'mock-child',
+    title: 'Göz teması kurarak oyun istedi',
+    content: 'Bugün legoları birleştirirken gözlerimin içine bakıp gülümsedi ve parçayı vermemi istedi. Bu normalde çok az karşılaştığımız ve bizi çok mutlu eden bir ilerleme.',
+    category: 'Sosyal Beceri',
+    mood: 'happy',
+    noteDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'mock-2',
+    childId: 'mock-child',
+    title: 'Duyusal hassasiyet (Elektrik süpürgesi)',
+    content: 'Evde elektrik süpürgesi çalışınca kulaklarını kapatarak odasına kaçtı. Hemen rutin bir mola verip sakinleştirici oyuncaklarıyla oynamasına alan açtık.',
+    category: 'Davranış',
+    mood: 'neutral',
+    noteDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'mock-3',
+    childId: 'mock-child',
+    title: 'Yeni kelime kullanımı (Masa)',
+    content: 'Mutfaktayken parmağıyla işaret ederek net bir şekilde "masa" kelimesini kullandı. Dil terapisi hedeflerimiz arasında nesneleri adlandırma vardı, çok başarılı bir deneme.',
+    category: 'Dil Gelişimi',
+    mood: 'happy',
+    noteDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+  }
+];
+
 export function NotesPage() {
   const { children, setChildren, selectedChild, setSelectedChild } = useChildStore();
   const [notes, setNotes] = useState<DevelopmentNote[]>([]);
+  const [demoMode, setDemoMode] = useState(false);
+
+  useEffect(() => {
+    if (notes.length > 0) {
+      setDemoMode(false);
+    }
+  }, [notes]);
+
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
@@ -159,7 +200,9 @@ export function NotesPage() {
     setDeletingId(null);
   };
 
-  const filteredNotes = notes.filter(note => {
+  const displayNotes = demoMode ? MOCK_NOTES : notes;
+
+  const filteredNotes = displayNotes.filter(note => {
     const matchSearch = !search ||
       note.title.toLowerCase().includes(search.toLowerCase()) ||
       (note.content || '').toLowerCase().includes(search.toLowerCase());
@@ -272,13 +315,38 @@ export function NotesPage() {
         </div>
       )}
 
-      {notes.length === 0 ? (
+      {demoMode && (
+        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 px-5 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-indigo-100 text-indigo-600 mt-0.5 shrink-0">
+              <Zap size={16} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Şu an örnek (demo) verileri görüntülüyorsunuz.</p>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">Kendi gelişim notunuzu eklediğinizde bu veriler gizlenecektir.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setDemoMode(false)}
+            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-white border border-indigo-150 rounded-xl px-4 py-2 hover:shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            Demo Modunu Kapat
+          </button>
+        </div>
+      )}
+
+      {displayNotes.length === 0 ? (
         <EmptyState
           icon={<FileText size={32} />}
           title="Henüz gelişim notu yok"
           description="Bugün çocuğunuzla ilgili küçük bir gözlemi kaydedin; uzun yazmak zorunda değilsiniz."
           steps={['Ne oldu?', 'Öncesinde ne vardı?', 'Sonrasında ne işe yaradı?']}
-          action={<Button onClick={() => setShowModal(true)}>İlk Notu Ekle</Button>}
+          action={
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={() => setShowModal(true)}>İlk Notu Ekle</Button>
+              <Button variant="outline" onClick={() => setDemoMode(true)}>Örnek Verileri Keşfet (Demo)</Button>
+            </div>
+          }
         />
       ) : filteredNotes.length === 0 ? (
         <EmptyState

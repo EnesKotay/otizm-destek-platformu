@@ -12,4 +12,5 @@ import java.util.UUID;
 public interface MedicationLogRepository extends JpaRepository<MedicationLog, UUID> {
     List<MedicationLog> findByChildIdAndLogDate(UUID childId, LocalDate date);
     Optional<MedicationLog> findByMedicationIdAndLogDateAndScheduledTime(UUID medicationId, LocalDate date, String scheduledTime);
+    List<MedicationLog> findByChildIdOrderByLogDateAsc(UUID childId);
 }

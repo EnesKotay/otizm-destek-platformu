@@ -6,7 +6,6 @@ export interface BuddyDto {
   buddyId: string;
   fullName: string;
   city?: string;
-  email?: string;
   profileImageUrl?: string;
   latitude?: number;
   longitude?: number;

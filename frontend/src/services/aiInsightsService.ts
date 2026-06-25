@@ -1,6 +1,6 @@
 import api from './api';
 
-export type AnalysisType = 'GENERAL' | 'BEHAVIORAL' | 'PROGRESS' | 'WEEKLY';
+export type AnalysisType = 'GENERAL' | 'BEHAVIORAL' | 'PROGRESS' | 'WEEKLY' | 'DAILY_COACH';
 
 export const aiInsightsService = {
   getInsights: (childId: string, type: AnalysisType = 'GENERAL') =>

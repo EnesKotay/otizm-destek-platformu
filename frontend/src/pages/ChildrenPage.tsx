@@ -52,6 +52,7 @@ export function ChildrenPage() {
   const { children, setChildren, addChild, removeChild } = useChildStore();
   const { hash } = useLocation();
   const requestsSectionRef = useRef<HTMLElement>(null);
+  const profilesSectionRef = useRef<HTMLDivElement>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fieldError, setFieldError] = useState('');
@@ -119,6 +120,15 @@ export function ChildrenPage() {
     setDeleteTarget(null);
   };
 
+  const handleProfileUpdateGuideClick = () => {
+    if (children.length === 0) {
+      setShowModal(true);
+      return;
+    }
+
+    profilesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   // Fix 4: Türkçe normalize arama
   const filtered = children.filter(c => {
     if (!search.trim()) return true;
@@ -133,8 +143,18 @@ export function ChildrenPage() {
         title="Çocuk Profillerine Hoş Geldiniz"
         description="Çocuğunuzun gelişimini ve tedavi sürecini buradan yönetebilirsiniz."
         steps={[
-          { icon: <Plus size={20} />, title: "Profil Ekleyin", description: "İlk adım olarak çocuğunuzun yaş, tanı ve terapi bilgilerini girin." },
-          { icon: <Baby size={20} />, title: "Profili Güncel Tutun", description: "Eğitim ve terapi programları değiştikçe profili güncelleyin." }
+          {
+            icon: <Plus size={20} />,
+            title: "Profil Ekleyin",
+            description: "İlk adım olarak çocuğunuzun yaş, tanı ve terapi bilgilerini girin.",
+            onClick: () => setShowModal(true)
+          },
+          {
+            icon: <Baby size={20} />,
+            title: "Profili Güncel Tutun",
+            description: "Eğitim ve terapi programları değiştikçe profili güncelleyin.",
+            onClick: handleProfileUpdateGuideClick
+          }
         ]}
       />
 
@@ -227,56 +247,58 @@ export function ChildrenPage() {
         </div>
       )}
 
-      {/* Fix 5: skeleton loading */}
-      {initialLoading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="rounded-2xl border border-gray-100 bg-white p-5 space-y-3">
-              <SkeletonCard lines={3} />
-            </div>
-          ))}
-        </div>
-      ) : children.length === 0 ? (
-        <EmptyState
-          icon={<Baby size={32} />}
-          title="Henüz çocuk profili eklenmemiş"
-          description="İlk profil; günlük takip, BEP planı, randevu ve uzman paylaşımı için güvenli başlangıç noktasıdır."
-          steps={['Ad ve yaş bilgisini girin.', 'Tanı, eğitim veya hassasiyet notu ekleyin.', 'Profil oluşunca ana sayfa günlük adımları gösterir.']}
-          action={
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Button onClick={() => setShowModal(true)}>
-                <Plus size={15} className="mr-1" />
-                Profil Oluştur
-              </Button>
-              <Link to="/gunluk-takip">
-                <Button variant="outline">
-                  <ClipboardList size={15} className="mr-1" />
-                  Günlük Takip
+      <div ref={profilesSectionRef}>
+        {/* Fix 5: skeleton loading */}
+        {initialLoading ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="rounded-2xl border border-gray-100 bg-white p-5 space-y-3">
+                <SkeletonCard lines={3} />
+              </div>
+            ))}
+          </div>
+        ) : children.length === 0 ? (
+          <EmptyState
+            icon={<Baby size={32} />}
+            title="Henüz çocuk profili eklenmemiş"
+            description="İlk profil; günlük takip, BEP planı, randevu ve uzman paylaşımı için güvenli başlangıç noktasıdır."
+            steps={['Ad ve yaş bilgisini girin.', 'Tanı, eğitim veya hassasiyet notu ekleyin.', 'Profil oluşunca ana sayfa günlük adımları gösterir.']}
+            action={
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button onClick={() => setShowModal(true)}>
+                  <Plus size={15} className="mr-1" />
+                  Profil Oluştur
                 </Button>
-              </Link>
-              <Link to="/uzmanlar">
-                <Button variant="outline">
-                  <GraduationCap size={15} className="mr-1" />
-                  Uzman Bul
-                </Button>
-              </Link>
-            </div>
-          }
-        />
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={<Search size={28} />}
-          title="Sonuç bulunamadı"
-          description={`"${search}" araması için eşleşen profil yok`}
-          action={<Button variant="outline" onClick={() => setSearch('')}>Aramayı Temizle</Button>}
-        />
-      ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(child => (
-            <ChildCard key={child.id} child={child} onDelete={child => setDeleteTarget(child)} />
-          ))}
-        </div>
-      )}
+                <Link to="/gunluk-takip">
+                  <Button variant="outline">
+                    <ClipboardList size={15} className="mr-1" />
+                    Günlük Takip
+                  </Button>
+                </Link>
+                <Link to="/uzmanlar">
+                  <Button variant="outline">
+                    <GraduationCap size={15} className="mr-1" />
+                    Uzman Bul
+                  </Button>
+                </Link>
+              </div>
+            }
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={<Search size={28} />}
+            title="Sonuç bulunamadı"
+            description={`"${search}" araması için eşleşen profil yok`}
+            action={<Button variant="outline" onClick={() => setSearch('')}>Aramayı Temizle</Button>}
+          />
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map(child => (
+              <ChildCard key={child.id} child={child} onDelete={child => setDeleteTarget(child)} />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Fix 2: silme modalında çocuk adı */}
       <ConfirmModal

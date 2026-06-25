@@ -18,15 +18,36 @@ import type { Medication, MoodEntry, SleepEntry } from '@/types';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
-const MOOD_OPTIONS = [
-  { level: 1, emoji: '😢', label: 'Çok Kötü', color: 'border-slate-800 bg-slate-800 text-white' },
-  { level: 2, emoji: '😕', label: 'Kötü',    color: 'border-slate-800 bg-slate-800 text-white' },
-  { level: 3, emoji: '😐', label: 'Orta',    color: 'border-slate-800 bg-slate-800 text-white' },
-  { level: 4, emoji: '🙂', label: 'İyi',     color: 'border-slate-800 bg-slate-800 text-white' },
-  { level: 5, emoji: '😄', label: 'Harika',  color: 'border-slate-800 bg-slate-800 text-white' },
+const COMMON_SIDE_EFFECTS = [
+  'Uyku Hali',
+  'İştahsızlık',
+  'Huzursuzluk',
+  'Hiperaktivite',
+  'Bulantı / Kusma',
+  'Baş Ağrısı',
+  'Ağız Kuruluğu',
+  'Kabızlık / İshal',
 ];
 
-const MOOD_TRIGGERS = ['Uyku', 'Gürültü', 'Rutin değişikliği', 'Sosyal ortam', 'Terapi', 'Yemek', 'Ev etkinliği', 'Hastalık'];
+const MOOD_OPTIONS = [
+  { level: 1, emoji: '😢', label: 'Çok Kötü', activeColor: 'border-rose-500 bg-rose-500 text-white shadow-rose-100 shadow-md scale-105', passiveColor: 'border-rose-100 bg-rose-50/50 hover:border-rose-300 text-rose-700 hover:bg-rose-50' },
+  { level: 2, emoji: '😕', label: 'Kötü',    activeColor: 'border-orange-500 bg-orange-500 text-white shadow-orange-100 shadow-md scale-105', passiveColor: 'border-orange-100 bg-orange-50/50 hover:border-orange-300 text-orange-700 hover:bg-orange-50' },
+  { level: 3, emoji: '😐', label: 'Orta',    activeColor: 'border-amber-500 bg-amber-500 text-white shadow-amber-100 shadow-md scale-105', passiveColor: 'border-amber-100 bg-amber-50/50 hover:border-amber-300 text-amber-700 hover:bg-amber-50' },
+  { level: 4, emoji: '🙂', label: 'İyi',     activeColor: 'border-sky-500 bg-sky-500 text-white shadow-sky-100 shadow-md scale-105', passiveColor: 'border-sky-100 bg-sky-50/50 hover:border-sky-300 text-sky-700 hover:bg-sky-50' },
+  { level: 5, emoji: '😄', label: 'Harika',  activeColor: 'border-emerald-500 bg-emerald-500 text-white shadow-emerald-100 shadow-md scale-105', passiveColor: 'border-emerald-100 bg-emerald-50/50 hover:border-emerald-300 text-emerald-700 hover:bg-emerald-50' },
+];
+
+const MOOD_TRIGGERS = [
+  'Uykusuzluk',
+  'Duyusal Hassasiyet (Gürültü/Işık)',
+  'Rutin Değişikliği',
+  'Sosyal Kaygı',
+  'Terapi Sonrası Yorgunluk',
+  'İletişim Engeli (İfade Edememe)',
+  'Açlık / Susuzluk',
+  'Fiziksel Rahatsızlık',
+  'Beklenmedik Geçişler'
+];
 
 const FREQUENCIES = [
   { value: 'DAILY',         label: 'Günde 1' },
@@ -37,6 +58,39 @@ const FREQUENCIES = [
 ];
 
 const QUALITY_LABELS = ['', 'Çok Kötü', 'Kötü', 'Orta', 'İyi', 'Harika'];
+
+// Format: "Weighted:true|Sensory:false|Melatonin:true|Disturbance:false|Notes:Asıl not metni..."
+const serializeSleepNotes = (notesText: string, flags: { weightedBlanket: boolean, sensoryIssues: boolean, melatonin: boolean, noiseLightDisturbance: boolean }) => {
+  return `Weighted:${flags.weightedBlanket}|Sensory:${flags.sensoryIssues}|Melatonin:${flags.melatonin}|Disturbance:${flags.noiseLightDisturbance}|Notes:${notesText}`;
+};
+
+const deserializeSleepNotes = (serialized = '') => {
+  const defaultFlags = { weightedBlanket: false, sensoryIssues: false, melatonin: false, noiseLightDisturbance: false, notesText: '' };
+  if (!serialized.startsWith('Weighted:')) {
+    return { ...defaultFlags, notesText: serialized };
+  }
+  const parts = serialized.split('|');
+  const flags: any = {};
+  parts.forEach(p => {
+    const idx = p.indexOf(':');
+    if (idx !== -1) {
+      const key = p.substring(0, idx);
+      const val = p.substring(idx + 1);
+      if (key === 'Notes') {
+        flags.notesText = val;
+      } else {
+        const flagKey = key === 'Weighted' ? 'weightedBlanket' :
+                        key === 'Sensory' ? 'sensoryIssues' :
+                        key === 'Melatonin' ? 'melatonin' :
+                        key === 'Disturbance' ? 'noiseLightDisturbance' : null;
+        if (flagKey) {
+          flags[flagKey] = val === 'true';
+        }
+      }
+    }
+  });
+  return { ...defaultFlags, ...flags };
+};
 
 export function DailyTrackerPage() {
   const [tab, setTab] = useState<'medication' | 'mood' | 'sleep'>('mood');
@@ -55,6 +109,15 @@ export function DailyTrackerPage() {
   const [savingMed, setSavingMed] = useState(false);
   const [expandedMed, setExpandedMed] = useState<string | null>(null);
 
+  // Medication Dose Log Modal state
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [activeLogMed, setActiveLogMed] = useState<Medication | null>(null);
+  const [activeLogTime, setActiveLogTime] = useState('');
+  const [logFormTaken, setLogFormTaken] = useState(true);
+  const [logFormNotes, setLogFormNotes] = useState('');
+  const [logFormSideEffects, setLogFormSideEffects] = useState<string[]>([]);
+  const [savingLog, setSavingLog] = useState(false);
+
   // Mood state
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [todayMood, setTodayMood] = useState<MoodEntry | null>(null);
@@ -66,13 +129,93 @@ export function DailyTrackerPage() {
   // Sleep state
   const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
   const [todaySleep, setTodaySleep] = useState<SleepEntry | null>(null);
-  const [sleepForm, setSleepForm] = useState({ bedtime: '21:00', wakeTime: '07:00', quality: 3, nightWakings: 0, notes: '' });
+  const [sleepForm, setSleepForm] = useState({
+    bedtime: '21:00',
+    wakeTime: '07:00',
+    quality: 3,
+    nightWakings: 0,
+    notes: '',
+    weightedBlanket: false,
+    sensoryIssues: false,
+    melatonin: false,
+    noiseLightDisturbance: false,
+  });
   const [savingSleep, setSavingSleep] = useState(false);
+
+  // Weekly Insights State
+  const [weeklyInsights, setWeeklyInsights] = useState<{
+    avgSleep: string;
+    mostFrequentMood: { label: string; emoji: string } | null;
+    topTrigger: string | null;
+    completedDaysCount: number;
+  }>({ avgSleep: '0s', mostFrequentMood: null, topTrigger: null, completedDaysCount: 0 });
 
   useEffect(() => {
     childService.getAll().then(c => { setChildren(c); if (c.length && !selectedChild) setSelectedChild(c[0]); }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Calculate Weekly Insights
+  useEffect(() => {
+    let totalSleepMins = 0;
+    let sleepCount = 0;
+    sleepEntries.forEach(entry => {
+      if (entry.durationMinutes) {
+        totalSleepMins += entry.durationMinutes;
+        sleepCount++;
+      }
+    });
+    const avgSleepMins = sleepCount > 0 ? Math.round(totalSleepMins / sleepCount) : 0;
+    const avgSleepStr = avgSleepMins > 0 
+      ? `${Math.floor(avgSleepMins / 60)}s ${avgSleepMins % 60}dk`
+      : 'Kayıt yok';
+
+    const moodCounts: Record<number, number> = {};
+    moodEntries.forEach(entry => {
+      moodCounts[entry.moodLevel] = (moodCounts[entry.moodLevel] || 0) + 1;
+    });
+    let topMoodLevel = 0;
+    let maxMoodCount = 0;
+    Object.entries(moodCounts).forEach(([level, count]) => {
+      if (count > maxMoodCount) {
+        maxMoodCount = count;
+        topMoodLevel = parseInt(level);
+      }
+    });
+    const topMoodOption = MOOD_OPTIONS.find(o => o.level === topMoodLevel) || null;
+
+    const triggerCounts: Record<string, number> = {};
+    moodEntries.forEach(entry => {
+      (entry.triggers || []).forEach(t => {
+        triggerCounts[t] = (triggerCounts[t] || 0) + 1;
+      });
+    });
+    let topTrigger = null;
+    let maxTriggerCount = 0;
+    Object.entries(triggerCounts).forEach(([trigger, count]) => {
+      if (count > maxTriggerCount) {
+        maxTriggerCount = count;
+        topTrigger = trigger;
+      }
+    });
+
+    const uniqueDays = new Set<string>();
+    moodEntries.forEach(e => uniqueDays.add(e.entryDate));
+    sleepEntries.forEach(e => uniqueDays.add(e.sleepDate));
+    let completedDays = 0;
+    uniqueDays.forEach(day => {
+      const hasMood = moodEntries.some(e => e.entryDate === day);
+      const hasSleep = sleepEntries.some(e => e.sleepDate === day);
+      if (hasMood && hasSleep) completedDays++;
+    });
+
+    setWeeklyInsights({
+      avgSleep: avgSleepStr,
+      mostFrequentMood: topMoodOption ? { label: topMoodOption.label, emoji: topMoodOption.emoji } : null,
+      topTrigger,
+      completedDaysCount: completedDays
+    });
+  }, [moodEntries, sleepEntries]);
 
   useEffect(() => {
     if (!selectedChildId) return;
@@ -88,7 +231,32 @@ export function DailyTrackerPage() {
       setSleepEntries(entries);
       const today = entries.find(e => e.sleepDate === TODAY) ?? null;
       setTodaySleep(today);
-      if (today) setSleepForm({ bedtime: today.bedtime ?? '21:00', wakeTime: today.wakeTime ?? '07:00', quality: today.quality ?? 3, nightWakings: today.nightWakings, notes: today.notes ?? '' });
+      if (today) {
+        const parsed = deserializeSleepNotes(today.notes ?? '');
+        setSleepForm({
+          bedtime: today.bedtime ?? '21:00',
+          wakeTime: today.wakeTime ?? '07:00',
+          quality: today.quality ?? 3,
+          nightWakings: today.nightWakings,
+          notes: parsed.notesText,
+          weightedBlanket: parsed.weightedBlanket,
+          sensoryIssues: parsed.sensoryIssues,
+          melatonin: parsed.melatonin,
+          noiseLightDisturbance: parsed.noiseLightDisturbance,
+        });
+      } else {
+        setSleepForm({
+          bedtime: '21:00',
+          wakeTime: '07:00',
+          quality: 3,
+          nightWakings: 0,
+          notes: '',
+          weightedBlanket: false,
+          sensoryIssues: false,
+          melatonin: false,
+          noiseLightDisturbance: false,
+        });
+      }
     }).catch(() => {});
   }, [selectedChildId]);
 
@@ -169,6 +337,45 @@ export function DailyTrackerPage() {
     } catch { toast.error('İşlem başarısız.'); }
   };
 
+  const openLogModal = (med: Medication, time: string) => {
+    const existingLog = med.todayLogs?.find(l => l.scheduledTime === time);
+    setActiveLogMed(med);
+    setActiveLogTime(time);
+    setLogFormTaken(existingLog ? existingLog.taken : true);
+    setLogFormNotes(existingLog?.notes ?? '');
+    setLogFormSideEffects(existingLog?.sideEffects ?? []);
+    setShowLogModal(false); // reset state first
+    setShowLogModal(true);
+  };
+
+  const handleSaveLog = async () => {
+    if (!activeLogMed) return;
+    setSavingLog(true);
+    try {
+      const payload = {
+        logDate: TODAY,
+        scheduledTime: activeLogTime,
+        taken: logFormTaken,
+        notes: logFormNotes,
+        sideEffects: logFormSideEffects,
+      };
+      const log = await medicationService.saveLog(activeLogMed.id, payload);
+      setMedications(prev => prev.map(m => {
+        if (m.id !== activeLogMed.id) return m;
+        const logs = m.todayLogs ?? [];
+        const existing = logs.findIndex(l => l.scheduledTime === activeLogTime);
+        if (existing >= 0) return { ...m, todayLogs: logs.map((l, i) => i === existing ? log : l) };
+        return { ...m, todayLogs: [...logs, log] };
+      }));
+      toast.success('Doz günlüğü başarıyla kaydedildi.');
+      setShowLogModal(false);
+    } catch {
+      toast.error('İşlem başarısız.');
+    } finally {
+      setSavingLog(false);
+    }
+  };
+
   // ── MOOD handlers ──
   const saveMood = async () => {
     if (!moodLevel) return;
@@ -206,7 +413,21 @@ export function DailyTrackerPage() {
   const saveSleep = async () => {
     setSavingSleep(true);
     try {
-      const saved = await sleepService.upsert({ childId: selectedChildId, sleepDate: TODAY, ...sleepForm, quality: sleepForm.quality as SleepEntry['quality'] });
+      const serializedNotes = serializeSleepNotes(sleepForm.notes, {
+        weightedBlanket: sleepForm.weightedBlanket,
+        sensoryIssues: sleepForm.sensoryIssues,
+        melatonin: sleepForm.melatonin,
+        noiseLightDisturbance: sleepForm.noiseLightDisturbance,
+      });
+      const saved = await sleepService.upsert({
+        childId: selectedChildId,
+        sleepDate: TODAY,
+        bedtime: sleepForm.bedtime,
+        wakeTime: sleepForm.wakeTime,
+        quality: sleepForm.quality as SleepEntry['quality'],
+        nightWakings: sleepForm.nightWakings,
+        notes: serializedNotes,
+      });
       setTodaySleep(saved);
       setSleepEntries(prev => { const idx = prev.findIndex(e => e.id === saved.id); return idx >= 0 ? prev.map((e, i) => i === idx ? saved : e) : [saved, ...prev]; });
       toast.success('Uyku kaydedildi.');
@@ -221,7 +442,17 @@ export function DailyTrackerPage() {
       setSleepEntries(prev => prev.filter(e => e.id !== id));
       if (todaySleep?.id === id || deletedEntry?.sleepDate === TODAY) {
         setTodaySleep(null);
-        setSleepForm({ bedtime: '21:00', wakeTime: '07:00', quality: 3, nightWakings: 0, notes: '' });
+        setSleepForm({
+          bedtime: '21:00',
+          wakeTime: '07:00',
+          quality: 3,
+          nightWakings: 0,
+          notes: '',
+          weightedBlanket: false,
+          sensoryIssues: false,
+          melatonin: false,
+          noiseLightDisturbance: false,
+        });
       }
       toast.success('Uyku kaydı silindi.');
     } catch {
@@ -272,6 +503,57 @@ export function DailyTrackerPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto px-4 py-6">
+      {/* Haftalık Özet / İçgörü Kartı */}
+      {selectedChildId && (moodEntries.length > 0 || sleepEntries.length > 0) && (
+        <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 animate-in fade-in duration-300">
+          <div className="rounded-2xl border border-slate-150 bg-white p-4 shadow-sm flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+              <Moon size={18} />
+            </div>
+            <div>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Haftalık Ortalama Uyku</p>
+              <p className="text-sm font-bold text-slate-850 mt-0.5">{weeklyInsights.avgSleep}</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-150 bg-white p-4 shadow-sm flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+              <Smile size={18} />
+            </div>
+            <div>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Haftanın Genel Hali</p>
+              <p className="text-sm font-bold text-slate-850 mt-0.5">
+                {weeklyInsights.mostFrequentMood 
+                  ? `${weeklyInsights.mostFrequentMood.emoji} ${weeklyInsights.mostFrequentMood.label}` 
+                  : 'Gözlem yok'}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-150 bg-white p-4 shadow-sm flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+              <AlertTriangle size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">En Sık Tetikleyici</p>
+              <p className="text-sm font-bold text-slate-850 mt-0.5 truncate" title={weeklyInsights.topTrigger || 'Gözlem yok'}>
+                {weeklyInsights.topTrigger || 'Gözlem yok'}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-150 bg-white p-4 shadow-sm flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <Check size={18} />
+            </div>
+            <div>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Tam Kayıtlı Günler</p>
+              <p className="text-sm font-bold text-slate-850 mt-0.5">{weeklyInsights.completedDaysCount} gün eksiksiz</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="p-5 sm:p-6">
@@ -458,12 +740,14 @@ export function DailyTrackerPage() {
                             {times.map(time => {
                               const log = med.todayLogs?.find(l => l.scheduledTime === time);
                               const taken = log?.taken ?? false;
+                              const hasSideEffects = log?.sideEffects && log.sideEffects.length > 0;
                               return (
-                                <button key={time} onClick={() => toggleMedLog(med.id, time)}
-                                  title={taken ? 'Alındı işaretini kaldır' : 'Alındı olarak işaretle'}
+                                <button key={time} onClick={() => openLogModal(med, time)}
+                                  title={taken ? 'Doz detayını düzenle' : 'Alındı/Yan etki bildir'}
                                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-[13px] font-semibold border-2 transition-all cursor-pointer ${taken ? 'border-slate-800 bg-slate-800 text-white shadow-sm' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-slate-100'}`}>
                                   {taken ? <Check size={14} /> : <div className="w-[14px] h-[14px] rounded-full border-2 border-slate-400" />}
                                   {time || 'Alındı'}
+                                  {taken && hasSideEffects && <AlertTriangle size={12} className="text-amber-400 ml-1 shrink-0" />}
                                 </button>
                               );
                             })}
@@ -497,15 +781,24 @@ export function DailyTrackerPage() {
                 <div className="flex gap-3 justify-between">
                   {MOOD_OPTIONS.map(opt => (
                     <button key={opt.level} onClick={() => setMoodLevel(opt.level)}
-                      className={`flex-1 flex flex-col items-center gap-1.5 py-4 rounded-xl border-2 transition-all cursor-pointer ${moodLevel === opt.level ? opt.color : 'border-slate-100 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-600'}`}>
+                      className={`flex-1 flex flex-col items-center gap-1.5 py-4 rounded-xl border-2 transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] cursor-pointer ${moodLevel === opt.level ? opt.activeColor : opt.passiveColor}`}>
                       <span className="text-3xl">{opt.emoji}</span>
-                      <span className={`text-xs font-semibold ${moodLevel === opt.level ? 'text-white' : 'text-slate-500'}`}>{opt.label}</span>
+                      <span className="text-xs font-semibold">{opt.label}</span>
                     </button>
                   ))}
                 </div>
 
                 <div className="mt-4">
-                  <p className="text-sm font-semibold text-slate-700 mb-3 mt-6">Tetikleyiciler (isteğe bağlı)</p>
+                  <div className="flex items-center gap-1.5 mb-3 mt-6">
+                    <p className="text-sm font-semibold text-slate-700">Tetikleyiciler (isteğe bağlı)</p>
+                    <div className="group relative">
+                      <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-slate-150 text-[11px] font-extrabold text-slate-500 cursor-help hover:bg-slate-200 transition-colors">?</span>
+                      <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-xl bg-slate-900 p-3.5 text-xs leading-relaxed text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md">
+                        <p className="font-extrabold text-amber-400 mb-1">💡 Otizm ve Tetikleyiciler</p>
+                        Duyusal taşkınlıklar, ani rutin değişiklikleri veya iletişim engelleri genellikle davranış değişikliklerine yol açar. Bunları kaydetmek, davranış örüntülerini analiz etmenize yardımcı olur.
+                      </div>
+                    </div>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {MOOD_TRIGGERS.map(t => (
                       <button key={t} onClick={() => toggleTrigger(t)}
@@ -606,6 +899,39 @@ export function DailyTrackerPage() {
                   </div>
                 </div>
 
+                <div className="mt-6">
+                  <label className="block text-sm font-semibold text-slate-700 mb-3">Duyusal ve Çevresel Faktörler</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer text-xs font-bold select-none ${
+                      sleepForm.weightedBlanket ? 'border-indigo-500 bg-indigo-50/50 text-indigo-900' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'
+                    }`}>
+                      <input type="checkbox" checked={sleepForm.weightedBlanket} onChange={e => setSleepForm(f => ({ ...f, weightedBlanket: e.target.checked }))} className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                      <span>🛏️ Ağır Battaniye Kullanıldı</span>
+                    </label>
+
+                    <label className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer text-xs font-bold select-none ${
+                      sleepForm.sensoryIssues ? 'border-amber-500 bg-amber-50/50 text-amber-900' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'
+                    }`}>
+                      <input type="checkbox" checked={sleepForm.sensoryIssues} onChange={e => setSleepForm(f => ({ ...f, sensoryIssues: e.target.checked }))} className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4" />
+                      <span>👕 Duyusal Hassasiyet (Pijama/Çarşaf)</span>
+                    </label>
+
+                    <label className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer text-xs font-bold select-none ${
+                      sleepForm.melatonin ? 'border-purple-500 bg-purple-50/50 text-purple-900' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'
+                    }`}>
+                      <input type="checkbox" checked={sleepForm.melatonin} onChange={e => setSleepForm(f => ({ ...f, melatonin: e.target.checked }))} className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4" />
+                      <span>💊 Melatonin Desteği Verildi</span>
+                    </label>
+
+                    <label className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer text-xs font-bold select-none ${
+                      sleepForm.noiseLightDisturbance ? 'border-rose-500 bg-rose-50/50 text-rose-900' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'
+                    }`}>
+                      <input type="checkbox" checked={sleepForm.noiseLightDisturbance} onChange={e => setSleepForm(f => ({ ...f, noiseLightDisturbance: e.target.checked }))} className="rounded text-rose-600 focus:ring-rose-500 w-4 h-4" />
+                      <span>🔊 Çevresel Gürültü / Işık Rahatsızlığı</span>
+                    </label>
+                  </div>
+                </div>
+
                 <textarea value={sleepForm.notes} onChange={e => setSleepForm(f => ({ ...f, notes: e.target.value }))} placeholder="Notlar (isteğe bağlı)..." rows={2}
                   className="w-full mt-6 p-4 border border-slate-200 bg-slate-50 rounded-xl text-sm font-medium resize-none focus:outline-none focus:border-slate-400 focus:bg-white transition-colors" />
 
@@ -635,10 +961,25 @@ export function DailyTrackerPage() {
                               </span>
                               <span className="text-[12px] font-semibold tracking-wide text-slate-400">{new Date(e.sleepDate).toLocaleDateString('tr-TR')}</span>
                             </div>
-                            <div className="flex items-center gap-2.5 mt-1.5">
+                            <div className="flex items-center gap-2.5 mt-1.5 flex-wrap">
                               {e.quality && <span className="text-xs">{'⭐'.repeat(e.quality)}</span>}
                               {e.nightWakings > 0 && <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">{e.nightWakings}x uyandı</span>}
+                              {(() => {
+                                const parsed = deserializeSleepNotes(e.notes ?? '');
+                                return (
+                                  <>
+                                    {parsed.weightedBlanket && <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100">🛏️ Ağır Battaniye</span>}
+                                    {parsed.sensoryIssues && <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-100">👕 Duyusal</span>}
+                                    {parsed.melatonin && <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-100">💊 Melatonin</span>}
+                                    {parsed.noiseLightDisturbance && <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-100">🔊 Gürültü/Işık</span>}
+                                  </>
+                                );
+                              })()}
                             </div>
+                            {(() => {
+                              const parsed = deserializeSleepNotes(e.notes ?? '');
+                              return parsed.notesText ? <p className="text-[13px] text-slate-500 mt-2 italic leading-relaxed">{parsed.notesText}</p> : null;
+                            })()}
                           </div>
                           <button
                             onClick={() => setDeleteSleepConfirm(e.id)}
@@ -715,6 +1056,55 @@ export function DailyTrackerPage() {
           <div className="flex gap-3 pt-1">
             <Button variant="outline" onClick={() => setShowMedModal(false)} className="flex-1">İptal</Button>
             <Button onClick={saveMed} loading={savingMed} className="flex-1">Kaydet</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* İlaç Dozu Günlüğü ve Yan Etki Modalı */}
+      <Modal isOpen={showLogModal} onClose={() => setShowLogModal(false)} title="Doz Günlüğü ve Yan Etki Takibi">
+        <div className="space-y-4">
+          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+            <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wide">İlaç Bilgisi</p>
+            <p className="text-base font-black text-slate-850 mt-1">{activeLogMed?.name}</p>
+            <p className="text-xs font-bold text-slate-500 mt-0.5">Doz: {activeLogMed?.dosage} {activeLogMed?.unit} · Planlanan Saat: {activeLogTime || 'Yok'}</p>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer py-1.5">
+              <input type="checkbox" checked={logFormTaken} onChange={e => setLogFormTaken(e.target.checked)}
+                className="w-4 h-4 text-slate-800 border-slate-300 rounded focus:ring-slate-500" />
+              <span className="text-sm font-bold text-slate-800">İlaç Alındı Olarak İşaretle</span>
+            </label>
+          </div>
+
+          {logFormTaken && (
+            <div className="space-y-2 animate-in fade-in duration-200">
+              <label className="block text-sm font-extrabold text-slate-800">Gözlemlenen Yan Etkiler</label>
+              <p className="text-xs font-medium text-slate-500">Bugün bu doz sonrasında çocukta gözlemlediğiniz yan etkileri seçin:</p>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {COMMON_SIDE_EFFECTS.map(se => {
+                  const isChecked = logFormSideEffects.includes(se);
+                  return (
+                    <label key={se} className={`flex items-center gap-2 p-2.5 rounded-xl border-2 transition-all cursor-pointer text-xs font-bold select-none ${
+                      isChecked ? 'border-slate-800 bg-slate-100 text-slate-800' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'
+                    }`}>
+                      <input type="checkbox" checked={isChecked} onChange={() => setLogFormSideEffects(prev => prev.includes(se) ? prev.filter(x => x !== se) : [...prev, se])} className="sr-only" />
+                      <span>{se}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-extrabold text-slate-800 mb-1">Gözlem Notları</label>
+            <TextArea value={logFormNotes} onChange={e => setLogFormNotes(e.target.value)} placeholder="Doktorunuza iletmek istediğiniz özel bir gözlem veya not var mı?" rows={3} />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" onClick={() => setShowLogModal(false)} className="flex-1 font-bold">İptal</Button>
+            <Button onClick={handleSaveLog} loading={savingLog} className="flex-1 font-bold">Kaydet</Button>
           </div>
         </div>
       </Modal>

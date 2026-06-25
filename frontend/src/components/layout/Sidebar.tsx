@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { ChevronDown, HeartHandshake, LockKeyhole, LogOut, PlusCircle, Search, Settings, Sparkles } from 'lucide-react';
+import { ChevronDown, HeartHandshake, HelpCircle, LockKeyhole, LogOut, PlusCircle, Search, Settings, Sparkles } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { appointmentService } from '@/services/appointmentService';
 import { childService } from '@/services/childService';
@@ -35,6 +35,28 @@ function NavBadge({ value }: { value?: number | string }) {
   );
 }
 
+function NavHelpIcon({ label, description }: { label: string; description?: string }) {
+  if (!description) return null;
+
+  return (
+    <span
+      className="group/help relative inline-flex shrink-0 cursor-help align-middle"
+      title={`${label}: ${description}`}
+      aria-label={`${label} hakkında bilgi: ${description}`}
+    >
+      <HelpCircle
+        size={13}
+        className="text-slate-400 transition-colors group-hover/help:text-primary-600"
+        aria-hidden="true"
+      />
+      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden w-56 -translate-x-1/2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-[11px] font-semibold leading-5 text-slate-600 shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/5 group-hover/help:block">
+        <span className="mb-0.5 block text-xs font-extrabold text-slate-900">{label}</span>
+        {description}
+      </span>
+    </span>
+  );
+}
+
 function NavItem({
   badge,
   compact,
@@ -65,7 +87,7 @@ function NavItem({
       />
       <span
         className={cn(
-          'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors duration-200',
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-200',
           isActive
             ? 'bg-primary-600 text-white'
             : 'bg-transparent text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600'
@@ -75,20 +97,23 @@ function NavItem({
       </span>
       {!compact && (
         <span className="min-w-0 flex-1">
-          <span className={cn("block truncate transition-colors", isActive ? "font-bold text-primary-700" : "font-semibold text-slate-600 group-hover:text-slate-900")}>{label}</span>
+          <span className="flex min-w-0 items-start gap-1.5">
+            <span className={cn("block min-w-0 whitespace-normal break-words leading-snug [overflow-wrap:anywhere] transition-colors", isActive ? "font-bold text-primary-700" : "font-semibold text-slate-700 group-hover:text-slate-950")}>{label}</span>
+            <NavHelpIcon label={label} description={description} />
+          </span>
           {description && showDescriptions && !reason && (
             <span className={cn(
-              "mt-0.5 block text-[10px] font-medium leading-3 transition-colors",
+              "mt-1 block text-[11px] font-medium leading-4 transition-colors",
               "whitespace-normal break-words",
-              isActive ? "text-primary-500/80" : "text-slate-400 group-hover:text-slate-500"
+              isActive ? "text-primary-700/85" : "text-slate-500 group-hover:text-slate-600"
             )}>
               {description}
             </span>
           )}
           {reason && (
-            <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[10px] font-semibold leading-3 text-slate-400">
+            <span className="mt-1 flex min-w-0 items-center gap-1 text-[11px] font-semibold leading-4 text-slate-500">
               <LockKeyhole size={11} className="shrink-0" aria-hidden="true" />
-              <span className="truncate">{reason}</span>
+              <span className="min-w-0 whitespace-normal break-words">{reason}</span>
             </span>
           )}
         </span>
@@ -103,7 +128,7 @@ function NavItem({
         title={compact ? `${title} (${disabledReason})` : undefined}
         aria-label={`${label} kapalı: ${disabledReason}`}
         className={cn(
-          'group relative flex w-full items-center gap-3 rounded-xl bg-slate-50/60 px-3 py-2 text-left text-sm font-semibold text-slate-300 opacity-85 ring-1 ring-slate-100/70',
+          'group relative flex w-full items-center gap-3 rounded-xl bg-slate-50/70 px-3 py-2.5 text-left text-sm font-semibold text-slate-500 opacity-90 ring-1 ring-slate-100/70',
           compact && 'justify-center px-2',
           !compact && disabledAction && 'pr-2'
         )}
@@ -133,11 +158,11 @@ function NavItem({
       onMouseEnter={() => prefetchRoute(to)}
       className={({ isActive }) =>
         cn(
-          'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-200',
+          'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200',
           compact && 'justify-center px-2',
           isActive
             ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-100'
-            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            : 'text-slate-700 hover:bg-slate-50 hover:text-slate-950'
         )
       }
     >
@@ -153,7 +178,7 @@ function buildInitialOpenState(groups: NavGroupConfig[]) {
 function buildSimpleParentGroups(groups: NavGroupConfig[]): NavGroupConfig[] {
   const allItems = groups.flatMap((group) => group.items);
   const byPath = (path: string) => allItems.find((item) => item.to === path);
-  const today = ['/', '/gunluk-takip', '/kriz-rehberi']
+  const today = ['/kullanici-rehberi', '/anasayfa', '/gunluk-takip', '/kriz-rehberi']
     .map(byPath)
     .filter(Boolean) as NavItemConfig[];
   const childAndProgress = ['/cocuklarim', '/gelisim-paneli', '/notlar']
@@ -198,6 +223,15 @@ function buildSimpleParentGroups(groups: NavGroupConfig[]): NavGroupConfig[] {
   ].filter((group) => group.items.length > 0);
 }
 
+function filterNavGroupsByChildState(groups: NavGroupConfig[], hasChild: boolean) {
+  return groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => hasChild || !item.requiresChild),
+    }))
+    .filter((group) => group.items.length > 0);
+}
+
 function getStoredOpenState(role: string, groups: NavGroupConfig[]) {
   try {
     const raw = localStorage.getItem(`sidebar-open-groups:${role}`);
@@ -206,6 +240,41 @@ function getStoredOpenState(role: string, groups: NavGroupConfig[]) {
     return buildInitialOpenState(groups);
   }
 }
+
+const ONBOARDING_HELP_COMMANDS = [
+  {
+    to: '/cocuklarim',
+    label: 'Yeni Çocuk Profili Ekle',
+    description: 'Çocuğunuzun yaş, gelişim ve tanı bilgilerini içeren yeni bir profil oluşturun.',
+    group: 'Yardım & Başlangıç',
+    kind: 'nav' as const,
+    icon: Sparkles,
+  },
+  {
+    to: '/gunluk-takip',
+    label: 'Günlük Kayıt Nasıl Girilir?',
+    description: 'Ruh hali, uyku kalitesi ve ilaç takibinizi 1 dakikada kaydedin.',
+    group: 'Yardım & Başlangıç',
+    kind: 'nav' as const,
+    icon: Sparkles,
+  },
+  {
+    to: '/kriz-rehberi',
+    label: 'Zor An Rehberi / Kriz Müdahale',
+    description: 'Kriz anlarında sakinleşmek ve doğru adımları atmak için kılavuz.',
+    group: 'Yardım & Başlangıç',
+    kind: 'nav' as const,
+    icon: Sparkles,
+  },
+  {
+    to: '/kullanici-rehberi',
+    label: 'Platform Rehberi ve Sayfa Haritası',
+    description: 'Platformdaki hangi modülün ne işe yaradığını tek ekranda öğrenin.',
+    group: 'Yardım & Başlangıç',
+    kind: 'nav' as const,
+    icon: Sparkles,
+  }
+];
 
 function CommandPalette({
   badges,
@@ -236,7 +305,26 @@ function CommandPalette({
     label: result.title,
     to: result.type === 'ARTICLE' ? '/bilgi-bankasi' : result.type === 'GROUP' ? '/gruplar' : result.type === 'EXPERT' ? '/uzmanlar' : '/forum',
   }));
+
+  const matchedOnboarding = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) return ONBOARDING_HELP_COMMANDS;
+    
+    const triggers = ['nasıl', 'yardım', 'ekle', 'nerede', 'kayıt', 'kriz', 'rehber', 'profil', 'başlangıç', 'tanıtım', 'onboarding'];
+    const isTriggerWord = triggers.some(t => q.includes(t));
+    
+    if (isTriggerWord) {
+      return ONBOARDING_HELP_COMMANDS;
+    }
+    
+    return ONBOARDING_HELP_COMMANDS.filter(item => 
+      item.label.toLowerCase().includes(q) || 
+      item.description.toLowerCase().includes(q)
+    );
+  }, [query]);
+
   const filteredItems: CommandItem[] = [
+    ...matchedOnboarding,
     ...filterCommandItems(navItems, query),
     ...remoteItems,
   ].slice(0, 12);
@@ -349,21 +437,29 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   const role = user?.role || 'PARENT';
   const navGroups = useMemo(() => getNavGroups(user?.role), [user?.role]);
   const [simpleMode, setSimpleMode] = useState(() => localStorage.getItem('sidebar-simple-mode') !== 'false');
-  const displayNavGroups = useMemo(
-    () => (role === 'PARENT' && simpleMode ? buildSimpleParentGroups(navGroups) : navGroups),
-    [navGroups, role, simpleMode]
-  );
-  const storageRole = `${role}:${role === 'PARENT' && simpleMode ? 'simple' : 'full'}`;
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => getStoredOpenState(storageRole, displayNavGroups));
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [badges, setBadges] = useState<BadgeMap>({});
   const [hasChild, setHasChild] = useState(true);
   const [childrenLoaded, setChildrenLoaded] = useState(user?.role !== 'PARENT');
   const [compact, setCompact] = useState(() => localStorage.getItem('sidebar-compact') === 'true');
   const [showBadges, setShowBadges] = useState(() => localStorage.getItem('sidebar-show-badges') !== 'false');
-  const [showDescriptions, setShowDescriptions] = useState(() => localStorage.getItem('sidebar-show-descriptions') !== 'false');
+  const [showDescriptions, setShowDescriptions] = useState(() => localStorage.getItem('sidebar-show-descriptions') === 'true');
   const [rememberGroups, setRememberGroups] = useState(() => localStorage.getItem('sidebar-remember-groups') !== 'false');
   const context = { hasChild: user?.role !== 'PARENT' || !childrenLoaded || hasChild, isExpertVerified: Boolean(user?.verified) };
+  const baseDisplayNavGroups = useMemo(
+    () => (role === 'PARENT' && simpleMode ? buildSimpleParentGroups(navGroups) : navGroups),
+    [navGroups, role, simpleMode]
+  );
+  const displayNavGroups = useMemo(
+    () => filterNavGroupsByChildState(baseDisplayNavGroups, context.hasChild),
+    [baseDisplayNavGroups, context.hasChild]
+  );
+  const commandNavGroups = useMemo(
+    () => filterNavGroupsByChildState(navGroups, context.hasChild),
+    [navGroups, context.hasChild]
+  );
+  const storageRole = `${role}:${role === 'PARENT' && simpleMode ? 'simple' : 'full'}:${context.hasChild ? 'child' : 'no-child'}`;
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => getStoredOpenState(storageRole, displayNavGroups));
   const effectiveShowDescriptions = showDescriptions;
 
   const isCompact = compact && !onClose;
@@ -557,7 +653,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
       if (childrenLoaded && !hasChild) paths.push('/cocuklarim');
       if (badges.appointments) paths.push('/randevular');
       if (badges.messages) paths.push('/mesajlar');
-      if (!simpleMode) paths.push(hasChild ? '/uzmanlar' : '/', '/bilgi-bankasi', '/tarama');
+      if (!simpleMode) paths.push(hasChild ? '/uzmanlar' : '/anasayfa', '/bilgi-bankasi', '/tarama');
     } else if (user?.role === 'EXPERT') {
       if (badges.appointments) paths.push('/randevular');
       if (badges.messages) paths.push('/mesajlar');
@@ -581,7 +677,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
     <aside className={cn(
       onClose ? 'relative h-full' : 'fixed left-0 top-0 z-40 h-full',
       'flex flex-col border-r border-slate-200/70 dark:border-gray-800 bg-white dark:bg-gray-900 transition-[width]',
-      isCompact ? 'w-20' : 'w-72',
+      isCompact ? 'w-20' : 'w-80',
       className
     )}>
       <div className="border-b border-slate-100 px-4 py-4">
@@ -603,11 +699,11 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
-          className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm font-medium text-slate-400 transition-all hover:border-slate-200 hover:bg-slate-100/70 hover:text-slate-600"
+          className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:border-slate-200 hover:bg-slate-100/70 hover:text-slate-700"
         >
           <Search size={18} aria-hidden="true" className="transition-transform group-hover:scale-105" />
           {!isCompact && <span className="min-w-0 flex-1 truncate text-left font-medium">Ara...</span>}
-          {!isCompact && <kbd className="rounded-md bg-white px-1.5 py-0.5 text-[9px] font-bold text-slate-300 ring-1 ring-slate-100/60 shadow-sm">⌘K</kbd>}
+          {!isCompact && <kbd className="rounded-md bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-400 ring-1 ring-slate-100/60 shadow-sm">⌘K</kbd>}
         </button>
       </div>
 
@@ -650,10 +746,10 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
                 onClick={() => toggleGroup(group.label)}
                 aria-expanded={isOpen}
                 className={cn(
-                  'mb-1 flex w-full items-center justify-between rounded-lg px-1.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] transition-colors',
+                  'mb-1 flex w-full items-center justify-between rounded-lg px-1.5 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] transition-colors',
                   'focus:outline-none focus-visible:bg-slate-50',
                   isCompact && 'justify-center px-1',
-                  isGroupActive ? 'text-primary-600' : 'text-slate-400 hover:text-slate-600'
+                  isGroupActive ? 'text-primary-700' : 'text-slate-500 hover:text-slate-700'
                 )}
               >
                 {!isCompact && <span>{group.label}</span>}
@@ -700,7 +796,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
             className={cn(
               'flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-[11px] font-bold transition-colors',
               simpleMode
-                ? 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                ? 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                 : 'text-primary-600 hover:bg-primary-50'
             )}
           >
@@ -721,7 +817,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
           </div>
           {!isCompact && <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-bold text-slate-800 tracking-tight leading-tight">{user?.fullName}</p>
-            <p className="truncate text-[10px] text-slate-400 leading-tight mt-0.5">{user?.email}</p>
+            <p className="truncate text-[11px] font-medium text-slate-500 leading-tight mt-0.5">{user?.email}</p>
           </div>}
           <button
             type="button"
@@ -734,7 +830,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
         </div>
       </div>
 
-      {paletteOpen && <CommandPalette badges={badges} context={context} groups={navGroups} onClose={() => setPaletteOpen(false)} />}
+      {paletteOpen && <CommandPalette badges={badges} context={context} groups={commandNavGroups} onClose={() => setPaletteOpen(false)} />}
     </aside>
   );
 }

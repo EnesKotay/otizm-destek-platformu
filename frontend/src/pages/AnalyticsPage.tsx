@@ -137,6 +137,39 @@ function renderMarkdown(text: string): ReactNode {
 
 interface ChildAnalyticsProps { child: Child; rangeDays: number; compact?: boolean }
 
+const MOCK_MOOD_DATA = [
+  { entryDate: new Date(Date.now() - 6 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), moodLevel: 3, notes: '' },
+  { entryDate: new Date(Date.now() - 5 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), moodLevel: 4, notes: '' },
+  { entryDate: new Date(Date.now() - 4 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), moodLevel: 4, notes: '' },
+  { entryDate: new Date(Date.now() - 3 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), moodLevel: 3, notes: '' },
+  { entryDate: new Date(Date.now() - 2 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), moodLevel: 5, notes: '' },
+  { entryDate: new Date(Date.now() - 1 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), moodLevel: 5, notes: '' },
+  { entryDate: new Date().toISOString().slice(0, 10), moodLevel: 4, notes: '' },
+];
+
+const MOCK_SLEEP_DATA = [
+  { sleepDate: new Date(Date.now() - 6 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), durationMinutes: 480, quality: 3, notes: '' },
+  { sleepDate: new Date(Date.now() - 5 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), durationMinutes: 510, quality: 4, notes: '' },
+  { sleepDate: new Date(Date.now() - 4 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), durationMinutes: 420, quality: 3, notes: '' },
+  { sleepDate: new Date(Date.now() - 3 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), durationMinutes: 540, quality: 4, notes: '' },
+  { sleepDate: new Date(Date.now() - 2 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), durationMinutes: 600, quality: 5, notes: '' },
+  { sleepDate: new Date(Date.now() - 1 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), durationMinutes: 570, quality: 5, notes: '' },
+  { sleepDate: new Date().toISOString().slice(0, 10), durationMinutes: 520, quality: 4, notes: '' },
+];
+
+const MOCK_MILESTONES = [
+  { category: 'Sosyal Beceri', achievedDate: new Date(Date.now() - 30 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), title: 'Göz teması' },
+  { category: 'Sosyal Beceri', achievedDate: new Date(Date.now() - 20 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), title: 'Sosyal oyun' },
+  { category: 'Dil Gelişimi', achievedDate: new Date(Date.now() - 15 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), title: 'İki kelimelik cümle' },
+  { category: 'Duyusal', achievedDate: new Date(Date.now() - 5 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), title: 'Duyusal mola rutinini uygulama' },
+  { category: 'Motor Gelişim', achievedDate: new Date(Date.now() - 1 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), title: 'Denge oyununda 3 saniye durma' },
+];
+
+const MOCK_NOTES_FOR_ANALYTICS = [
+  { noteDate: new Date(Date.now() - 3 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), createdAt: new Date(Date.now() - 3 * 24 * 60 * 65 * 1000).toISOString() },
+  { noteDate: new Date(Date.now() - 1 * 24 * 60 * 65 * 1000).toISOString().slice(0, 10), createdAt: new Date(Date.now() - 1 * 24 * 60 * 65 * 1000).toISOString() },
+];
+
 function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsProps) {
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -146,6 +179,8 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
   const [analysisTimestamp, setAnalysisTimestamp] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
   const { from, to } = dateRangeOf(rangeDays);
+
+  const [demoMode, setDemoMode] = useState(false);
 
   const { data: moodData = [] } = useQuery({
     queryKey: ['mood-range', child.id, from, to],
@@ -167,6 +202,17 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
     queryKey: ['milestones', child.id],
     queryFn: () => milestoneService.getByChild(child.id),
   });
+
+  useEffect(() => {
+    if (moodData.length > 0 || sleepData.length > 0) {
+      setDemoMode(false);
+    }
+  }, [moodData, sleepData]);
+
+  const effectiveMoodData = demoMode ? MOCK_MOOD_DATA : moodData;
+  const effectiveSleepData = demoMode ? MOCK_SLEEP_DATA : sleepData;
+  const effectiveMilestones = demoMode ? MOCK_MILESTONES : milestones;
+  const effectiveNotes = demoMode ? MOCK_NOTES_FOR_ANALYTICS : notes;
 
   const { data: appointments = [] } = useQuery({
     queryKey: ['appointments-analytics', child.id],
@@ -239,28 +285,28 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
     .sort((a, b) => b.adet - a.adet)
     .slice(0, 8);
 
-  const avgMood = moodData.length
-    ? (moodData.reduce((s, m) => s + m.moodLevel, 0) / moodData.length).toFixed(1)
+  const avgMood = effectiveMoodData.length
+    ? (effectiveMoodData.reduce((s, m) => s + m.moodLevel, 0) / effectiveMoodData.length).toFixed(1)
     : '—';
 
-  const avgSleep = sleepData.length
-    ? Math.round(sleepData.reduce((s, e) => s + (e.durationMinutes || 0), 0) / sleepData.length)
+  const avgSleep = effectiveSleepData.length
+    ? Math.round(effectiveSleepData.reduce((s, e) => s + (e.durationMinutes || 0), 0) / effectiveSleepData.length)
     : 0;
 
   const avgSleepHours = avgSleep ? `${Math.floor(avgSleep / 60)}s ${avgSleep % 60}dk` : '—';
 
-  const moodChartData = moodData.map(e => ({
+  const moodChartData = effectiveMoodData.map(e => ({
     date: formatDate(e.entryDate),
     ruhHali: e.moodLevel,
   }));
 
-  const sleepChartData = sleepData.map(e => ({
+  const sleepChartData = effectiveSleepData.map(e => ({
     date: formatDate(e.sleepDate),
     süre: e.durationMinutes ? Math.round(e.durationMinutes / 60 * 10) / 10 : 0,
     kalite: e.quality || 0,
   }));
 
-  const milestonesByCategory = milestones.reduce<Record<string, number>>((acc, m) => {
+  const milestonesByCategory = effectiveMilestones.reduce<Record<string, number>>((acc, m) => {
     const cat = m.category || 'Diğer';
     acc[cat] = (acc[cat] || 0) + 1;
     return acc;
@@ -268,7 +314,7 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
 
   const radarData = Object.entries(milestonesByCategory).map(([name, value]) => ({ name, value }));
 
-  const milestonesByMonth = milestones.reduce<Record<string, number>>((acc, m) => {
+  const milestonesByMonth = effectiveMilestones.reduce<Record<string, number>>((acc, m) => {
     const month = m.achievedDate?.slice(0, 7) || '';
     if (month) acc[month] = (acc[month] || 0) + 1;
     return acc;
@@ -280,7 +326,7 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
       taş: count,
     }));
 
-  const notesByMonth = notes.reduce<Record<string, number>>((acc, n) => {
+  const notesByMonth = effectiveNotes.reduce<Record<string, number>>((acc, n) => {
     const month = n.noteDate?.slice(0, 7) || n.createdAt.slice(0, 7);
     acc[month] = (acc[month] || 0) + 1;
     return acc;
@@ -316,12 +362,12 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
   const avgMoodNumber = Number(avgMood);
   const moodScore = Number.isFinite(avgMoodNumber) ? (avgMoodNumber / 5) * 100 : 0;
   const sleepScore = avgSleep ? Math.min(avgSleep / 600, 1) * 100 : 0;
-  const activityScore = Math.min((notes.length + milestones.length + completedAppointments + screeningResults.length) / 8, 1) * 100;
+  const activityScore = Math.min((effectiveNotes.length + effectiveMilestones.length + completedAppointments + screeningResults.length) / 8, 1) * 100;
   const dataTypesWithRecords = [
-    moodData.length > 0,
-    sleepData.length > 0,
-    notes.length > 0,
-    milestones.length > 0,
+    effectiveMoodData.length > 0,
+    effectiveSleepData.length > 0,
+    effectiveNotes.length > 0,
+    effectiveMilestones.length > 0,
     appointments.length > 0,
     screeningResults.length > 0,
   ].filter(Boolean).length;
@@ -334,27 +380,47 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
       : { label: 'Veri bekleniyor', className: 'bg-amber-50 text-amber-700 border-amber-200', color: '#f59e0b' };
 
   const actionItems = [
-    !moodData.length && { to: '/gunluk-takip', icon: Smile, label: 'Ruh hali kaydı ekle', detail: 'Duygu trendi için günlük kayıt girin.' },
-    !sleepData.length && { to: '/gunluk-takip', icon: Moon, label: 'Uyku kaydı ekle', detail: 'Uyku grafiğini düzenli veriyle güçlendirin.' },
-    !notes.length && { to: '/notlar', icon: BookOpen, label: 'Gelişim notu yaz', detail: 'Gözlemleri kısa notlarla biriktirin.' },
-    !milestones.length && { to: '/tedavi', icon: Award, label: 'Kilometre taşı ekle', detail: 'Yeni becerileri gelişim akışına bağlayın.' },
+    !effectiveMoodData.length && { to: '/gunluk-takip', icon: Smile, label: 'Ruh hali kaydı ekle', detail: 'Duygu trendi için günlük kayıt girin.' },
+    !effectiveSleepData.length && { to: '/gunluk-takip', icon: Moon, label: 'Uyku kaydı ekle', detail: 'Uyku grafiğini düzenli veriyle güçlendirin.' },
+    !effectiveNotes.length && { to: '/notlar', icon: BookOpen, label: 'Gelişim notu yaz', detail: 'Gözlemleri kısa notlarla biriktirin.' },
+    !effectiveMilestones.length && { to: '/tedavi', icon: Award, label: 'Kilometre taşı ekle', detail: 'Yeni becerileri gelişim akışına bağlayın.' },
     !screeningResults.length && { to: '/tarama', icon: ClipboardList, label: 'Tarama başlat', detail: 'Dönemsel değerlendirme verisi oluşturun.' },
   ].filter(Boolean).slice(0, 3) as Array<{ to: string; icon: ElementType; label: string; detail: string }>;
-  const latestMoodDate = latestDateLabel(moodData.map(e => e.entryDate));
-  const latestSleepDate = latestDateLabel(sleepData.map(e => e.sleepDate));
-  const latestNoteDate = latestDateLabel(notes.map(n => n.noteDate || n.createdAt));
+  const latestMoodDate = latestDateLabel(effectiveMoodData.map(e => e.entryDate));
+  const latestSleepDate = latestDateLabel(effectiveSleepData.map(e => e.sleepDate));
+  const latestNoteDate = latestDateLabel(effectiveNotes.map(n => n.noteDate || n.createdAt));
 
   // CSV veri
   const csvRows = [
-    ...moodData.map(m => ({ tür: 'Ruh Hali', tarih: m.entryDate, değer: m.moodLevel, not: m.notes ?? '' })),
-    ...sleepData.map(s => ({ tür: 'Uyku', tarih: s.sleepDate, değer: s.durationMinutes ? `${Math.floor(s.durationMinutes/60)}s ${s.durationMinutes%60}dk` : '', not: s.notes ?? '' })),
-    ...milestones.map(ms => ({ tür: 'Milestone', tarih: ms.achievedDate, değer: ms.title, not: ms.category ?? '' })),
+    ...effectiveMoodData.map(m => ({ tür: 'Ruh Hali', tarih: m.entryDate, değer: m.moodLevel, not: m.notes ?? '' })),
+    ...effectiveSleepData.map(s => ({ tür: 'Uyku', tarih: s.sleepDate, değer: s.durationMinutes ? `${Math.floor(s.durationMinutes/60)}s ${s.durationMinutes%60}dk` : '', not: s.notes ?? '' })),
+    ...effectiveMilestones.map(ms => ({ tür: 'Milestone', tarih: ms.achievedDate, değer: ms.title, not: ms.category ?? '' })),
   ];
   // eslint-disable-next-line react-hooks/immutability
   (window as unknown as Record<string, unknown>).__analyticsData = csvRows;
 
   return (
     <div className="space-y-5">
+      {demoMode && (
+        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 px-5 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-indigo-100 text-indigo-600 mt-0.5 shrink-0">
+              <Zap size={16} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Şu an örnek (demo) verileri görüntülüyorsunuz.</p>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">Kendi günlük takipleriniz girildiğinde bu veriler gizlenecektir.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setDemoMode(false)}
+            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-white border border-indigo-150 rounded-xl px-4 py-2 hover:shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            Demo Modunu Kapat
+          </button>
+        </div>
+      )}
+
       {!compact && (
         <div className="grid gap-4 xl:grid-cols-[1fr_1.15fr_1fr]">
           <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -575,8 +641,8 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4">
         <StatCard icon={Smile} label={`Ort. Ruh Hali (${rangeDays}g)`} value={avgMood} color="bg-yellow-500" tone="hover:border-yellow-100" />
         <StatCard icon={Moon} label={`Ort. Uyku (${rangeDays}g)`} value={avgSleepHours} color="bg-indigo-500" tone="hover:border-indigo-100" />
-        <StatCard icon={Award} label="Kilometre Taşı" value={milestones.length} color="bg-emerald-500" tone="hover:border-emerald-100" />
-        <StatCard icon={BookOpen} label="Gelişim Notu" value={notes.length} color="bg-primary-500" tone="hover:border-primary-100" />
+        <StatCard icon={Award} label="Kilometre Taşı" value={effectiveMilestones.length} color="bg-emerald-500" tone="hover:border-emerald-100" />
+        <StatCard icon={BookOpen} label="Gelişim Notu" value={effectiveNotes.length} color="bg-primary-500" tone="hover:border-primary-100" />
         <StatCard icon={Calendar} label="Tamamlanan Randevu" value={completedAppointments} color="bg-teal-500" tone="hover:border-teal-100" />
         <StatCard icon={ClipboardList} label="Tarama Sayısı" value={screeningResults.length} color="bg-rose-500" tone="hover:border-rose-100" />
       </div>
@@ -604,7 +670,16 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
             </ResponsiveContainer>
           ) : (
             <EmptyChart>
-              Henüz ruh hali verisi yok
+              <div className="flex flex-col items-center gap-1.5">
+                <span>Henüz ruh hali verisi yok</span>
+                <button
+                  type="button"
+                  onClick={() => setDemoMode(true)}
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                >
+                  Örnek Grafik Verisini Göster
+                </button>
+              </div>
             </EmptyChart>
           )}
         </ChartCard>
@@ -633,7 +708,16 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
             </ResponsiveContainer>
           ) : (
             <EmptyChart>
-              Henüz uyku verisi yok
+              <div className="flex flex-col items-center gap-1.5">
+                <span>Henüz uyku verisi yok</span>
+                <button
+                  type="button"
+                  onClick={() => setDemoMode(true)}
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                >
+                  Örnek Grafik Verisini Göster
+                </button>
+              </div>
             </EmptyChart>
           )}
         </ChartCard>

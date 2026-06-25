@@ -49,7 +49,7 @@ public class AiInsightsService {
 
     public enum AnalysisType {
         GENERAL, BEHAVIORAL, PROGRESS, WEEKLY,
-        SLEEP_BEHAVIOR, EXPERT_REPORT, BEP_SUGGESTIONS
+        SLEEP_BEHAVIOR, EXPERT_REPORT, BEP_SUGGESTIONS, DAILY_COACH
     }
 
     public String generateInsights(UUID childId, AnalysisType type, UUID requesterId, String requesterRole) {
@@ -65,6 +65,7 @@ public class AiInsightsService {
             case SLEEP_BEHAVIOR  -> generateSleepBehaviorCorrelation(childId);
             case EXPERT_REPORT   -> generateExpertReport(childId);
             case BEP_SUGGESTIONS -> generateBepSuggestions(childId);
+            case DAILY_COACH     -> geminiService.sendMessage(buildDailyCoachPrompt(childId), null, "Gunluk Koc Notu");
             default              -> generateCorrelations(childId);
         };
     }
@@ -75,6 +76,8 @@ public class AiInsightsService {
     }
 
     private String buildPromptForStreaming(UUID childId, AnalysisType type) {
+        if (type == AnalysisType.DAILY_COACH) return buildDailyCoachPrompt(childId);
+
         LocalDate cutoff = switch (type) {
             case WEEKLY          -> LocalDate.now().minusDays(7);
             case BEHAVIORAL      -> LocalDate.now().minusDays(60);
@@ -601,6 +604,70 @@ public class AiInsightsService {
                 **Onceliklendirme** (hangi alan en acil, neden)
                 **Aile Icin Ev Destek Onerileri** (2-3 somut faaliyet)
                 """;
+    }
+
+    private String buildDailyCoachPrompt(UUID childId) {
+        var child = childRepository.findById(childId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cocuk profili bulunamadi"));
+
+        LocalDate today = LocalDate.now();
+
+        String moodInfo = moodRepo.findByChildIdAndEntryDate(childId, today)
+                .map(m -> "Girildi (Seviye: " + m.getMoodLevel() + "/5" +
+                          (m.getNotes() != null && !m.getNotes().isBlank()
+                              ? ", Not: " + m.getNotes().substring(0, Math.min(60, m.getNotes().length()))
+                              : "") + ")")
+                .orElse("Henuz girilmedi");
+
+        String appointmentInfo = "Bilgi yok";
+        if (child.getParent() != null) {
+            List<Appointment> upcoming = appointmentRepo
+                    .findByParentIdOrderByAppointmentDateAscAppointmentTimeAsc(child.getParent().getId())
+                    .stream()
+                    .filter(a -> !a.getAppointmentDate().isBefore(today) &&
+                                 a.getAppointmentDate().isBefore(today.plusDays(7)) &&
+                                 !"CANCELLED".equals(a.getStatus()))
+                    .limit(3)
+                    .collect(Collectors.toList());
+            appointmentInfo = upcoming.isEmpty() ? "Yaklasan randevu yok (7 gun)" :
+                    upcoming.stream()
+                            .map(a -> a.getAppointmentDate() + " - " +
+                                      (a.getExpert() != null ? a.getExpert().getFullName() : "Uzman") +
+                                      " (" + a.getStatus() + ")")
+                            .collect(Collectors.joining(", "));
+        }
+
+        String recentNotes = noteRepo.findByChildId(childId).stream()
+                .sorted(Comparator.comparing(DevelopmentNote::getNoteDate).reversed())
+                .limit(3)
+                .map(n -> n.getNoteDate() + ": " + n.getTitle())
+                .collect(Collectors.joining("; "));
+
+        return """
+                Sen destekleyici bir otizm aile kocu yapay zekasisin.
+                Asagida bir ebeveynin BUGUN icin ozet durumu verilmistir.
+
+                Cocuk adi: %s
+                Terapiler/Destek alanlari: %s
+                Bugunun ruh hali kaydi: %s
+                Yaklasan randevular (7 gun): %s
+                Son gozlem notlari: %s
+
+                GOREV: Bu ebeveyni bugun icin yonlendir. Kurallara uy:
+                - Ruh hali kaydi girilmemisse oncelikle onu hatirlat
+                - Yaklasan randevu varsa kisa bir hazirlik veya hatirlatma yap
+                - Terapilere gore evde uygulanabilir kisa 1 aktivite oner
+                - Empatic, destekleyici ve KISA ol (en fazla 2-3 cumle, baslık veya madde isareti kullanma)
+                - Tibbi tavsiye verme
+                - Turkce ve samimi bir dilde yaz
+                """.formatted(
+                    child.getName(),
+                    child.getTherapies() != null && !child.getTherapies().isBlank()
+                            ? child.getTherapies() : "Belirtilmemis",
+                    moodInfo,
+                    appointmentInfo,
+                    recentNotes.isEmpty() ? "Kayit yok" : recentNotes
+                );
     }
 
     private void validateChildAccess(UUID childId, UUID requesterId, String requesterRole) {

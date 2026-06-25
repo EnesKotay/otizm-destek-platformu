@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type ElementType } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, AlertTriangle, ArrowRight, Award, Baby, BarChart2, Bell, Brain, Calendar, CalendarCheck, CheckCircle, ClipboardList, Clock, FileText, GraduationCap, Heart, MessageCircle, Pill, Plus, Search, Settings, ShieldCheck, Sparkles, Target, Timer, TrendingUp, UserPlus, Users, XCircle } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, Baby, BarChart2, Bell, BookOpen, Brain, Calendar, CalendarCheck, CheckCircle, ClipboardList, Clock, FileText, GraduationCap, Heart, MessageCircle, Pill, Search, Settings, ShieldCheck, Smile, Sparkles, Target, Timer, TrendingUp, UserPlus, Users, XCircle } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import { SkeletonStatCard, SkeletonCard } from '@/components/ui/Skeleton';
+import { Modal } from '@/components/ui/Modal';
+import { GuideTooltip } from '@/components/ui/GuideTooltip';
 import { WeeklyTopicWidget } from '@/components/WeeklyTopicWidget';
+import { InteractiveOnboardingTour } from '@/components/InteractiveOnboardingTour';
 import { useAuthStore } from '@/store/authStore';
 import { useChildStore } from '@/store/childStore';
 import { childService } from '@/services/childService';
@@ -15,16 +17,41 @@ import { appointmentService } from '@/services/appointmentService';
 import { patientService } from '@/services/patientService';
 import { noteService } from '@/services/noteService';
 import { messagingService } from '@/services/messagingService';
-import { milestoneService } from '@/services/milestoneService';
 import { moodService } from '@/services/moodService';
 import { medicationService } from '@/services/medicationService';
+import { sensoryProfileService } from '@/services/sensoryProfileService';
+import { emergencyCardService } from '@/services/emergencyCardService';
+import { wellbeingService } from '@/services/wellbeingService';
+import { behaviorJournalService } from '@/services/behaviorJournalService';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { toast } from '@/store/toastStore';
 import { formatDateTime } from '@/utils/date';
-import type { AdminStats, AppointmentRecord, CalendarEvent, DevelopmentNote, ExpertStats, ExpertTask, Medication, MoodEntry, Milestone, PatientSummary, Report, ExpertConnectionRequest } from '@/types';
+import type { AdminStats, AppointmentRecord, CalendarEvent, DevelopmentNote, ExpertStats, ExpertTask, Medication, MoodEntry, PatientSummary, Report, ExpertConnectionRequest } from '@/types';
+
+type FollowUpSuggestion = {
+  to: string;
+  icon: ElementType;
+  title: string;
+  detail: string;
+  cta: string;
+  badge: string;
+  priorityLabel?: string;
+  tone: string;
+  iconTone: string;
+};
 
 // Fix: parse gerçek adı — "Dr. Kemal Aydın" → "Kemal"
 const HONORIFICS = new Set(['Dr.', 'Prof.', 'Av.', 'Doç.', 'Op.', 'Uzm.', 'Yrd.', 'Fzt.']);
+
+const PARENT_THERAPY_TIPS = [
+  "Çocuğunuza komut verirken göz hizasına inin. Bu, dikkati toplamayı ve işbirliğini kolaylaştırır.",
+  "Sorular yerine iki net seçenek sunun (örn. 'Mavi bardak mı kırmızı bardak mı?'). Bu, dil gelişimini teşvik eder.",
+  "Duyusal taşkınlık durumunda sesi azaltın, ışıkları kısın ve bedenine derin basınç (sarılma) uygulayın.",
+  "Rutin geçişlerinden önce geri sayım yapın (örn. '5 dakika sonra parka gideceğiz'). Geçiş kaygısını azaltır.",
+  "İstenen davranışı hemen pekiştirin. Sözel övgü veya alkış, motivasyonu artırır.",
+  "Çocuğunuzun oyununa liderlik etmeye çalışmak yerine onun başlattığı oyuna katılarak dahil olun."
+];
+
 function getFirstName(fullName?: string): string {
   if (!fullName) return '';
   const parts = fullName.split(' ').filter(Boolean);
@@ -138,52 +165,68 @@ function getProfileCompleteness(u?: { fullName?: string; bio?: string; expertTit
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 
-function getAgeLabel(birthDate?: string): string {
-  if (!birthDate) return 'Yaş bilgisi yok';
-  const birth = new Date(birthDate);
-  if (Number.isNaN(birth.getTime())) return 'Yaş bilgisi yok';
-
-  const today = new Date();
-  let months = (today.getFullYear() - birth.getFullYear()) * 12 + today.getMonth() - birth.getMonth();
-  if (today.getDate() < birth.getDate()) months -= 1;
-  if (months < 0) return 'Yaş bilgisi yok';
-  if (months < 24) return `${months} aylık`;
-
-  const years = Math.floor(months / 12);
-  const extraMonths = months % 12;
-  return extraMonths > 0 ? `${years} yaş ${extraMonths} ay` : `${years} yaş`;
-}
-
-function getMoodMeta(mood?: MoodEntry | null) {
-  if (!mood) {
-    return {
-      label: 'Kaydedilmedi',
-      detail: 'Bugün duygu kaydı yok',
-      className: 'bg-slate-50 text-slate-600 ring-slate-200',
-      barClass: 'bg-slate-300',
-      width: '20%',
-    };
-  }
-
-  const moodMap = {
-    1: { label: 'Zorlanıyor', detail: 'Daha sakin bir tempo iyi gelir', className: 'bg-rose-50 text-rose-700 ring-rose-200', barClass: 'bg-rose-500' },
-    2: { label: 'Hassas', detail: 'Duyusal mola öne alınabilir', className: 'bg-orange-50 text-orange-700 ring-orange-200', barClass: 'bg-orange-500' },
-    3: { label: 'Dengeli', detail: 'Planı kısa tekrarlarla sürdürün', className: 'bg-blue-50 text-blue-700 ring-blue-200', barClass: 'bg-blue-500' },
-    4: { label: 'İyi', detail: 'Yeni beceri için uygun an', className: 'bg-emerald-50 text-emerald-700 ring-emerald-200', barClass: 'bg-emerald-500' },
-    5: { label: 'Çok iyi', detail: 'Sosyal oyun eklenebilir', className: 'bg-teal-50 text-teal-700 ring-teal-200', barClass: 'bg-teal-500' },
-  }[mood.moodLevel];
-
-  return {
-    ...moodMap,
-    width: `${mood.moodLevel * 20}%`,
-  };
-}
-
 function getPendingMedicationSlots(medications: Medication[]): number {
   return medications.reduce((count, med) => {
     const scheduledTimes = med.scheduledTimes ?? [];
     return count + scheduledTimes.filter((time) => !med.todayLogs?.some((log) => log.scheduledTime === time && log.taken)).length;
   }, 0);
+}
+
+const EVENT_TYPE_META: Record<string, { label: string; textColor: string; bgColor: string }> = {
+  TERAPI:      { label: 'Terapi',    textColor: 'text-indigo-700', bgColor: 'bg-indigo-100' },
+  DOKTOR:      { label: 'Doktor',    textColor: 'text-emerald-700', bgColor: 'bg-emerald-100' },
+  EGITIM:      { label: 'Eğitim',   textColor: 'text-amber-700',   bgColor: 'bg-amber-100' },
+  AKTIVITE:    { label: 'Aktivite',  textColor: 'text-rose-700',    bgColor: 'bg-rose-100' },
+  APPOINTMENT: { label: 'Randevu',   textColor: 'text-sky-700',     bgColor: 'bg-sky-100' },
+  DIGER:       { label: 'Etkinlik',  textColor: 'text-slate-600',   bgColor: 'bg-slate-100' },
+};
+
+const STARTER_DEMO_CARDS = [
+  {
+    icon: Heart,
+    title: 'Bugünün kaydı',
+    value: 'Ruh hali: sakin',
+    detail: 'Uyku ve ilaç bilgisiyle günlük akış netleşir.',
+    tone: 'bg-rose-50 text-rose-700 ring-rose-100',
+  },
+  {
+    icon: Target,
+    title: 'Sıradaki adım',
+    value: 'Kısa duyusal mola',
+    detail: 'Evde uygulanabilir küçük hedefler önerilir.',
+    tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+  },
+  {
+    icon: TrendingUp,
+    title: 'İlerleme',
+    value: '%67 tamamlandı',
+    detail: 'Kayıtlar arttıkça haftalık örüntüler görünür.',
+    tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+  },
+];
+
+function getEventCountdown(startTime: string): { label: string; timeLabel: string; urgent: boolean } {
+  const start = new Date(startTime);
+  const now = new Date();
+  const todayStr = getLocalDateString(now);
+  const eventDateStr = getLocalDateString(start);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = getLocalDateString(tomorrow);
+  const timeLabel = start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  const diffMs = start.getTime() - now.getTime();
+  const isToday = eventDateStr === todayStr;
+  const isTomorrow = eventDateStr === tomorrowStr;
+  let label: string;
+  if (isToday) {
+    const diffHours = Math.round(diffMs / 3600000);
+    label = diffHours <= 1 ? 'Az kaldı!' : `Bugün · ${timeLabel}`;
+  } else if (isTomorrow) {
+    label = 'Yarın';
+  } else {
+    label = `${Math.round(diffMs / 86400000)} gün sonra`;
+  }
+  return { label, timeLabel, urgent: isToday || isTomorrow };
 }
 
 function getTaskPriority(task: ExpertTask): 'high' | 'medium' | 'low' {
@@ -226,14 +269,20 @@ function ProfileRing({ pct }: { pct: number }) {
 
 export function DashboardPage() {
   const { user } = useAuthStore();
-  const { children, selectedChild, setChildren, setSelectedChild } = useChildStore();
+  const { children, selectedChild, setChildren, setSelectedChild, addChild } = useChildStore();
   const { subscribe, unsubscribe } = useWebSocket();
+
+  // Onboarding & Wizard States
+  const [visitedRoutes, setVisitedRoutes] = useState<Set<string>>(new Set());
+  const [showWelcomeWizard, setShowWelcomeWizard] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const [wizardForm, setWizardForm] = useState({ name: '', birthDate: '', gender: '' });
+  const [wizardSaving, setWizardSaving] = useState(false);
+  const [wizardError, setWizardError] = useState('');
+
   const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
-  const [notesCount, setNotesCount] = useState<number>(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
   const [recentNotes, setRecentNotes] = useState<DevelopmentNote[]>([]);
-  const [thisWeekMilestones, setThisWeekMilestones] = useState<number>(0);
-  const [upcomingAppointments, setUpcomingAppointments] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [todayMood, setTodayMood] = useState<MoodEntry | null>(null);
   const [todayMeds, setTodayMeds] = useState<Medication[]>([]);
@@ -252,6 +301,99 @@ export function DashboardPage() {
   const [savingNote, setSavingNote] = useState(false);
   const [hasAvailability, setHasAvailability] = useState(false);
   const [patientSearch, setPatientSearch] = useState('');
+
+  // Discovery Quest States
+  const [hasSensoryProfile, setHasSensoryProfile] = useState(false);
+  const [hasEmergencyCard, setHasEmergencyCard] = useState(false);
+  const [hasWellbeingLog, setHasWellbeingLog] = useState(false);
+  const [hasBehaviorLog, setHasBehaviorLog] = useState(false);
+
+  // Growth & Discovery Hub Tab States
+  const [discoveryTab, setDiscoveryTab] = useState<'quests' | 'library'>('quests');
+  const [libraryFilter, setLibraryFilter] = useState<'all' | 'growth' | 'social' | 'safety' | 'wellbeing'>('all');
+
+  // ── Bugünün Mini Seansı (Interactive Session States) ──
+  const [sessionActive, setSessionActive] = useState(false);
+  const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [sessionTimeLeft, setSessionTimeLeft] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [sessionCompletedState, setSessionCompletedState] = useState(false);
+  const [sessionNoteText, setSessionNoteText] = useState('');
+  const [savingSessionNote, setSavingSessionNote] = useState(false);
+
+  // Timer Countdown Effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (timerRunning && sessionTimeLeft > 0) {
+      interval = setInterval(() => {
+        setSessionTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (sessionTimeLeft === 0 && timerRunning) {
+      setTimerRunning(false);
+      toast.success('Adım süresi tamamlandı! Sıradaki adıma geçebilirsiniz.');
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [timerRunning, sessionTimeLeft]);
+
+  const startSession = () => {
+    if (!dashboardTodayPlan?.steps?.length) return;
+    setActiveStepIndex(0);
+    const durationStr = dashboardTodayPlan.steps[0]?.duration || '5 dk';
+    const mins = parseInt(durationStr.match(/\d+/)?.[0] || '5', 10);
+    setSessionTimeLeft(mins * 60);
+    setSessionActive(true);
+    setTimerRunning(true);
+    setSessionCompletedState(false);
+    setSessionNoteText('');
+  };
+
+  const toggleTimer = () => setTimerRunning(!timerRunning);
+  const addOneMinute = () => setSessionTimeLeft((prev) => prev + 60);
+
+  const nextStep = () => {
+    const nextIdx = activeStepIndex + 1;
+    if (nextIdx < dashboardTodayPlan.steps.length) {
+      setActiveStepIndex(nextIdx);
+      const durationStr = dashboardTodayPlan.steps[nextIdx]?.duration || '5 dk';
+      const mins = parseInt(durationStr.match(/\d+/)?.[0] || '5', 10);
+      setSessionTimeLeft(mins * 60);
+      setTimerRunning(true);
+    } else {
+      setTimerRunning(false);
+      setSessionActive(false);
+      setSessionCompletedState(true);
+    }
+  };
+
+  const saveSessionNote = async () => {
+    if (!activeChild) return;
+    setSavingSessionNote(true);
+    try {
+      const content = sessionNoteText.trim() 
+        ? `Bugünün mini seansı başarıyla tamamlandı. Ebeveyn notu: ${sessionNoteText.trim()}`
+        : 'Bugünün mini seansı başarıyla tamamlandı.';
+      await noteService.create({
+        childId: activeChild.id,
+        title: 'Günlük Mini Seans Notu',
+        content,
+      });
+      toast.success('Seans notu kaydedildi!');
+      setSessionCompletedState(false);
+      setSessionNoteText('');
+    } catch {
+      toast.error('Not kaydedilemedi.');
+    } finally {
+      setSavingSessionNote(false);
+    }
+  };
+
+  const formatSeconds = (totalSecs: number) => {
+    const m = Math.floor(totalSecs / 60);
+    const s = totalSecs % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
   
   // Admin-specific stats
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
@@ -306,24 +448,29 @@ export function DashboardPage() {
           return data;
         }),
         calendarService.getUpcoming().then(events => setUpcomingEvents(events.slice(0, 5))),
-        noteService.getCount().then(setNotesCount),
         messagingService.getUnreadCount().then(setUnreadMessagesCount),
-        appointmentService.getAll().then(data => {
-          const todayStr = getLocalDateString();
-          const weekEndDate = new Date();
-          weekEndDate.setDate(weekEndDate.getDate() + 7);
-          const weekEndStr = getLocalDateString(weekEndDate);
-          const upcoming = data.filter(a => {
-            const dateStr = (a.date ?? '').slice(0, 10);
-            return dateStr >= todayStr && dateStr <= weekEndStr && a.status !== 'CANCELLED';
-          });
-          setUpcomingAppointments(upcoming.length);
-        }),
         patientService.getConnectionRequests().then(setConnectionRequests),
         patientService.getActiveConnections().then(setActiveConnections),
       ]).finally(() => setLoading(false));
     }
   }, [selectedChild, setChildren, setSelectedChild, user?.role]);
+
+  useEffect(() => {
+    if (user?.role !== 'PARENT') return;
+    try {
+      const visited = new Set(JSON.parse(localStorage.getItem('guide-visited-routes') ?? '[]') as string[]);
+      setVisitedRoutes(visited);
+    } catch {
+      // ignore
+    }
+    setOnboardingDismissed(localStorage.getItem('dashboard-onboarding-dismissed') === 'true');
+  }, [user?.role]);
+
+  useEffect(() => {
+    if (!loading && user?.role === 'PARENT' && children.length === 0) {
+      setShowWelcomeWizard(true);
+    }
+  }, [loading, children, user?.role]);
 
   // #8 WebSocket: live appointment updates
   useEffect(() => {
@@ -344,6 +491,10 @@ export function DashboardPage() {
     if (!activeChild) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setRecentNotes([]);
+      setHasSensoryProfile(false);
+      setHasEmergencyCard(false);
+      setHasWellbeingLog(false);
+      setHasBehaviorLog(false);
       return;
     }
 
@@ -353,11 +504,6 @@ export function DashboardPage() {
       .then((notes) => setRecentNotes(notes.slice(0, 3)))
       .catch(() => setRecentNotes([]));
 
-    const oneWeekAgo = new Date(); oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    milestoneService.getByChild(activeChild.id)
-      .then((ms: Milestone[]) => setThisWeekMilestones(ms.filter(m => new Date(m.achievedDate) >= oneWeekAgo).length))
-      .catch(() => {});
-
     moodService.getByChild(activeChild.id)
       .then(entries => setTodayMood(entries.find(e => e.entryDate === today) ?? null))
       .catch(() => {});
@@ -365,6 +511,22 @@ export function DashboardPage() {
     medicationService.getByChild(activeChild.id)
       .then(meds => setTodayMeds(meds.filter(m => m.isActive !== false)))
       .catch(() => {});
+
+    sensoryProfileService.get(activeChild.id)
+      .then((data) => setHasSensoryProfile(!!data))
+      .catch(() => setHasSensoryProfile(false));
+
+    emergencyCardService.get(activeChild.id)
+      .then((data) => setHasEmergencyCard(!!data))
+      .catch(() => setHasEmergencyCard(false));
+
+    wellbeingService.getAll()
+      .then((list) => setHasWellbeingLog(list.length > 0))
+      .catch(() => setHasWellbeingLog(false));
+
+    behaviorJournalService.getByChild(activeChild.id)
+      .then((list) => setHasBehaviorLog(list.length > 0))
+      .catch(() => setHasBehaviorLog(false));
   }, [children, selectedChild, user?.role]);
 
   const greeting = (() => {
@@ -381,42 +543,18 @@ export function DashboardPage() {
   const activeChildTherapies = splitTherapies(activeChild?.therapies);
   const dashboardTodayPlan = buildDashboardTodayPlan(activeChildTherapies, recentNotes, activeChildEvents.length, todayMood, todayMeds);
   const firstName = getFirstName(user?.fullName);
-  const activeChildAge = getAgeLabel(activeChild?.birthDate);
-  const primaryActions = [
-    {
-      to: activeChild ? '/gunluk-takip' : '/cocuklarim',
-      label: activeChild ? 'Bugünün kaydını gir' : 'Çocuğumu ekle',
-      detail: activeChild ? 'Duygu, uyku ve ilaç bilgisini kısaca işaretleyin.' : 'Bir kez profil oluşturun, site size göre sadeleşsin.',
-      icon: activeChild ? Heart : Baby,
-      tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-    },
-    {
-      to: activeChild ? '/randevular' : '/uzmanlar',
-      label: activeChild ? 'Randevulara bak' : 'Uzman bul',
-      detail: 'Görüşme, mesaj ve uzman desteğine buradan ulaşın.',
-      icon: CalendarCheck,
-      tone: 'bg-blue-50 text-blue-700 ring-blue-100',
-    },
-    {
-      to: '/kriz-rehberi',
-      label: 'Zor bir an yaşıyorum',
-      detail: 'Sakinleşme adımlarını ve acil bilgileri hızlıca açın.',
-      icon: AlertTriangle,
-      tone: 'bg-rose-50 text-rose-700 ring-rose-100',
-    },
-  ];
   const quickCaptureActions = [
     {
       to: '/gunluk-takip',
       label: 'Bugünün kaydı',
-      detail: todayMood ? 'Bugün kaydedildi' : 'Duygu, uyku, ilaç',
+      detail: todayMood ? 'Kaydı güncelle' : 'Duygu, uyku, ilaç',
       icon: Heart,
       tone: 'bg-rose-50 text-rose-700 ring-rose-100',
     },
     {
       to: '/davranis-gunlugu',
       label: 'Davranış notu',
-      detail: 'Davranış gözlemi',
+      detail: 'Önce ve sonrası',
       icon: AlertTriangle,
       tone: 'bg-amber-50 text-amber-700 ring-amber-100',
     },
@@ -430,79 +568,29 @@ export function DashboardPage() {
     {
       to: '/takvim',
       label: 'Plan ekle',
-      detail: activeChildEvents.length ? `${activeChildEvents.length} yaklaşan` : 'Randevu ve etkinlik',
+      detail: activeChildEvents.length ? `${activeChildEvents.length} yaklaşan` : 'Randevu, okul, etkinlik',
       icon: Calendar,
       tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
     },
   ];
-  const parentStartSteps = [
-    {
-      to: '/cocuklarim',
-      icon: Baby,
-      title: 'Çocuk profilini oluşturun',
-      detail: 'Yaş, tanı, güçlü yanlar ve hassasiyetler günlük planı kişiselleştirir.',
-      cta: 'Profil oluştur',
-      tone: 'bg-blue-50 text-blue-700 ring-blue-100',
-    },
-    {
-      to: '/gunluk-takip',
-      icon: ClipboardList,
-      title: 'Bugünün kısa kaydını girin',
-      detail: 'Duygu, uyku ve ilaç bilgisi eklenince öneriler daha isabetli olur.',
-      cta: 'Takibe başla',
-      tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-    },
-    {
-      to: '/uzmanlar',
-      icon: GraduationCap,
-      title: 'Onaylı uzmanları keşfedin',
-      detail: 'Şehir, uzmanlık ve puana göre filtreleyip güvenle randevu alın.',
-      cta: 'Uzman bul',
-      tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
-    },
-    {
-      to: '/paylasimli-ilerleme',
-      icon: ShieldCheck,
-      title: 'Paylaşım kontrolünü sizde tutun',
-      detail: 'Gelişim notlarını uzmanla ne zaman paylaşacağınızı siz belirlersiniz.',
-      cta: 'Güvenli paylaşım',
-      tone: 'bg-amber-50 text-amber-700 ring-amber-100',
-    },
-  ];
-  const parentStats = [
-    { to: '/cocuklarim', label: 'Çocuk', value: children.length, icon: Baby, iconClass: 'bg-blue-50 text-blue-600' },
-    { to: '/randevular', label: 'Yaklaşan Randevu', value: upcomingAppointments, icon: Calendar, iconClass: 'bg-emerald-50 text-emerald-600' },
-    { to: '/notlar', label: 'Not', value: notesCount, icon: TrendingUp, iconClass: 'bg-violet-50 text-violet-600' },
-    { to: '/mesajlar', label: 'Okunmamış Mesaj', value: unreadMessagesCount, icon: MessageCircle, iconClass: 'bg-orange-50 text-orange-600' },
-    { to: '/cocuklarim', label: 'Bu Hafta Hedef', value: thisWeekMilestones, icon: Award, iconClass: 'bg-yellow-50 text-yellow-600' },
-  ];
-  const moodMeta = getMoodMeta(todayMood);
   const pendingMedicationSlots = getPendingMedicationSlots(todayMeds);
   const nextEvent = activeChildEvents[0];
+  const nextEventCountdown = nextEvent ? getEventCountdown(nextEvent.startTime) : null;
+  const nextEventType = nextEvent ? (EVENT_TYPE_META[nextEvent.eventType] ?? EVENT_TYPE_META.DIGER) : null;
   const planTotalMinutes = dashboardTodayPlan.steps.reduce((total, step) => total + (Number.parseInt(step.duration, 10) || 0), 0);
-  const readinessChecks = [
-    { label: 'Profil', done: Boolean(activeChild) },
-    { label: 'Duygu', done: Boolean(todayMood) },
-    { label: 'Not', done: recentNotes.length > 0 },
-    { label: 'Takvim', done: activeChildEvents.length > 0 },
-  ];
-  const readinessPct = Math.round((readinessChecks.filter((item) => item.done).length / readinessChecks.length) * 100);
-  const careSignals = [
-    { label: 'Plan süresi', value: `${planTotalMinutes} dk`, detail: '3 kısa adım', icon: Timer, className: 'bg-sky-50 text-sky-700 ring-sky-100' },
-    { label: 'Ruh hali', value: moodMeta.label, detail: moodMeta.detail, icon: Brain, className: moodMeta.className },
-    {
-      label: 'İlaç',
-      value: pendingMedicationSlots > 0 ? `${pendingMedicationSlots} bekliyor` : todayMeds.length > 0 ? 'Tamam' : 'Yok',
-      detail: todayMeds.length > 0 ? `${todayMeds.length} aktif takip` : 'Aktif ilaç kaydı yok',
-      icon: Pill,
-      className: pendingMedicationSlots > 0 ? 'bg-amber-50 text-amber-700 ring-amber-100' : 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-    },
-  ];
-  const todayTasks = activeChild ? [
-    {
+  const todayTasks = activeChild ? (() => {
+    type Task = {
+      to: string; icon: React.ElementType; title: string; detail: string;
+      reason: string; duration: string; done: boolean;
+      tone: string; cta: string; doneCta: string;
+    };
+    const tasks: Task[] = [];
+
+    // 1. Günlük kayıt — her zaman
+    tasks.push({
       to: '/gunluk-takip',
       icon: Heart,
-      title: 'Bugünün kısa kaydını gir',
+      title: todayMood ? 'Bugünün kaydını güncelle' : 'Bugünün kısa kaydını gir',
       detail: todayMood
         ? 'Ruh hali girildi; uyku, ilaç veya kısa not ekleyebilirsiniz.'
         : 'Ruh hali, uyku ve ilaç bilgisini 1 dakikada işaretleyin.',
@@ -512,48 +600,124 @@ export function DashboardPage() {
       tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
       cta: todayMood ? 'Güncelle' : 'Kaydet',
       doneCta: 'Kaydı görüntüle',
-    },
-    {
-      to: pendingMedicationSlots > 0 ? '/gunluk-takip' : '/takvim',
-      icon: pendingMedicationSlots > 0 ? Pill : CalendarCheck,
-      title: pendingMedicationSlots > 0 ? 'İlaç kontrolünü tamamla' : 'Bugünkü planı kontrol et',
-      detail: pendingMedicationSlots > 0
-        ? `${pendingMedicationSlots} doz bekliyor.`
-        : nextEvent
-          ? `Sıradaki: ${nextEvent.title}`
-          : 'Randevu, okul veya etkinlik varsa takvime ekleyin.',
-      reason: pendingMedicationSlots > 0
-        ? `${pendingMedicationSlots} ilaç dozu bekliyor.`
-        : nextEvent
-          ? 'Takvimde yaklaşan etkinlik var.'
-          : 'Bugün için takvimde plan görünmüyor.',
-      duration: pendingMedicationSlots > 0 ? '2 dk' : '30 sn',
-      done: pendingMedicationSlots === 0 && Boolean(nextEvent),
-      tone: pendingMedicationSlots > 0 ? 'bg-amber-50 text-amber-700 ring-amber-100' : 'bg-indigo-50 text-indigo-700 ring-indigo-100',
-      cta: pendingMedicationSlots > 0 ? 'Kontrol et' : 'Takvimi aç',
-      doneCta: 'Planı gör',
-    },
-    {
-      to: unreadMessagesCount > 0 ? '/mesajlar' : '/notlar',
-      icon: unreadMessagesCount > 0 ? MessageCircle : FileText,
-      title: unreadMessagesCount > 0 ? 'Mesajları yanıtla' : 'Kısa gözlem notu ekle',
-      detail: unreadMessagesCount > 0
-        ? `${unreadMessagesCount} okunmamış mesaj var.`
-        : recentNotes.length > 0
-          ? 'Bugüne dair yeni fark ettiğiniz bir şeyi ekleyin.'
-          : 'İlk not ilerleme takibini başlatır.',
-      reason: unreadMessagesCount > 0
-        ? `${unreadMessagesCount} mesaj yanıt bekliyor.`
-        : recentNotes.length > 0
-          ? 'Son gözlem notu hazır.'
-          : 'Henüz gözlem notu yok.',
-      duration: unreadMessagesCount > 0 ? '2 dk' : '2 dk',
-      done: unreadMessagesCount === 0 && recentNotes.length > 0,
-      tone: unreadMessagesCount > 0 ? 'bg-orange-50 text-orange-700 ring-orange-100' : 'bg-sky-50 text-sky-700 ring-sky-100',
-      cta: unreadMessagesCount > 0 ? 'Mesajlar' : 'Not ekle',
-      doneCta: 'Notları gör',
-    },
-  ] : [
+    });
+
+    // 2. İlaç — sadece bekleyen varsa
+    if (pendingMedicationSlots > 0) {
+      const pendingNames = todayMeds
+        .filter(m => (m.scheduledTimes ?? []).some(t => !(m.todayLogs ?? []).find(l => l.scheduledTime === t && l.taken)))
+        .map(m => m.name).join(', ');
+      tasks.push({
+        to: '/gunluk-takip',
+        icon: Pill,
+        title: 'İlaç kontrolünü tamamla',
+        detail: `${pendingMedicationSlots} doz henüz işaretlenmedi.`,
+        reason: pendingNames || 'Aktif ilaç takibinde eksik doz var.',
+        duration: '2 dk',
+        done: false,
+        tone: 'bg-amber-50 text-amber-700 ring-amber-100',
+        cta: 'Kontrol et',
+        doneCta: 'Tamam',
+      });
+    }
+
+    // 3. Okunmamış mesaj — sadece varsa
+    if (unreadMessagesCount > 0) {
+      tasks.push({
+        to: '/mesajlar',
+        icon: MessageCircle,
+        title: 'Mesajları yanıtla',
+        detail: `${unreadMessagesCount} okunmamış mesajın var.`,
+        reason: 'Uzman veya aile mesajı yanıt bekliyor.',
+        duration: '2 dk',
+        done: false,
+        tone: 'bg-orange-50 text-orange-700 ring-orange-100',
+        cta: 'Mesajlara git',
+        doneCta: 'Mesajlar',
+      });
+    }
+
+    // 4. Uzman bağlantı isteği — sadece varsa
+    if (connectionRequests.length > 0) {
+      tasks.push({
+        to: '/cocuklarim#uzman-istekleri',
+        icon: UserPlus,
+        title: `${connectionRequests.length} uzman erişim isteği`,
+        detail: `${connectionRequests.map(r => r.expertName).join(', ')} bağlantı bekliyor.`,
+        reason: 'Onaylayana kadar uzman profiline erişemez.',
+        duration: '1 dk',
+        done: false,
+        tone: 'bg-violet-50 text-violet-700 ring-violet-100',
+        cta: 'İncele',
+        doneCta: 'Tamam',
+      });
+    }
+
+    // 5. Bugün/yarın etkinlik — varsa kendi kartı
+    if (nextEvent && nextEventCountdown?.urgent) {
+      tasks.push({
+        to: '/takvim',
+        icon: CalendarCheck,
+        title: nextEvent.title,
+        detail: `${nextEventCountdown.label} — saat ${nextEventCountdown.timeLabel}`,
+        reason: nextEventType?.label ?? 'Yaklaşan etkinlik',
+        duration: '30 sn',
+        done: false,
+        tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+        cta: 'Takvimi aç',
+        doneCta: 'Planı gör',
+      });
+    }
+
+    // 6. Gözlem notu
+    if (recentNotes.length === 0) {
+      tasks.push({
+        to: '/notlar',
+        icon: FileText,
+        title: 'Kısa gözlem notu ekle',
+        detail: 'Bugün fark ettiğin bir şeyi not et.',
+        reason: 'Henüz gözlem notu yok — ilk not takibi başlatır.',
+        duration: '2 dk',
+        done: false,
+        tone: 'bg-sky-50 text-sky-700 ring-sky-100',
+        cta: 'Not ekle',
+        doneCta: 'Notları gör',
+      });
+    } else {
+      tasks.push({
+        to: '/notlar',
+        icon: FileText,
+        title: 'Gözlem notlarını gözden geçir',
+        detail: `${recentNotes.length} not mevcut — yeni bir şey ekleyebilirsin.`,
+        reason: 'Düzenli not takibi örüntüleri ortaya çıkarır.',
+        duration: '2 dk',
+        done: true,
+        tone: 'bg-sky-50 text-sky-700 ring-sky-100',
+        cta: 'Not ekle',
+        doneCta: 'Notları gör',
+      });
+    }
+
+    // 7. Takvim — acil etkinlik yoksa genel kontrol
+    if (!nextEvent || !nextEventCountdown?.urgent) {
+      tasks.push({
+        to: '/takvim',
+        icon: Calendar,
+        title: nextEvent ? 'Yaklaşan etkinliği gör' : 'Takvimi planla',
+        detail: nextEvent
+          ? `${nextEvent.title} — ${nextEventCountdown?.label}`
+          : 'Randevu, okul veya etkinlik varsa ekleyin.',
+        reason: nextEvent ? 'Takvimde sıradaki plan.' : 'Bugün için plan görünmüyor.',
+        duration: '30 sn',
+        done: Boolean(nextEvent),
+        tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+        cta: 'Takvimi aç',
+        doneCta: 'Planı gör',
+      });
+    }
+
+    return tasks;
+  })() : [
     {
       to: '/cocuklarim',
       icon: Baby,
@@ -592,30 +756,380 @@ export function DashboardPage() {
     },
   ];
   const firstPendingTaskIndex = todayTasks.findIndex((task) => !task.done);
-  const guidedTodayTasks = todayTasks.map((task, index) => ({
-    ...task,
-    priorityLabel: task.done
-      ? 'Tamam'
-      : index === firstPendingTaskIndex
-        ? 'Şimdi bunu yap'
-        : index === firstPendingTaskIndex + 1
-          ? 'Sonra'
-          : 'İsteğe bağlı',
-  }));
+  let pendingCount = 0;
+  let stepCounter = 0;
+  const guidedTodayTasks = todayTasks.map((task) => {
+    if (task.done) return { ...task, priorityLabel: 'Tamam', stepNumber: null };
+    pendingCount += 1;
+    stepCounter += 1;
+    const priorityLabel =
+      pendingCount === 1 ? 'Şimdi bunu yap' :
+      pendingCount === 2 ? 'Sonra' :
+      'İsteğe bağlı';
+    return { ...task, priorityLabel, stepNumber: stepCounter };
+  });
   const completedTodayTasks = todayTasks.filter((task) => task.done).length;
+  const pendingTodayTasks = todayTasks.filter((task) => !task.done);
   const todayProgressPct = Math.round((completedTodayTasks / todayTasks.length) * 100);
   const allTodayTasksDone = completedTodayTasks === todayTasks.length;
+
+  // Onboarding steps calculations
+  const onboardingSteps = [
+    { id: 'profile', done: children.length > 0 },
+    { id: 'daily-log', done: visitedRoutes.has('/gunluk-takip') || todayMood !== null },
+    { id: 'crisis-guide', done: visitedRoutes.has('/kriz-rehberi') },
+  ];
+  const completedOnboardingSteps = onboardingSteps.filter((s) => s.done).length;
+  const onboardingProgressPct = Math.round((completedOnboardingSteps / onboardingSteps.length) * 100);
+  const allOnboardingStepsDone = completedOnboardingSteps === onboardingSteps.length;
+
+  // Discovery quests calculations
+  const completedQuests = (hasSensoryProfile ? 1 : 0) + (hasEmergencyCard ? 1 : 0) + (hasWellbeingLog ? 1 : 0) + (hasBehaviorLog ? 1 : 0);
+  const questsPct = Math.round((completedQuests / 4) * 100);
+  const priorityGuidanceItems: FollowUpSuggestion[] = activeChild ? [
+    todayMood
+      ? {
+          to: '/gunluk-takip',
+          icon: Heart,
+          title: 'Bugünün kaydını kontrol et',
+          detail: 'Ruh hali kaydı var; uyku, ilaç veya kısa not eksikse tamamla.',
+          cta: 'Kaydı aç',
+          badge: 'Her gün',
+          priorityLabel: '1. Önce',
+          tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-950 hover:border-emerald-300',
+          iconTone: 'bg-emerald-100 text-emerald-700',
+        }
+      : {
+          to: '/gunluk-takip',
+          icon: Heart,
+          title: 'Bugünün kaydını gir',
+          detail: 'Ruh hali, uyku ve ilaç bilgisini gir; öneriler buna göre şekillenir.',
+          cta: 'Kayda git',
+          badge: 'Zorunlu',
+          priorityLabel: '1. Önce',
+          tone: 'border-rose-200 bg-rose-50/70 text-rose-950 hover:border-rose-300',
+          iconTone: 'bg-rose-100 text-rose-700',
+        },
+    pendingMedicationSlots > 0
+      ? {
+          to: '/gunluk-takip',
+          icon: Pill,
+          title: 'İlaç kontrolünü bitir',
+          detail: `${pendingMedicationSlots} doz bekliyor; sağlık takibi önce tamamlanmalı.`,
+          cta: 'Kontrol et',
+          badge: 'Sağlık',
+          priorityLabel: '2. Acil',
+          tone: 'border-amber-200 bg-amber-50/70 text-amber-950 hover:border-amber-300',
+          iconTone: 'bg-amber-100 text-amber-700',
+        }
+      : {
+          to: '/tedavi',
+          icon: Target,
+          title: 'Günlük planı uygula',
+          detail: 'Kayıt girildikten sonra evde uygulanacak küçük hedef ve destek adımlarına geç.',
+          cta: 'Planı aç',
+          badge: 'Günlük',
+          priorityLabel: '2. Sonra',
+          tone: 'border-indigo-200 bg-indigo-50/70 text-indigo-950 hover:border-indigo-300',
+          iconTone: 'bg-indigo-100 text-indigo-700',
+        },
+    !hasSensoryProfile
+      ? {
+          to: '/duyusal-profil',
+          icon: Brain,
+          title: 'Rahatlatan ve zorlayan şeyleri ekle',
+          detail: 'Ses, ışık, temas gibi çocuğunu rahatlatan veya zorlayan durumları belirle.',
+          cta: 'Kısa anketi aç',
+          badge: 'Kurulum',
+          priorityLabel: '3. Temel',
+          tone: 'border-violet-200 bg-violet-50/70 text-violet-950 hover:border-violet-300',
+          iconTone: 'bg-violet-100 text-violet-700',
+        }
+      : !hasEmergencyCard
+        ? {
+            to: '/acil-kart',
+            icon: ShieldCheck,
+            title: 'Acil kartı hazırla',
+            detail: 'Okulda veya dışarıda paylaşılacak temel bilgileri güvenli tut.',
+            cta: 'Kartı oluştur',
+            badge: 'Güvenlik',
+            priorityLabel: '3. Temel',
+            tone: 'border-teal-200 bg-teal-50/70 text-teal-950 hover:border-teal-300',
+            iconTone: 'bg-teal-100 text-teal-700',
+          }
+        : {
+            to: '/gelisim-paneli',
+            icon: TrendingUp,
+            title: 'Gelişimi yorumla',
+            detail: 'Günlük kayıtlar ve notlardan haftalık örüntüleri çıkar.',
+            cta: 'Paneli aç',
+            badge: 'Analiz',
+            priorityLabel: '3. Haftalık',
+            tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-950 hover:border-emerald-300',
+            iconTone: 'bg-emerald-100 text-emerald-700',
+          },
+    activeConnections.length > 0
+      ? {
+          to: '/paylasimli-ilerleme',
+          icon: ShieldCheck,
+          title: 'Uzmanla paylaşımı yönet',
+          detail: 'Hiçbir kayıt sen onaylamadan paylaşılmaz; neyi göstereceğini sen seç.',
+          cta: 'Paylaşımı aç',
+          badge: 'Uzman',
+          priorityLabel: '4. Destek',
+          tone: 'border-blue-200 bg-blue-50/70 text-blue-950 hover:border-blue-300',
+          iconTone: 'bg-blue-100 text-blue-700',
+        }
+      : {
+          to: '/uzmanlar',
+          icon: GraduationCap,
+          title: 'Uzman desteğini keşfet',
+          detail: 'Randevu almadan önce uzman profillerini ve seçenekleri incele.',
+          cta: 'Uzman bul',
+          badge: 'Destek',
+          priorityLabel: '4. Destek',
+          tone: 'border-sky-200 bg-sky-50/70 text-sky-950 hover:border-sky-300',
+          iconTone: 'bg-sky-100 text-sky-700',
+        },
+    {
+      to: '/bilgi-bankasi',
+      icon: BookOpen,
+      title: 'Kaynaklarla güçlendir',
+      detail: 'Bir konuya takıldığında güvenilir rehber ve içeriklere bak.',
+      cta: 'Kaynakları aç',
+      badge: 'Öğren',
+      priorityLabel: '5. İhtiyaç',
+      tone: 'border-slate-200 bg-slate-50/80 text-slate-950 hover:border-slate-300',
+      iconTone: 'bg-slate-200 text-slate-700',
+    },
+  ] : [
+    {
+      to: '/cocuklarim',
+      icon: Baby,
+      title: 'Çocuk profilini oluştur',
+      detail: 'Ana sayfadaki tüm yönlendirmeler profil sonrası kişiselleşir.',
+      cta: 'Profili aç',
+      badge: 'İlk adım',
+      priorityLabel: '1. Önce',
+      tone: 'border-indigo-200 bg-indigo-50/70 text-indigo-950 hover:border-indigo-300',
+      iconTone: 'bg-indigo-100 text-indigo-700',
+    },
+    {
+      to: '/kullanici-rehberi',
+      icon: Sparkles,
+      title: 'Platformu tanı',
+      detail: 'Hangi sayfanın ne işe yaradığını kısa yoldan öğren.',
+      cta: 'Rehberi aç',
+      badge: 'Harita',
+      priorityLabel: '2. Sonra',
+      tone: 'border-violet-200 bg-violet-50/70 text-violet-950 hover:border-violet-300',
+      iconTone: 'bg-violet-100 text-violet-700',
+    },
+    {
+      to: '/uzmanlar',
+      icon: GraduationCap,
+      title: 'Uzmanları incele',
+      detail: 'Destek seçeneklerini profil oluşturmadan önce de görebilirsin.',
+      cta: 'Uzman bul',
+      badge: 'Destek',
+      priorityLabel: '3. Destek',
+      tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-950 hover:border-emerald-300',
+      iconTone: 'bg-emerald-100 text-emerald-700',
+    },
+  ];
+
+  // Toplam tahmini süre (bekleyen görevler)
+  const pendingMinutes = pendingTodayTasks.reduce((acc, t) => {
+    const match = t.duration.match(/(\d+)/);
+    return acc + (match ? parseInt(match[1], 10) : 0);
+  }, 0);
+  const pendingTimeLabel = pendingMinutes >= 60
+    ? `~${Math.round(pendingMinutes / 60)} saat`
+    : pendingMinutes > 0 ? `~${pendingMinutes} dakika` : '';
+  const smartNextActionCard = user?.role === 'PARENT' ? (() => {
+    const nextAction = (() => {
+      if (children.length === 0) {
+        return {
+          title: "Önce çocuk profilini oluştur",
+          detail: "Profil olmadan günlük plan, takip, uzman paylaşımı ve öneriler kişiselleşmez. İlk gün için sadece bu adımla başla.",
+          badge: "1. İlk adım",
+          onClick: () => setShowWelcomeWizard(true),
+          icon: Baby,
+          tone: "from-indigo-600 via-indigo-700 to-violet-700 text-white shadow-indigo-100"
+        };
+      }
+      if (!todayMood) {
+        return {
+          title: "Bugünün kısa kaydını gir",
+          detail: "Önce kayıt girilir; günlük plan ve öneriler bu bilgiye göre anlam kazanır.",
+          badge: "1. Bugün",
+          to: "/gunluk-takip",
+          cta: "Kayda Git",
+          icon: Heart,
+          tone: "from-rose-500 via-rose-600 to-pink-600 text-white shadow-rose-100 animate-pulse"
+        };
+      }
+      if (pendingMedicationSlots > 0) {
+        return {
+          title: "İlaç Kontrolünü Tamamlayın",
+          detail: `Bugün için bekleyen ${pendingMedicationSlots} doz ilaç var. İşaretleme yapın.`,
+          badge: "Sağlık 💊",
+          to: "/gunluk-takip",
+          cta: "İlaçları Kontrol Et",
+          icon: Pill,
+          tone: "from-amber-500 via-amber-600 to-orange-600 text-white shadow-amber-100"
+        };
+      }
+      if (!hasSensoryProfile) {
+        return {
+          title: "Rahatlatan ve zorlayan şeyleri ekle",
+          detail: "Ses, ışık, temas ve geçişlerde neyin iyi geldiğini kısa anketle belirle.",
+          badge: "3. Temel",
+          to: "/duyusal-profil",
+          cta: "Kısa Anketi Aç",
+          icon: Brain,
+          tone: "from-violet-500 via-violet-600 to-indigo-600 text-white shadow-violet-100"
+        };
+      }
+      if (!hasEmergencyCard) {
+        return {
+          title: "Acil Durum Kartını Doldurun",
+          detail: "Çocuğunuzun özel durumunu gösteren ve QR kodla paylaşılabilen acil durum kartını hazırlayın.",
+          badge: "3. Güvenlik",
+          to: "/acil-kart",
+          cta: "Kartı Oluştur",
+          icon: ShieldCheck,
+          tone: "from-emerald-500 via-emerald-600 to-teal-600 text-white shadow-emerald-100"
+        };
+      }
+      return {
+        title: "Bugünün temeli tamam",
+        detail: "Şimdi gelişim özeti, rutinler, uzman paylaşımı veya kaynaklarla devam edebilirsin.",
+        badge: "Sonra",
+        to: "/ebeveyn-refahi",
+        cta: "Ebeveyn Refah Testi",
+        icon: Smile,
+        tone: "from-slate-800 via-slate-850 to-slate-900 text-white shadow-slate-900/10"
+      };
+    })();
+
+    const ActionIcon = nextAction.icon;
+    const hasPrimaryTask = children.length === 0 || !todayMood || pendingMedicationSlots > 0 || !hasSensoryProfile || !hasEmergencyCard;
+
+    return (
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)] xl:items-stretch">
+          <div className="flex min-w-0 flex-col justify-between gap-5 rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+            <div className="flex items-start gap-4">
+              <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ${
+                hasPrimaryTask ? 'bg-indigo-600 text-white ring-indigo-500' : 'bg-emerald-100 text-emerald-700 ring-emerald-200'
+              }`}>
+                <ActionIcon size={22} />
+              </span>
+              <div className="min-w-0">
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                  hasPrimaryTask ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+                }`}>
+                  {nextAction.badge}
+                </span>
+                <h3 className="mt-2 text-xl font-black leading-tight tracking-tight text-slate-950">{nextAction.title}</h3>
+                <p className="mt-1.5 max-w-2xl text-sm font-medium leading-6 text-slate-600">{nextAction.detail}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs font-semibold leading-5 text-slate-500">
+                {hasPrimaryTask
+                  ? 'Bu adımı tamamla; sonra sağdaki önem sırasına göre devam et.'
+                  : 'Temel adımlar tamam. Sağdaki sırayla gelişim, destek ve kaynaklara geçebilirsin.'}
+              </p>
+              {nextAction.onClick ? (
+                <button
+                  type="button"
+                  onClick={nextAction.onClick}
+                  className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-black text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 sm:w-auto"
+                >
+                  Hemen Başla
+                  <ArrowRight size={15} />
+                </button>
+              ) : (
+                <Link
+                  to={nextAction.to}
+                  className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-black text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 sm:w-auto"
+                >
+                  {nextAction.cta}
+                  <ArrowRight size={15} />
+                </Link>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Önem sırası</p>
+                <h3 className="mt-1 text-sm font-extrabold text-slate-950">Sıradaki 3 adım</h3>
+              </div>
+              <Link to="/kullanici-rehberi" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">
+                Tüm yollar
+              </Link>
+            </div>
+            <div className="mt-3 grid gap-2">
+              {priorityGuidanceItems.slice(0, 3).map((suggestion) => {
+                const SuggestionIcon = suggestion.icon;
+                return (
+                  <Link
+                    key={suggestion.to}
+                    to={suggestion.to}
+                    className={`group flex items-center gap-3 rounded-xl border p-3 transition-all ${suggestion.tone}`}
+                  >
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${suggestion.iconTone}`}>
+                      <SuggestionIcon size={16} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <span className="truncate text-xs font-black">{suggestion.title}</span>
+                        <span className="rounded-full bg-white/70 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-500">
+                          {suggestion.priorityLabel ?? suggestion.badge}
+                        </span>
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] font-semibold opacity-75">{suggestion.detail}</span>
+                    </span>
+                    <ArrowRight size={13} className="shrink-0 opacity-50 transition-transform group-hover:translate-x-0.5 group-hover:opacity-80" />
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  })() : null;
+  // Progress bar rengi: kırmızı → sarı → yeşil
+  const progressBarColor = todayProgressPct >= 80
+    ? 'from-emerald-400 to-emerald-500'
+    : todayProgressPct >= 50
+      ? 'from-amber-400 to-yellow-500'
+      : todayProgressPct >= 20
+        ? 'from-orange-400 to-amber-500'
+        : 'from-rose-400 to-red-500';
+  // Kişisel ve dinamik coach notu
+  const childFirstName = activeChild ? getFirstName(activeChild.name) : '';
+  const coachHour = new Date().getHours();
+  const coachTimeOfDay = coachHour < 12 ? 'sabah' : coachHour < 17 ? 'öğleden sonra' : 'akşam';
   const dailyCoachNote = !activeChild
     ? 'Bugün yalnızca profil oluşturmanız yeterli. Diğer alanlar profil sonrası anlam kazanır.'
     : allTodayTasksDone
-      ? 'Bugünün temel işleri tamam. İsterseniz gelişim planına veya bilgi bankasına geçebilirsiniz.'
+      ? `${childFirstName} için bugünkü tüm işler tamam! 🎉 İsterseniz gelişim planına veya bilgi bankasına geçebilirsiniz.`
       : pendingMedicationSlots > 0
-        ? 'Bugün önce ilaç kontrolünü bitirmek iyi olur; diğer işleri kısa tutabilirsiniz.'
+        ? `${childFirstName} için ${coachTimeOfDay} önce ilaç kontrolünü bitirmek iyi olur; kalan ${pendingTodayTasks.length - 1} iş daha kısa sürer.`
         : !todayMood
-          ? 'Önce kısa günlük kaydı girin. Kalan işler daha net hale gelir.'
+          ? `${childFirstName} için önce kısa günlük kaydı girin — ${coachTimeOfDay} rutini tamamlanmış hissettiriyor.`
           : nextEvent
-            ? 'Bugün planlı bir etkinlik var; not veya mesaj işleri kısa tutulabilir.'
-            : 'Bugün düşük yoğunluklu bir plan yeterli: kayıt, kısa takvim kontrolü ve bir not.';
+            ? `${childFirstName} için bugün planlı bir etkinlik var; kalan ${pendingTodayTasks.length} iş kısa tutulabilir.`
+            : completedTodayTasks > 0
+              ? `${childFirstName} için ${completedTodayTasks} iş tamam, ${pendingTodayTasks.length} iş kaldı. ${coachTimeOfDay.charAt(0).toUpperCase() + coachTimeOfDay.slice(1)} güzel gidiyor!`
+              : `${childFirstName} için ${coachTimeOfDay} planı: kayıt, kısa takvim kontrolü ve bir not. Hepsi ${pendingTimeLabel}.`;
 
   if (user?.role === 'ADMIN') {
     return (
@@ -1559,11 +2073,11 @@ export function DashboardPage() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm text-slate-500">{greeting}</p>
+          <p className="text-sm font-medium text-slate-600">{greeting}</p>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             {firstName || 'Merhaba'}
             {activeChild && (
-              <span className="text-slate-400 font-normal text-xl">· {activeChild.name}</span>
+              <span className="text-slate-500 font-normal text-xl">· {activeChild.name}</span>
             )}
           </h1>
         </div>
@@ -1622,240 +2136,376 @@ export function DashboardPage() {
         </Link>
       )}
 
+      {/* ── Yeni Kullanıcı Başlangıç Rehberi (Checklist) ── */}
+      {user?.role === 'PARENT' && !onboardingDismissed && !allOnboardingStepsDone && (
+        <div className="relative overflow-hidden rounded-[24px] border border-indigo-100 bg-gradient-to-br from-indigo-50/40 via-white to-blue-50/20 p-5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.setItem('dashboard-onboarding-dismissed', 'true');
+              setOnboardingDismissed(true);
+            }}
+            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
+            title="Rehberi Kapat"
+          >
+            <XCircle size={18} />
+          </button>
+          
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-indigo-600 animate-pulse" />
+              <h3 className="text-sm font-black uppercase tracking-wider text-indigo-700">Hızlı Başlangıç Rehberi</h3>
+            </div>
+            <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
+              allOnboardingStepsDone ? 'bg-emerald-100 text-emerald-700 animate-bounce' : 'bg-indigo-100 text-indigo-700'
+            }`}>
+              {allOnboardingStepsDone ? 'Tamamlandı 🎉' : `%${onboardingProgressPct} Hazır`}
+            </span>
+          </div>
+          
+          <p className="text-sm font-medium text-slate-600 mb-4 max-w-2xl">
+            İlk gün her şeyi tamamlamana gerek yok. Önce profil, kısa günlük kayıt ve zor an rehberi yeterli; diğer araçlar sonra açılır.
+          </p>
+
+          {/* Checklist Progress Bar */}
+          <div className="flex items-center gap-3 mb-4 max-w-2xl">
+            <div className="h-2.5 flex-1 rounded-full bg-slate-100/80 overflow-hidden ring-1 ring-inset ring-slate-200/20">
+              <div 
+                className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ease-out ${
+                  allOnboardingStepsDone ? 'from-emerald-400 to-emerald-500' : 'from-indigo-500 to-indigo-600'
+                }`}
+                style={{ width: `${onboardingProgressPct}%` }}
+              />
+            </div>
+            <span className="text-xs font-black text-slate-500 shrink-0">{completedOnboardingSteps}/3 Adım</span>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-3">
+              {/* Step 1: Profil */}
+              <div className={`flex flex-col justify-between p-3.5 rounded-xl border transition-all ${
+                children.length > 0 
+                  ? 'bg-emerald-50/30 border-emerald-100/60' 
+                  : 'bg-white border-slate-200 hover:border-indigo-200'
+              }`}>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className={`p-1.5 rounded-lg ${children.length > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                      <Baby size={16} />
+                    </div>
+                    {children.length > 0 ? (
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full">Tamamlandı</span>
+                    ) : (
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Yapılacak</span>
+                    )}
+                  </div>
+                  <h4 className={`text-xs font-extrabold ${children.length > 0 ? 'text-slate-500 line-through' : 'text-slate-800'}`}>1. Çocuk Profili Oluştur</h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Plan, takip ve uzman paylaşımı profil bilgisine göre kişiselleşir.</p>
+                </div>
+                {children.length === 0 && (
+                  <button
+                    onClick={() => setShowWelcomeWizard(true)}
+                    className="mt-3 w-full text-center text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 py-1.5 rounded-lg border border-indigo-100/50 transition-all active:scale-95 cursor-pointer"
+                  >
+                    Profili Oluştur
+                  </button>
+                )}
+              </div>
+
+              {/* Step 2: Günlük Takip */}
+              {(() => {
+                const isDone = visitedRoutes.has('/gunluk-takip') || todayMood !== null;
+                return (
+                  <div className={`flex flex-col justify-between p-3.5 rounded-xl border transition-all ${
+                    isDone 
+                      ? 'bg-emerald-50/30 border-emerald-100/60' 
+                      : 'bg-white border-slate-200 hover:border-indigo-200'
+                  }`}>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className={`p-1.5 rounded-lg ${isDone ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                          <ClipboardList size={16} />
+                        </div>
+                        {isDone ? (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full">Tamamlandı</span>
+                        ) : (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Yapılacak</span>
+                        )}
+                      </div>
+                      <h4 className={`text-xs font-extrabold ${isDone ? 'text-slate-500 line-through' : 'text-slate-800'}`}>2. İlk Kısa Kayıt</h4>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Önce veri girilir; günlük plan bu kayıttan sonra anlam kazanır.</p>
+                    </div>
+                    {!isDone && (
+                      <Link
+                        to="/gunluk-takip"
+                        className="mt-3 w-full text-center text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 py-1.5 rounded-lg border border-indigo-100/50 transition-all block"
+                      >
+                        Kayda Git
+                      </Link>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Step 3: Zor An Rehberi */}
+              {(() => {
+                const isDone = visitedRoutes.has('/kriz-rehberi');
+                return (
+                  <div className={`flex flex-col justify-between p-3.5 rounded-xl border transition-all ${
+                    isDone 
+                      ? 'bg-emerald-50/30 border-emerald-100/60' 
+                      : 'bg-white border-slate-200 hover:border-indigo-200'
+                  }`}>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className={`p-1.5 rounded-lg ${isDone ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                          <AlertTriangle size={16} />
+                        </div>
+                        {isDone ? (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full">Tamamlandı</span>
+                        ) : (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Yapılacak</span>
+                        )}
+                      </div>
+                      <h4 className={`text-xs font-extrabold ${isDone ? 'text-slate-500 line-through' : 'text-slate-800'}`}>3. Zor An Rehberi'ni Oku</h4>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Kriz anlarında sakinleşme ve müdahale yöntemlerini inceleyin.</p>
+                    </div>
+                    {!isDone && (
+                      <Link
+                        to="/kriz-rehberi"
+                        className="mt-3 w-full text-center text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 py-1.5 rounded-lg border border-indigo-100/50 transition-all block"
+                      >
+                        Rehberi Oku
+                      </Link>
+                    )}
+                  </div>
+                );
+              })()}
+          </div>
+        </div>
+      )}
+
       {!loading && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-indigo-500">Görev Merkezi</p>
-              <h2 className="mt-0.5 text-lg font-bold text-slate-900">Bugün ne yapacağım?</h2>
-              <p className="mt-1 text-sm text-slate-500">
+        <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-b from-white to-indigo-50/30 p-6 sm:p-8 shadow-sm border border-slate-200">
+          {/* Decorative background element */}
+          <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-100/50 to-purple-100/50 blur-3xl pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between mb-6">
+            <div className="max-w-xl">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="inline-flex items-center gap-2 rounded-full bg-indigo-100/80 px-3 py-1 border border-indigo-200/50">
+                  <Target size={14} className="text-indigo-600" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">GÖREV MERKEZİ</span>
+                </div>
+                <GuideTooltip content="Günlük görevlerinizi sırasıyla tamamlayarak çocuğunuzun gelişim rutinini oluşturun." position="right" />
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Bugün ne yapacağım?</h2>
+              <p className="mt-2 text-sm font-medium leading-relaxed text-slate-500">
                 {activeChild
-                  ? `${activeChild.name} için en önemli ${todayTasks.length} adım.`
+                  ? (
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span>{activeChild.name} için {todayTasks.length} görev</span>
+                      {!allTodayTasksDone && pendingTodayTasks.length > 0 && pendingTimeLabel && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-600">
+                          <Timer size={11} />
+                          {pendingTimeLabel}
+                        </span>
+                      )}
+                      {allTodayTasksDone && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                          <CheckCircle size={11} />
+                          Tümü tamamlandı!
+                        </span>
+                      )}
+                    </span>
+                  )
                   : 'Önce profil oluşturun; sonra günlük takip ve randevu akışı açılır.'}
               </p>
             </div>
-            <div className="w-full rounded-2xl bg-slate-50 px-3 py-3 ring-1 ring-slate-100 sm:w-48">
-              <div className="flex items-center justify-between gap-2 text-xs font-bold text-slate-600">
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle size={15} className="text-emerald-600" />
-                  {completedTodayTasks}/{todayTasks.length} tamam
+            {/* İlerleme Widget — Compact & Sleek */}
+            <div className="w-full shrink-0 sm:w-52 rounded-2xl bg-white/85 backdrop-blur-sm p-4 ring-1 ring-slate-200/60 shadow-sm">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">İlerleme</span>
+                <span className="text-xs font-bold text-slate-500">
+                  {completedTodayTasks}/{todayTasks.length} bitti
                 </span>
-                <span className="text-slate-400">%{todayProgressPct}</span>
               </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white ring-1 ring-slate-100">
+              <div className="flex items-baseline gap-1.5 mb-2.5">
+                <span
+                  className={`text-3xl font-black tracking-tighter transition-colors duration-500 ${
+                    todayProgressPct >= 80 ? 'text-emerald-600' :
+                    todayProgressPct >= 50 ? 'text-amber-500' :
+                    todayProgressPct >= 20 ? 'text-orange-500' : 'text-rose-500'
+                  }`}
+                >
+                  {todayProgressPct}%
+                </span>
+                {todayProgressPct > 0 && todayProgressPct < 100 && (
+                  <span className="text-[10px] font-semibold text-slate-400">
+                    ({pendingTodayTasks.length} kaldı)
+                  </span>
+                )}
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200/50">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-indigo-500 transition-all duration-500"
+                  className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ease-out ${progressBarColor}`}
                   style={{ width: `${todayProgressPct}%` }}
                 />
               </div>
             </div>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-3">
-            <div className="flex items-start gap-2.5">
-              <Sparkles size={16} className="mt-0.5 shrink-0 text-indigo-600" />
-              <p className="text-sm font-semibold leading-6 text-indigo-950">{dailyCoachNote}</p>
+          <div className="relative z-10 mb-6 rounded-2xl border border-indigo-100 bg-white/60 backdrop-blur-sm px-5 py-4 shadow-sm transition-all hover:bg-white/80">
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                <Sparkles size={16} />
+              </div>
+              <p className="mt-1 text-sm font-semibold leading-relaxed text-indigo-950">{dailyCoachNote}</p>
             </div>
           </div>
 
           {allTodayTasksDone && (
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <Link
-                to="/tedavi"
-                className="group rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800 transition-colors hover:bg-emerald-100"
-              >
-                Günün işleri tamamlandı. Gelişim planına geç
-                <ArrowRight size={13} className="ml-1 inline transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <Link
-                to="/bilgi-bankasi"
-                className="group rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm font-bold text-sky-800 transition-colors hover:bg-sky-100"
-              >
-                Bugün için kısa bir kaynak oku
-                <ArrowRight size={13} className="ml-1 inline transition-transform group-hover:translate-x-0.5" />
-              </Link>
+            <div className="relative z-10 mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-5 py-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 ring-1 ring-emerald-200">
+                  <CheckCircle size={17} />
+                </span>
+                <div>
+                  <p className="text-sm font-black text-emerald-950">Bugünün görevleri tamamlandı</p>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-emerald-800">
+                    {childFirstName ? `${childFirstName} için temel kayıtlar hazır.` : 'Temel kayıtlar hazır.'} Aşağıdaki önem sırasına göre gelişim, rutin ve destek adımlarına geçebilirsin.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
-          <div className="mt-4 grid gap-3 lg:grid-cols-3">
-            {guidedTodayTasks.map(({ to, icon: Icon, title, detail, reason, duration, done, tone, cta, doneCta, priorityLabel }) => (
-              <Link
-                key={title}
-                to={to}
-                className={`group flex min-h-[10.5rem] flex-col justify-between rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-sm ${
-                  done
-                    ? 'border-emerald-100 bg-emerald-50/35 hover:bg-white'
-                    : priorityLabel === 'Şimdi bunu yap'
-                      ? 'border-indigo-200 bg-white shadow-sm ring-1 ring-indigo-100 hover:border-indigo-300'
-                      : 'border-slate-100 bg-slate-50/70 hover:border-indigo-200 hover:bg-white'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${tone}`}>
-                    <Icon size={18} />
-                  </span>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className={`rounded-full px-2 py-1 text-[10px] font-extrabold ${
+          {/* Clean, Uniform Task List */}
+          <div className="relative z-10 flex flex-col gap-3.5">
+            {guidedTodayTasks.map((task, idx) => {
+              const { to, icon: Icon, title, detail, reason, duration, done, tone, cta, doneCta, priorityLabel } = task;
+              const isPrimary = priorityLabel === 'Şimdi bunu yap';
+              
+              return (
+                <div key={title} className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${(idx + 1) * 75}ms` }}>
+                  <Link
+                    to={to}
+                    className={`group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-hidden rounded-[20px] border p-4 sm:p-5 transition-all hover:shadow-sm ${
                       done
-                        ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
-                        : priorityLabel === 'Şimdi bunu yap'
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'bg-white text-slate-500 ring-1 ring-slate-200'
-                    }`}>
-                      {priorityLabel}
-                    </span>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 ring-1 ring-slate-100">
-                      {duration}
-                    </span>
-                  </div>
+                        ? 'border-emerald-100 bg-emerald-50/10 hover:bg-emerald-50/20'
+                        : isPrimary
+                          ? 'border-indigo-200 bg-white hover:border-indigo-300'
+                          : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Subtle left border line */}
+                    {done ? (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-400" />
+                    ) : isPrimary ? (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600" />
+                    ) : (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-300" />
+                    )}
+
+                    <div className="flex items-start gap-4 min-w-0 flex-1">
+                      {/* Step Number / Icon Container */}
+                      <div className="relative flex items-center justify-center shrink-0">
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 ${tone} ${done ? 'opacity-60' : ''}`}>
+                          <Icon size={22} />
+                        </div>
+                        {/* Step Number badge positioned overlaying on the icon corner */}
+                        {!done && task.stepNumber && (
+                          <span className={`absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white shadow-sm ${
+                            isPrimary ? 'bg-indigo-600' : 'bg-slate-500'
+                          }`}>
+                            {task.stepNumber}
+                          </span>
+                        )}
+                        {done && (
+                          <span className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-white shadow-sm">
+                            ✓
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                            done
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : isPrimary
+                                ? 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200/50'
+                                : priorityLabel === 'Sonra'
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {priorityLabel}
+                          </span>
+                          <span className="flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-100">
+                            <Timer size={11} /> {duration}
+                          </span>
+                        </div>
+
+                        <h3 className={`text-base sm:text-lg font-bold leading-snug tracking-tight ${
+                          done ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900'
+                        }`}>
+                          {title}
+                        </h3>
+                        <p className={`text-sm mt-0.5 leading-relaxed ${done ? 'text-slate-400/80' : 'text-slate-600'}`}>
+                          {detail}
+                        </p>
+                        <div className={`mt-2.5 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold border ${
+                          done ? 'bg-emerald-50/50 border-emerald-100/50 text-emerald-700/80' : 'bg-slate-50 border-slate-100 text-slate-600'
+                        }`}>
+                          <Target size={11} /> {reason}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right CTA Button */}
+                    <div className="shrink-0 self-end sm:self-center w-full sm:w-auto flex justify-end">
+                      <span className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition-all ${
+                        done
+                          ? 'text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100/60'
+                          : isPrimary
+                            ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 hover:-translate-y-0.5'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
+                      }`}>
+                        {done ? doneCta : cta}
+                        <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                      </span>
+                    </div>
+                  </Link>
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
-                  <p className="mt-2 rounded-xl bg-white/80 px-2.5 py-1.5 text-[11px] font-semibold leading-4 text-slate-500 ring-1 ring-slate-100">
-                    {reason}
-                  </p>
-                  <span className={`mt-3 inline-flex items-center gap-1 text-xs font-bold ${done ? 'text-emerald-700' : 'text-indigo-700'}`}>
-                    {done ? doneCta : cta}
-                    <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </div>
-              </Link>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
 
-      {/* ── Bugünün Odağı — tek büyük kart ── */}
-      {loading ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 animate-pulse">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-slate-100 shrink-0" />
-            <div className="flex-1 space-y-2">
-              <div className="h-3 bg-slate-100 rounded w-24" />
-              <div className="h-5 bg-slate-100 rounded w-64" />
-              <div className="h-3 bg-slate-100 rounded w-48" />
-            </div>
-          </div>
-        </div>
-      ) : !activeChild ? (
-        <div className="rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 p-8 text-center">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center mb-4">
-            <Baby size={28} className="text-indigo-600" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-900">Başlamak için çocuk profili ekleyin</h2>
-          <p className="mt-2 text-slate-500 text-sm max-w-sm mx-auto">
-            Profil oluşturunca günlük plan, ruh hali takibi, randevu ve uzman paylaşımı otomatik düzenlenir.
-          </p>
-          <Link
-            to="/cocuklarim"
-            className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 transition-colors"
-          >
-            <Plus size={16} />
-            Profil Ekle
-          </Link>
-        </div>
-      ) : pendingMedicationSlots > 0 ? (
-        <Link
-          to="/gunluk-takip"
-          className="group block rounded-2xl border border-amber-200 bg-amber-50 p-6 hover:bg-amber-100/70 transition-colors"
-        >
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
-              <Pill size={24} className="text-amber-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-bold uppercase tracking-wider text-amber-600 mb-1">İlaç Hatırlatması</p>
-              <h2 className="text-xl font-bold text-slate-900">
-                {activeChild.name} için {pendingMedicationSlots} doz bekleniyor
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {todayMeds
-                  .filter(m => (m.scheduledTimes ?? []).some(t => !(m.todayLogs ?? []).find(l => l.scheduledTime === t && l.taken)))
-                  .map(m => m.name)
-                  .join(', ')}
-              </p>
-            </div>
-            <span className="shrink-0 flex items-center gap-1 text-sm font-semibold text-amber-700 group-hover:translate-x-0.5 transition-transform mt-1">
-              Git <ArrowRight size={16} />
-            </span>
-          </div>
-        </Link>
-      ) : !todayMood ? (
-        <Link
-          to="/gunluk-takip"
-          className="group block rounded-2xl border border-sky-200 bg-sky-50 p-6 hover:bg-sky-100/70 transition-colors"
-        >
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-sky-100 flex items-center justify-center shrink-0">
-              <Brain size={24} className="text-sky-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-bold uppercase tracking-wider text-sky-600 mb-1">Günlük Kayıt</p>
-              <h2 className="text-xl font-bold text-slate-900">
-                {activeChild.name}&apos;in bugünkü ruh hali henüz kaydedilmedi
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                10 saniyede işaretleyin — öneriler daha isabetli olur.
-              </p>
-            </div>
-            <span className="shrink-0 flex items-center gap-1 text-sm font-semibold text-sky-700 group-hover:translate-x-0.5 transition-transform mt-1">
-              Kaydet <ArrowRight size={16} />
-            </span>
-          </div>
-        </Link>
-      ) : nextEvent ? (
-        <Link
-          to="/takvim"
-          className="group block rounded-2xl border border-emerald-200 bg-emerald-50 p-6 hover:bg-emerald-100/70 transition-colors"
-        >
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center shrink-0">
-              <Calendar size={24} className="text-emerald-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-1">Yaklaşan Etkinlik</p>
-              <h2 className="text-xl font-bold text-slate-900">{nextEvent.title}</h2>
-              <p className="mt-1 text-sm text-slate-500">{formatDateTime(nextEvent.startTime)}</p>
-            </div>
-            <span className="shrink-0 flex items-center gap-1 text-sm font-semibold text-emerald-700 group-hover:translate-x-0.5 transition-transform mt-1">
-              Görüntüle <ArrowRight size={16} />
-            </span>
-          </div>
-        </Link>
-      ) : (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center shrink-0">
-              <CheckCircle size={24} className="text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-1">Bugün İyi Gidiyor</p>
-              <h2 className="text-xl font-bold text-slate-900">Günün temel kayıtları tamam</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Devam etmek için aşağıdaki araçları kullanabilirsiniz.
-              </p>
-            </div>
-          </div>
-        </div>
+      {smartNextActionCard}
+
+      {!loading && !activeChild && (
+        <InteractiveOnboardingTour onStartWizard={() => setShowWelcomeWizard(true)} />
       )}
 
       {/* ── Hızlı Eylemler — 4 kart ── */}
-      {!loading && activeChild && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {!loading && activeChild && todayMood && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {quickCaptureActions.map(({ to, label, detail, icon: Icon, tone }) => (
             <Link
               key={to}
               to={to}
-              className="group flex flex-col gap-3 p-4 rounded-2xl border border-slate-200 bg-white hover:border-indigo-200 hover:shadow-sm hover:-translate-y-0.5 transition-all"
+              className="group relative flex flex-col gap-4 overflow-hidden p-5 rounded-[24px] border border-slate-200/80 bg-white transition-all hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-200/60 hover:border-indigo-200"
             >
-              <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ${tone}`}>
-                <Icon size={18} />
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent to-indigo-50/0 transition-all group-hover:to-indigo-50/60 pointer-events-none" />
+              <span className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm ring-1 transition-transform duration-300 group-hover:scale-110 ${tone}`}>
+                <Icon size={20} />
               </span>
-              <div>
-                <p className="text-sm font-bold text-slate-900">{label}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{detail}</p>
+              <div className="relative z-10">
+                <p className="text-sm font-extrabold text-slate-900">{label}</p>
+                <p className="text-xs font-medium text-slate-500 mt-0.5 leading-relaxed">{detail}</p>
               </div>
+              <ArrowRight size={14} className="absolute bottom-4 right-4 text-slate-300 transition-all group-hover:text-indigo-500 group-hover:translate-x-0.5" />
             </Link>
           ))}
         </div>
@@ -1863,22 +2513,34 @@ export function DashboardPage() {
 
       {/* ── Bağlı Uzmanlar — kompakt ── */}
       {activeConnections.length > 0 && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <Users size={16} className="text-indigo-600" />
-            <h2 className="text-sm font-semibold text-slate-900">Bağlı Uzmanlar</h2>
+        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
+                <Users size={17} className="text-indigo-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Bağlı Uzmanlar</h2>
+                <p className="text-xs font-medium text-slate-500">{activeConnections.length} aktif bağlantı</p>
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {activeConnections.map(conn => (
-              <div key={conn.id} className="flex items-center justify-between gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{conn.expertName}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Çocuk: <span className="font-medium text-slate-700">{conn.childName}</span></p>
+              <div key={conn.id} className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-4 transition-all hover:border-indigo-100 hover:bg-white hover:shadow-sm">
+                <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-extrabold text-white shadow-sm">
+                    {conn.expertName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-900 truncate">{conn.expertName}</p>
+                    <p className="text-xs font-medium text-slate-500 mt-0.5">Çocuk: <span className="font-semibold text-indigo-700">{conn.childName}</span></p>
+                  </div>
                 </div>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="text-rose-600 border-rose-200 hover:bg-rose-50 shrink-0"
+                  className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 shrink-0 rounded-xl"
                   onClick={async () => {
                     if (!window.confirm('Bu uzman ile bağlantıyı kesmek istediğinize emin misiniz?')) return;
                     try {
@@ -1896,184 +2558,344 @@ export function DashboardPage() {
         </section>
       )}
 
-      {/* ── Bugünün Planı — pratik mini seans ── */}
-      {!loading && activeChild && (
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-2xl">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-sky-50 text-sky-700 ring-1 ring-sky-100">
-                  <Timer size={18} />
-                </span>
-                <p className="text-xs font-bold uppercase text-slate-400">Bugünün Mini Seansı</p>
-              </div>
-              <h2 className="mt-3 text-xl font-black leading-tight text-slate-950 sm:text-2xl">
-                {dashboardTodayPlan.title}
-              </h2>
-              <p className="mt-2 text-sm font-medium leading-6 text-slate-500">{dashboardTodayPlan.summary}</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-600 ring-1 ring-slate-100">
-                <Clock size={14} />
-                {planTotalMinutes} dk
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">
-                <CheckCircle size={14} />
-                Baskısız tempo
-              </span>
-            </div>
-          </div>
 
-          <div className="mt-5 grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
-            <div className="rounded-3xl border border-sky-100 bg-sky-50/70 p-4 sm:p-5">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-bold uppercase text-sky-700">Şimdi başla</p>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 ring-1 ring-sky-100">
-                  {dashboardTodayPlan.steps[0]?.duration}
-                </span>
-              </div>
-              <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-sky-100">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-600 text-lg font-black text-white shadow-sm">
-                    1
-                  </span>
-                  <div>
-                    <h3 className="text-base font-black text-slate-950">{dashboardTodayPlan.steps[0]?.title}</h3>
-                    <p className="mt-1 text-sm font-medium leading-6 text-slate-500">{dashboardTodayPlan.steps[0]?.detail}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                {[
-                  { label: 'Ortam', value: 'Sakin' },
-                  { label: 'Yönerge', value: 'Net' },
-                  { label: 'Bitiş', value: 'Not' },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-2xl bg-white px-3 py-3 ring-1 ring-sky-100">
-                    <p className="text-[10px] font-bold uppercase text-slate-400">{item.label}</p>
-                    <p className="mt-1 text-xs font-black text-slate-800">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                  to="/tedavi"
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-slate-800"
-                >
-                  Planı Aç
-                  <ArrowRight size={14} />
-                </Link>
-                <Link
-                  to="/notlar"
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-700 ring-1 ring-sky-100 transition-all hover:bg-sky-50"
-                >
-                  Seans Notu
-                </Link>
-              </div>
-            </div>
 
-            <div className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4 sm:p-5">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      {/* ── Haftalık konu + Keşfet & Geliş Paneli ── */}
+      {!loading && activeChild && todayMood && (
+        <div className="grid gap-5 xl:grid-cols-2">
+          <WeeklyTopicWidget variant="dashboard" />
+
+          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
+              {/* Widget Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                 <div>
-                  <p className="text-xs font-bold uppercase text-slate-400">Uygulama akışı</p>
-                  <h3 className="mt-1 text-base font-black text-slate-950">Adım adım ilerleyin</h3>
+                  <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-1.5">
+                    Sonraki araçlar
+                    <GuideTooltip content="Günlük kayıt tamamlandıktan sonra gelişim, güvenlik ve destek araçlarını sırayla keşfedin." position="top" />
+                  </h2>
+                  <p className="text-xs text-slate-500">Günlük kayıt sonrası sırayla kullanılacak destekler</p>
                 </div>
-                <Link to="/tedavi" className="group inline-flex w-fit items-center gap-1 text-sm font-bold text-indigo-700 hover:text-indigo-800">
-                  Detay
-                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-
-              <div className="mt-4 space-y-2.5">
-                {dashboardTodayPlan.steps.map((step, i) => (
-                  <div
-                    key={step.title}
-                    className="group grid gap-3 rounded-2xl border border-white bg-white p-3 shadow-sm transition-all hover:border-indigo-100 sm:grid-cols-[auto_1fr_auto]"
+                
+                {/* Tabs */}
+                <div className="flex rounded-xl bg-slate-100 p-0.75 self-start sm:self-center shrink-0">
+                  <button
+                    onClick={() => setDiscoveryTab('quests')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                      discoveryTab === 'quests'
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
                   >
-                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black ring-1 ${
-                      i === 0
-                        ? 'bg-indigo-600 text-white ring-indigo-600'
-                        : 'bg-slate-50 text-slate-500 ring-slate-200'
-                    }`}>
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-black text-slate-900">{step.title}</p>
-                      <p className="mt-1 text-sm font-medium leading-6 text-slate-500">{step.detail}</p>
-                    </div>
-                    <span className="h-fit w-fit rounded-full bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-400 ring-1 ring-slate-200">
-                      {step.duration}
-                    </span>
-                  </div>
-                ))}
+                    🎯 Görevler
+                  </button>
+                  <button
+                    onClick={() => setDiscoveryTab('library')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                      discoveryTab === 'library'
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    🗂️ Tüm Araçlar
+                  </button>
+                </div>
               </div>
 
-              <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-                <div className="flex items-start gap-2.5">
-                  <Sparkles size={16} className="mt-0.5 shrink-0 text-emerald-600" />
-                  <p className="text-sm font-semibold leading-6 text-emerald-900">
-                    Zorlanırsa süreyi yarıya indirin. Amaç kusursuz yapmak değil, günü güvenli bir ritimle kapatmak.
-                  </p>
+              {/* Tab 1: Quests */}
+              {discoveryTab === 'quests' && (
+                <div className="space-y-4 flex-1 flex flex-col justify-between">
+                  {/* Quest Progress */}
+                  <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Araç Keşif İlerlemesi</p>
+                      <h3 className="text-xs font-extrabold text-indigo-950 mt-0.5">
+                        {completedQuests === 4 ? 'Harika! Tüm ana araçları keşfettiniz 🎉' : `${4 - completedQuests} araç keşfedilmeyi bekliyor`}
+                      </h3>
+                      {/* Quest Progress Bar */}
+                      <div className="h-2 w-full bg-slate-200/60 rounded-full overflow-hidden mt-2">
+                        <div 
+                          className="h-full bg-indigo-600 rounded-full transition-all duration-500" 
+                          style={{ width: `${questsPct}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="shrink-0 font-black text-2xl text-indigo-600 bg-white shadow-sm rounded-xl px-3 py-1.5 ring-1 ring-slate-100">
+                      %{questsPct}
+                    </div>
+                  </div>
+
+                  {/* Quests List */}
+                  <div className="space-y-2.5">
+                    {[
+                      {
+                        id: 'sensory',
+                        done: hasSensoryProfile,
+                        title: 'Rahatlatan / zorlayan şeyleri ekle',
+                        desc: 'Ses, ışık, temas ve geçişlerde neyin iyi geldiğini belirleyin.',
+                        icon: Activity,
+                        to: '/duyusal-profil',
+                        cta: 'Profili Gör',
+                        startCta: 'Kısa Anket',
+                        tone: 'text-violet-600 bg-violet-50 border-violet-100/50'
+                      },
+                      {
+                        id: 'emergency',
+                        done: hasEmergencyCard,
+                        title: 'Acil Durum Kartı Oluştur',
+                        desc: 'Dışarısı veya okul için QR kodlu acil durum kartı hazırlayın.',
+                        icon: ShieldCheck,
+                        to: '/acil-kart',
+                        cta: 'Kartı İncele',
+                        startCta: 'Kartı Oluştur',
+                        tone: 'text-emerald-600 bg-emerald-50 border-emerald-100/50'
+                      },
+                      {
+                        id: 'wellbeing',
+                        done: hasWellbeingLog,
+                        title: 'Ebeveyn Refahı Testi',
+                        desc: 'Kendi stres seviyenizi ve iyi oluş durumunuzu izleyin.',
+                        icon: Heart,
+                        to: '/ebeveyn-refahi',
+                        cta: 'Raporu Gör',
+                        startCta: 'Testi Çöz',
+                        tone: 'text-rose-600 bg-rose-50 border-rose-100/50'
+                      },
+                      {
+                        id: 'behavior',
+                        done: hasBehaviorLog,
+                        title: 'Davranış notu ekle',
+                        desc: 'Davranıştan önce ve sonra ne olduğunu kısa not alın.',
+                        icon: ClipboardList,
+                        to: '/davranis-gunlugu',
+                        cta: 'Notları Gör',
+                        startCta: 'Not Ekle',
+                        tone: 'text-sky-600 bg-sky-50 border-sky-100/50'
+                      }
+                    ].map((quest) => {
+                      const QuestIcon = quest.icon;
+                      return (
+                        <div key={quest.id} className={`flex items-center justify-between gap-3 p-3 rounded-2xl border transition-all hover:bg-slate-50/20 ${
+                          quest.done ? 'border-emerald-100 bg-emerald-50/10' : 'border-slate-100 bg-white'
+                        }`}>
+                          <div className="flex items-start gap-3 min-w-0">
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${quest.tone} ${quest.done ? 'opacity-65' : ''}`}>
+                              <QuestIcon size={18} />
+                            </span>
+                            <div className="min-w-0">
+                              <p className={`text-xs font-extrabold ${quest.done ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{quest.title}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">{quest.desc}</p>
+                            </div>
+                          </div>
+                          <Link
+                            to={quest.to}
+                            className={`shrink-0 text-[10px] font-black px-3 py-1.5 rounded-lg border transition-all ${
+                              quest.done
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                                : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700'
+                            }`}
+                          >
+                            {quest.done ? quest.cta : quest.startCta}
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: Library */}
+              {discoveryTab === 'library' && (
+                <div className="space-y-4 flex-1 flex flex-col">
+                  {/* Category Filter Pills */}
+                  <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none shrink-0">
+                    {[
+                      { id: 'all', label: 'Tümü' },
+                      { id: 'growth', label: 'Analiz & Gelişim' },
+                      { id: 'social', label: 'Sosyal & Akran' },
+                      { id: 'safety', label: 'Yaşam & Güvenlik' },
+                      { id: 'wellbeing', label: 'Sağlık & Refah' }
+                    ].map((pill) => (
+                      <button
+                        key={pill.id}
+                        onClick={() => setLibraryFilter(pill.id as typeof libraryFilter)}
+                        className={`px-2.5 py-1 text-[10px] font-black rounded-lg border whitespace-nowrap cursor-pointer transition-all ${
+                          libraryFilter === pill.id
+                            ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                        }`}
+                      >
+                        {pill.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Grid of Categorised Cards */}
+                  <div className="grid grid-cols-2 gap-2 max-h-[260px] overflow-y-auto pr-1">
+                    {[
+                      // Gelişim
+                      { to: '/gelisim-paneli', label: 'İlerleme Özeti', cat: 'growth', desc: 'Grafikler & analiz' },
+                      { to: '/notlar', label: 'Gözlem Notları', cat: 'growth', desc: 'Serbest günlük notlar' },
+                      { to: '/davranis-gunlugu', label: 'Davranış Notu', cat: 'growth', desc: 'Önce/sonra takibi' },
+                      { to: '/duyusal-profil', label: 'Rahatlatan Şeyler', cat: 'growth', desc: 'Hassasiyet anketi' },
+                      { to: '/tarama', label: 'Tarama Testleri', cat: 'growth', desc: 'M-CHAT / gelişim testleri' },
+                      // Sosyal
+                      { to: '/benzer-aileler', label: 'Benzer Aileler', cat: 'social', desc: 'Akran eşleştirme' },
+                      { to: '/dertlesme-duvari', label: 'Dertleşme Duvarı', cat: 'social', desc: 'İç dökme & destek' },
+                      { to: '/forum', label: 'Forum', cat: 'social', desc: 'Soru & uzman cevapları' },
+                      { to: '/gruplar', label: 'Gruplar', cat: 'social', desc: 'Tematik topluluklar' },
+                      { to: '/mesajlar', label: 'Mesajlar', cat: 'social', desc: 'Uzman/veli sohbet' },
+                      // Güvenlik
+                      { to: '/acil-kart', label: 'Acil Durum Kartı', cat: 'safety', desc: 'QR kodlu çocuk kartı' },
+                      { to: '/okul-defteri', label: 'Okul Defteri', cat: 'safety', desc: 'Öğretmenle ortak takip' },
+                      { to: '/haklar-rehberi', label: 'Haklar Rehberi', cat: 'safety', desc: 'Yasal/sosyal haklar' },
+                      { to: '/rutinler', label: 'Rutinler', cat: 'safety', desc: 'Görsel geçiş rutinleri' },
+                      { to: '/gorevler', label: 'Ev Görevleri', cat: 'safety', desc: 'Uzmandan ev ödevleri' },
+                      // Refah & Sağlık
+                      { to: '/beslenme', label: 'Beslenme Günlüğü', cat: 'wellbeing', desc: 'Gıda & reaksiyon takibi' },
+                      { to: '/ebeveyn-refahi', label: 'Ebeveyn Refahı', cat: 'wellbeing', desc: 'Stres & iyi oluş takibi' },
+                      { to: '/uzmanlar', label: 'Uzmanlar', cat: 'wellbeing', desc: 'Uzman arama & profil' },
+                      { to: '/randevular', label: 'Randevular', cat: 'wellbeing', desc: 'Randevu & seans planı' },
+                      { to: '/uzman-harita', label: 'Uzman Haritası', cat: 'wellbeing', desc: 'Yakındaki klinikler' }
+                    ]
+                      .filter(item => libraryFilter === 'all' || item.cat === libraryFilter)
+                      .map((item) => (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className="flex flex-col p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-indigo-100 hover:shadow-sm transition-all"
+                        >
+                          <span className="text-[11px] font-extrabold text-slate-800 leading-tight truncate">{item.label}</span>
+                          <span className="text-[9px] text-slate-400 mt-0.5 truncate leading-tight">{item.desc}</span>
+                        </Link>
+                      ))}
+                  </div>
+                </div>
+              )}
+          </section>
+        </div>
+      )}
+
+      {/* ── Karşılama Sihirbazı Modalı (Welcome Setup Wizard) ── */}
+      <Modal
+        isOpen={showWelcomeWizard}
+        onClose={() => setShowWelcomeWizard(false)}
+        title={
+          <div className="flex items-center gap-2">
+            <Sparkles className="text-indigo-600 animate-pulse" size={18} />
+            <span className="font-extrabold text-slate-900">Otizm Destek Platformu'na Hoş Geldiniz!</span>
+          </div>
+        }
+        size="md"
+      >
+        <div className="space-y-5">
+          <p className="text-sm leading-relaxed text-slate-600">
+            Çocuğunuzun gelişimini sağlıklı takip edebilmek ve platformun kişiselleştirilmiş özelliklerinden yararlanabilmek için öncelikle çocuğunuzun profil bilgilerini girelim.
+          </p>
+          
+          {wizardError && (
+            <div className="rounded-xl bg-rose-50 border border-rose-100 p-3 text-xs font-semibold text-rose-700">
+              {wizardError}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="wizard-child-name" className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Çocuğun Adı / Rumuzu</label>
+              <input
+                id="wizard-child-name"
+                type="text"
+                placeholder="Örn: Enes Can"
+                value={wizardForm.name}
+                onChange={e => setWizardForm(f => ({ ...f, name: e.target.value }))}
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="wizard-child-birthdate" className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Doğum Tarihi</label>
+                <input
+                  id="wizard-child-birthdate"
+                  type="date"
+                  value={wizardForm.birthDate}
+                  onChange={e => setWizardForm(f => ({ ...f, birthDate: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Cinsiyet</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setWizardForm(f => ({ ...f, gender: 'KIZ' }))}
+                    className={`rounded-xl border py-2.5 text-xs font-bold transition-all ${
+                      wizardForm.gender === 'KIZ'
+                        ? 'border-pink-300 bg-pink-50 text-pink-700'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    Kız
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWizardForm(f => ({ ...f, gender: 'ERKEK' }))}
+                    className={`rounded-xl border py-2.5 text-xs font-bold transition-all ${
+                      wizardForm.gender === 'ERKEK'
+                        ? 'border-blue-300 bg-blue-50 text-blue-700'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    Erkek
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </section>
-      )}
 
-      {/* ── Başlangıç adımları — sadece çocuk yoksa ── */}
-      {!loading && !activeChild && (
-        <section className="grid gap-3 sm:grid-cols-2">
-          {parentStartSteps.map(({ to, icon: Icon, title, detail, cta, tone }) => (
-            <Link
-              key={title}
-              to={to}
-              className="group flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+          <div className="flex gap-3 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setShowWelcomeWizard(false)}
+              className="flex-1 rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
             >
-              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${tone}`}>
-                <Icon size={18} />
-              </span>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-                <p className="mt-1 text-xs text-slate-500 leading-5">{detail}</p>
-                <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-indigo-700">
-                  {cta} <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
-                </span>
-              </div>
-            </Link>
-          ))}
-        </section>
-      )}
-
-      {/* ── Haftalık konu + Kısa Yollar ── */}
-      <div className="grid gap-5 xl:grid-cols-2">
-        <WeeklyTopicWidget variant="dashboard" />
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-900 mb-3">Kısa Yollar</h2>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { to: '/notlar', label: 'Gözlem Notları', icon: FileText, tone: 'text-violet-600 bg-violet-50 ring-violet-100' },
-              { to: '/gunluk-takip', label: 'Bugünün Kaydı', icon: Target, tone: 'text-emerald-600 bg-emerald-50 ring-emerald-100' },
-              { to: '/mesajlar', label: 'Mesajlar', icon: Bell, tone: 'text-orange-600 bg-orange-50 ring-orange-100' },
-              { to: '/gruplar', label: 'Gruplar', icon: Users, tone: 'text-sky-600 bg-sky-50 ring-sky-100' },
-              { to: '/dertlesme-duvari', label: 'Destek', icon: Heart, tone: 'text-rose-600 bg-rose-50 ring-rose-100' },
-              { to: '/uzmanlar', label: 'Uzmanlar', icon: GraduationCap, tone: 'text-indigo-600 bg-indigo-50 ring-indigo-100' },
-            ].map(({ to, label, icon: Icon, tone }) => (
-              <Link
-                key={to}
-                to={to}
-                className="flex flex-col items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-2 py-3.5 text-center transition-all hover:border-slate-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-sm"
-              >
-                <span className={`flex h-9 w-9 items-center justify-center rounded-xl ring-1 ${tone}`}>
-                  <Icon size={17} />
-                </span>
-                <span className="text-xs font-semibold text-slate-700 leading-tight">{label}</span>
-              </Link>
-            ))}
+              Daha Sonra Kur
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!wizardForm.name.trim()) {
+                  setWizardError('Çocuğun adı zorunludur.');
+                  return;
+                }
+                setWizardError('');
+                setWizardSaving(true);
+                try {
+                  const child = await childService.create({
+                    name: wizardForm.name,
+                    birthDate: wizardForm.birthDate || undefined,
+                    gender: (wizardForm.gender as 'ERKEK' | 'KIZ') || undefined,
+                    diagnosisInfo: '',
+                    educationProgram: '',
+                    therapies: '',
+                  });
+                  addChild(child);
+                  setShowWelcomeWizard(false);
+                  toast.success('Çocuk profili başarıyla oluşturuldu! Şimdi günlük takibi ve planlarınızı yapabilirsiniz.');
+                } catch (err: unknown) {
+                  const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+                  setWizardError(msg || 'Profil oluşturulamadı. Lütfen tekrar deneyin.');
+                }
+                setWizardSaving(false);
+              }}
+              disabled={wizardSaving}
+              className="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 shadow-md shadow-indigo-100 transition-all disabled:opacity-50 active:scale-95"
+            >
+              {wizardSaving ? 'Oluşturuluyor...' : 'Profil Oluştur ve Başla'}
+            </button>
           </div>
-        </section>
-      </div>
+        </div>
+      </Modal>
     </div>
   );
 }

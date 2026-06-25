@@ -16,7 +16,6 @@ public class BuddyDto {
     private UUID buddyId;
     private String fullName;
     private String city;
-    private String email;
     private String profileImageUrl;
     private Double latitude;
     private Double longitude;

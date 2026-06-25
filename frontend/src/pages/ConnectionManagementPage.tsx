@@ -40,7 +40,9 @@ export function ConnectionManagementPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    queueMicrotask(load);
+  }, [load]);
 
   const handleApprove = async (id: string) => {
     setActionId(id);
@@ -91,7 +93,7 @@ export function ConnectionManagementPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Link2 className="text-indigo-600" size={24} />
-            Uzman Erişim Yönetimi
+            Uzman Erişimleri
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
             Çocuğunuzun profiline erişim isteyen uzmanları buradan onaylayın veya kaldırın.

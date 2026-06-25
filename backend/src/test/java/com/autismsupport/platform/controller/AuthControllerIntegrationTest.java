@@ -122,6 +122,42 @@ class AuthControllerIntegrationTest {
         assertThat(refreshResponse.getStatusCode().value()).isEqualTo(401);
     }
 
+    @Test
+    void checkEmailAvailability() {
+        String email = "avail-" + UUID.randomUUID() + "@example.com";
+
+        // Initial check: email should be available
+        ResponseEntity<Map<String, Object>> response = exchange(
+                "/api/auth/check-email?email=" + email,
+                HttpMethod.GET,
+                null
+        );
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        Map<String, Object> body = response.getBody();
+        assertThat(body).isNotNull();
+        assertThat(data(body).get("available")).isEqualTo(true);
+
+        // Register the email
+        exchange("/api/auth/register", HttpMethod.POST, new HttpEntity<>(Map.of(
+                "email", email,
+                "password", "StrongPass123!",
+                "fullName", "Integration Parent",
+                "kvkkConsent", true,
+                "role", "PARENT"
+        )));
+
+        // Check again: email should not be available
+        ResponseEntity<Map<String, Object>> responseAfterRegister = exchange(
+                "/api/auth/check-email?email=" + email,
+                HttpMethod.GET,
+                null
+        );
+        assertThat(responseAfterRegister.getStatusCode().is2xxSuccessful()).isTrue();
+        Map<String, Object> bodyAfterRegister = responseAfterRegister.getBody();
+        assertThat(bodyAfterRegister).isNotNull();
+        assertThat(data(bodyAfterRegister).get("available")).isEqualTo(false);
+    }
+
     private ResponseEntity<Map<String, Object>> exchange(String path, HttpMethod method, HttpEntity<?> entity) {
         return rest.exchange(path, method, entity, new ParameterizedTypeReference<>() {});
     }

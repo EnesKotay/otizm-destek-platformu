@@ -204,7 +204,6 @@ public class BuddyRelationshipService {
                 .buddyId(buddy.getId())
                 .fullName(buddy.getFullName())
                 .city(buddy.getCity())
-                .email(buddy.getEmail())
                 .profileImageUrl(buddy.getProfileImageUrl())
                 .latitude(buddy.getLatitude())
                 .longitude(buddy.getLongitude())

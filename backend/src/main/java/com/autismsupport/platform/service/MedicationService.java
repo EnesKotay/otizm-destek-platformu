@@ -26,9 +26,10 @@ public class MedicationService {
     private final MedicationRepository medicationRepository;
     private final MedicationLogRepository medicationLogRepository;
     private final ChildRepository childRepository;
+    private final ClinicalDataShareService clinicalDataShareService;
 
-    public List<MedicationDto> getMedications(UUID childId, UUID parentId) {
-        validateOwnership(childId, parentId);
+    public List<MedicationDto> getMedications(UUID childId, UUID userId) {
+        validateReadAccess(childId, userId);
         return medicationRepository.findByChildIdOrderByCreatedAtDesc(childId)
                 .stream().map(m -> toDto(m, LocalDate.now())).toList();
     }
@@ -86,11 +87,54 @@ public class MedicationService {
         return toLogDto(medicationLogRepository.save(log));
     }
 
+    @Transactional
+    public MedicationLogDto saveLog(UUID medicationId, MedicationLogDto dto, UUID parentId) {
+        Medication med = medicationRepository.findById(medicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ilac bulunamadi"));
+        validateOwnership(med.getChild().getId(), parentId);
+
+        var existing = medicationLogRepository.findByMedicationIdAndLogDateAndScheduledTime(
+                medicationId, dto.getLogDate(), dto.getScheduledTime());
+        MedicationLog log;
+        if (existing.isPresent()) {
+            log = existing.get();
+            log.setTaken(dto.isTaken());
+            log.setTakenAt(dto.isTaken() ? LocalDateTime.now() : null);
+            log.setSideEffects(dto.getSideEffects());
+            log.setNotes(dto.getNotes());
+        } else {
+            log = MedicationLog.builder()
+                    .medication(med).child(med.getChild()).logDate(dto.getLogDate())
+                    .scheduledTime(dto.getScheduledTime()).taken(dto.isTaken())
+                    .takenAt(dto.isTaken() ? LocalDateTime.now() : null)
+                    .sideEffects(dto.getSideEffects()).notes(dto.getNotes())
+                    .build();
+        }
+        return toLogDto(medicationLogRepository.save(log));
+    }
+
+    public List<MedicationLogDto> getMedicationLogs(UUID childId, UUID userId) {
+        validateReadAccess(childId, userId);
+        return medicationLogRepository.findByChildIdOrderByLogDateAsc(childId)
+                .stream().map(this::toLogDto).toList();
+    }
+
     private void validateOwnership(UUID childId, UUID parentId) {
         Child child = childRepository.findById(childId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cocuk bulunamadi"));
         if (!child.getParent().getId().equals(parentId))
             throw new UnauthorizedException("Erisim yetkisi yok");
+    }
+
+    private void validateReadAccess(UUID childId, UUID userId) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cocuk bulunamadi"));
+        if (child.getParent().getId().equals(userId)) {
+            return;
+        }
+        if (!clinicalDataShareService.verifyAccess(userId, childId, "tracker")) {
+            throw new UnauthorizedException("Erisim yetkisi yok");
+        }
     }
 
     private Child getChildAndValidate(UUID childId, UUID parentId) {
@@ -119,6 +163,8 @@ public class MedicationService {
                 .id(l.getId()).medicationId(l.getMedication().getId())
                 .childId(l.getChild().getId()).logDate(l.getLogDate())
                 .scheduledTime(l.getScheduledTime()).taken(l.isTaken())
-                .takenAt(l.getTakenAt()).notes(l.getNotes()).createdAt(l.getCreatedAt()).build();
+                .takenAt(l.getTakenAt()).notes(l.getNotes())
+                .sideEffects(l.getSideEffects())
+                .createdAt(l.getCreatedAt()).build();
     }
 }

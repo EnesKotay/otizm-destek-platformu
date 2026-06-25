@@ -3,9 +3,12 @@ package com.autismsupport.platform.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -37,6 +40,10 @@ public class MedicationLog {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "side_effects", columnDefinition = "jsonb")
+    private List<String> sideEffects;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

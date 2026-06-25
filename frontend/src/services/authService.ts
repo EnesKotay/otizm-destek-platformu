@@ -18,6 +18,9 @@ export const authService = {
   }) =>
     api.post<ApiResponse<AuthResponse>>('/auth/register', data).then(r => r.data.data),
 
+  checkEmail: (email: string) =>
+    api.get<ApiResponse<{ available: boolean }>>(`/auth/check-email?email=${encodeURIComponent(email)}`).then(r => r.data.data),
+
   login: (data: { email: string; password: string }) =>
     api.post<ApiResponse<AuthResponse>>('/auth/login', data).then(r => r.data.data),
 

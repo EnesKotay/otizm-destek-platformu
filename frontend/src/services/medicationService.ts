@@ -16,4 +16,10 @@ export const medicationService = {
 
   toggle: (id: string, date: string, time = '') =>
     api.post<ApiResponse<MedicationLog>>(`/medications/${id}/toggle?date=${date}&time=${encodeURIComponent(time)}`).then(r => r.data.data),
+
+  saveLog: (medicationId: string, logData: Partial<MedicationLog>) =>
+    api.post<ApiResponse<MedicationLog>>(`/medications/${medicationId}/log`, logData).then(r => r.data.data),
+
+  getLogs: (childId: string) =>
+    api.get<ApiResponse<MedicationLog[]>>(`/medications/child/${childId}/logs`).then(r => r.data.data),
 };

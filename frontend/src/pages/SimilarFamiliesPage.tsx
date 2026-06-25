@@ -47,6 +47,13 @@ const SORT_OPTIONS = [
   { value: 'age',   label: 'Yaş Sırası' },
 ];
 
+const FOCUS_SORT_MAP: Record<'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY', string> = {
+  BALANCED: 'score',
+  SYMPTOMS: 'tags',
+  AGE: 'age',
+  THERAPY: 'therapy',
+};
+
 const MEETING_TIMES = [
   '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
   '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
@@ -416,7 +423,7 @@ export function SimilarFamiliesPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const doSearch = useCallback(async (childId: string) => {
+  const doSearch = useCallback(async (childId: string, sortOverride?: string) => {
     if (!childId) return;
     if (!matchingEnabled) {
       setResults([]);
@@ -427,7 +434,7 @@ export function SimilarFamiliesPage() {
     setSearched(true);
     try {
       const data = await matchingService.findSimilarFamilies(childId, {
-        minScore, ageGroup: ageGroup || undefined, sortBy,
+        minScore, ageGroup: ageGroup || undefined, sortBy: sortOverride ?? sortBy,
       });
       setResults(data || []);
     } catch {
@@ -449,7 +456,7 @@ export function SimilarFamiliesPage() {
       setPendingBuddies(pending || []);
       setNearbyBuddies(near || []);
     } catch {
-      // ignore
+      toast.error('Sosyal çember verileri yüklenirken bir hata oluştu.');
     }
     setBuddiesLoading(false);
   }, [maxDistance]);
@@ -964,7 +971,11 @@ export function SimilarFamiliesPage() {
                         key={focus.id}
                         type="button"
                         onClick={() => {
-                          setPriorityFocus(focus.id as 'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY');
+                          const focusId = focus.id as 'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY';
+                          const mappedSort = FOCUS_SORT_MAP[focusId];
+                          setPriorityFocus(focusId);
+                          setSortBy(mappedSort);
+                          doSearch(selectedChildId, mappedSort);
                           toast.success(`Eşleştirme motoru önceliği "${focus.label}" olarak güncellendi! 🚀`);
                         }}
                         title={focus.desc}
@@ -1048,6 +1059,11 @@ export function SimilarFamiliesPage() {
 
           {!loading && finalResults.length > 0 && (
             <div className="space-y-4 animate-fadeIn">
+              {results.length >= 20 && (
+                <p className="text-xs text-slate-450 px-1">
+                  En uyumlu 20 sonuç gösteriliyor. Daha fazla aile görmek için filtreleri daraltmayı (min. benzerlik, yaş grubu) deneyin.
+                </p>
+              )}
               {finalResults.map((family) => (
                 <FamilyMatchCard
                   key={family.parentId}
@@ -1278,6 +1294,7 @@ export function SimilarFamiliesPage() {
                           <button
                             key={buddy.buddyId}
                             onClick={() => setSelectedBlip(buddy)}
+                            aria-label={`${buddy.fullName} (${buddy.distanceKm} km)`}
                             className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer group focus:outline-none focus:ring-0 z-20"
                             style={{
                               left: `${leftPercent}%`,
@@ -1357,8 +1374,14 @@ export function SimilarFamiliesPage() {
                           {/* Selected parent profile and stats */}
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-md text-white font-extrabold text-xl relative shrink-0">
-                                {selectedBlip.fullName?.charAt(0)}
+                              <div className="w-14 h-14 rounded-full shadow-md relative shrink-0 overflow-hidden">
+                                {selectedBlip.profileImageUrl ? (
+                                  <img src={selectedBlip.profileImageUrl} alt={selectedBlip.fullName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-extrabold text-xl">
+                                    {selectedBlip.fullName?.charAt(0)}
+                                  </div>
+                                )}
                                 <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" />
                               </div>
                               <div>
@@ -1366,7 +1389,7 @@ export function SimilarFamiliesPage() {
                                   {selectedBlip.fullName}
                                 </h3>
                                 <p className="text-xs font-bold text-slate-450 mt-0.5">
-                                  📍 {selectedBlip.city || 'İstanbul'}
+                                  📍 {selectedBlip.city || 'Şehir belirtilmemiş'}
                                 </p>
                               </div>
                             </div>
@@ -1449,8 +1472,14 @@ export function SimilarFamiliesPage() {
                     <Card key={idx} className="hover:-translate-y-1 hover:shadow-md border border-slate-100 hover:border-indigo-150 transition-all duration-300 bg-white/90 backdrop-blur-md relative overflow-hidden group">
                       <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-indigo-500/5 to-transparent rounded-full pointer-events-none" />
                       <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-base relative shrink-0">
-                          {buddy.fullName?.charAt(0)}
+                        <div className="w-12 h-12 rounded-full relative shrink-0 overflow-hidden">
+                          {buddy.profileImageUrl ? (
+                            <img src={buddy.profileImageUrl} alt={buddy.fullName} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-base">
+                              {buddy.fullName?.charAt(0)}
+                            </div>
+                          )}
                           <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1460,7 +1489,7 @@ export function SimilarFamiliesPage() {
                               📍 {buddy.distanceKm} km yakında
                             </span>
                           </div>
-                          <p className="text-xs text-slate-450 mt-0.5">{buddy.city || 'İstanbul'}</p>
+                          <p className="text-xs text-slate-450 mt-0.5">{buddy.city || 'Şehir belirtilmemiş'}</p>
                           
                           {/* Role tag */}
                           <div className="flex gap-1.5 mt-2.5">
@@ -1514,8 +1543,14 @@ export function SimilarFamiliesPage() {
                 {pendingBuddies.map((req, idx) => (
                   <Card key={idx} className="border-red-150 bg-red-50/10 hover:shadow-md transition-all duration-300">
                     <div className="flex items-start gap-4">
-                      <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-pink-400 to-red-400 flex items-center justify-center text-white font-extrabold shrink-0">
-                        {req.fullName?.charAt(0)}
+                      <div className="w-11 h-11 rounded-full shrink-0 overflow-hidden">
+                        {req.profileImageUrl ? (
+                          <img src={req.profileImageUrl} alt={req.fullName} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-tr from-pink-400 to-red-400 flex items-center justify-center text-white font-extrabold">
+                            {req.fullName?.charAt(0)}
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1524,7 +1559,7 @@ export function SimilarFamiliesPage() {
                             {req.isMentorRelation ? 'Mentorluk İsteği' : 'Buddy İsteği'}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-450 mt-1">{req.city || 'Şehir Belirtilmemiş'}</p>
+                        <p className="text-xs text-slate-450 mt-1">{req.city || 'Şehir belirtilmemiş'}</p>
                         
                         <div className="flex gap-2 mt-4">
                           <button
@@ -1570,8 +1605,14 @@ export function SimilarFamiliesPage() {
                   <Card key={idx} className="hover:-translate-y-0.5 hover:shadow-md border border-slate-100 transition-all duration-300">
                     <div className="flex flex-col h-full justify-between">
                       <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-extrabold shrink-0 relative">
-                          {buddy.fullName?.charAt(0)}
+                        <div className="w-12 h-12 rounded-full shrink-0 relative overflow-hidden">
+                          {buddy.profileImageUrl ? (
+                            <img src={buddy.profileImageUrl} alt={buddy.fullName} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-extrabold">
+                              {buddy.fullName?.charAt(0)}
+                            </div>
+                          )}
                           <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
                         </div>
                         <div className="min-w-0">
@@ -1583,7 +1624,7 @@ export function SimilarFamiliesPage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-[10px] text-slate-450 mt-0.5">{buddy.city || 'Şehir Belirtilmemiş'}</p>
+                          <p className="text-[10px] text-slate-450 mt-0.5">{buddy.city || 'Şehir belirtilmemiş'}</p>
                           {buddy.distanceKm && (
                             <p className="text-[10px] text-indigo-600 font-semibold mt-1">📍 {buddy.distanceKm} km yakında</p>
                           )}
@@ -1789,8 +1830,14 @@ export function SimilarFamiliesPage() {
             {/* Drawer Header */}
             <div className="p-4 border-b border-slate-150 flex items-center justify-between bg-gradient-to-r from-indigo-50/50 to-purple-50/30">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-extrabold shadow-sm relative">
-                  {activeChatBuddy.fullName?.charAt(0)}
+                <div className="w-10 h-10 rounded-full shadow-sm relative overflow-hidden">
+                  {activeChatBuddy.profileImageUrl ? (
+                    <img src={activeChatBuddy.profileImageUrl} alt={activeChatBuddy.fullName} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-indigo-500 flex items-center justify-center text-white font-extrabold">
+                      {activeChatBuddy.fullName?.charAt(0)}
+                    </div>
+                  )}
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
                 </div>
                 <div>
