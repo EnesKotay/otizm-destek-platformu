@@ -60,4 +60,20 @@ public class NotificationController {
         service.markAllRead(requireUserId(principal));
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteNotification(
+            @PathVariable UUID id,
+            @CurrentUser UserPrincipal principal) {
+        service.deleteNotification(id, requireUserId(principal));
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @DeleteMapping("/bulk")
+    public ResponseEntity<ApiResponse<Void>> deleteNotifications(
+            @RequestBody Map<String, List<UUID>> body,
+            @CurrentUser UserPrincipal principal) {
+        service.deleteNotifications(body.get("ids"), requireUserId(principal));
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }

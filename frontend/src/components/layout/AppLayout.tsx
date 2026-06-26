@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { NotificationToast } from '@/components/notifications/NotificationToast';
 import { ChatBot } from '@/components/ChatBot';
 import { AlertTriangle, HelpCircle, Search, Menu, X, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -237,6 +238,7 @@ export function AppLayout() {
       </main>
       <MobileNav />
       <ChatBot />
+      {isAuthenticated && <NotificationToast />}
     </div>
   );
 }

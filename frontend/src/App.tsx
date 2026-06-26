@@ -74,7 +74,8 @@ const EmergencyCardPage = lazyNamed(() => import('@/pages/EmergencyCardPage'), '
 const HelpPage = lazyNamed(() => import('@/pages/HelpPage'), 'HelpPage');
 const MeetupsPage = lazyNamed(() => import('@/pages/MeetupsPage'), 'MeetupsPage');
 const WeeklyQuestionPage = lazyNamed(() => import('@/pages/WeeklyQuestionPage'), 'WeeklyQuestionPage');
-const UserGuidePage = lazyNamed(() => import('@/pages/UserGuidePage'), 'UserGuidePage');
+const UserGuidePage = lazyNamed(() => import('./pages/UserGuidePage'), 'UserGuidePage');
+const NotificationsPage = lazyNamed(() => import('./pages/NotificationsPage'), 'NotificationsPage');
 
 function PageLoader() {
   return (
@@ -175,6 +176,7 @@ export default function App() {
                 <Route path="/benzer-aileler" element={<RoleRoute allowedRoles={PARENT_ONLY}><SimilarFamiliesPage /></RoleRoute>} />
                 <Route path="/similar-families" element={<RoleRoute allowedRoles={PARENT_ONLY}><Navigate to="/benzer-aileler" replace /></RoleRoute>} />
                 <Route path="/ayarlar" element={<RoleRoute allowedRoles={ALL_ROLES}><SettingsPage /></RoleRoute>} />
+                <Route path="/bildirimler" element={<RoleRoute allowedRoles={ALL_ROLES}><NotificationsPage /></RoleRoute>} />
                 <Route path="/settings" element={<RoleRoute allowedRoles={ALL_ROLES}><Navigate to="/ayarlar" replace /></RoleRoute>} />
                 <Route path="/bilgi-bankasi" element={<RoleRoute allowedRoles={ALL_ROLES}><KnowledgePage /></RoleRoute>} />
                 <Route path="/uzmanlar" element={<RoleRoute allowedRoles={PARENT_ONLY}><ExpertsPage /></RoleRoute>} />

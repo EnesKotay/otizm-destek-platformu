@@ -536,6 +536,38 @@ export function DashboardPage() {
       });
     }
 
+    // 8. Duyusal Profil — doldurulmadıysa öner
+    if (!hasSensoryProfile) {
+      tasks.push({
+        to: '/duyusal-profil',
+        icon: Brain,
+        title: 'Duyusal profili tamamla',
+        detail: 'Çocuğunuzu rahatlatan ve zorlayan ses, ışık gibi durumları belirleyin.',
+        reason: 'Hassasiyetleri bilmek doğru planlama yapmayı sağlar.',
+        duration: '3 dk',
+        done: false,
+        tone: 'bg-violet-50 text-violet-700 ring-violet-100',
+        cta: 'Profili Doldur',
+        doneCta: 'Profili Gör',
+      });
+    }
+
+    // 9. Acil Durum Kartı — doldurulmadıysa öner
+    if (!hasEmergencyCard) {
+      tasks.push({
+        to: '/acil-kart',
+        icon: ShieldCheck,
+        title: 'Acil Durum Kartı oluştur',
+        detail: 'Kritik tıbbi ve acil durum bilgilerini içeren QR kodlu kartı hazırlayın.',
+        reason: 'Acil durumlarda ilk müdahale için hayati önem taşır.',
+        duration: '2 dk',
+        done: false,
+        tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+        cta: 'Kartı Hazırla',
+        doneCta: 'Kartı Gör',
+      });
+    }
+
     return tasks;
   })() : [
     {
@@ -606,183 +638,6 @@ export function DashboardPage() {
   // Discovery quests calculations
   const completedQuests = (hasSensoryProfile ? 1 : 0) + (hasEmergencyCard ? 1 : 0) + (hasWellbeingLog ? 1 : 0) + (hasBehaviorLog ? 1 : 0);
   const questsPct = Math.round((completedQuests / 4) * 100);
-  const priorityGuidanceItems: FollowUpSuggestion[] = activeChild ? [
-    todayMood
-      ? {
-          id: 'mood',
-          to: '/gunluk-takip',
-          icon: Heart,
-          title: 'Bugünün kaydını kontrol et',
-          detail: 'Ruh hali kaydı var; uyku, ilaç veya kısa not eksikse tamamla.',
-          cta: 'Kaydı aç',
-          badge: 'Her gün',
-          priorityLabel: '1. Önce',
-          tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-950 hover:border-emerald-300',
-          iconTone: 'bg-emerald-100 text-emerald-700',
-        }
-      : {
-          id: 'mood',
-          to: '/gunluk-takip',
-          icon: Heart,
-          title: 'Bugünün kaydını gir',
-          detail: 'Ruh hali, uyku ve ilaç bilgisini gir; öneriler buna göre şekillenir.',
-          cta: 'Kayda git',
-          badge: 'Zorunlu',
-          priorityLabel: '1. Önce',
-          tone: 'border-rose-200 bg-rose-50/70 text-rose-950 hover:border-rose-300',
-          iconTone: 'bg-rose-100 text-rose-700',
-        },
-    pendingMedicationSlots > 0
-      ? {
-          id: 'meds',
-          to: '/gunluk-takip',
-          icon: Pill,
-          title: 'İlaç kontrolünü bitir',
-          detail: `${pendingMedicationSlots} doz bekliyor; sağlık takibi önce tamamlanmalı.`,
-          cta: 'Kontrol et',
-          badge: 'Sağlık',
-          priorityLabel: '2. Acil',
-          tone: 'border-amber-200 bg-amber-50/70 text-amber-950 hover:border-amber-300',
-          iconTone: 'bg-amber-100 text-amber-700',
-        }
-      : {
-          id: 'plan',
-          to: '/tedavi',
-          icon: Target,
-          title: 'Günlük planı uygula',
-          detail: 'Kayıt girildikten sonra evde uygulanacak küçük hedef ve destek adımlarına geç.',
-          cta: 'Planı aç',
-          badge: 'Günlük',
-          priorityLabel: '2. Sonra',
-          tone: 'border-indigo-200 bg-indigo-50/70 text-indigo-950 hover:border-indigo-300',
-          iconTone: 'bg-indigo-100 text-indigo-700',
-        },
-    !hasSensoryProfile
-      ? {
-          id: 'sensory',
-          to: '/duyusal-profil',
-          icon: Brain,
-          title: 'Rahatlatan ve zorlayan şeyleri ekle',
-          detail: 'Ses, ışık, temas gibi çocuğunu rahatlatan veya zorlayan durumları belirle.',
-          cta: 'Kısa anketi aç',
-          badge: 'Kurulum',
-          priorityLabel: '3. Temel',
-          tone: 'border-violet-200 bg-violet-50/70 text-violet-950 hover:border-violet-300',
-          iconTone: 'bg-violet-100 text-violet-700',
-        }
-      : !hasEmergencyCard
-        ? {
-            id: 'emergency',
-            to: '/acil-kart',
-            icon: ShieldCheck,
-            title: 'Acil kartı hazırla',
-            detail: 'Okulda veya dışarıda paylaşılacak temel bilgileri güvenli tut.',
-            cta: 'Kartı oluştur',
-            badge: 'Güvenlik',
-            priorityLabel: '3. Temel',
-            tone: 'border-teal-200 bg-teal-50/70 text-teal-950 hover:border-teal-300',
-            iconTone: 'bg-teal-100 text-teal-700',
-          }
-        : {
-            id: 'analytics',
-            to: '/gelisim-paneli',
-            icon: TrendingUp,
-            title: 'Gelişimi yorumla',
-            detail: 'Günlük kayıtlar ve notlardan haftalık örüntüleri çıkar.',
-            cta: 'Paneli aç',
-            badge: 'Analiz',
-            priorityLabel: '3. Haftalık',
-            tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-950 hover:border-emerald-300',
-            iconTone: 'bg-emerald-100 text-emerald-700',
-          },
-    nextAppointment
-      ? {
-          id: 'experts',
-          to: '/takvim',
-          icon: GraduationCap,
-          title: 'Yaklaşan randevunuz var',
-          detail: `${nextAppointment.title} — ${getEventCountdown(nextAppointment.startTime).label}`,
-          cta: 'Takvimi aç',
-          badge: 'Randevu',
-          priorityLabel: '4. Randevu',
-          tone: 'border-indigo-200 bg-indigo-50/70 text-indigo-950 hover:border-indigo-300',
-          iconTone: 'bg-indigo-100 text-indigo-700',
-        }
-      : activeConnections.length > 0
-        ? {
-            id: 'connections',
-            to: '/paylasimli-ilerleme',
-            icon: ShieldCheck,
-            title: 'Uzmanla paylaşımı yönet',
-            detail: 'Hiçbir kayıt sen onaylamadan paylaşılmaz; neyi göstereceğini sen seç.',
-            cta: 'Paylaşımı aç',
-            badge: 'Uzman',
-            priorityLabel: '4. Destek',
-            tone: 'border-blue-200 bg-blue-50/70 text-blue-950 hover:border-blue-300',
-            iconTone: 'bg-blue-100 text-blue-700',
-          }
-        : {
-            id: 'experts',
-            to: '/uzmanlar',
-            icon: GraduationCap,
-            title: 'Yaklaşan randevunuz yok',
-            detail: 'Planlanmış randevu yok. Uzman profillerini ve seçenekleri incele.',
-            cta: 'Uzman bul',
-            badge: 'Destek',
-            priorityLabel: '4. Destek',
-            tone: 'border-sky-200 bg-sky-50/70 text-sky-950 hover:border-sky-300',
-            iconTone: 'bg-sky-100 text-sky-700',
-          },
-    {
-      id: 'knowledge',
-      to: '/bilgi-bankasi',
-      icon: BookOpen,
-      title: 'Kaynaklarla güçlendir',
-      detail: 'Bir konuya takıldığında güvenilir rehber ve içeriklere bak.',
-      cta: 'Kaynakları aç',
-      badge: 'Öğren',
-      priorityLabel: '5. İhtiyaç',
-      tone: 'border-slate-200 bg-slate-50/80 text-slate-950 hover:border-slate-300',
-      iconTone: 'bg-slate-200 text-slate-700',
-    },
-  ] : [
-    {
-      id: 'profile',
-      to: '/cocuklarim',
-      icon: Baby,
-      title: 'Çocuk profilini oluştur',
-      detail: 'Ana sayfadaki tüm yönlendirmeler profil sonrası kişiselleşir.',
-      cta: 'Profili aç',
-      badge: 'İlk adım',
-      priorityLabel: '1. Önce',
-      tone: 'border-indigo-200 bg-indigo-50/70 text-indigo-950 hover:border-indigo-300',
-      iconTone: 'bg-indigo-100 text-indigo-700',
-    },
-    {
-      id: 'guide',
-      to: '/kullanici-rehberi',
-      icon: Sparkles,
-      title: 'Platformu tanı',
-      detail: 'Hangi sayfanın ne işe yaradığını kısa yoldan öğren.',
-      cta: 'Rehberi aç',
-      badge: 'Harita',
-      priorityLabel: '2. Sonra',
-      tone: 'border-violet-200 bg-violet-50/70 text-violet-950 hover:border-violet-300',
-      iconTone: 'bg-violet-100 text-violet-700',
-    },
-    {
-      id: 'experts',
-      to: '/uzmanlar',
-      icon: GraduationCap,
-      title: 'Uzmanları incele',
-      detail: 'Destek seçeneklerini profil oluşturmadan önce de görebilirsin.',
-      cta: 'Uzman bul',
-      badge: 'Destek',
-      priorityLabel: '3. Destek',
-      tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-950 hover:border-emerald-300',
-      iconTone: 'bg-emerald-100 text-emerald-700',
-    },
-  ];
 
   // Toplam tahmini süre (bekleyen görevler)
   const pendingMinutes = pendingTodayTasks.reduce((acc, t) => {
@@ -792,174 +647,6 @@ export function DashboardPage() {
   const pendingTimeLabel = pendingMinutes >= 60
     ? `~${Math.round(pendingMinutes / 60)} saat`
     : pendingMinutes > 0 ? `~${pendingMinutes} dakika` : '';
-  const smartNextActionCard = user?.role === 'PARENT' ? (() => {
-    const nextAction = (() => {
-      if (children.length === 0) {
-        return {
-          id: 'profile',
-          title: "Önce çocuk profilini oluştur",
-          detail: "Profil olmadan günlük plan, takip, uzman paylaşımı ve öneriler kişiselleşmez. İlk gün için sadece bu adımla başla.",
-          badge: "1. İlk adım",
-          onClick: () => setShowWelcomeWizard(true),
-          icon: Baby,
-          tone: "from-indigo-600 via-indigo-700 to-violet-700 text-white shadow-indigo-100"
-        };
-      }
-      if (!todayMood) {
-        return {
-          id: 'mood',
-          title: "Bugünün kısa kaydını gir",
-          detail: "Önce kayıt girilir; günlük plan ve öneriler bu bilgiye göre anlam kazanır.",
-          badge: "1. Bugün",
-          to: "/gunluk-takip",
-          cta: "Kayda Git",
-          icon: Heart,
-          tone: "from-rose-500 via-rose-600 to-pink-600 text-white shadow-rose-100 animate-pulse"
-        };
-      }
-      if (pendingMedicationSlots > 0) {
-        return {
-          id: 'meds',
-          title: "İlaç Kontrolünü Tamamlayın",
-          detail: `Bugün için bekleyen ${pendingMedicationSlots} doz ilaç var. İşaretleme yapın.`,
-          badge: "Sağlık 💊",
-          to: "/gunluk-takip",
-          cta: "İlaçları Kontrol Et",
-          icon: Pill,
-          tone: "from-amber-500 via-amber-600 to-orange-600 text-white shadow-amber-100"
-        };
-      }
-      if (!hasSensoryProfile) {
-        return {
-          id: 'sensory',
-          title: "Rahatlatan ve zorlayan şeyleri ekle",
-          detail: "Ses, ışık, temas ve geçişlerde neyin iyi geldiğini kısa anketle belirle.",
-          badge: "3. Temel",
-          to: "/duyusal-profil",
-          cta: "Kısa Anketi Aç",
-          icon: Brain,
-          tone: "from-violet-500 via-violet-600 to-indigo-600 text-white shadow-violet-100"
-        };
-      }
-      if (!hasEmergencyCard) {
-        return {
-          id: 'emergency',
-          title: "Acil Durum Kartını Doldurun",
-          detail: "Çocuğunuzun özel durumunu gösteren ve QR kodla paylaşılabilen acil durum kartını hazırlayın.",
-          badge: "3. Güvenlik",
-          to: "/acil-kart",
-          cta: "Kartı Oluştur",
-          icon: ShieldCheck,
-          tone: "from-emerald-500 via-emerald-600 to-teal-600 text-white shadow-emerald-100"
-        };
-      }
-      return {
-        id: 'wellbeing',
-        title: "Bugünün temeli tamam",
-        detail: "Şimdi gelişim özeti, rutinler, uzman paylaşımı veya kaynaklarla devam edebilirsin.",
-        badge: "Sonra",
-        to: "/ebeveyn-refahi",
-        cta: "Ebeveyn Refah Testi",
-        icon: Smile,
-        tone: "from-slate-800 via-slate-850 to-slate-900 text-white shadow-slate-900/10"
-      };
-    })();
-
-    const ActionIcon = nextAction.icon;
-    const hasPrimaryTask = children.length === 0 || !todayMood || pendingMedicationSlots > 0 || !hasSensoryProfile || !hasEmergencyCard;
-
-    return (
-      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)] xl:items-stretch">
-          <div className="flex min-w-0 flex-col justify-between gap-5 rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
-            <div className="flex items-start gap-4">
-              <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ${
-                hasPrimaryTask ? 'bg-indigo-600 text-white ring-indigo-500' : 'bg-emerald-100 text-emerald-700 ring-emerald-200'
-              }`}>
-                <ActionIcon size={22} />
-              </span>
-              <div className="min-w-0">
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                  hasPrimaryTask ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
-                }`}>
-                  {nextAction.badge}
-                </span>
-                <h3 className="mt-2 text-xl font-black leading-tight tracking-tight text-slate-950">{nextAction.title}</h3>
-                <p className="mt-1.5 max-w-2xl text-sm font-medium leading-6 text-slate-600">{nextAction.detail}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs font-semibold leading-5 text-slate-500">
-                {hasPrimaryTask
-                  ? 'Bu adımı tamamla; sonra sağdaki önem sırasına göre devam et.'
-                  : 'Temel adımlar tamam. Sağdaki sırayla gelişim, destek ve kaynaklara geçebilirsin.'}
-              </p>
-              {nextAction.onClick ? (
-                <button
-                  type="button"
-                  onClick={nextAction.onClick}
-                  className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-black text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 sm:w-auto"
-                >
-                  Hemen Başla
-                  <ArrowRight size={15} />
-                </button>
-              ) : (
-                <Link
-                  to={nextAction.to}
-                  className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-black text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 sm:w-auto"
-                >
-                  {nextAction.cta}
-                  <ArrowRight size={15} />
-                </Link>
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Önem sırası</p>
-                <h3 className="mt-1 text-sm font-extrabold text-slate-950">Sıradaki 3 adım</h3>
-              </div>
-              <Link to="/kullanici-rehberi" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">
-                Tüm yollar
-              </Link>
-            </div>
-            <div className="mt-3 grid gap-2">
-              {priorityGuidanceItems
-                .filter((suggestion) => suggestion.id !== nextAction.id)
-                .slice(0, 3)
-                .map((suggestion) => {
-                  const SuggestionIcon = suggestion.icon;
-                return (
-                  <Link
-                    key={suggestion.to}
-                    to={suggestion.to}
-                    className={`group flex items-center gap-3 rounded-xl border p-3 transition-all ${suggestion.tone}`}
-                  >
-                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${suggestion.iconTone}`}>
-                      <SuggestionIcon size={16} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2">
-                        <span className="truncate text-xs font-black">{suggestion.title}</span>
-                        <span className="rounded-full bg-white/70 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-500">
-                          {suggestion.priorityLabel ?? suggestion.badge}
-                        </span>
-                      </span>
-                      <span className="mt-0.5 block truncate text-[11px] font-semibold opacity-75">{suggestion.detail}</span>
-                    </span>
-                    <ArrowRight size={13} className="shrink-0 opacity-50 transition-transform group-hover:translate-x-0.5 group-hover:opacity-80" />
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  })() : null;
   // Progress bar rengi: kırmızı → sarı → yeşil
   const progressBarColor = todayProgressPct >= 80
     ? 'from-emerald-400 to-emerald-500'
@@ -1926,28 +1613,31 @@ export function DashboardPage() {
     <div className="space-y-5 pb-8">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
-          <p className="text-sm font-medium text-slate-600">{greeting}</p>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-slate-400">{greeting}</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2 mt-1">
             {firstName || 'Merhaba'}
             {activeChild && (
-              <span className="text-slate-500 font-normal text-xl">· {activeChild.name}</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 border border-indigo-100/60 text-sm font-extrabold shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                {activeChild.name}
+              </span>
             )}
           </h1>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
           {children.length > 1 && (
-            <div className="flex gap-1.5">
+            <div className="bg-slate-100/80 p-1 rounded-2xl flex gap-1 ring-1 ring-slate-200/50">
               {children.map(c => (
                 <button
                   key={c.id}
                   type="button"
                   onClick={() => setSelectedChild(c)}
-                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                     activeChild?.id === c.id
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'
+                      ? 'bg-white text-indigo-700 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   {c.name}
@@ -1957,10 +1647,11 @@ export function DashboardPage() {
           )}
           <Link
             to="/kriz-rehberi"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold hover:bg-rose-100 transition-colors"
+            className="relative group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/60 shadow-sm transition-all duration-300 font-bold text-sm overflow-hidden"
           >
-            <AlertTriangle size={15} />
-            Zor An
+            <span className="absolute -top-10 -left-10 w-20 h-20 bg-rose-200/30 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+            <AlertTriangle size={15} className="text-rose-600 animate-bounce" />
+            <span>Zor An</span>
           </Link>
         </div>
       </div>
@@ -1993,38 +1684,38 @@ export function DashboardPage() {
 
       {/* ── Yeni Kullanıcı Başlangıç Rehberi (Checklist) ── */}
       {user?.role === 'PARENT' && !onboardingDismissed && !allOnboardingStepsDone && (
-        <div className="relative overflow-hidden rounded-[24px] border border-indigo-100 bg-gradient-to-br from-indigo-50/40 via-white to-blue-50/20 p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-[28px] border border-indigo-100 bg-gradient-to-br from-indigo-50/30 via-white to-indigo-50/10 p-6 shadow-md shadow-indigo-100/10">
           <button
             type="button"
             onClick={() => {
               localStorage.setItem('dashboard-onboarding-dismissed', 'true');
               setOnboardingDismissed(true);
             }}
-            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
+            className="absolute right-5 top-5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
             title="Rehberi Kapat"
           >
-            <XCircle size={18} />
+            <XCircle size={20} />
           </button>
           
-          <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2">
               <Sparkles size={16} className="text-indigo-600 animate-pulse" />
-              <h3 className="text-sm font-black uppercase tracking-wider text-indigo-700">Hızlı Başlangıç Rehberi</h3>
+              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-700">Hızlı Başlangıç Rehberi</h3>
             </div>
-            <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
-              allOnboardingStepsDone ? 'bg-emerald-100 text-emerald-700 animate-bounce' : 'bg-indigo-100 text-indigo-700'
+            <span className={`text-xs font-black px-3 py-1 rounded-full ${
+              allOnboardingStepsDone ? 'bg-emerald-100 text-emerald-700 animate-bounce' : 'bg-indigo-100/70 text-indigo-700'
             }`}>
               {allOnboardingStepsDone ? 'Tamamlandı 🎉' : `%${onboardingProgressPct} Hazır`}
             </span>
           </div>
           
-          <p className="text-sm font-medium text-slate-600 mb-4 max-w-2xl">
+          <p className="text-sm font-medium text-slate-600 mb-4 max-w-2xl leading-relaxed">
             İlk gün her şeyi tamamlamana gerek yok. Önce profil, kısa günlük kayıt ve zor an rehberi yeterli; diğer araçlar sonra açılır.
           </p>
 
           {/* Checklist Progress Bar */}
-          <div className="flex items-center gap-3 mb-4 max-w-2xl">
-            <div className="h-2.5 flex-1 rounded-full bg-slate-100/80 overflow-hidden ring-1 ring-inset ring-slate-200/20">
+          <div className="flex items-center gap-3 mb-5 max-w-2xl">
+            <div className="h-2 flex-1 rounded-full bg-slate-100 overflow-hidden ring-1 ring-inset ring-slate-200/10">
               <div 
                 className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ease-out ${
                   allOnboardingStepsDone ? 'from-emerald-400 to-emerald-500' : 'from-indigo-500 to-indigo-600'
@@ -2032,34 +1723,34 @@ export function DashboardPage() {
                 style={{ width: `${onboardingProgressPct}%` }}
               />
             </div>
-            <span className="text-xs font-black text-slate-500 shrink-0">{completedOnboardingSteps}/3 Adım</span>
+            <span className="text-xs font-bold text-slate-500 shrink-0">{completedOnboardingSteps}/3 Adım</span>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3">
               {/* Step 1: Profil */}
-              <div className={`flex flex-col justify-between p-3.5 rounded-xl border transition-all ${
+              <div className={`flex flex-col justify-between p-4.5 rounded-2xl border transition-all duration-300 ${
                 children.length > 0 
-                  ? 'bg-emerald-50/30 border-emerald-100/60' 
-                  : 'bg-white border-slate-200 hover:border-indigo-200'
+                  ? 'bg-emerald-50/20 border-emerald-100/60 shadow-sm' 
+                  : 'bg-white border-slate-200/80 hover:border-indigo-200 hover:shadow-sm hover:scale-[1.02]'
               }`}>
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={`p-1.5 rounded-lg ${children.length > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
-                      <Baby size={16} />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`p-2 rounded-xl ${children.length > 0 ? 'bg-emerald-100 text-emerald-600 shadow-sm' : 'bg-indigo-50 text-indigo-600 border border-indigo-100/40'}`}>
+                      <Baby size={18} />
                     </div>
                     {children.length > 0 ? (
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full">Tamamlandı</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100/80 px-2.5 py-0.5 rounded-full">Tamamlandı</span>
                     ) : (
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Yapılacak</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full">Yapılacak</span>
                     )}
                   </div>
-                  <h4 className={`text-xs font-extrabold ${children.length > 0 ? 'text-slate-500 line-through' : 'text-slate-800'}`}>1. Çocuk Profili Oluştur</h4>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Plan, takip ve uzman paylaşımı profil bilgisine göre kişiselleşir.</p>
+                  <h4 className={`text-sm font-extrabold ${children.length > 0 ? 'text-slate-400 line-through' : 'text-slate-800'}`}>1. Çocuk Profili</h4>
+                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed font-medium">Plan, takip ve uzman paylaşımı profil bilgisine göre kişiselleşir.</p>
                 </div>
                 {children.length === 0 && (
                   <button
                     onClick={() => setShowWelcomeWizard(true)}
-                    className="mt-3 w-full text-center text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 py-1.5 rounded-lg border border-indigo-100/50 transition-all active:scale-95 cursor-pointer"
+                    className="mt-4 w-full text-center text-xs font-bold text-white hover:text-white bg-indigo-600 hover:bg-indigo-700 py-2 rounded-xl transition-all shadow-md shadow-indigo-100 active:scale-95 cursor-pointer"
                   >
                     Profili Oluştur
                   </button>
@@ -2070,29 +1761,29 @@ export function DashboardPage() {
               {(() => {
                 const isDone = visitedRoutes.has('/gunluk-takip') || todayMood !== null;
                 return (
-                  <div className={`flex flex-col justify-between p-3.5 rounded-xl border transition-all ${
+                  <div className={`flex flex-col justify-between p-4.5 rounded-2xl border transition-all duration-300 ${
                     isDone 
-                      ? 'bg-emerald-50/30 border-emerald-100/60' 
-                      : 'bg-white border-slate-200 hover:border-indigo-200'
+                      ? 'bg-emerald-50/20 border-emerald-100/60 shadow-sm' 
+                      : 'bg-white border-slate-200/80 hover:border-indigo-200 hover:shadow-sm hover:scale-[1.02]'
                   }`}>
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className={`p-1.5 rounded-lg ${isDone ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
-                          <ClipboardList size={16} />
+                      <div className="flex items-center justify-between mb-3">
+                        <div className={`p-2 rounded-xl ${isDone ? 'bg-emerald-100 text-emerald-600 shadow-sm' : 'bg-indigo-50 text-indigo-600 border border-indigo-100/40'}`}>
+                          <ClipboardList size={18} />
                         </div>
                         {isDone ? (
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full">Tamamlandı</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100/80 px-2.5 py-0.5 rounded-full">Tamamlandı</span>
                         ) : (
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Yapılacak</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full">Yapılacak</span>
                         )}
                       </div>
-                      <h4 className={`text-xs font-extrabold ${isDone ? 'text-slate-500 line-through' : 'text-slate-800'}`}>2. İlk Kısa Kayıt</h4>
-                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Önce veri girilir; günlük plan bu kayıttan sonra anlam kazanır.</p>
+                      <h4 className={`text-sm font-extrabold ${isDone ? 'text-slate-400 line-through' : 'text-slate-800'}`}>2. İlk Kısa Kayıt</h4>
+                      <p className="text-xs text-slate-500 mt-1.5 leading-relaxed font-medium">Önce veri girilir; günlük plan bu kayıttan sonra anlam kazanır.</p>
                     </div>
                     {!isDone && (
                       <Link
                         to="/gunluk-takip"
-                        className="mt-3 w-full text-center text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 py-1.5 rounded-lg border border-indigo-100/50 transition-all block"
+                        className="mt-4 w-full text-center text-xs font-bold text-white hover:text-white bg-indigo-600 hover:bg-indigo-700 py-2 rounded-xl transition-all shadow-md shadow-indigo-100 block"
                       >
                         Kayda Git
                       </Link>
@@ -2105,29 +1796,29 @@ export function DashboardPage() {
               {(() => {
                 const isDone = visitedRoutes.has('/kriz-rehberi');
                 return (
-                  <div className={`flex flex-col justify-between p-3.5 rounded-xl border transition-all ${
+                  <div className={`flex flex-col justify-between p-4.5 rounded-2xl border transition-all duration-300 ${
                     isDone 
-                      ? 'bg-emerald-50/30 border-emerald-100/60' 
-                      : 'bg-white border-slate-200 hover:border-indigo-200'
+                      ? 'bg-emerald-50/20 border-emerald-100/60 shadow-sm' 
+                      : 'bg-white border-slate-200/80 hover:border-indigo-200 hover:shadow-sm hover:scale-[1.02]'
                   }`}>
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className={`p-1.5 rounded-lg ${isDone ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
-                          <AlertTriangle size={16} />
+                      <div className="flex items-center justify-between mb-3">
+                        <div className={`p-2 rounded-xl ${isDone ? 'bg-emerald-100 text-emerald-600 shadow-sm' : 'bg-indigo-50 text-indigo-600 border border-indigo-100/40'}`}>
+                          <AlertTriangle size={18} />
                         </div>
                         {isDone ? (
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full">Tamamlandı</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100/80 px-2.5 py-0.5 rounded-full">Tamamlandı</span>
                         ) : (
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Yapılacak</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full">Yapılacak</span>
                         )}
                       </div>
-                      <h4 className={`text-xs font-extrabold ${isDone ? 'text-slate-500 line-through' : 'text-slate-800'}`}>3. Zor An Rehberi'ni Oku</h4>
-                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Kriz anlarında sakinleşme ve müdahale yöntemlerini inceleyin.</p>
+                      <h4 className={`text-sm font-extrabold ${isDone ? 'text-slate-400 line-through' : 'text-slate-800'}`}>3. Kriz Rehberi</h4>
+                      <p className="text-xs text-slate-500 mt-1.5 leading-relaxed font-medium">Kriz anlarında sakinleşme ve müdahale yöntemlerini inceleyin.</p>
                     </div>
                     {!isDone && (
                       <Link
                         to="/kriz-rehberi"
-                        className="mt-3 w-full text-center text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 py-1.5 rounded-lg border border-indigo-100/50 transition-all block"
+                        className="mt-4 w-full text-center text-xs font-bold text-white hover:text-white bg-indigo-600 hover:bg-indigo-700 py-2 rounded-xl transition-all shadow-md shadow-indigo-100 block"
                       >
                         Rehberi Oku
                       </Link>
@@ -2140,15 +1831,15 @@ export function DashboardPage() {
       )}
 
       {!loading && (
-        <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-b from-white to-indigo-50/30 p-6 sm:p-8 shadow-sm border border-slate-200">
+        <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-b from-white to-indigo-50/30 p-6 sm:p-8 shadow-md shadow-slate-100/60 border border-slate-200/80">
           {/* Decorative background element */}
-          <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-100/50 to-purple-100/50 blur-3xl pointer-events-none" />
+          <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-100/40 to-purple-100/40 blur-3xl pointer-events-none" />
           
           <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between mb-6">
             <div className="max-w-xl">
               <div className="flex items-center gap-2 mb-3">
                 <div className="inline-flex items-center gap-2 rounded-full bg-indigo-100/80 px-3 py-1 border border-indigo-200/50">
-                  <Target size={14} className="text-indigo-600" />
+                  <Target size={14} className="text-indigo-600 animate-pulse" />
                   <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">GÖREV MERKEZİ</span>
                 </div>
                 <GuideTooltip content="Günlük görevlerinizi sırasıyla tamamlayarak çocuğunuzun gelişim rutinini oluşturun." position="right" />
@@ -2177,7 +1868,7 @@ export function DashboardPage() {
               </p>
             </div>
             {/* İlerleme Widget — Compact & Sleek */}
-            <div className="w-full shrink-0 sm:w-52 rounded-2xl bg-white/85 backdrop-blur-sm p-4 ring-1 ring-slate-200/60 shadow-sm">
+            <div className="w-full shrink-0 sm:w-52 rounded-2xl bg-white/90 backdrop-blur-sm p-4 border border-slate-100 shadow-md shadow-slate-50/50">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">İlerleme</span>
                 <span className="text-xs font-bold text-slate-500">
@@ -2200,7 +1891,7 @@ export function DashboardPage() {
                   </span>
                 )}
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200/50">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200/30">
                 <div
                   className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ease-out ${progressBarColor}`}
                   style={{ width: `${todayProgressPct}%` }}
@@ -2209,19 +1900,23 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <div className="relative z-10 mb-6 rounded-2xl border border-indigo-100 bg-white/60 backdrop-blur-sm px-5 py-4 shadow-sm transition-all hover:bg-white/80">
+          {/* AI Günlük Tavsiye (dailyCoachNote) */}
+          <div className="relative z-10 mb-6 rounded-2xl border border-indigo-100/60 bg-gradient-to-r from-indigo-50/60 via-white to-purple-50/30 backdrop-blur-md px-5 py-4.5 shadow-sm hover:shadow-md transition-all duration-300">
             <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
-                <Sparkles size={16} />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 border border-indigo-200/30 shadow-sm">
+                <Sparkles size={16} className="text-indigo-600 animate-pulse" />
               </div>
-              <p className="mt-1 text-sm font-semibold leading-relaxed text-indigo-950">{dailyCoachNote}</p>
+              <div>
+                <p className="text-[10px] font-bold text-indigo-700/80 uppercase tracking-wider">GÜNLÜK AKILLI KOÇ ÖNERİSİ</p>
+                <p className="mt-1 text-sm font-semibold leading-relaxed text-indigo-950">{dailyCoachNote}</p>
+              </div>
             </div>
           </div>
 
           {allTodayTasksDone && (
             <div className="relative z-10 mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-5 py-4">
               <div className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 ring-1 ring-emerald-200">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 ring-1 ring-emerald-200 shadow-sm">
                   <CheckCircle size={17} />
                 </span>
                 <div>
@@ -2244,7 +1939,7 @@ export function DashboardPage() {
                 <div key={title} className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${(idx + 1) * 75}ms` }}>
                   <Link
                     to={to}
-                    className={`group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-hidden rounded-[20px] border p-4 sm:p-5 transition-all hover:shadow-sm ${
+                    className={`group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-hidden rounded-[20px] border p-4 sm:p-5 transition-all hover:shadow-md hover:shadow-slate-100/50 ${
                       done
                         ? 'border-emerald-100 bg-emerald-50/10 hover:bg-emerald-50/20'
                         : isPrimary
@@ -2254,17 +1949,17 @@ export function DashboardPage() {
                   >
                     {/* Subtle left border line */}
                     {done ? (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-400" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full bg-emerald-400" />
                     ) : isPrimary ? (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full bg-indigo-600" />
                     ) : (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-300" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full bg-slate-300" />
                     )}
 
                     <div className="flex items-start gap-4 min-w-0 flex-1">
                       {/* Step Number / Icon Container */}
                       <div className="relative flex items-center justify-center shrink-0">
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 ${tone} ${done ? 'opacity-60' : ''}`}>
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ring-2 ring-white/50 transition-transform duration-300 group-hover:scale-105 shadow-sm ${tone} ${done ? 'opacity-60' : ''}`}>
                           <Icon size={22} />
                         </div>
                         {/* Step Number badge positioned overlaying on the icon corner */}
@@ -2276,7 +1971,7 @@ export function DashboardPage() {
                           </span>
                         )}
                         {done && (
-                          <span className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-white shadow-sm">
+                          <span className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-white shadow-sm animate-scaleIn">
                             ✓
                           </span>
                         )}
@@ -2284,7 +1979,7 @@ export function DashboardPage() {
 
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
                             done
                               ? 'bg-emerald-100 text-emerald-700'
                               : isPrimary
@@ -2318,12 +2013,12 @@ export function DashboardPage() {
 
                     {/* Right CTA Button */}
                     <div className="shrink-0 self-end sm:self-center w-full sm:w-auto flex justify-end">
-                      <span className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition-all ${
+                      <span className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-200 ${
                         done
-                          ? 'text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100/60'
+                          ? 'text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100/80 hover:scale-105 active:scale-95'
                           : isPrimary
-                            ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 hover:-translate-y-0.5'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
+                            ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-100 hover:shadow-lg hover:shadow-indigo-200/50 hover:scale-105 active:scale-95'
+                            : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-150/80 hover:scale-105 active:scale-95'
                       }`}>
                         {done ? doneCta : cta}
                         <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
@@ -2337,8 +2032,6 @@ export function DashboardPage() {
         </section>
       )}
 
-      {smartNextActionCard}
-
       {!loading && !activeChild && (
         <InteractiveOnboardingTour onStartWizard={() => setShowWelcomeWizard(true)} />
       )}
@@ -2346,23 +2039,37 @@ export function DashboardPage() {
       {/* ── Hızlı Eylemler — 4 kart ── */}
       {!loading && activeChild && todayMood && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {quickCaptureActions.map(({ to, label, detail, icon: Icon, tone }) => (
-            <Link
-              key={to}
-              to={to}
-              className="group relative flex flex-col gap-4 overflow-hidden p-5 rounded-[24px] border border-slate-200/80 bg-white transition-all hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-200/60 hover:border-indigo-200"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent to-indigo-50/0 transition-all group-hover:to-indigo-50/60 pointer-events-none" />
-              <span className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm ring-1 transition-transform duration-300 group-hover:scale-110 ${tone}`}>
-                <Icon size={20} />
-              </span>
-              <div className="relative z-10">
-                <p className="text-sm font-extrabold text-slate-900">{label}</p>
-                <p className="text-xs font-medium text-slate-500 mt-0.5 leading-relaxed">{detail}</p>
-              </div>
-              <ArrowRight size={14} className="absolute bottom-4 right-4 text-slate-300 transition-all group-hover:text-indigo-500 group-hover:translate-x-0.5" />
-            </Link>
-          ))}
+          {quickCaptureActions.map(({ to, label, detail, icon: Icon, tone }) => {
+            const hoverBorderColor = 
+              to === '/gunluk-takip' ? 'hover:border-rose-300 hover:shadow-rose-100/50' :
+              to === '/davranis-gunlugu' ? 'hover:border-amber-300 hover:shadow-amber-100/50' :
+              to === '/notlar' ? 'hover:border-sky-300 hover:shadow-sky-100/50' :
+              'hover:border-indigo-300 hover:shadow-indigo-100/50';
+
+            const softGradient =
+              to === '/gunluk-takip' ? 'group-hover:to-rose-50/40' :
+              to === '/davranis-gunlugu' ? 'group-hover:to-amber-50/40' :
+              to === '/notlar' ? 'group-hover:to-sky-50/40' :
+              'group-hover:to-indigo-50/40';
+
+            return (
+              <Link
+                key={to}
+                to={to}
+                className={`group relative flex flex-col gap-4 overflow-hidden p-5 rounded-[24px] border border-slate-200/80 bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${hoverBorderColor}`}
+              >
+                <div className={`absolute inset-0 bg-gradient-to-br from-transparent to-transparent transition-all duration-300 ${softGradient} pointer-events-none`} />
+                <span className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm ring-2 ring-white transition-transform duration-300 group-hover:scale-110 ${tone}`}>
+                  <Icon size={20} />
+                </span>
+                <div className="relative z-10">
+                  <p className="text-sm font-extrabold text-slate-900">{label}</p>
+                  <p className="text-xs font-medium text-slate-500 mt-0.5 leading-relaxed">{detail}</p>
+                </div>
+                <ArrowRight size={14} className="absolute bottom-4 right-4 text-slate-300 transition-all group-hover:text-slate-600 group-hover:translate-x-0.5" />
+              </Link>
+            );
+          })}
         </div>
       )}
 
@@ -2371,7 +2078,7 @@ export function DashboardPage() {
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100 shadow-sm">
                 <Users size={17} className="text-indigo-600" />
               </div>
               <div>
@@ -2382,9 +2089,9 @@ export function DashboardPage() {
           </div>
           <div className="space-y-3">
             {activeConnections.map(conn => (
-              <div key={conn.id} className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-4 transition-all hover:border-indigo-100 hover:bg-white hover:shadow-sm">
+              <div key={conn.id} className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 transition-all duration-300 hover:border-indigo-100 hover:bg-white hover:shadow-md hover:shadow-indigo-50/30">
                 <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-extrabold text-white shadow-sm">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-extrabold text-white shadow-sm ring-2 ring-white">
                     {conn.expertName.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
@@ -2395,7 +2102,7 @@ export function DashboardPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 shrink-0 rounded-xl"
+                  className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 shrink-0 rounded-xl font-bold"
                   onClick={async () => {
                     if (!window.confirm('Bu uzman ile bağlantıyı kesmek istediğinize emin misiniz?')) return;
                     try {
@@ -2412,8 +2119,6 @@ export function DashboardPage() {
           </div>
         </section>
       )}
-
-
 
       {/* ── Haftalık konu + Keşfet & Geliş Paneli ── */}
       {!loading && activeChild && todayMood && (
@@ -2432,10 +2137,10 @@ export function DashboardPage() {
                 </div>
                 
                 {/* Tabs */}
-                <div className="flex rounded-xl bg-slate-100 p-0.75 self-start sm:self-center shrink-0">
+                <div className="bg-slate-100/85 p-1 rounded-2xl flex gap-1 ring-1 ring-slate-200/50 self-start sm:self-center shrink-0">
                   <button
                     onClick={() => setDiscoveryTab('quests')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                    className={`px-3 py-1.5 text-xs font-bold rounded-xl cursor-pointer transition-all duration-200 ${
                       discoveryTab === 'quests'
                         ? 'bg-white text-slate-900 shadow-sm'
                         : 'text-slate-500 hover:text-slate-800'
@@ -2445,7 +2150,7 @@ export function DashboardPage() {
                   </button>
                   <button
                     onClick={() => setDiscoveryTab('library')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                    className={`px-3 py-1.5 text-xs font-bold rounded-xl cursor-pointer transition-all duration-200 ${
                       discoveryTab === 'library'
                         ? 'bg-white text-slate-900 shadow-sm'
                         : 'text-slate-500 hover:text-slate-800'
@@ -2529,8 +2234,8 @@ export function DashboardPage() {
                     ].map((quest) => {
                       const QuestIcon = quest.icon;
                       return (
-                        <div key={quest.id} className={`flex items-center justify-between gap-3 p-3 rounded-2xl border transition-all hover:bg-slate-50/20 ${
-                          quest.done ? 'border-emerald-100 bg-emerald-50/10' : 'border-slate-100 bg-white'
+                        <div key={quest.id} className={`flex items-center justify-between gap-3 p-3 rounded-2xl border transition-all duration-300 hover:bg-slate-50/30 ${
+                          quest.done ? 'border-emerald-100 bg-emerald-50/10' : 'border-slate-100 bg-white hover:border-slate-200'
                         }`}>
                           <div className="flex items-start gap-3 min-w-0">
                             <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${quest.tone} ${quest.done ? 'opacity-65' : ''}`}>
@@ -2538,15 +2243,15 @@ export function DashboardPage() {
                             </span>
                             <div className="min-w-0">
                               <p className={`text-xs font-extrabold ${quest.done ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{quest.title}</p>
-                              <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">{quest.desc}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5 leading-snug font-medium">{quest.desc}</p>
                             </div>
                           </div>
                           <Link
                             to={quest.to}
-                            className={`shrink-0 text-[10px] font-black px-3 py-1.5 rounded-lg border transition-all ${
+                            className={`shrink-0 text-[10px] font-black px-3.5 py-2 rounded-xl border transition-all duration-200 hover:scale-105 active:scale-95 ${
                               quest.done
-                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
-                                : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700'
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100/80 shadow-sm'
+                                : 'bg-gradient-to-r from-indigo-600 to-purple-600 border-transparent text-white hover:from-indigo-700 hover:to-purple-700 shadow-md shadow-indigo-50/50'
                             }`}
                           >
                             {quest.done ? quest.cta : quest.startCta}
@@ -2573,10 +2278,10 @@ export function DashboardPage() {
                       <button
                         key={pill.id}
                         onClick={() => setLibraryFilter(pill.id as typeof libraryFilter)}
-                        className={`px-2.5 py-1 text-[10px] font-black rounded-lg border whitespace-nowrap cursor-pointer transition-all ${
+                        className={`px-3 py-1.5 text-[10px] font-black rounded-xl border whitespace-nowrap cursor-pointer transition-all ${
                           libraryFilter === pill.id
-                            ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
-                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                            ? 'bg-slate-900 border-slate-900 text-white shadow-sm animate-scaleIn'
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 shadow-sm'
                         }`}
                       >
                         {pill.label}

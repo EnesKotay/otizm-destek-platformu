@@ -417,7 +417,7 @@ function ChildCard({ child, onDelete }: { child: Child; onDelete: (child: Child)
   const therapyList = parseTherapies(child.therapies);
 
   return (
-    <Card hover className="flex flex-col relative group overflow-hidden border-gray-100 hover:border-indigo-200 hover:shadow-md transition-all duration-300">
+    <Card hover className="flex flex-col p-6 relative group overflow-hidden border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300 bg-white">
       {/* Arka plan dekorasyonu */}
       <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none">
         <Baby size={120} className="rotate-12 transform translate-x-4 -translate-y-4" />
@@ -426,21 +426,21 @@ function ChildCard({ child, onDelete }: { child: Child; onDelete: (child: Child)
       {/* Tüm kartı tıklanabilir yapan kapsayıcı Link */}
       <Link to={`/cocuklarim/${child.id}`} className="absolute inset-0 z-0" aria-label={`${child.name} profilini görüntüle`} />
 
-      <div className="flex items-start justify-between mb-4 relative z-10">
-        <div className="flex items-center gap-3.5">
+      <div className="flex items-start justify-between mb-5 relative z-10">
+        <div className="flex items-center gap-4">
           {child.profileImageUrl ? (
-            <img src={child.profileImageUrl} alt={child.name} className="w-14 h-14 rounded-full object-cover shrink-0 shadow-sm border-2 border-white ring-2 ring-indigo-50" />
+            <img src={child.profileImageUrl} alt={child.name} className="w-16 h-16 rounded-full object-cover shrink-0 shadow-md border-2 border-white ring-4 ring-indigo-50" />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-50 flex items-center justify-center shrink-0 shadow-sm border-2 border-white ring-2 ring-indigo-50">
-              <span className="text-indigo-600 font-bold text-xl">{child.name.charAt(0).toUpperCase()}</span>
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-md border-2 border-white ring-4 ring-indigo-50">
+              <span className="text-white font-extrabold text-2xl tracking-wider">{child.name.charAt(0).toUpperCase()}</span>
             </div>
           )}
           <div className="min-w-0">
-            <h3 className="font-bold text-gray-900 text-lg leading-tight group-hover:text-indigo-600 transition-colors truncate pr-2">{child.name}</h3>
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              {age && <span className="text-[11px] font-medium text-gray-500 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100 shadow-sm">{age}</span>}
+            <h3 className="font-extrabold text-gray-900 text-xl leading-tight group-hover:text-indigo-600 transition-colors truncate pr-2">{child.name}</h3>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {age && <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-100/40 shadow-sm">{age}</span>}
               {child.gender && (
-                <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border shadow-sm ${genderColor}`}>
+                <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold border shadow-sm ${genderColor}`}>
                   {GENDER_LABELS[child.gender]}
                 </span>
               )}
@@ -450,14 +450,14 @@ function ChildCard({ child, onDelete }: { child: Child; onDelete: (child: Child)
         <div className="flex gap-1.5 shrink-0 relative z-20">
           <Link
             to={`/cocuklarim/${child.id}`}
-            className="p-1.5 rounded-xl bg-white hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 transition-colors shadow-sm border border-gray-100/50"
+            className="p-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-all hover:scale-105 shadow-sm border border-slate-100"
             title="Düzenle"
           >
             <Edit size={14} />
           </Link>
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(child); }}
-            className="p-1.5 rounded-xl bg-white hover:bg-rose-50 text-gray-400 hover:text-rose-600 transition-colors cursor-pointer shadow-sm border border-gray-100/50"
+            className="p-2 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-all hover:scale-105 shadow-sm border border-slate-100 cursor-pointer"
             title="Sil"
           >
             <Trash2 size={14} />
@@ -465,27 +465,28 @@ function ChildCard({ child, onDelete }: { child: Child; onDelete: (child: Child)
         </div>
       </div>
 
-      <div className="flex-1 space-y-3 relative z-10 pointer-events-none">
+      <div className="flex-1 space-y-3.5 relative z-10 pointer-events-none">
         {child.diagnosisInfo && (
-          <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100/50">
-            <p className="text-sm text-slate-700 line-clamp-2 leading-relaxed">{child.diagnosisInfo}</p>
+          <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-100/80">
+            <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed font-medium">{child.diagnosisInfo}</p>
           </div>
         )}
         {child.educationProgram && (
-          <p className="text-[13px] font-medium text-indigo-600 line-clamp-1 flex items-center gap-1.5">
-            <span className="text-indigo-400">📚</span> {child.educationProgram}
-          </p>
+          <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50/40 border border-indigo-100/30 px-3 py-1.5 rounded-xl w-fit">
+            <span>📚</span>
+            <span className="truncate">{child.educationProgram}</span>
+          </div>
         )}
 
         {therapyList.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-1">
             {therapyList.slice(0, 3).map(t => (
-              <span key={t} className="text-[11px] bg-teal-50/80 text-teal-700 border border-teal-100/50 px-2.5 py-1 rounded-lg font-semibold tracking-wide">
+              <span key={t} className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-100/50 px-2.5 py-1 rounded-lg font-bold tracking-wide shadow-sm">
                 {t}
               </span>
             ))}
             {therapyList.length > 3 && (
-              <span className="text-[11px] bg-gray-50 text-gray-500 border border-gray-100/50 px-2.5 py-1 rounded-lg font-semibold tracking-wide">
+              <span className="text-[11px] bg-slate-50 text-slate-500 border border-slate-100 px-2.5 py-1 rounded-lg font-bold tracking-wide">
                 +{therapyList.length - 3} daha
               </span>
             )}
@@ -494,14 +495,26 @@ function ChildCard({ child, onDelete }: { child: Child; onDelete: (child: Child)
       </div>
 
       {/* Alt bölüm */}
-      <div className="mt-4 pt-3.5 border-t border-gray-100/80 flex items-center justify-between relative z-10 group-hover:border-indigo-100 transition-colors pointer-events-none">
-        <span className="text-xs font-bold text-indigo-600 group-hover:text-indigo-700 flex items-center gap-1 transition-colors">
-          Profili Görüntüle <span className="group-hover:translate-x-0.5 transition-transform">→</span>
-        </span>
-        <div className="flex gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-          {child.diagnosisInfo && <span className="bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md flex items-center gap-1"><span className="text-green-500">✓</span> Tanı</span>}
-          {therapyList.length > 0 && <span className="bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md shadow-sm">{therapyList.length} terapi</span>}
+      <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between relative z-10 group-hover:border-indigo-100 transition-colors pointer-events-none">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-pulse" />
+          <span>Profil Bilgileri</span>
         </div>
+        <div className="flex gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          {child.diagnosisInfo && <span className="bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1"><span className="text-green-500 font-bold">✓</span> Tanı</span>}
+          {therapyList.length > 0 && <span className="bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md shadow-sm">{therapyList.length} Terapi</span>}
+        </div>
+      </div>
+
+      {/* Profil Sayfasına Git Butonu */}
+      <div className="mt-4 relative z-20">
+        <Link
+          to={`/cocuklarim/${child.id}`}
+          className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-extrabold transition-all shadow-md shadow-indigo-100 hover:shadow-lg hover:shadow-indigo-200/50 text-sm hover:scale-[1.01] active:scale-[0.99] duration-200"
+        >
+          <span>Profil Sayfasına Git</span>
+          <span className="transition-transform group-hover:translate-x-0.5">→</span>
+        </Link>
       </div>
     </Card>
   );

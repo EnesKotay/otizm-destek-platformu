@@ -763,29 +763,17 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
         </div>
       </div>
 
-      {posts.length === 0 && !loading && !loadError && (
-        <div className="bg-gradient-to-r from-primary-50 to-indigo-50 border border-primary-100 rounded-2xl p-5 flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
-            <BookOpen size={18} className="text-primary-600" />
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900 mb-1">Topluluk henüz yeni başlıyor!</p>
-            <p className="text-sm text-gray-500">İlk gönderiyi siz paylaşın. Deneyimleriniz, sorularınız veya başarı hikayeleriniz diğer ailelere ilham verebilir.</p>
-          </div>
-        </div>
-      )}
-
       {/* Haftanın Konusu */}
       <WeeklyTopicWidget variant="forum" onJoin={handleJoinWeeklyTopic} />
 
       {showIntro && (
-        <div className="grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
-          <Card className="overflow-hidden border-slate-200">
-            <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+        <div className="grid gap-4 lg:grid-cols-[1.22fr_0.78fr]">
+          <Card className="overflow-hidden border-slate-200/80 bg-gradient-to-br from-slate-50/50 via-white to-primary-50/10 p-0 shadow-sm">
+            <div className="border-b border-slate-100 bg-slate-50/40 px-5 py-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-primary-600">Topluluğa giriş</p>
-                  <h2 className="mt-1 text-lg font-black text-slate-950">Sadece akış değil, doğru kapıdan başlama alanı</h2>
+                  <p className="text-xs font-black uppercase tracking-widest text-primary-600">Topluluğa giriş</p>
+                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-tight">Deneyimleri paylaşın, doğru adımlarla başlayın</h2>
                 </div>
                 <div className="flex flex-wrap gap-2 text-center">
                   {[
@@ -794,93 +782,115 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
                     [communityStats.anonymousPosts, 'Anonim'],
                     [communityStats.activeTags, 'Etiket'],
                   ].map(([val, label]) => (
-                    <div key={String(label)} className="rounded-xl border border-white bg-white px-3 py-1.5 shadow-sm min-w-[64px]">
+                    <div key={String(label)} className="rounded-xl border border-slate-150 bg-white px-3 py-1.5 shadow-sm min-w-[70px]">
                       <p className="text-sm font-black text-slate-900">{val}</p>
-                      <p className="text-[10px] font-semibold text-slate-500">{label}</p>
+                      <p className="text-[10px] font-bold text-slate-500 mt-0.5">{label}</p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="grid gap-2 p-4 md:grid-cols-2">
+            <div className="grid gap-3 p-5 md:grid-cols-2">
               <button
                 onClick={() => openCreatePost('QUESTION')}
-                className="group flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-left transition-all hover:border-blue-200 hover:bg-blue-50"
+                className="group flex items-center gap-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/70 hover:shadow-md hover:shadow-blue-100/30 cursor-pointer"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm">
-                  <HelpCircle size={16} />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm border border-blue-100/50 group-hover:scale-105 transition-transform">
+                  <HelpCircle size={18} />
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Uzman cevaplı sorular</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Sorunuzu Soru-Cevap'ta uzman onaylı cevap alın</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold text-slate-900">Uzman cevaplı sorular</p>
+                  <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Sorunuzu Soru-Cevap'ta sorun, uzman onaylı cevap alın.</p>
                 </div>
               </button>
+
               <button
                 onClick={openAnonymousShare}
-                className="group flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-left transition-all hover:border-emerald-200 hover:bg-emerald-50"
+                className="group flex items-center gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/70 hover:shadow-md hover:shadow-emerald-100/30 cursor-pointer"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
-                  <EyeOff size={16} />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm border border-emerald-100/50 group-hover:scale-105 transition-transform">
+                  <EyeOff size={18} />
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Anonim paylaşım</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Adınızı gizleyerek rahatça paylaşın</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold text-slate-900">Anonim paylaşım</p>
+                  <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Adınızı gizleyerek toplulukta rahatça paylaşım yapın.</p>
                 </div>
               </button>
+
               <button
                 onClick={() => navigate('/benzer-aileler')}
-                className="group flex items-center gap-3 rounded-xl border border-violet-100 bg-violet-50/70 p-3 text-left transition-all hover:border-violet-200 hover:bg-violet-50"
+                className="group flex items-center gap-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/70 hover:shadow-md hover:shadow-violet-100/30 cursor-pointer"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
-                  <Users size={16} />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm border border-violet-100/50 group-hover:scale-105 transition-transform">
+                  <Users size={18} />
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Benzer aileler</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Aynı süreci yaşayan ailelerle tanışın</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold text-slate-900">Benzer aileler</p>
+                  <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Sizinle benzer süreçlerden geçen ailelerle tanışın.</p>
                 </div>
               </button>
+
               <button
                 onClick={() => setSortMode('expert')}
-                className="group flex items-center gap-3 rounded-xl border border-amber-100 bg-amber-50/70 p-3 text-left transition-all hover:border-amber-200 hover:bg-amber-50"
+                className="group flex items-center gap-4 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/70 hover:shadow-md hover:shadow-amber-100/30 cursor-pointer"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
-                  <ShieldCheck size={16} />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm border border-amber-100/50 group-hover:scale-105 transition-transform">
+                  <ShieldCheck size={18} />
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Moderasyon akışı</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Uzman onaylı içerikleri öne al</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold text-slate-900">Uzman onaylı akış</p>
+                  <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Uzman hekim ve terapistlerce doğrulanmış paylaşımlar.</p>
                 </div>
               </button>
             </div>
           </Card>
 
-          <Card className="border-slate-200 p-4">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 text-red-600">
-                <Flag size={16} />
-              </div>
-              <p className="text-sm font-bold text-slate-900">Güvenli topluluk nasıl çalışır?</p>
-            </div>
-            <div className="space-y-2">
-              {[
-                ['1', 'İçerik işaretlenir', 'Gönderi veya yorumdan şikayet oluşturulur.'],
-                ['2', 'Ekip inceler', 'Uygunsuz içerik ve kişisel veri riski kontrol edilir.'],
-                ['3', 'Aksiyon alınır', 'Gerekirse içerik kaldırılır ya da kullanıcı bilgilendirilir.'],
-              ].map(([step, title, description]) => (
-                <div key={step} className="flex gap-2.5 rounded-xl border border-slate-100 bg-slate-50/70 p-2.5">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-black text-slate-600 shadow-sm">{step}</span>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">{title}</p>
-                    <p className="text-xs text-slate-500 leading-4 mt-0.5">{description}</p>
-                  </div>
+          <Card className="border-slate-200/80 p-5 flex flex-col justify-between shadow-sm">
+            <div>
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 border border-rose-100/50 shadow-sm">
+                  <Flag size={16} />
                 </div>
-              ))}
+                <p className="text-sm font-black text-slate-900">Güvenli topluluk nasıl çalışır?</p>
+              </div>
+              <div className="space-y-3">
+                {[
+                  ['1', 'İçerik işaretlenir', 'Gönderi veya yorumdan şikayet oluşturulur.'],
+                  ['2', 'Ekip inceler', 'Uygunsuz içerik ve kişisel veri riski kontrol edilir.'],
+                  ['3', 'Aksiyon alınır', 'Gerekirse içerik kaldırılır ya da kullanıcı bilgilendirilir.'],
+                ].map(([step, title, description]) => (
+                  <div key={step} className="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/40 p-3 hover:bg-slate-50/70 transition-all duration-150">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200/60 text-xs font-black text-slate-600 shadow-sm">{step}</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-900">{title}</p>
+                      <p className="text-xs text-slate-500 leading-relaxed mt-0.5 font-medium">{description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </Card>
         </div>
       )}
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm md:flex-row md:items-center">
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto">
+        {TABS.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+              activeTab === tab.key
+                ? 'bg-white text-primary-700 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {tab.icon} {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-150 bg-white p-3 shadow-sm md:flex-row md:items-center">
         <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
           <Search size={16} className="shrink-0 text-slate-400" />
           <input
@@ -910,29 +920,12 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
             <button
               key={key}
               onClick={() => setSortMode(key as typeof sortMode)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${sortMode === key ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`rounded-lg px-3 py-1.5 text-xs font-black transition-all ${sortMode === key ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               {label}
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === tab.key
-                ? 'bg-white text-primary-700 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {tab.icon} {tab.label}
-          </button>
-        ))}
       </div>
 
       {/* Tag filter toggle */}

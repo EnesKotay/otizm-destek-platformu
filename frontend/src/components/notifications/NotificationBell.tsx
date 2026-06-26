@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Check, X, Calendar, MessageCircle, AlertCircle, MessageSquare, Info, BellRing } from 'lucide-react';
+import { Bell, Check, X, Trash2, BellRing, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { notificationService } from '@/services/notificationService';
 import { childService } from '@/services/childService';
@@ -8,6 +8,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { useAuthStore } from '@/store/authStore';
 import { formatRelative } from '@/utils/date';
 import { patientService } from '@/services/patientService';
+import { getNotificationIconConfig, shouldShowNotification, playNotificationSound } from '@/utils/notificationUtils';
 import type { Notification, ExpertConnectionRequest } from '@/types';
 
 const LOCAL_READ_KEY = 'local_notification_read_ids';
@@ -220,6 +221,16 @@ export function NotificationBell() {
     } catch { /* ignore */ }
   };
 
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      if (isLocalNotification(id)) rememberLocalRead(id);
+      else await notificationService.deleteNotification(id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch { /* ignore */ }
+  };
+
   const handleNotificationClick = async (n: Notification) => {
     if (!n.read) {
       try {
@@ -234,6 +245,8 @@ export function NotificationBell() {
       navigate(n.link);
     }
   };
+
+  const visibleNotifications = notifications.filter(n => shouldShowNotification(n.type));
 
   return (
     <div ref={ref} className="relative">
@@ -289,7 +302,7 @@ export function NotificationBell() {
                 <div className="w-8 h-8 border-2 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
                 <p className="text-sm text-gray-500 font-medium">Bildirimler yükleniyor...</p>
               </div>
-            ) : notifications.length === 0 && connectionRequests.length === 0 ? (
+            ) : visibleNotifications.length === 0 && connectionRequests.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 text-center">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 shadow-inner">
                   <BellRing size={28} className="text-gray-300" />
@@ -322,24 +335,9 @@ export function NotificationBell() {
                     </span>
                   </div>
                 )}
-                {notifications.map(n => {
-                  const getIcon = () => {
-                    const title = n.title.toLowerCase();
-                    if (n.type === 'LOCAL_REMINDER') return <AlertCircle size={18} className="text-orange-500" />;
-                    if (title.includes('randevu') || title.includes('onaylandı')) return <Calendar size={18} className="text-emerald-500" />;
-                    if (title.includes('mesaj')) return <MessageCircle size={18} className="text-blue-500" />;
-                    if (title.includes('forum') || title.includes('yorum')) return <MessageSquare size={18} className="text-purple-500" />;
-                    return <Info size={18} className="text-indigo-500" />;
-                  };
-
-                  const getIconBg = () => {
-                    const title = n.title.toLowerCase();
-                    if (n.type === 'LOCAL_REMINDER') return 'bg-orange-50 border-orange-100';
-                    if (title.includes('randevu') || title.includes('onaylandı')) return 'bg-emerald-50 border-emerald-100';
-                    if (title.includes('mesaj')) return 'bg-blue-50 border-blue-100';
-                    if (title.includes('forum') || title.includes('yorum')) return 'bg-purple-50 border-purple-100';
-                    return 'bg-indigo-50 border-indigo-100';
-                  };
+                {visibleNotifications.map(n => {
+                  const config = getNotificationIconConfig(n.type);
+                  const Icon = config.icon;
 
                   return (
                     <div
@@ -353,8 +351,8 @@ export function NotificationBell() {
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-r-full" />
                       )}
                       
-                      <div className={`mt-0.5 w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm border ${getIconBg()}`}>
-                        {getIcon()}
+                      <div className={`mt-0.5 w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm border ${config.bg} ${config.border}`}>
+                        <Icon size={18} className={config.color} />
                       </div>
                       
                       <div className="flex-1 min-w-0 pr-6">
@@ -371,20 +369,42 @@ export function NotificationBell() {
                         </p>
                       </div>
 
-                      {!n.read && (
-                        <button
-                          onClick={(e) => handleMarkRead(n.id, e)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 rounded-full hover:bg-indigo-100 bg-white shadow-sm border border-gray-100 transition-all shrink-0 cursor-pointer text-indigo-600"
-                          title="Okundu olarak işaretle"
-                        >
-                          <Check size={16} />
-                        </button>
-                      )}
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all">
+                        {!n.read && (
+                          <button
+                            onClick={(e) => handleMarkRead(n.id, e)}
+                            className="p-2 rounded-full hover:bg-indigo-100 bg-white shadow-sm border border-gray-100 transition-all shrink-0 cursor-pointer text-indigo-600"
+                            title="Okundu olarak işaretle"
+                          >
+                            <Check size={14} />
+                          </button>
+                        )}
+                        {!isLocalNotification(n.id) && (
+                          <button
+                            onClick={(e) => handleDelete(n.id, e)}
+                            className="p-2 rounded-full hover:bg-red-100 bg-white shadow-sm border border-gray-100 transition-all shrink-0 cursor-pointer text-red-500"
+                            title="Bildirimi sil"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             )}
+          </div>
+
+          {/* Tümünü Gör */}
+          <div className="p-3 border-t border-gray-100 bg-gray-50/50">
+            <button
+              onClick={() => { setOpen(false); navigate('/bildirimler'); }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all cursor-pointer"
+            >
+              Tümünü Gör
+              <ArrowRight size={14} />
+            </button>
           </div>
         </div>
       )}

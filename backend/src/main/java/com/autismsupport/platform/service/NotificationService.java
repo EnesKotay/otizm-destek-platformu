@@ -90,6 +90,17 @@ public class NotificationService {
         return notificationRepository.deleteByCreatedAtBefore(cutoff);
     }
 
+    @Transactional
+    public void deleteNotification(UUID notificationId, UUID userId) {
+        notificationRepository.deleteByIdAndUserId(notificationId, userId);
+    }
+
+    @Transactional
+    public void deleteNotifications(List<UUID> ids, UUID userId) {
+        if (ids == null || ids.isEmpty()) return;
+        notificationRepository.deleteByIdInAndUserId(ids, userId);
+    }
+
     private NotificationDto toDto(Notification n) {
         return NotificationDto.builder()
                 .id(n.getId())
