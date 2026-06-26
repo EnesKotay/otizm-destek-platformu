@@ -24,6 +24,18 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReset = () => {
+    const message = this.state.error?.message || '';
+    const isStaleChunkError =
+      message.includes('Failed to fetch dynamically imported module')
+      || message.includes('Importing a module script failed')
+      || message.includes('MIME type of "text/html"')
+      || message.includes('Loading chunk');
+
+    if (isStaleChunkError) {
+      window.location.reload();
+      return;
+    }
+
     this.setState({ hasError: false, error: null });
   };
 

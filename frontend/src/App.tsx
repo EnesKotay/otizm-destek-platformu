@@ -27,7 +27,36 @@ function lazyNamed<T extends Record<K, ComponentType<any>>, K extends string>(
   loader: () => Promise<T>,
   exportName: K,
 ) {
-  return lazy(async () => ({ default: (await loader())[exportName] }));
+  return lazy(async () => {
+    try {
+      return { default: (await loader())[exportName] };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const isStaleChunkError =
+        message.includes('Failed to fetch dynamically imported module')
+        || message.includes('Importing a module script failed')
+        || message.includes('MIME type of "text/html"')
+        || message.includes('Loading chunk');
+
+      if (isStaleChunkError && typeof window !== 'undefined') {
+        const reloadKey = 'stale-chunk-reload-attempted';
+        if (sessionStorage.getItem(reloadKey) !== 'true') {
+          sessionStorage.setItem(reloadKey, 'true');
+          if ('caches' in window) {
+            const keys = await window.caches.keys();
+            await Promise.all(keys.map((key) => window.caches.delete(key)));
+          }
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map((registration) => registration.update()));
+          }
+          window.location.reload();
+        }
+      }
+
+      throw error;
+    }
+  });
 }
 
 const AdminLayout = lazyNamed(() => import('./pages/admin/AdminLayout'), 'AdminLayout');
