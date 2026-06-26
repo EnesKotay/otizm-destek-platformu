@@ -26,7 +26,7 @@ public class BuddyRelationshipService {
 
     @CacheEvict(value = "similar-families", allEntries = true)
     @Transactional
-    public BuddyRelationship sendBuddyRequest(UUID requesterId, UUID receiverId, boolean isMentorRequest) {
+    public BuddyRelationship sendBuddyRequest(UUID requesterId, UUID receiverId, boolean isMentorRequest, String requestMessage) {
         if (requesterId.equals(receiverId)) {
             throw new RuntimeException("Kendinize eslesme istegi gonderemezsiniz.");
         }
@@ -49,15 +49,18 @@ public class BuddyRelationshipService {
                 .receiver(receiver)
                 .status("PENDING")
                 .isMentorRelation(isMentorRequest)
+                .requestMessage(sanitizeRequestMessage(requestMessage))
                 .build();
 
         relation = buddyRelationshipRepository.save(relation);
 
         // Bildirim tetikle
         String notificationTitle = isMentorRequest ? "Yeni Mentorluk Talebi" : "Yeni Buddy (Eslesme) Talebi";
-        String notificationBody = requester.getFullName() + (isMentorRequest 
+        String safeMessage = relation.getRequestMessage();
+        String notificationBody = requester.getFullName() + (isMentorRequest
                 ? " size mentorluk yapmak icin talep gonderdi." 
-                : " sizinle buddy eslesmesi yapmak istiyor.");
+                : " sizinle buddy eslesmesi yapmak istiyor.")
+                + (safeMessage != null && !safeMessage.isBlank() ? " Not: " + safeMessage : "");
         
         notificationService.createNotification(
                 receiverId,
@@ -209,7 +212,16 @@ public class BuddyRelationshipService {
                 .longitude(buddy.getLongitude())
                 .distanceKm(distance)
                 .isMentorRelation(r.getIsMentorRelation())
+                .requestMessage(r.getRequestMessage())
                 .status(r.getStatus())
                 .build();
+    }
+
+    private String sanitizeRequestMessage(String requestMessage) {
+        if (requestMessage == null || requestMessage.isBlank()) {
+            return null;
+        }
+        String normalized = requestMessage.replaceAll("\\s+", " ").trim();
+        return normalized.length() > 500 ? normalized.substring(0, 500) : normalized;
     }
 }

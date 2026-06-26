@@ -129,6 +129,7 @@ public class MatchingService {
                             .parentId(otherParentId)
                             .parentName(sf.child.getParent().getFullName())
                             .parentCity(sf.child.getParent().getCity())
+                            .childName(sf.child.getName())
                             .childAgeRange(ageRange)
                             .commonTags(sf.commonTags)
                             .totalCommonTags(sf.commonTags.size())
@@ -137,6 +138,7 @@ public class MatchingService {
                             .ageScore(Math.round(sf.ageScore * 100.0) / 100.0)
                             .therapyScore(Math.round(sf.therapyScore * 100.0) / 100.0)
                             .educationScore(Math.round(sf.educationScore * 100.0) / 100.0)
+                            .matchReasons(buildMatchReasons(myChild, sf.child, sf))
                             .relationshipStatus(relationship.map(BuddyRelationship::getStatus).orElse("NONE"))
                             .mentorRelation(relationship.map(BuddyRelationship::getIsMentorRelation).orElse(false))
                             .build();
@@ -221,6 +223,35 @@ public class MatchingService {
         union.addAll(wordsB);
         if (union.isEmpty()) return 0;
         return (double) intersection.size() / union.size();
+    }
+
+    private List<String> buildMatchReasons(Child myChild, Child otherChild, ScoredFamily scoredFamily) {
+        List<String> reasons = new ArrayList<>();
+        if (!scoredFamily.commonTags.isEmpty()) {
+            String tagNames = scoredFamily.commonTags.stream()
+                    .limit(3)
+                    .map(TagDto::getName)
+                    .collect(Collectors.joining(", "));
+            reasons.add(scoredFamily.commonTags.size() + " ortak gelişim etiketi: " + tagNames);
+        }
+        if (scoredFamily.ageScore >= 0.67) {
+            reasons.add("Yaş aralığı yakın olduğu için akran etkileşimi potansiyeli yüksek");
+        }
+        if (scoredFamily.therapyScore > 0) {
+            reasons.add("Terapi notlarında ortak kelimeler bulunuyor");
+        }
+        if (scoredFamily.educationScore > 0) {
+            reasons.add("Eğitim programı bilgileri benzerlik gösteriyor");
+        }
+        String myCity = myChild.getParent().getCity();
+        String otherCity = otherChild.getParent().getCity();
+        if (myCity != null && otherCity != null && myCity.equalsIgnoreCase(otherCity)) {
+            reasons.add("Aynı şehirde olduğunuz için yüz yüze destek olasılığı daha yüksek");
+        }
+        if (reasons.isEmpty()) {
+            reasons.add("Genel profil skoru benzer aile eşiğini geçti");
+        }
+        return reasons;
     }
 
     private String calculateAgeRange(LocalDate birthDate) {

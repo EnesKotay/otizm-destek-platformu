@@ -115,6 +115,8 @@ class MatchingServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getParentId()).isEqualTo(otherPId);
         assertThat(result.get(0).getSimilarityScore()).isGreaterThan(0);
+        assertThat(result.get(0).getMatchReasons()).isNotEmpty();
+        assertThat(result.get(0).getMatchReasons().get(0)).contains("ortak gelişim etiketi");
     }
 
     // ── isMatchingEnabled ─────────────────────────────────────────────────────

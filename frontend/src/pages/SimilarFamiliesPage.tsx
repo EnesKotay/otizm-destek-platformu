@@ -1,17 +1,20 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, MessageSquare, ChevronDown, Sparkles,
   SlidersHorizontal, EyeOff, Eye, ArrowUpDown,
   CalendarDays, MapPin, Video, Handshake, X, Send,
   Smile, GraduationCap, Tag, Activity, Map, UserCheck, Trash2,
-  Compass, List, Navigation
+  Compass, List, Navigation, ShieldCheck, Info,
+  CheckCircle2, Search, ThumbsDown, ThumbsUp
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
+import { BuddyRequestModal, type BuddyRequestDraft } from '@/components/similarFamilies/BuddyRequestModal';
+import { TrustAndPrivacyPanel } from '@/components/similarFamilies/TrustAndPrivacyPanel';
 import { childService } from '@/services/childService';
 import { matchingService } from '@/services/matchingService';
 import { messagingService } from '@/services/messagingService';
@@ -45,6 +48,7 @@ const SORT_OPTIONS = [
   { value: 'score', label: 'Benzerlik Puanı' },
   { value: 'tags',  label: 'Ortak Etiket Sayısı' },
   { value: 'age',   label: 'Yaş Sırası' },
+  { value: 'therapy', label: 'Terapi Uyumu' },
 ];
 
 const FOCUS_SORT_MAP: Record<'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY', string> = {
@@ -59,6 +63,37 @@ const MEETING_TIMES = [
   '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
   '16:00', '16:30', '17:00', '18:00', '19:00', '20:00',
 ];
+
+const FIRST_MESSAGE_TEMPLATES = [
+  'Merhaba, benzer süreçlerden geçtiğimizi gördüm. Uygunsanız önce burada kısa bir tanışma mesajlaşması yapmak isterim.',
+  'Merhaba, çocuklarımızın deneyimleri bazı alanlarda örtüşüyor gibi görünüyor. Size uygun olduğunda karşılıklı deneyim paylaşabilir miyiz?',
+  'Merhaba, sosyal destek çemberimde güvenli ve sakin bir tanışma başlatmak isterim. Önce yalnızca mesaj üzerinden ilerleyebiliriz.',
+];
+
+const DEFAULT_MATCHING_PREFERENCES: MatchingPreferences = {
+  sameCityOnly: false,
+  commonTagsOnly: false,
+  closeAgeOnly: false,
+};
+
+function readJsonMap<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) as T : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+type CircleFilter = 'all' | 'buddy' | 'mentor' | 'nearby';
+type NearbySort = 'distance' | 'name' | 'city';
+type MatchFeedback = 'helpful' | 'not_helpful' | 'hidden';
+
+interface MatchingPreferences {
+  sameCityOnly: boolean;
+  commonTagsOnly: boolean;
+  closeAgeOnly: boolean;
+}
 
 interface MeetingTemplate {
   id: string;
@@ -129,6 +164,12 @@ function formatPercent(value: number) {
   return `%${Math.round(Math.max(0, Math.min(1, value)) * 100)}`;
 }
 
+function formatDistance(value?: number | null) {
+  if (value === undefined || value === null) return 'Mesafe yok';
+  if (value < 1) return `${Math.round(value * 1000)} m`;
+  return `${value.toFixed(value >= 10 ? 0 : 1)} km`;
+}
+
 function getInitial(name?: string) {
   return name?.trim().charAt(0).toLocaleUpperCase('tr-TR') || '?';
 }
@@ -158,6 +199,22 @@ function getFallbackAngle(id: string) {
     hash = id.charCodeAt(i) + ((hash << 5) - hash);
   }
   return Math.abs(hash) % 360;
+}
+
+function getDistanceLabel(distanceKm?: number | null) {
+  if (distanceKm === undefined || distanceKm === null) return 'Mesafe bilinmiyor';
+  if (distanceKm <= 1) return 'Aynı mahalleye yakın';
+  if (distanceKm <= 5) return 'Çok yakın çevre';
+  if (distanceKm <= 15) return 'Aynı bölgede';
+  return 'Geniş çevre';
+}
+
+function buildRequestTemplate(draft: BuddyRequestDraft) {
+  const relationLabel = draft.isMentor ? 'mentorluk' : 'buddy';
+  const contextLabel = draft.context === 'nearby'
+    ? 'yakın çevrede olduğumuzu gördüm'
+    : 'çocuklarımızın gelişim alanlarında benzerlik olduğunu gördüm';
+  return `Merhaba ${draft.displayName}, ${contextLabel}. Uygunsanız önce burada kısa ve güvenli bir tanışma yapıp ${relationLabel} bağlantısı için uygun olup olmadığımızı konuşmak isterim.`;
 }
 
 function getRadarPosition(
@@ -224,17 +281,21 @@ function FamilyMatchCard({
   selectedChildName,
   currentCity,
   messaging,
+  feedback,
   onMessage,
   onOpenMeeting,
-  onSendBuddyRequest,
+  onOpenBuddyRequest,
+  onRateMatch,
 }: {
   family: SimilarFamily;
   selectedChildName?: string;
   currentCity?: string;
   messaging: boolean;
+  feedback?: MatchFeedback;
   onMessage: (parentId: string) => void;
   onOpenMeeting: (family: SimilarFamily) => void;
-  onSendBuddyRequest: (parentId: string, isMentor: boolean) => void;
+  onOpenBuddyRequest: (draft: BuddyRequestDraft) => void;
+  onRateMatch: (parentId: string, feedback: MatchFeedback) => void;
 }) {
   const pill = getAffinityPill(family.similarityScore);
   const sameCity = !!currentCity && !!family.parentCity && family.parentCity.toLocaleLowerCase('tr-TR') === currentCity.toLocaleLowerCase('tr-TR');
@@ -248,6 +309,10 @@ function FamilyMatchCard({
   const insight = (family.commonTags?.length || 0) > 0
     ? `${family.childName || family.parentName} ile ${selectedChildName || 'çocuğunuz'} ${family.commonTags!.slice(0, 3).map(t => t.name).join(', ')} alanlarında ortaklık gösteriyor.`
     : `${family.childName || 'Bu çocuk'} ile ${selectedChildName || 'çocuğunuz'} yakın gelişim evresinde görünüyor.`;
+  const reasons = family.matchReasons?.length ? family.matchReasons : [
+    `${formatPercent(family.similarityScore)} genel uyum`,
+    `${family.totalCommonTags || 0} ortak gelişim etiketi`,
+  ];
 
   return (
     <Card className="border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all">
@@ -304,6 +369,53 @@ function FamilyMatchCard({
               ))}
             </div>
           )}
+
+          <div className="mt-4 rounded-2xl border border-slate-100 bg-white p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-slate-400">
+                <Info size={13} className="text-indigo-500" />
+                Neden eşleşti?
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => onRateMatch(family.parentId, 'helpful')}
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-lg border transition-colors cursor-pointer ${
+                    feedback === 'helpful' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-400 hover:text-emerald-600'
+                  }`}
+                  title="Bu eşleşme faydalı"
+                >
+                  <ThumbsUp size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRateMatch(family.parentId, 'not_helpful')}
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-lg border transition-colors cursor-pointer ${
+                    feedback === 'not_helpful' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-white text-slate-400 hover:text-amber-600'
+                  }`}
+                  title="Bu eşleşme daha az alakalı"
+                >
+                  <ThumbsDown size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRateMatch(family.parentId, 'hidden')}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 transition-colors hover:text-slate-700 cursor-pointer"
+                  title="Bu eşleşmeyi gizle"
+                >
+                  <EyeOff size={13} />
+                </button>
+              </div>
+            </div>
+            <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+              {reasons.slice(0, 4).map(reason => (
+                <div key={reason} className="flex items-start gap-1.5 text-xs text-slate-600">
+                  <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-emerald-500" />
+                  <span>{reason}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="lg:border-l lg:border-slate-100 lg:pl-5 flex flex-col justify-between gap-4">
@@ -332,14 +444,24 @@ function FamilyMatchCard({
               <CalendarDays size={13} /> Buluşma
             </button>
             <button
-              onClick={() => onSendBuddyRequest(family.parentId, false)}
+              onClick={() => onOpenBuddyRequest({
+                receiverId: family.parentId,
+                isMentor: false,
+                displayName: family.parentName,
+                context: 'match',
+              })}
               disabled={hasRelationship}
               className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
             >
               <Handshake size={13} /> Buddy
             </button>
             <button
-              onClick={() => onSendBuddyRequest(family.parentId, true)}
+              onClick={() => onOpenBuddyRequest({
+                receiverId: family.parentId,
+                isMentor: true,
+                displayName: family.parentName,
+                context: 'match',
+              })}
               disabled={hasRelationship}
               className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-100 transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
             >
@@ -358,11 +480,20 @@ export function SimilarFamiliesPage() {
   const { children, setChildren, selectedChild, setSelectedChild } = useChildStore();
   const selectedChildId = selectedChild?.id ?? '';
   const [results, setResults] = useState<SimilarFamily[]>([]);
+  const searchRequestIdRef = useRef(0);
+  const buddiesRequestIdRef = useRef(0);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [matchingEnabled, setMatchingEnabled] = useState(true);
   const [togglingOptOut, setTogglingOptOut] = useState(false);
   const [messagingId, setMessagingId] = useState<string | null>(null);
+  const [showExactLocation, setShowExactLocation] = useState(false);
+  const [requestDraft, setRequestDraft] = useState<BuddyRequestDraft | null>(null);
+  const [requestMessage, setRequestMessage] = useState('');
+  const [requestSending, setRequestSending] = useState(false);
+  const [matchingPreferences, setMatchingPreferences] = useState<MatchingPreferences>(DEFAULT_MATCHING_PREFERENCES);
+  const [matchFeedback, setMatchFeedback] = useState<Record<string, MatchFeedback>>({});
+  const [circleNotes, setCircleNotes] = useState<Record<string, string>>({});
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'ai-match' | 'nearby' | 'my-circle'>('ai-match');
@@ -374,6 +505,10 @@ export function SimilarFamiliesPage() {
   const [viewMode, setViewMode] = useState<'radar' | 'list'>('radar');
   const [selectedBlip, setSelectedBlip] = useState<BuddyDto | null>(null);
   const [locating, setLocating] = useState(false);
+  const [nearbySort, setNearbySort] = useState<NearbySort>('distance');
+  const [nearbyCityOnly, setNearbyCityOnly] = useState(false);
+  const [circleFilter, setCircleFilter] = useState<CircleFilter>('all');
+  const [circleQuery, setCircleQuery] = useState('');
 
   // AI priority sort focus state
   const [priorityFocus, setPriorityFocus] = useState<'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY'>('BALANCED');
@@ -412,6 +547,10 @@ export function SimilarFamiliesPage() {
   const radarOrigin = hasUserCoordinates
     ? { latitude: userLatitude, longitude: userLongitude }
     : null;
+  const userStorageSuffix = user?.id || 'anonymous';
+  const preferencesStorageKey = `similar-families-preferences:${userStorageSuffix}`;
+  const feedbackStorageKey = `similar-families-feedback:${userStorageSuffix}`;
+  const circleNotesStorageKey = `similar-families-circle-notes:${userStorageSuffix}`;
 
   useEffect(() => {
     childService.getAll().then(data => {
@@ -423,8 +562,27 @@ export function SimilarFamiliesPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    setMatchingPreferences(readJsonMap(preferencesStorageKey, DEFAULT_MATCHING_PREFERENCES));
+    setMatchFeedback(readJsonMap(feedbackStorageKey, {} as Record<string, MatchFeedback>));
+    setCircleNotes(readJsonMap(circleNotesStorageKey, {} as Record<string, string>));
+  }, [preferencesStorageKey, feedbackStorageKey, circleNotesStorageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(preferencesStorageKey, JSON.stringify(matchingPreferences));
+  }, [matchingPreferences, preferencesStorageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(feedbackStorageKey, JSON.stringify(matchFeedback));
+  }, [matchFeedback, feedbackStorageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(circleNotesStorageKey, JSON.stringify(circleNotes));
+  }, [circleNotes, circleNotesStorageKey]);
+
   const doSearch = useCallback(async (childId: string, sortOverride?: string) => {
     if (!childId) return;
+    const requestId = ++searchRequestIdRef.current;
     if (!matchingEnabled) {
       setResults([]);
       setSearched(true);
@@ -436,15 +594,23 @@ export function SimilarFamiliesPage() {
       const data = await matchingService.findSimilarFamilies(childId, {
         minScore, ageGroup: ageGroup || undefined, sortBy: sortOverride ?? sortBy,
       });
-      setResults(data || []);
+      if (requestId === searchRequestIdRef.current) {
+        setResults(data || []);
+      }
     } catch {
-      setResults([]);
-      toast.error('Eşleştirme sırasında bir hata oluştu.');
+      if (requestId === searchRequestIdRef.current) {
+        setResults([]);
+        toast.error('Eşleştirme sırasında bir hata oluştu.');
+      }
+    } finally {
+      if (requestId === searchRequestIdRef.current) {
+        setLoading(false);
+      }
     }
-    setLoading(false);
   }, [ageGroup, matchingEnabled, minScore, sortBy]);
 
   const fetchBuddiesData = useCallback(async () => {
+    const requestId = ++buddiesRequestIdRef.current;
     setBuddiesLoading(true);
     try {
       const [list, pending, near] = await Promise.all([
@@ -452,13 +618,20 @@ export function SimilarFamiliesPage() {
         buddyService.getPendingRequests(),
         buddyService.getNearbyBuddies(maxDistance),
       ]);
-      setMyBuddies(list || []);
-      setPendingBuddies(pending || []);
-      setNearbyBuddies(near || []);
+      if (requestId === buddiesRequestIdRef.current) {
+        setMyBuddies(list || []);
+        setPendingBuddies(pending || []);
+        setNearbyBuddies(near || []);
+      }
     } catch {
-      toast.error('Sosyal çember verileri yüklenirken bir hata oluştu.');
+      if (requestId === buddiesRequestIdRef.current) {
+        toast.error('Sosyal çember verileri yüklenirken bir hata oluştu.');
+      }
+    } finally {
+      if (requestId === buddiesRequestIdRef.current) {
+        setBuddiesLoading(false);
+      }
     }
-    setBuddiesLoading(false);
   }, [maxDistance]);
   const handleGeolocate = () => {
     if (!navigator.geolocation) {
@@ -565,6 +738,31 @@ export function SimilarFamiliesPage() {
 
   const handleSearch = () => doSearch(selectedChildId);
 
+  const handleToggleMatchingPreference = (key: keyof MatchingPreferences) => {
+    setMatchingPreferences(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleRateMatch = (parentId: string, feedback: MatchFeedback) => {
+    setMatchFeedback(prev => {
+      const current = prev[parentId];
+      if (current === feedback) {
+        const { [parentId]: _removed, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [parentId]: feedback };
+    });
+    if (feedback === 'hidden') {
+      toast.success('Eşleşme gizlendi. Filtreleri sıfırlayarak geri getirebilirsiniz.');
+    }
+  };
+
+  const resetHiddenMatches = () => {
+    setMatchFeedback(prev => Object.fromEntries(
+      Object.entries(prev).filter(([, feedback]) => feedback !== 'hidden')
+    ) as Record<string, MatchFeedback>);
+    toast.success('Gizlenen eşleşmeler geri getirildi.');
+  };
+
   const handleToggleOptOut = async () => {
     setTogglingOptOut(true);
     try {
@@ -590,19 +788,37 @@ export function SimilarFamiliesPage() {
   };
 
   // Buddy & Mentor Operations
-  const handleSendBuddyRequest = async (receiverId: string, isMentor: boolean) => {
+  const handleOpenBuddyRequest = (draft: BuddyRequestDraft) => {
+    setRequestDraft(draft);
+    setRequestMessage(buildRequestTemplate(draft));
+  };
+
+  const handleSendBuddyRequest = async () => {
+    if (!requestDraft) return;
+    const message = requestMessage.trim();
+    if (message.length < 20) {
+      toast.error('Lütfen karşı tarafa güvenli bir tanışma notu yazın.');
+      return;
+    }
+    setRequestSending(true);
     try {
-      await buddyService.sendRequest(receiverId, isMentor);
-      toast.success(isMentor ? 'Mentorluk isteği gönderildi! 🌟' : 'Buddy eşleşme isteği gönderildi! 🤝');
-      setResults(prev => prev.map(family => family.parentId === receiverId
-        ? { ...family, relationshipStatus: 'PENDING', mentorRelation: isMentor }
+      await buddyService.sendRequest(requestDraft.receiverId, requestDraft.isMentor, message);
+      toast.success(requestDraft.isMentor ? 'Mentorluk isteği gönderildi!' : 'Buddy eşleşme isteği gönderildi!');
+      setResults(prev => prev.map(family => family.parentId === requestDraft.receiverId
+        ? { ...family, relationshipStatus: 'PENDING', mentorRelation: requestDraft.isMentor }
         : family
       ));
+      setNearbyBuddies(prev => prev.filter(buddy => buddy.buddyId !== requestDraft.receiverId));
+      setSelectedBlip(prev => prev?.buddyId === requestDraft.receiverId ? null : prev);
+      setRequestDraft(null);
+      setRequestMessage('');
       fetchBuddiesData();
       if (selectedChildId) doSearch(selectedChildId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       toast.error(e?.message || 'İstek gönderilemedi.');
+    } finally {
+      setRequestSending(false);
     }
   };
 
@@ -670,7 +886,12 @@ export function SimilarFamiliesPage() {
           : []),
         ...(meetingForm.message ? ['', `💬 ${meetingForm.message}`] : []),
         '',
-        'Bu tarihe uygunsa yanıtlayabilir, farklı bir tarih önermek isterseniz yazabilirsiniz. 😊',
+        'Yanıt seçenekleri:',
+        '✅ Uygun, kabul ediyorum',
+        '🔁 Farklı bir tarih/saat öneriyorum',
+        '⏳ Şimdilik uygun değil',
+        '',
+        'Güvenli buluşma notu: İlk görüşmede platform içi mesajlaşmayı sürdürmeyi, yüz yüze ise halka açık ve sakin bir yer seçmeyi öneririm.',
       ];
       await messagingService.sendMessage(conv.id, lines.join('\n'));
       setMeetingFamily(null);
@@ -683,25 +904,57 @@ export function SimilarFamiliesPage() {
   };
 
   const hasNoTags = selectedChild && (!selectedChild.tags || selectedChild.tags.length === 0);
-  const filteredResults = cityOnly && user?.city
-    ? results.filter(r => normalizeCity(r.parentCity) === normalizeCity(user.city))
-    : results;
+  const filteredResults = results.filter((family) => {
+    if (matchFeedback[family.parentId] === 'hidden') return false;
+    if ((cityOnly || matchingPreferences.sameCityOnly) && user?.city && normalizeCity(family.parentCity) !== normalizeCity(user.city)) return false;
+    if (matchingPreferences.commonTagsOnly && family.totalCommonTags <= 0) return false;
+    if (matchingPreferences.closeAgeOnly && family.ageScore < 0.67) return false;
+    return true;
+  });
+
+  const getFeedbackBoost = (parentId: string) => {
+    if (matchFeedback[parentId] === 'helpful') return 0.08;
+    if (matchFeedback[parentId] === 'not_helpful') return -0.12;
+    return 0;
+  };
 
   const getSortedResults = () => {
     const baseList = [...filteredResults];
     if (priorityFocus === 'SYMPTOMS') {
-      return baseList.sort((a, b) => b.tagScore - a.tagScore);
+      return baseList.sort((a, b) => (b.tagScore + getFeedbackBoost(b.parentId)) - (a.tagScore + getFeedbackBoost(a.parentId)));
     }
     if (priorityFocus === 'AGE') {
-      return baseList.sort((a, b) => b.ageScore - a.ageScore);
+      return baseList.sort((a, b) => (b.ageScore + getFeedbackBoost(b.parentId)) - (a.ageScore + getFeedbackBoost(a.parentId)));
     }
     if (priorityFocus === 'THERAPY') {
-      return baseList.sort((a, b) => b.therapyScore - a.therapyScore);
+      return baseList.sort((a, b) => (b.therapyScore + getFeedbackBoost(b.parentId)) - (a.therapyScore + getFeedbackBoost(a.parentId)));
     }
-    return baseList.sort((a, b) => b.similarityScore - a.similarityScore);
+    return baseList.sort((a, b) => (b.similarityScore + getFeedbackBoost(b.parentId)) - (a.similarityScore + getFeedbackBoost(a.parentId)));
   };
   const finalResults = getSortedResults();
   const bestMatch = finalResults[0];
+  const visibleNearbyBuddies = nearbyBuddies
+    .filter(buddy => !nearbyCityOnly || !user?.city || normalizeCity(buddy.city) === normalizeCity(user.city))
+    .sort((a, b) => {
+      if (nearbySort === 'name') return a.fullName.localeCompare(b.fullName, 'tr');
+      if (nearbySort === 'city') return (a.city || '').localeCompare(b.city || '', 'tr') || (a.distanceKm ?? 999) - (b.distanceKm ?? 999);
+      return (a.distanceKm ?? 999) - (b.distanceKm ?? 999);
+    });
+  const matchesCircleFilter = (buddy: BuddyDto) => {
+    const query = circleQuery.trim().toLocaleLowerCase('tr-TR');
+    const note = circleNotes[buddy.buddyId] || '';
+    const matchesQuery = !query
+      || buddy.fullName.toLocaleLowerCase('tr-TR').includes(query)
+      || (buddy.city || '').toLocaleLowerCase('tr-TR').includes(query)
+      || note.toLocaleLowerCase('tr-TR').includes(query);
+    if (!matchesQuery) return false;
+    if (circleFilter === 'mentor') return !!buddy.isMentorRelation;
+    if (circleFilter === 'buddy') return !buddy.isMentorRelation;
+    if (circleFilter === 'nearby') return (buddy.distanceKm ?? Number.POSITIVE_INFINITY) <= 15;
+    return true;
+  };
+  const visiblePendingBuddies = pendingBuddies.filter(matchesCircleFilter);
+  const visibleMyBuddies = myBuddies.filter(matchesCircleFilter);
 
   return (
     <div className="max-w-[92rem] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
@@ -797,6 +1050,13 @@ export function SimilarFamiliesPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {children.length > 0 && (
+        <TrustAndPrivacyPanel
+          showExactLocation={showExactLocation}
+          onToggleExactLocation={() => setShowExactLocation(v => !v)}
+        />
       )}
 
       {/* Tab Navigation */}
@@ -950,6 +1210,52 @@ export function SimilarFamiliesPage() {
                   </div>
                 )}
 
+                <div className="col-span-1 sm:col-span-3 mt-2 pt-3 border-t border-slate-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-bold text-slate-700">Güvenli eşleşme tercihleri</p>
+                      <p className="text-[11px] text-slate-450 mt-0.5">
+                        Eşleşmeleri ailelerin sizin için daha uygun hissettirdiği kriterlere göre daraltın.
+                      </p>
+                    </div>
+                    {Object.values(matchFeedback).includes('hidden') && (
+                      <button
+                        type="button"
+                        onClick={resetHiddenMatches}
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-50 cursor-pointer"
+                      >
+                        Gizlenenleri Geri Getir
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {[
+                      { key: 'sameCityOnly', label: 'Aynı şehir', detail: user?.city || 'Şehir bilgisi' },
+                      { key: 'commonTagsOnly', label: 'Ortak etiket şartı', detail: 'En az 1 ortak alan' },
+                      { key: 'closeAgeOnly', label: 'Yakın yaş aralığı', detail: 'Akran etkileşimi' },
+                    ].map(option => {
+                      const prefKey = option.key as keyof MatchingPreferences;
+                      const active = matchingPreferences[prefKey];
+                      return (
+                        <button
+                          key={option.key}
+                          type="button"
+                          onClick={() => handleToggleMatchingPreference(prefKey)}
+                          className={`rounded-2xl border px-3 py-2.5 text-left transition-colors cursor-pointer ${
+                            active ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2 text-xs font-black">
+                            <CheckCircle2 size={13} className={active ? 'text-indigo-600' : 'text-slate-300'} />
+                            {option.label}
+                          </span>
+                          <span className="mt-1 block text-[10px] font-semibold opacity-70">{option.detail}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* AI Matching Priority Focus Panel */}
                 <div className="col-span-1 sm:col-span-3 mt-2 pt-3 border-t border-slate-100 flex flex-col gap-2.5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
@@ -1071,9 +1377,11 @@ export function SimilarFamiliesPage() {
                   selectedChildName={selectedChild?.name}
                   currentCity={user?.city}
                   messaging={messagingId === family.parentId}
+                  feedback={matchFeedback[family.parentId]}
                   onMessage={handleMessage}
                   onOpenMeeting={handleOpenMeeting}
-                  onSendBuddyRequest={handleSendBuddyRequest}
+                  onOpenBuddyRequest={handleOpenBuddyRequest}
+                  onRateMatch={handleRateMatch}
                 />
               ))}
             </div>
@@ -1220,7 +1528,8 @@ export function SimilarFamiliesPage() {
                 
                 <div className="flex items-center justify-end gap-2.5">
                   <span className="text-[10px] font-bold text-slate-450">
-                    Mevcut Konum: {user?.city || 'Şehir belirtilmemiş'} ({(userLatitude ?? 0).toFixed(3)}, {(userLongitude ?? 0).toFixed(3)})
+                    Mevcut Konum: {user?.city || 'Şehir belirtilmemiş'}
+                    {showExactLocation && ` (${(userLatitude ?? 0).toFixed(3)}, ${(userLongitude ?? 0).toFixed(3)})`}
                   </span>
                   <button
                     onClick={handleGeolocate}
@@ -1233,12 +1542,43 @@ export function SimilarFamiliesPage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_180px_180px] gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <MapPin size={15} className="text-indigo-500 shrink-0" />
+                  <span>
+                    {visibleNearbyBuddies.length} veli gösteriliyor
+                    {nearbyBuddies.length !== visibleNearbyBuddies.length && ` (${nearbyBuddies.length} sonuçtan filtrelendi)`}
+                  </span>
+                </div>
+                <div className="relative">
+                  <select
+                    value={nearbySort}
+                    onChange={e => setNearbySort(e.target.value as NearbySort)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-650 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="distance">Mesafeye göre</option>
+                    <option value="name">İsme göre</option>
+                    <option value="city">Şehre göre</option>
+                  </select>
+                  <ArrowUpDown size={13} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNearbyCityOnly(v => !v)}
+                  className={`rounded-xl border px-3 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                    nearbyCityOnly ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-slate-50 text-slate-600'
+                  }`}
+                >
+                  {nearbyCityOnly ? 'Aynı şehir açık' : 'Aynı şehir filtresi'}
+                </button>
+              </div>
+
               {buddiesLoading ? (
                 <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-3">
                   <Sparkles size={24} className="animate-spin text-indigo-500" />
                   <p className="text-xs font-semibold uppercase animate-pulse">Yakındaki Veliler Taranıyor...</p>
                 </div>
-              ) : nearbyBuddies.length === 0 ? (
+              ) : visibleNearbyBuddies.length === 0 ? (
                 <EmptyState
                   icon={<Map size={32} />}
                   title="Yakınınızda Veli Bulunmamaktadır"
@@ -1286,7 +1626,7 @@ export function SimilarFamiliesPage() {
                       </svg>
                       
                       {/* Interactive Radar Blips representing Veliler */}
-                      {nearbyBuddies.map((buddy) => {
+                      {visibleNearbyBuddies.map((buddy) => {
                         const { leftPercent, topPercent } = getRadarPosition(buddy, maxDistance, radarOrigin);
                         const isSelected = selectedBlip?.buddyId === buddy.buddyId;
                         
@@ -1305,18 +1645,14 @@ export function SimilarFamiliesPage() {
                             <span className={`absolute -inset-2.5 rounded-full border transition-all duration-300 ${
                               isSelected
                                 ? 'border-pink-500 bg-pink-500/20 animate-radar-pulse'
-                                : buddy.isMentorRelation
-                                  ? 'border-violet-500/30 bg-violet-500/10 group-hover:scale-150 group-hover:bg-violet-500/20'
-                                  : 'border-emerald-500/30 bg-emerald-500/10 group-hover:scale-150 group-hover:bg-emerald-500/20'
+                                : 'border-emerald-500/30 bg-emerald-500/10 group-hover:scale-150 group-hover:bg-emerald-500/20'
                             }`} />
 
                             {/* Core glowing dot */}
                             <span className={`relative block w-3.5 h-3.5 rounded-full border-2 border-slate-950 shadow-lg transition-all duration-300 ${
                               isSelected
                                 ? 'bg-pink-500 scale-125'
-                                : buddy.isMentorRelation
-                                  ? 'bg-violet-500 group-hover:bg-violet-400'
-                                  : 'bg-emerald-500 group-hover:bg-emerald-400'
+                                : 'bg-emerald-500 group-hover:bg-emerald-400'
                             }`} />
 
                             {/* Quick name hover tooltip */}
@@ -1332,9 +1668,6 @@ export function SimilarFamiliesPage() {
                     <div className="flex gap-4 mt-5 text-[10px] font-bold text-slate-450 tracking-wide select-none">
                       <span className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-slate-900" /> Buddy Adayı
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-violet-500 border border-slate-900" /> Tecrübeli Mentor
                       </span>
                       <span className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-pink-500 border border-slate-900 animate-pulse" /> Seçili Veli
@@ -1396,7 +1729,7 @@ export function SimilarFamiliesPage() {
                             
                             <div className="text-right">
                               <span className="px-3 py-1 bg-indigo-50 border border-indigo-150 text-[10px] font-black text-indigo-755 rounded-full uppercase tracking-wider block shadow-2xs select-none">
-                                📍 {selectedBlip.distanceKm} km
+                                  📍 {formatDistance(selectedBlip.distanceKm)}
                               </span>
                             </div>
                           </div>
@@ -1423,16 +1756,12 @@ export function SimilarFamiliesPage() {
                             <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-center">
                               <p className="text-[10px] text-slate-400 font-bold uppercase">Mesafe Durumu</p>
                               <p className="text-xs font-extrabold text-slate-700 mt-1 select-none">
-                                {selectedBlip.distanceKm! <= 1.0 ? 'Aynı Mahallede' :
-                                 selectedBlip.distanceKm! <= 5.0 ? 'Çok Yakında' :
-                                 selectedBlip.distanceKm! <= 10.0 ? 'Aynı Bölgede' : 'Biraz Uzakta'}
+                                  {getDistanceLabel(selectedBlip.distanceKm)}
                               </p>
                             </div>
                             <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-center">
                               <p className="text-[10px] text-slate-400 font-bold uppercase">Yardımlaşma Rolü</p>
-                              <p className="text-xs font-extrabold text-slate-700 mt-1">
-                                {selectedBlip.isMentorRelation ? 'Tecrübeli Mentor' : 'Buddy Yol Arkadaşı'}
-                              </p>
+                              <p className="text-xs font-extrabold text-slate-700 mt-1">Yakın Veli Adayı</p>
                             </div>
                           </div>
                         </div>
@@ -1447,14 +1776,24 @@ export function SimilarFamiliesPage() {
                           </button>
                           
                           <button
-                            onClick={() => handleSendBuddyRequest(selectedBlip.buddyId, false)}
+                            onClick={() => handleOpenBuddyRequest({
+                              receiverId: selectedBlip.buddyId,
+                              isMentor: false,
+                              displayName: selectedBlip.fullName,
+                              context: 'nearby',
+                            })}
                             className="flex-1 flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl text-xs font-extrabold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-150 transition-all cursor-pointer select-none"
                           >
                             <Handshake size={13} /> Buddy İsteği
                           </button>
 
                           <button
-                            onClick={() => handleSendBuddyRequest(selectedBlip.buddyId, true)}
+                            onClick={() => handleOpenBuddyRequest({
+                              receiverId: selectedBlip.buddyId,
+                              isMentor: true,
+                              displayName: selectedBlip.fullName,
+                              context: 'nearby',
+                            })}
                             className="flex-1 flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl text-xs font-extrabold bg-violet-50 hover:bg-violet-100 text-violet-755 border border-violet-150 transition-all cursor-pointer select-none"
                             title="Mentorluk İsteği Gönder"
                           >
@@ -1468,8 +1807,8 @@ export function SimilarFamiliesPage() {
               ) : (
                 /* CLASSIC LIST GRID VIEW */
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
-                  {nearbyBuddies.map((buddy, idx) => (
-                    <Card key={idx} className="hover:-translate-y-1 hover:shadow-md border border-slate-100 hover:border-indigo-150 transition-all duration-300 bg-white/90 backdrop-blur-md relative overflow-hidden group">
+                  {visibleNearbyBuddies.map((buddy) => (
+                    <Card key={buddy.buddyId} className="hover:-translate-y-1 hover:shadow-md border border-slate-100 hover:border-indigo-150 transition-all duration-300 bg-white/90 backdrop-blur-md relative overflow-hidden group">
                       <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-indigo-500/5 to-transparent rounded-full pointer-events-none" />
                       <div className="flex items-start gap-4">
                         <div className="w-12 h-12 rounded-full relative shrink-0 overflow-hidden">
@@ -1486,7 +1825,7 @@ export function SimilarFamiliesPage() {
                           <div className="flex items-start justify-between gap-1.5 flex-wrap">
                             <h4 className="font-extrabold text-slate-800 text-base truncate group-hover:text-indigo-950 transition-colors">{buddy.fullName}</h4>
                             <span className="text-[10px] font-black text-indigo-700 bg-indigo-50 border border-indigo-150 px-2 py-0.5 rounded-full shrink-0 select-none">
-                              📍 {buddy.distanceKm} km yakında
+                              {formatDistance(buddy.distanceKm)} yakında
                             </span>
                           </div>
                           <p className="text-xs text-slate-450 mt-0.5">{buddy.city || 'Şehir belirtilmemiş'}</p>
@@ -1494,7 +1833,10 @@ export function SimilarFamiliesPage() {
                           {/* Role tag */}
                           <div className="flex gap-1.5 mt-2.5">
                             <span className="px-2 py-0.5 rounded-md bg-slate-50 text-[9px] font-black text-slate-500 border border-slate-150 select-none uppercase tracking-wide">
-                              {buddy.isMentorRelation ? '🌟 Tecrübeli Mentor' : '🤝 Buddy Adayı'}
+                              🤝 Yakın Veli Adayı
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-[9px] font-black text-indigo-650 border border-indigo-150 select-none uppercase tracking-wide">
+                              {getDistanceLabel(buddy.distanceKm)}
                             </span>
                           </div>
 
@@ -1506,13 +1848,23 @@ export function SimilarFamiliesPage() {
                               <MessageSquare size={12} /> Hızlı Sohbet
                             </button>
                             <button
-                              onClick={() => handleSendBuddyRequest(buddy.buddyId, false)}
+                              onClick={() => handleOpenBuddyRequest({
+                                receiverId: buddy.buddyId,
+                                isMentor: false,
+                                displayName: buddy.fullName,
+                                context: 'nearby',
+                              })}
                               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-150 transition-all cursor-pointer select-none"
                             >
                               <Handshake size={12} /> Buddy
                             </button>
                             <button
-                              onClick={() => handleSendBuddyRequest(buddy.buddyId, true)}
+                              onClick={() => handleOpenBuddyRequest({
+                                receiverId: buddy.buddyId,
+                                isMentor: true,
+                                displayName: buddy.fullName,
+                                context: 'nearby',
+                              })}
                               className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 cursor-pointer transition-all shrink-0"
                               title="Mentorluk İsteği Gönder"
                             >
@@ -1533,15 +1885,62 @@ export function SimilarFamiliesPage() {
       {/* TAB 3: SOCIAL CIRCLE & REQUESTS */}
       {children.length > 0 && activeTab === 'my-circle' && (
         <div className="space-y-6 animate-fadeIn">
+          <Card className="border border-slate-100">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Sosyal çember filtreleri</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Aktif velileri ve gelen istekleri role, yakınlığa veya ada göre süzün.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                <div className="relative flex-1 lg:w-64">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="search"
+                    value={circleQuery}
+                    onChange={e => setCircleQuery(e.target.value)}
+                    placeholder="İsim veya şehir ara"
+                    className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div className="flex gap-1 rounded-xl bg-slate-100 p-1">
+                  {[
+                    { id: 'all', label: 'Tümü' },
+                    { id: 'buddy', label: 'Buddy' },
+                    { id: 'mentor', label: 'Mentor' },
+                    { id: 'nearby', label: 'Yakın' },
+                  ].map(option => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setCircleFilter(option.id as CircleFilter)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                        circleFilter === option.id ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
+
           {/* Pending Requests Section */}
           {pendingBuddies.length > 0 && (
             <div className="space-y-3">
               <h3 className="text-xs font-black text-red-500 uppercase tracking-wider flex items-center gap-2">
-                🔔 Gelen Bekleyen Eşleşme İstekleri ({pendingBuddies.length})
+                🔔 Gelen Bekleyen Eşleşme İstekleri ({visiblePendingBuddies.length}/{pendingBuddies.length})
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {pendingBuddies.map((req, idx) => (
-                  <Card key={idx} className="border-red-150 bg-red-50/10 hover:shadow-md transition-all duration-300">
+              {visiblePendingBuddies.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 text-center text-xs font-semibold text-slate-500">
+                  Bu filtrelerle bekleyen istek yok.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {visiblePendingBuddies.map((req) => (
+                  <Card key={req.relationshipId || req.buddyId} className="border-red-150 bg-red-50/10 hover:shadow-md transition-all duration-300">
                     <div className="flex items-start gap-4">
                       <div className="w-11 h-11 rounded-full shrink-0 overflow-hidden">
                         {req.profileImageUrl ? (
@@ -1560,6 +1959,12 @@ export function SimilarFamiliesPage() {
                           </span>
                         </div>
                         <p className="text-xs text-slate-450 mt-1">{req.city || 'Şehir belirtilmemiş'}</p>
+                        {req.requestMessage && (
+                          <div className="mt-3 rounded-xl border border-red-100 bg-white/70 p-3">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-red-400">İstek notu</p>
+                            <p className="mt-1 text-xs leading-relaxed text-slate-650">{req.requestMessage}</p>
+                          </div>
+                        )}
                         
                         <div className="flex gap-2 mt-4">
                           <button
@@ -1578,15 +1983,16 @@ export function SimilarFamiliesPage() {
                       </div>
                     </div>
                   </Card>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
           {/* Active Circle Section */}
           <div className="space-y-3">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              🤝 Aktif Velilerim & Mentörlerim ({myBuddies.length})
+              🤝 Aktif Velilerim & Mentörlerim ({visibleMyBuddies.length}/{myBuddies.length})
             </h3>
 
             {buddiesLoading ? (
@@ -1599,10 +2005,16 @@ export function SimilarFamiliesPage() {
                 title="Sosyal Çemberiniz Henüz Boş"
                 description="Diğer ailelerle 'Akıllı Uyum' veya 'Yakındaki Veliler' sekmelerinden istek göndererek bağ kurmaya başlayın."
               />
+            ) : visibleMyBuddies.length === 0 ? (
+              <EmptyState
+                icon={<UserCheck size={28} />}
+                title="Filtreye Uygun Veli Yok"
+                description="Arama metnini temizleyin veya farklı bir sosyal çember filtresi seçin."
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {myBuddies.map((buddy, idx) => (
-                  <Card key={idx} className="hover:-translate-y-0.5 hover:shadow-md border border-slate-100 transition-all duration-300">
+                {visibleMyBuddies.map((buddy) => (
+                  <Card key={buddy.relationshipId || buddy.buddyId} className="hover:-translate-y-0.5 hover:shadow-md border border-slate-100 transition-all duration-300">
                     <div className="flex flex-col h-full justify-between">
                       <div className="flex items-start gap-3">
                         <div className="w-12 h-12 rounded-full shrink-0 relative overflow-hidden">
@@ -1631,6 +2043,22 @@ export function SimilarFamiliesPage() {
                         </div>
                       </div>
 
+                      <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-3">
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          Kişisel bağlantı notu
+                        </label>
+                        <textarea
+                          value={circleNotes[buddy.buddyId] || ''}
+                          onChange={event => setCircleNotes(prev => ({
+                            ...prev,
+                            [buddy.buddyId]: event.target.value.slice(0, 240),
+                          }))}
+                          rows={2}
+                          placeholder="Örn: Dil terapisi deneyimi var, park buluşması konuşuldu..."
+                          className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs leading-relaxed text-slate-650 outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+
                       <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100/60 shrink-0">
                         <button
                           onClick={() => setActiveChatBuddy(buddy)}
@@ -1654,6 +2082,19 @@ export function SimilarFamiliesPage() {
           </div>
         </div>
       )}
+
+      <BuddyRequestModal
+        draft={requestDraft}
+        message={requestMessage}
+        sending={requestSending}
+        onClose={() => {
+          if (requestSending) return;
+          setRequestDraft(null);
+          setRequestMessage('');
+        }}
+        onMessageChange={setRequestMessage}
+        onSend={handleSendBuddyRequest}
+      />
 
       {/* Buluşma İsteği Modal */}
       <Modal
@@ -1798,6 +2239,24 @@ export function SimilarFamiliesPage() {
               </p>
             </div>
 
+            <div className="grid gap-2 rounded-xl border border-emerald-100 bg-emerald-50/45 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700">
+                Güvenli buluşma akışı
+              </p>
+              {[
+                'Karşı taraf mesajda kabul, alternatif tarih veya uygun değil yanıtlarından birini seçebilir.',
+                meetingForm.type === 'YUZEYUZE'
+                  ? 'İlk yüz yüze görüşme için halka açık, sakin ve erişilebilir bir yer önerilir.'
+                  : 'İlk görüşme online kalır; kişisel telefon veya adres paylaşmanız gerekmez.',
+                'Çocuklara ait okul, ev adresi veya özel sağlık dosyası ilk görüşmede paylaşılmamalıdır.',
+              ].map(item => (
+                <div key={item} className="flex items-start gap-2 text-xs leading-relaxed text-emerald-800">
+                  <CheckCircle2 size={13} className="mt-0.5 shrink-0" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+
             <div className="flex gap-3 pt-2">
               <Button variant="outline" onClick={() => setMeetingFamily(null)} className="flex-1 font-semibold rounded-xl text-xs">
                 <X size={14} className="mr-1" /> İptal
@@ -1889,6 +2348,30 @@ export function SimilarFamiliesPage() {
             </div>
 
             {/* Drawer Input Area */}
+            {!drawerLoading && drawerMessages.length === 0 && (
+              <div className="border-t border-slate-100 bg-indigo-50/35 px-3 py-3">
+                <div className="flex items-start gap-2">
+                  <ShieldCheck size={14} className="mt-0.5 shrink-0 text-indigo-650" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-indigo-900">
+                      Güvenli ilk mesaj önerileri
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {FIRST_MESSAGE_TEMPLATES.map((template, index) => (
+                        <button
+                          key={template}
+                          type="button"
+                          onClick={() => setDrawerNewMessage(template)}
+                          className="rounded-full border border-indigo-150 bg-white px-2.5 py-1 text-[10px] font-bold text-indigo-700 transition-colors hover:bg-indigo-50 cursor-pointer"
+                        >
+                          Öneri {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <form 
               onSubmit={async (e) => {
                 e.preventDefault();

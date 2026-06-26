@@ -21,5 +21,6 @@ public class BuddyDto {
     private Double longitude;
     private Double distanceKm;
     private Boolean isMentorRelation;
+    private String requestMessage;
     private String status;
 }

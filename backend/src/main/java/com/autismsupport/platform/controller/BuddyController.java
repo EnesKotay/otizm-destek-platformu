@@ -30,7 +30,8 @@ public class BuddyController {
                 buddyRelationshipService.sendBuddyRequest(
                         principal.getId(),
                         payload.getReceiverId(),
-                        payload.isMentorRequest()
+                        payload.isMentorRequest(),
+                        payload.getMessage()
                 )
         ));
     }
@@ -84,5 +85,6 @@ public class BuddyController {
         private UUID receiverId;
         @JsonProperty("isMentorRequest")
         private boolean isMentorRequest;
+        private String message;
     }
 }

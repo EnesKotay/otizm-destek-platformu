@@ -16,6 +16,7 @@ public class SimilarFamilyDto {
     private UUID parentId;
     private String parentName;
     private String parentCity;
+    private String childName;
     private String childAgeRange;
     private List<TagDto> commonTags;
     private int totalCommonTags;
@@ -24,6 +25,7 @@ public class SimilarFamilyDto {
     private double ageScore;
     private double therapyScore;
     private double educationScore;
+    private List<String> matchReasons;
     private String relationshipStatus;
     private Boolean mentorRelation;
 }

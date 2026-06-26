@@ -244,6 +244,7 @@ export interface SimilarFamily {
   ageScore: number;
   therapyScore: number;
   educationScore: number;
+  matchReasons?: string[];
   relationshipStatus?: 'NONE' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
   mentorRelation?: boolean;
 }

@@ -37,6 +37,9 @@ public class BuddyRelationship {
     @Builder.Default
     private Boolean isMentorRelation = false;
 
+    @Column(name = "request_message", length = 600)
+    private String requestMessage;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

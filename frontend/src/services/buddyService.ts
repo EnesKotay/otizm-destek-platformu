@@ -11,12 +11,13 @@ export interface BuddyDto {
   longitude?: number;
   distanceKm?: number;
   isMentorRelation?: boolean;
+  requestMessage?: string;
   status: string; // PENDING, ACCEPTED, REJECTED, NONE
 }
 
 export const buddyService = {
-  sendRequest: (receiverId: string, isMentorRequest: boolean) =>
-    api.post<ApiResponse<unknown>>('/buddies/request', { receiverId, isMentorRequest }).then(r => r.data.data),
+  sendRequest: (receiverId: string, isMentorRequest: boolean, message?: string) =>
+    api.post<ApiResponse<unknown>>('/buddies/request', { receiverId, isMentorRequest, message }).then(r => r.data.data),
 
   acceptRequest: (relationshipId: string) =>
     api.post<ApiResponse<unknown>>(`/buddies/accept/${relationshipId}`).then(r => r.data.data),
