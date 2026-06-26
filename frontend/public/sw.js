@@ -1,11 +1,9 @@
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const STATIC_CACHE = `autism-static-${CACHE_VERSION}`;
 const API_CACHE = `autism-api-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
 const SHELL_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/offline.html',
   '/icon-192.png',
@@ -50,11 +48,7 @@ self.addEventListener('fetch', (event) => {
 
   // Navigasyon istekleri → SPA shell, offline'da /offline.html
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(() =>
-        caches.match('/index.html').then((cached) => cached || caches.match(OFFLINE_URL))
-      )
-    );
+    event.respondWith(networkFirstNavigation(request));
     return;
   }
 
@@ -93,6 +87,19 @@ async function networkFirst(request) {
   } catch {
     const cached = await caches.match(request);
     return cached || new Response('', { status: 503 });
+  }
+}
+
+async function networkFirstNavigation(request) {
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (response.ok) {
+      const cache = await caches.open(STATIC_CACHE);
+      cache.put('/index.html', response.clone());
+    }
+    return response;
+  } catch {
+    return caches.match('/index.html').then((cached) => cached || caches.match(OFFLINE_URL));
   }
 }
 
