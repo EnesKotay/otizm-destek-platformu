@@ -21,6 +21,14 @@
   ],
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://otizm-backend.onrender.com/api/$1"
+    },
+    {
+      "source": "/ws/(.*)",
+      "destination": "https://otizm-backend.onrender.com/ws/$1"
+    },
+    {
       "source": "/((?!assets/|.*\\..*).*)",
       "destination": "/index.html"
     }
