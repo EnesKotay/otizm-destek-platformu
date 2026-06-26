@@ -1,5 +1,6 @@
 import api from './api';
 import { useAuthStore } from '@/store/authStore';
+import { API_BASE_URL } from '@/services/endpoints';
 
 export interface ChatMessage {
   id:        string;
@@ -81,7 +82,7 @@ export const chatbotService = {
       }, STREAM_TIMEOUT_MS);
 
       try {
-        const response = await fetch('/api/chatbot/stream', {
+        const response = await fetch(`${API_BASE_URL}/chatbot/stream`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -158,7 +159,7 @@ export const chatbotService = {
   /** Backend sağlık kontrolü */
   async healthCheck(): Promise<boolean> {
     try {
-      const resp = await fetch('/api/chatbot/message', {
+      const resp = await fetch(`${API_BASE_URL}/chatbot/message`, {
         method: 'OPTIONS',
         signal: AbortSignal.timeout(5000),
       });
