@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 export type GoalStatus = 'done' | 'active' | 'upcoming';
-export type FocusKey = 'communication' | 'social' | 'sensory';
+export type FocusKey = 'communication' | 'social' | 'sensory' | 'motor' | 'behavior' | 'education';
 export type GameReflection = 'easy' | 'assisted' | 'independent' | 'challenging';
 
 export interface GoalItem {
@@ -100,6 +100,7 @@ export interface EditableGoal {
   title: string;
   focusKey: FocusKey;
   done: boolean;
+  dueDate?: string;
 }
 
 export interface SensoryProfileState {
@@ -121,6 +122,13 @@ export interface GoalProgressSnapshot {
   percent: number;
 }
 
+export interface CustomStoryData {
+  id: string;
+  title: string;
+  icon: string;
+  linkedGoal: string;
+}
+
 export interface TreatmentPageState {
   customGoals: EditableGoal[];
   sensoryProfile: SensoryProfileState;
@@ -128,4 +136,6 @@ export interface TreatmentPageState {
   gameSessions: GameSession[];
   goalProgressHistory: GoalProgressSnapshot[];
   templateGoalToggles: Record<string, boolean>;
+  completedPlanSteps: string[];
+  customStories: CustomStoryData[];
 }

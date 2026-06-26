@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Check, Lightbulb, Quote, User, Award, TrendingUp, Brain, Flame } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
@@ -15,10 +14,6 @@ const MOOD_META: Record<number, { emoji: string; label: string; color: string }>
   4: { emoji: '😊', label: 'İyi', color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
   5: { emoji: '😄', label: 'Çok iyi', color: 'text-teal-600 bg-teal-50 border-teal-100' },
 };
-
-function getStepsStorageKey(childId: string) {
-  return `plan-done-${childId}-${new Date().toISOString().slice(0, 10)}`;
-}
 
 interface TreatmentTodayTabProps {
   todayPlan: TodayPlanStep[];
@@ -40,6 +35,8 @@ interface TreatmentTodayTabProps {
   childId?: string;
   streakDays?: number;
   todayMood?: { moodLevel: number } | null;
+  todayCompletedPlanSteps: Set<string>;
+  onTogglePlanStep: (stepId: string) => void;
 }
 
 export function TreatmentTodayTab({
@@ -49,44 +46,12 @@ export function TreatmentTodayTab({
   weeklyProgress,
   recommendedGameCount,
   microProgress,
-  childId,
   streakDays = 0,
   todayMood,
+  todayCompletedPlanSteps,
+  onTogglePlanStep,
 }: TreatmentTodayTabProps) {
-  const [completedSteps, setCompletedSteps] = useState<Set<string>>(() => {
-    if (!childId) return new Set<string>();
-    try {
-      const raw = localStorage.getItem(getStepsStorageKey(childId));
-      return new Set<string>(raw ? JSON.parse(raw) : []);
-    } catch { return new Set<string>(); }
-  });
-
-  // Persist to localStorage whenever completedSteps changes
-  useEffect(() => {
-    if (!childId) return;
-    localStorage.setItem(getStepsStorageKey(childId), JSON.stringify([...completedSteps]));
-  }, [completedSteps, childId]);
-
-  // Reset when child changes
-  useEffect(() => {
-    if (!childId) return;
-    try {
-      const raw = localStorage.getItem(getStepsStorageKey(childId));
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCompletedSteps(new Set<string>(raw ? JSON.parse(raw) : []));
-    } catch { setCompletedSteps(new Set<string>()); }
-  }, [childId]);
-
-  const toggleStep = (id: string) => {
-    setCompletedSteps(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const doneCount = completedSteps.size;
+  const doneCount = todayPlan.filter(step => todayCompletedPlanSteps.has(step.id)).length;
   const totalCount = todayPlan.length;
   const percentDone = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
@@ -107,9 +72,7 @@ export function TreatmentTodayTab({
   return (
     <div className="space-y-6">
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        {/* Left Column: Daily Flow Timeline */}
         <div className="group rounded-[2.5rem] border border-slate-200/50 bg-white/70 backdrop-blur-2xl p-7 sm:p-9 shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 transition-all duration-500 relative overflow-hidden">
-          {/* Subtle glowing background effect */}
           <div className="absolute top-0 right-0 h-[500px] w-[500px] bg-gradient-to-br from-indigo-50/50 to-emerald-50/50 rounded-full blur-[100px] opacity-50 pointer-events-none group-hover:opacity-80 transition-opacity duration-700" />
           
           <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -137,7 +100,6 @@ export function TreatmentTodayTab({
             </div>
           </div>
 
-          {/* Mini progress bar inside Günlük Akış */}
           {totalCount > 0 && (
             <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100/70">
               <div 
@@ -147,25 +109,22 @@ export function TreatmentTodayTab({
             </div>
           )}
 
-          {/* Timeline steps */}
           <div className="relative mt-6 space-y-4">
-            {/* Timeline vertical connector line */}
             {totalCount > 1 && (
               <div className="absolute left-6 top-3 bottom-6 w-0.5 bg-slate-100" />
             )}
 
             {todayPlan.map((step) => {
-              const isDone = completedSteps.has(step.id);
+              const isDone = todayCompletedPlanSteps.has(step.id);
               return (
                 <div
                   key={step.id}
                   className={`relative pl-12 pr-4 py-3.5 rounded-2xl border border-transparent transition-all duration-300 hover:border-slate-100 hover:bg-slate-50/50 hover:shadow-sm ${isDone ? 'opacity-70 bg-slate-50/30' : 'bg-white'}`}
                 >
-                  {/* Floating Checkbox button exactly on the vertical line */}
                   <div className="absolute left-3.5 top-[18px] z-10 flex items-center justify-center">
                     <button
                       type="button"
-                      onClick={() => toggleStep(step.id)}
+                      onClick={() => onTogglePlanStep(step.id)}
                       className="flex h-5 w-5 items-center justify-center rounded-full transition-all duration-200 cursor-pointer focus:outline-none"
                       aria-label={isDone ? 'Tamamlandı, geri al' : `${step.title} adımını tamamla`}
                       aria-pressed={isDone}
@@ -182,7 +141,6 @@ export function TreatmentTodayTab({
                     </button>
                   </div>
 
-                  {/* Text details container */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className={`text-xs font-bold leading-snug ${isDone ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
@@ -191,8 +149,6 @@ export function TreatmentTodayTab({
                       <p className={`mt-1 text-[11px] leading-relaxed ${isDone ? 'text-slate-400' : 'text-slate-500'}`}>
                         {step.detail}
                       </p>
-
-                      {/* Pill badges */}
                       <div className="mt-2.5 flex flex-wrap gap-2">
                         {step.linkedGoal && (
                           <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold tracking-wide uppercase ring-1 ring-inset ${getBadgeStyle(step.linkedGoal)} transition-colors`}>
@@ -206,8 +162,6 @@ export function TreatmentTodayTab({
                         )}
                       </div>
                     </div>
-                    
-                    {/* Duration badge */}
                     <span className="shrink-0 inline-flex items-center rounded-full bg-slate-100/80 px-2 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200/40">
                       ⏱️ {step.duration}
                     </span>
@@ -217,7 +171,6 @@ export function TreatmentTodayTab({
             })}
           </div>
 
-          {/* Tüm adımlar tamamlandıysa kutlama mesajı */}
           {doneCount === totalCount && totalCount > 0 && (
             <div className="mt-5 rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-500 to-teal-600 p-4 text-white shadow-md shadow-emerald-100/50 flex items-center gap-3 animate-pulse">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur-sm">
@@ -225,15 +178,13 @@ export function TreatmentTodayTab({
               </div>
               <div>
                 <p className="text-sm font-black">🎉 Harika İş!</p>
-                <p className="text-xs text-emerald-50/90 mt-0.5">Bugünün tüm tedavi adımlarını başarıyla tamamladınız. Çocuğunuzun gelişimini desteklemek için mükemmel bir adım!</p>
+                <p className="text-xs text-emerald-50/90 mt-0.5">Bugünün tüm tedavi adımlarını başarıyla tamamladınız.</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Right Column: Mood + Suggestions + Expert Opinion */}
         <div className="space-y-4">
-          {/* Mood check-in — show when mood not yet recorded */}
           {todayMood === null && (
             <Link
               to="/gunluk-takip"
@@ -251,7 +202,6 @@ export function TreatmentTodayTab({
               </span>
             </Link>
           )}
-          {/* Mood display — show when mood is recorded */}
           {todayMood != null && (() => {
             const meta = MOOD_META[todayMood.moodLevel] ?? MOOD_META[3];
             return (
@@ -265,7 +215,7 @@ export function TreatmentTodayTab({
               </div>
             );
           })()}
-          {/* Smart Suggestions */}
+
           <div className="group/sug rounded-[2rem] border border-indigo-100/50 bg-gradient-to-br from-indigo-50/90 via-white to-purple-50/50 p-6 backdrop-blur-xl shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_40px_rgba(99,102,241,0.1)] transition-all duration-500 relative overflow-hidden">
             <div className="absolute -right-10 -top-10 h-40 w-40 bg-indigo-400/20 rounded-full blur-3xl group-hover/sug:bg-indigo-400/30 transition-colors duration-500" />
             <div className="relative z-10 flex items-center gap-3">
@@ -285,7 +235,6 @@ export function TreatmentTodayTab({
             </div>
           </div>
 
-          {/* Expert Opinion speech-bubble card */}
           <div className="group/note relative overflow-hidden rounded-[2rem] border border-slate-200/60 bg-white/80 p-6 backdrop-blur-xl shadow-[0_8px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_40px_rgba(15,23,42,0.06)] transition-all duration-500">
             <div className="absolute -right-6 -top-6 text-slate-100 transition-transform duration-500 group-hover/note:scale-110 group-hover/note:rotate-12 group-hover/note:text-slate-200/80">
               <Quote size={100} strokeWidth={1} />
@@ -294,7 +243,6 @@ export function TreatmentTodayTab({
             
             {latestNote ? (
               <div className="relative mt-4">
-                {/* Expert Profile Header */}
                 <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-500 to-indigo-600 text-white font-extrabold text-xs shadow-sm shadow-indigo-100/30">
                     {latestNote.authorName ? latestNote.authorName.split(' ').map((n: string) => n[0]).join('') : 'U'}
@@ -307,7 +255,6 @@ export function TreatmentTodayTab({
                     <p className="text-[10px] text-slate-400 font-medium">{latestNote.title || 'Çocuk Gelişim Uzmanı'}</p>
                   </div>
                 </div>
-                {/* Speech Bubble */}
                 <div className="relative mt-3 rounded-2xl bg-slate-50/80 p-3">
                   <p className="text-xs leading-relaxed text-slate-600 font-medium italic">
                     "{latestNote.content || 'Bu nota eklenmiş detay bulunmuyor.'}"
@@ -341,9 +288,7 @@ export function TreatmentTodayTab({
         </div>
       </div>
 
-      {/* Bottom Grid: Weekly Progress & Micro Progress */}
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-        {/* Weekly View Chart */}
         <div className="group rounded-[2.5rem] border border-slate-200/60 bg-white/70 p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -364,7 +309,6 @@ export function TreatmentTodayTab({
           </div>
         </div>
 
-        {/* Micro Progress Bars */}
         <div className="group rounded-[2.5rem] border border-slate-200/60 bg-white/70 p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
           <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-slate-400">GELİŞİM ALANLARI</span>
           <h3 className="mt-1 text-base font-extrabold text-slate-800">Her Alanda Neredeyiz?</h3>
@@ -388,18 +332,13 @@ export function TreatmentTodayTab({
                       {item.value}
                     </span>
                   </div>
-                  
                   <p className="mt-2 text-[11px] leading-relaxed text-slate-500 font-medium">{item.detail}</p>
-                  
-                  {/* Visual Progress Bar representation */}
                   <div className="mt-3.5 h-1.5 overflow-hidden rounded-full bg-slate-100/80">
                     <div 
                       className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-1000 ease-out shadow-sm"
                       style={{ width: `${numericVal}%` }}
                     />
                   </div>
-
-                  {/* Destekleyen Oyun if available */}
                   {item.linkedGame && (
                     <div className="mt-3.5 flex items-center gap-1.5 border-t border-slate-100 pt-2.5">
                       <span className="text-[10px] font-bold text-indigo-500 flex items-center gap-1.5 uppercase tracking-wider">

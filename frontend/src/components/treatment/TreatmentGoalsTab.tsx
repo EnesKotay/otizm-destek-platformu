@@ -20,23 +20,36 @@ const MILESTONE_CATEGORIES = [
   { value: 'Eğitim', label: 'Eğitim' },
 ];
 
+const FOCUS_OPTIONS: { value: FocusKey; label: string }[] = [
+  { value: 'communication', label: 'İletişim' },
+  { value: 'social', label: 'Sosyal' },
+  { value: 'sensory', label: 'Duyusal' },
+  { value: 'motor', label: 'Motor' },
+  { value: 'behavior', label: 'Davranış' },
+  { value: 'education', label: 'Eğitim' },
+];
+
 interface TreatmentGoalsTabProps {
   activeAppointments: AppointmentRecord[];
   childEvents: CalendarEvent[];
   customGoals: EditableGoal[];
   detailLoading: boolean;
   goalDraft: string;
+  goalDraftDueDate: string;
   goalDraftFocus: FocusKey;
   mergedGoalGroups: GoalGroup[];
   recentNotes: DevelopmentNote[];
   savingTreatment: boolean;
+  templateGoalToggles: Record<string, boolean>;
   childId?: string;
   onAddGoal: () => void;
   onGoalDraftChange: (value: string) => void;
+  onGoalDraftDueDateChange: (value: string) => void;
   onGoalDraftFocusChange: (value: FocusKey) => void;
   onDeleteGoal: (goalId: string) => void;
-  onUpdateGoal: (goalId: string, title: string, focusKey: FocusKey) => Promise<boolean>;
+  onUpdateGoal: (goalId: string, title: string, focusKey: FocusKey, dueDate?: string) => Promise<boolean>;
   onToggleGoal: (goalId: string) => void;
+  onToggleTemplateGoal: (goalLabel: string) => void;
 }
 
 export function TreatmentGoalsTab({
@@ -45,21 +58,26 @@ export function TreatmentGoalsTab({
   customGoals,
   detailLoading,
   goalDraft,
+  goalDraftDueDate,
   goalDraftFocus,
   mergedGoalGroups,
   recentNotes,
   savingTreatment,
+  templateGoalToggles,
   childId,
   onAddGoal,
   onDeleteGoal,
   onGoalDraftChange,
+  onGoalDraftDueDateChange,
   onGoalDraftFocusChange,
   onUpdateGoal,
   onToggleGoal,
+  onToggleTemplateGoal,
 }: TreatmentGoalsTabProps) {
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const [editFocus, setEditFocus] = useState<FocusKey>('communication');
+  const [editDueDate, setEditDueDate] = useState('');
   const [milestoneTitle, setMilestoneTitle] = useState('');
   const [milestoneCategory, setMilestoneCategory] = useState('İletişim');
   const [savingMilestone, setSavingMilestone] = useState(false);
@@ -82,28 +100,34 @@ export function TreatmentGoalsTab({
     setEditingGoalId(goal.id);
     setEditDraft(goal.title);
     setEditFocus(goal.focusKey);
+    setEditDueDate(goal.dueDate || '');
   };
 
   const saveEditing = async () => {
     if (!editingGoalId) return;
-    const saved = await onUpdateGoal(editingGoalId, editDraft, editFocus);
+    const saved = await onUpdateGoal(editingGoalId, editDraft, editFocus, editDueDate || undefined);
     if (saved) {
       setEditingGoalId(null);
       setEditDraft('');
+      setEditDueDate('');
     }
   };
+
+  const getFocusLabel = (key: FocusKey) => FOCUS_OPTIONS.find(f => f.value === key)?.label ?? key;
 
   return (
     <div className="space-y-6">
 
       <div className="relative overflow-hidden rounded-[2.5rem] border border-slate-200/60 bg-gradient-to-br from-indigo-50/50 to-white p-7 sm:p-9 shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
         <div className="absolute -right-20 -top-20 h-64 w-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none" />
-        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h3 className="text-xl font-bold text-slate-800">Günlük Hedef Ekle</h3>
-            <p className="mt-1.5 text-sm text-slate-500">Bugün çocuğunuza özel takip etmek istediğiniz küçük bir şey yazın. Örn: "2 kez göz teması kurdu", "Selam dedi".</p>
+        <div className="relative z-10">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-slate-800">Günlük Hedef Ekle</h3>
+              <p className="mt-1.5 text-sm text-slate-500">Bugün çocuğunuza özel takip etmek istediğiniz küçük bir şey yazın.</p>
+            </div>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <select
               value={goalDraftFocus}
               onChange={(event) => onGoalDraftFocusChange(event.target.value as FocusKey)}
@@ -111,31 +135,36 @@ export function TreatmentGoalsTab({
               aria-label="Hedef alanı"
               className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700"
             >
-              <option value="communication">İletişim</option>
-              <option value="social">Sosyal</option>
-              <option value="sensory">Duyusal</option>
+              {FOCUS_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
-            {/* Fix 4: Enter tuşuyla hedef ekleme */}
             <input
               value={goalDraft}
               onChange={(event) => onGoalDraftChange(event.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && goalDraft.trim().length > 0 && !savingTreatment) {
-                  onAddGoal();
-                }
+                if (e.key === 'Enter' && goalDraft.trim().length > 0 && !savingTreatment) onAddGoal();
               }}
               disabled={savingTreatment}
               placeholder="Örn: 2 kez göz teması kurdu"
-              className="min-w-[16rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none ring-0 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300"
+              className="min-w-[16rem] flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300"
             />
-              <button
-                type="button"
-                onClick={onAddGoal}
-                disabled={savingTreatment || goalDraft.trim().length === 0}
-                className="rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(79,70,229,0.3)] hover:bg-indigo-700 hover:shadow-[0_12px_25px_rgba(79,70,229,0.4)] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none transition-all duration-300"
-              >
-                {savingTreatment ? 'Kaydediliyor...' : 'Hedef Ekle'}
-              </button>
+            <input
+              type="date"
+              value={goalDraftDueDate}
+              onChange={(e) => onGoalDraftDueDateChange(e.target.value)}
+              disabled={savingTreatment}
+              aria-label="Hedef bitiş tarihi"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300"
+            />
+            <button
+              type="button"
+              onClick={onAddGoal}
+              disabled={savingTreatment || goalDraft.trim().length === 0}
+              className="rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(79,70,229,0.3)] hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none transition-all duration-300"
+            >
+              {savingTreatment ? 'Kaydediliyor...' : 'Hedef Ekle'}
+            </button>
           </div>
         </div>
 
@@ -165,10 +194,18 @@ export function TreatmentGoalsTab({
                         disabled={savingTreatment}
                         className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
                       >
-                        <option value="communication">İletişim</option>
-                        <option value="social">Sosyal</option>
-                        <option value="sensory">Duyusal</option>
+                        {FOCUS_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
                       </select>
+                      <input
+                        type="date"
+                        value={editDueDate}
+                        onChange={(e) => setEditDueDate(e.target.value)}
+                        disabled={savingTreatment}
+                        aria-label="Hedef bitiş tarihi"
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none"
+                      />
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
@@ -196,16 +233,23 @@ export function TreatmentGoalsTab({
                         disabled={savingTreatment}
                         aria-pressed={goal.done}
                         className={cn(
-                          'mt-0.5 h-4 w-4 rounded-full disabled:cursor-not-allowed disabled:opacity-60',
+                          'mt-0.5 h-4 w-4 shrink-0 rounded-full disabled:cursor-not-allowed disabled:opacity-60',
                           goal.done ? 'bg-emerald-500' : 'bg-slate-200'
                         )}
                         aria-label={`${goal.title} hedefini tamamlandı olarak işaretle`}
                       />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-slate-900">{goal.title}</p>
-                        <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">
-                          {goal.focusKey === 'communication' ? 'İletişim' : goal.focusKey === 'social' ? 'Sosyal' : 'Duyusal'}
-                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <p className="text-xs uppercase tracking-wide text-slate-400">
+                            {getFocusLabel(goal.focusKey)}
+                          </p>
+                          {goal.dueDate && (
+                            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-600 ring-1 ring-indigo-100">
+                              📅 {goal.dueDate}
+                            </span>
+                          )}
+                        </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           <button
                             type="button"
@@ -239,7 +283,6 @@ export function TreatmentGoalsTab({
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Terapi Hedefleri — Alana Göre İlerleme</p>
         </div>
 
-        {/* Fix 6: boş hedef grubu empty state */}
         {mergedGoalGroups.length === 0 && (
           <div className="lg:col-span-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 mb-3">
@@ -247,85 +290,102 @@ export function TreatmentGoalsTab({
             </div>
             <p className="text-sm font-semibold text-slate-600">Henüz terapi hedefi görünmüyor</p>
             <p className="mt-1 text-sm text-slate-400">
-              Çocuğunuzun profiline terapi türü eklendiğinde (örn: ABA, dil terapisi) hedefler otomatik olarak burada listelenir.
-              Şimdilik yukarıdaki alandan kendi hedeflerinizi ekleyebilirsiniz.
+              Çocuğunuzun profiline terapi türü eklendiğinde hedefler otomatik olarak burada listelenir.
             </p>
           </div>
         )}
 
-        {mergedGoalGroups.map((group) => (
-          <div key={group.title} className="group rounded-[2.5rem] border border-slate-200/60 bg-white/70 p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
-            {/* Header with donut */}
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3 text-slate-900">
-                <div className={cn(
-                  'flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3',
-                  group.tone === 'sky' ? 'bg-sky-50 text-sky-600 shadow-sky-100/50' : 'bg-violet-50 text-violet-600 shadow-violet-100/50'
-                )}>
-                  {group.icon}
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">{group.title}</h3>
-                  <p className="text-sm text-slate-400">
-                    {group.items.filter((item) => item.status === 'done').length}/{group.items.length} tamamlandı
-                  </p>
-                </div>
-              </div>
-              {/* Donut progress */}
-              <div className="relative h-12 w-12 shrink-0">
-                <svg className="h-12 w-12 -rotate-90" viewBox="0 0 48 48">
-                  <circle cx="24" cy="24" r="18" fill="none" stroke="#f1f5f9" strokeWidth="4" />
-                  <circle
-                    cx="24" cy="24" r="18" fill="none"
-                    stroke={group.tone === 'sky' ? '#38bdf8' : '#a78bfa'}
-                    strokeWidth="4"
-                    strokeDasharray={`${2 * Math.PI * 18}`}
-                    strokeDashoffset={`${2 * Math.PI * 18 * (1 - group.percent / 100)}`}
-                    strokeLinecap="round"
-                    className="transition-all duration-500"
-                  />
-                </svg>
-                <span className={cn(
-                  'absolute inset-0 flex items-center justify-center text-[10px] font-bold',
-                  group.tone === 'sky' ? 'text-sky-600' : 'text-violet-600'
-                )}>
-                  {group.percent}%
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-2.5">
-              {group.items.map((item) => {
-                const meta = getStatusMeta(item.status);
-                const isDone = item.status === 'done';
-                return (
-                  <div key={item.label} className="flex items-center gap-3 border-t border-slate-100 pt-2.5 first:border-t-0 first:pt-0">
-                    {isDone ? (
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                        <Check size={11} className="text-emerald-600" strokeWidth={3} />
-                      </span>
-                    ) : (
-                      <span className={cn('h-2.5 w-2.5 rounded-full shrink-0', meta.dot)} />
-                    )}
-                    <p className={cn('text-sm font-medium flex-1', isDone ? 'text-emerald-700' : meta.text)}>
-                      {item.label}
-                    </p>
-                    <span className={cn('text-xs shrink-0', isDone ? 'text-emerald-600 font-semibold' : 'text-slate-400')}>
-                      {meta.suffix}
-                    </span>
+        {mergedGoalGroups.map((group) => {
+          const templateLabels = new Set((group.templateItems || []).map(t => t.label));
+          return (
+            <div key={group.title} className="group rounded-[2.5rem] border border-slate-200/60 bg-white/70 p-7 backdrop-blur-2xl shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3 text-slate-900">
+                  <div className={cn(
+                    'flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3',
+                    group.tone === 'sky' ? 'bg-sky-50 text-sky-600 shadow-sky-100/50' : 'bg-violet-50 text-violet-600 shadow-violet-100/50'
+                  )}>
+                    {group.icon}
                   </div>
-                );
-              })}
-            </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">{group.title}</h3>
+                    <p className="text-sm text-slate-400">
+                      {group.items.filter((item) => item.status === 'done').length}/{group.items.length} tamamlandı
+                    </p>
+                  </div>
+                </div>
+                <div className="relative h-12 w-12 shrink-0">
+                  <svg className="h-12 w-12 -rotate-90" viewBox="0 0 48 48">
+                    <circle cx="24" cy="24" r="18" fill="none" stroke="#f1f5f9" strokeWidth="4" />
+                    <circle
+                      cx="24" cy="24" r="18" fill="none"
+                      stroke={group.tone === 'sky' ? '#38bdf8' : '#a78bfa'}
+                      strokeWidth="4"
+                      strokeDasharray={`${2 * Math.PI * 18}`}
+                      strokeDashoffset={`${2 * Math.PI * 18 * (1 - group.percent / 100)}`}
+                      strokeLinecap="round"
+                      className="transition-all duration-500"
+                    />
+                  </svg>
+                  <span className={cn(
+                    'absolute inset-0 flex items-center justify-center text-[10px] font-bold',
+                    group.tone === 'sky' ? 'text-sky-600' : 'text-violet-600'
+                  )}>
+                    {group.percent}%
+                  </span>
+                </div>
+              </div>
 
-            <div className="mt-5 rounded-2xl bg-slate-50/80 px-5 py-4 text-sm leading-6 text-slate-500 font-medium">
-              {group.summary}
+              <div className="mt-5 space-y-2.5">
+                {group.items.map((item) => {
+                  const isTemplate = templateLabels.has(item.label);
+                  const isToggled = isTemplate && templateGoalToggles[item.label];
+                  const isDone = item.status === 'done' || isToggled;
+                  const meta = getStatusMeta(isDone ? 'done' : item.status);
+                  return (
+                    <div key={item.label} className="flex items-center gap-3 border-t border-slate-100 pt-2.5 first:border-t-0 first:pt-0">
+                      {isTemplate ? (
+                        <button
+                          type="button"
+                          onClick={() => onToggleTemplateGoal(item.label)}
+                          disabled={savingTreatment}
+                          aria-pressed={isDone}
+                          aria-label={`${item.label} hedefini ${isDone ? 'geri al' : 'tamamlandı işaretle'}`}
+                          className={cn(
+                            'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors disabled:cursor-not-allowed',
+                            isDone
+                              ? 'border-emerald-500 bg-emerald-500 text-white'
+                              : 'border-slate-300 bg-white hover:border-indigo-400'
+                          )}
+                        >
+                          {isDone && <Check size={11} strokeWidth={3} />}
+                        </button>
+                      ) : isDone ? (
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                          <Check size={11} className="text-emerald-600" strokeWidth={3} />
+                        </span>
+                      ) : (
+                        <span className={cn('h-2.5 w-2.5 rounded-full shrink-0', meta.dot)} />
+                      )}
+                      <p className={cn('text-sm font-medium flex-1', isDone ? 'text-emerald-700' : meta.text)}>
+                        {item.label}
+                      </p>
+                      <span className={cn('text-xs shrink-0', isDone ? 'text-emerald-600 font-semibold' : 'text-slate-400')}>
+                        {isDone ? 'Tamamlandı' : meta.suffix}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-5 rounded-2xl bg-slate-50/80 px-5 py-4 text-sm leading-6 text-slate-500 font-medium">
+                {group.summary}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Milestone quick-add */}
       <div className="relative overflow-hidden rounded-[2.5rem] border border-violet-200/50 bg-gradient-to-r from-violet-50/80 via-white to-fuchsia-50/50 p-7 sm:p-9 shadow-[0_20px_60px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition-all duration-500">
         <div className="absolute right-0 top-0 h-40 w-40 bg-violet-400/10 rounded-full blur-[60px] pointer-events-none" />
         <div className="relative z-10 flex items-center gap-3 mb-5">

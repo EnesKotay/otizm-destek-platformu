@@ -40,6 +40,7 @@ function TreatmentContent() {
   const [activeGameFilter, setActiveGameFilter] = useState<'all' | FocusKey>('all');
   const [goalDraft, setGoalDraft] = useState('');
   const [goalDraftFocus, setGoalDraftFocus] = useState<FocusKey>('communication');
+  const [goalDraftDueDate, setGoalDraftDueDate] = useState('');
   const [showIntro, setShowIntro] = useState(() => {
     const stored = localStorage.getItem('treatment_intro_visible');
     return stored === null ? true : stored === 'true';
@@ -56,11 +57,11 @@ function TreatmentContent() {
   const treatment = useTreatmentPageData();
   const {
     activeAppointments, activeChild, actions, childEvents, children,
-    customGoals, detailLoading, gameFeedback, gameSessions, latestNote,
+    customGoals, customStories, detailLoading, gameFeedback, gameSessions, latestNote,
     loading, mergedGoalGroups, microProgress, primaryGoal, recentNotes,
     savingTreatment, sensoryMetrics, sensoryProfile, showMilestoneBanner,
-    streakDays, supportPlan, todayCompletedGames, todayMood,
-    weeklyProgress, weeklySummary, user,
+    streakDays, supportPlan, templateGoalToggles, todayCompletedGames,
+    todayCompletedPlanSteps, todayMood, weeklyProgress, weeklySummary, user,
   } = treatment;
 
   const {
@@ -75,15 +76,14 @@ function TreatmentContent() {
     [activeGameFilter, recommendedGames]
   );
 
-  // Fix 5: çocuk değişince oyun filtresini sıfırla
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveGameFilter('all');
   }, [activeChild?.id]);
 
   const handleAddGoal = async () => {
-    const saved = await actions.addCustomGoal(goalDraft, goalDraftFocus);
-    if (saved) setGoalDraft('');
+    const saved = await actions.addCustomGoal(goalDraft, goalDraftFocus, goalDraftDueDate || undefined);
+    if (saved) { setGoalDraft(''); setGoalDraftDueDate(''); }
   };
 
   const handleDownloadPdf = async () => {
@@ -120,7 +120,6 @@ function TreatmentContent() {
     };
   }, []);
 
-  // ── Auth guard ──
   if (user?.role && user.role !== 'PARENT') {
     return (
       <div className="py-12">
@@ -133,7 +132,6 @@ function TreatmentContent() {
     );
   }
 
-  // ── Loading skeleton ──
   if (loading) {
     return (
       <div className="space-y-5">
@@ -148,7 +146,6 @@ function TreatmentContent() {
     );
   }
 
-  // ── Empty state ──
   if (!activeChild) {
     return (
       <div className="py-10">
@@ -209,7 +206,6 @@ function TreatmentContent() {
 
   return (
     <div className="space-y-5">
-      {/* PWA Çevrimdışı Çalışma Modu Bildirimi */}
       {!isOnline && (
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-amber-700 shadow-sm animate-pulse">
           <div className="flex items-center gap-2 min-w-0">
@@ -432,9 +428,7 @@ function TreatmentContent() {
         })}
       </div>
 
-      {/* ── 4. MAIN TAB PANEL ── */}
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        {/* Tab bar + quick action */}
         <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <TreatmentDetailTabs
             tabs={DETAIL_TABS}
@@ -452,7 +446,6 @@ function TreatmentContent() {
           </button>
         </div>
 
-        {/* Tab content */}
         <div className="p-4 sm:p-5">
           {activeDetailTab === 'today' && (
             <TreatmentTodayTab
@@ -465,6 +458,8 @@ function TreatmentContent() {
               childId={activeChild.id}
               streakDays={streakDays}
               todayMood={todayMood ?? null}
+              todayCompletedPlanSteps={todayCompletedPlanSteps}
+              onTogglePlanStep={actions.togglePlanStep}
             />
           )}
 
@@ -475,17 +470,21 @@ function TreatmentContent() {
               customGoals={customGoals}
               detailLoading={detailLoading}
               goalDraft={goalDraft}
+              goalDraftDueDate={goalDraftDueDate}
               goalDraftFocus={goalDraftFocus}
               mergedGoalGroups={mergedGoalGroups}
               recentNotes={recentNotes}
               savingTreatment={savingTreatment}
+              templateGoalToggles={templateGoalToggles}
               childId={activeChild.id}
               onAddGoal={handleAddGoal}
               onDeleteGoal={actions.deleteCustomGoal}
               onGoalDraftChange={setGoalDraft}
+              onGoalDraftDueDateChange={setGoalDraftDueDate}
               onGoalDraftFocusChange={setGoalDraftFocus}
               onUpdateGoal={actions.updateCustomGoal}
               onToggleGoal={actions.toggleCustomGoal}
+              onToggleTemplateGoal={actions.toggleTemplateGoal}
             />
           )}
 
@@ -493,6 +492,7 @@ function TreatmentContent() {
             <TreatmentGamesTab
               activeGameFilter={activeGameFilter}
               allGames={recommendedGames}
+              customStories={customStories}
               filteredGames={filteredGames}
               gameFeedback={gameFeedback}
               gameSessions={gameSessions}
@@ -501,6 +501,8 @@ function TreatmentContent() {
               showMilestoneBanner={showMilestoneBanner}
               socialStories={socialStories}
               todayCompletedGames={todayCompletedGames}
+              onAddCustomStory={actions.addCustomStory}
+              onDeleteCustomStory={actions.deleteCustomStory}
               onFilterChange={setActiveGameFilter}
               onSaveGameFeedback={actions.saveGameFeedback}
               onToggleGameCompletion={actions.toggleGameCompletion}

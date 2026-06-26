@@ -22,11 +22,15 @@ import {
   buildGoalDeleteResult,
   buildGoalToggleResult,
   buildGoalUpdateResult,
+  buildPlanStepToggleResult,
+  buildTemplateGoalToggleResult,
   createTreatmentState,
+  getGameFeedbackForDay,
   saveGameFeedbackForDay,
   toggleGameSessionForDay,
 } from './treatmentState';
 import type {
+  CustomStoryData,
   EditableGoal,
   FocusKey,
   GameReflection,
@@ -53,6 +57,8 @@ function applyTreatmentState(
     setGameSessions: (value: GameSession[]) => void;
     setGoalProgressHistory: (value: GoalProgressSnapshot[]) => void;
     setTemplateGoalToggles: (value: Record<string, boolean>) => void;
+    setCompletedPlanSteps: (value: string[]) => void;
+    setCustomStories: (value: CustomStoryData[]) => void;
   },
 ) {
   setters.setCustomGoals(nextState.customGoals);
@@ -61,6 +67,21 @@ function applyTreatmentState(
   setters.setGameSessions(nextState.gameSessions);
   setters.setGoalProgressHistory(nextState.goalProgressHistory);
   setters.setTemplateGoalToggles(nextState.templateGoalToggles);
+  setters.setCompletedPlanSteps(nextState.completedPlanSteps);
+  setters.setCustomStories(nextState.customStories);
+}
+
+function createEmptyTreatmentState(): TreatmentPageState {
+  return {
+    customGoals: [],
+    sensoryProfile: DEFAULT_SENSORY_PROFILE,
+    gameFeedback: {},
+    gameSessions: [],
+    goalProgressHistory: [],
+    templateGoalToggles: {},
+    completedPlanSteps: [],
+    customStories: [],
+  };
 }
 
 export function useTreatmentPageData() {
@@ -79,6 +100,8 @@ export function useTreatmentPageData() {
   const [gameSessions, setGameSessions] = useState<GameSession[]>([]);
   const [goalProgressHistory, setGoalProgressHistory] = useState<GoalProgressSnapshot[]>([]);
   const [templateGoalToggles, setTemplateGoalToggles] = useState<Record<string, boolean>>({});
+  const [completedPlanSteps, setCompletedPlanSteps] = useState<string[]>([]);
+  const [customStories, setCustomStories] = useState<CustomStoryData[]>([]);
   const [savingTreatment, setSavingTreatment] = useState(false);
   const [todayMood, setTodayMood] = useState<{ moodLevel: number } | null | undefined>(undefined);
 
@@ -108,8 +131,8 @@ export function useTreatmentPageData() {
     [therapyItems, recentNotes, activeAppointments, childEvents]
   );
   const mergedGoalGroups = useMemo(
-    () => mergeGoalGroups(supportPlan.goalGroups, customGoals),
-    [supportPlan.goalGroups, customGoals]
+    () => mergeGoalGroups(supportPlan.goalGroups, customGoals, templateGoalToggles),
+    [supportPlan.goalGroups, customGoals, templateGoalToggles]
   );
   const sensoryMetrics = useMemo(() => buildEditableSensoryMetrics(sensoryProfile), [sensoryProfile]);
   const latestNote = recentNotes[0] || null;
@@ -135,7 +158,6 @@ export function useTreatmentPageData() {
       detail: weeklyCompletedGameCount > 0 ? 'Bu hafta tekrar edilen mini egzersiz sayısı' : 'Bugün ilk oyunu planlayabilirsiniz',
     },
     {
-      // Fix 3: totalGoalCount 0 iken yanıltıcı "0/1" gösterme
       title: 'Tamamlanan hedef',
       value: totalGoalCount > 0 ? `${completedGoalCount}/${totalGoalCount}` : '—',
       detail: totalGoalCount > 0 ? 'Tüm aktif beceri alanlarındaki toplam ilerleme' : 'Hedefler sekmesinden hedef ekleyebilirsiniz',
@@ -171,13 +193,22 @@ export function useTreatmentPageData() {
     detail: group.summary,
     linkedGame: supportPlan.games.find((game) => game.key === group.key)?.title || 'Günlük tekrar',
   }));
+
   const todayCompletedGames = useMemo(
     () => Array.from(
       new Set(gameSessions.filter((session) => getDateKey(session.completedAt) === todayKey).map((session) => session.gameId))
     ),
     [gameSessions, todayKey]
   );
+
+  const todayGameFeedback = useMemo(() => supportPlan.games.reduce<Record<string, GameReflection>>((acc, game) => {
+    const status = getGameFeedbackForDay(gameFeedback, todayKey, game.id);
+    if (status) acc[game.id] = status;
+    return acc;
+  }, {}), [gameFeedback, supportPlan.games, todayKey]);
+
   const showMilestoneBanner = supportPlan.games.length > 0 && todayCompletedGames.length >= supportPlan.games.length;
+
   const weeklyProgress = useMemo(() => {
     const labels = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
     return Array.from({ length: 7 }).map((_, index) => {
@@ -199,6 +230,11 @@ export function useTreatmentPageData() {
     });
   }, [completedGoalCount, gameSessions, goalProgressHistory, todayKey, totalGoalCount]);
 
+  const todayCompletedPlanSteps = useMemo(
+    () => new Set(completedPlanSteps.filter(s => s.startsWith(todayKey + ':')).map(s => s.slice(todayKey.length + 1))),
+    [completedPlanSteps, todayKey]
+  );
+
   const currentTreatmentState = () => createTreatmentState({
     customGoals,
     sensoryProfile,
@@ -206,9 +242,11 @@ export function useTreatmentPageData() {
     gameSessions,
     goalProgressHistory,
     templateGoalToggles,
+    completedPlanSteps,
+    customStories,
   });
 
-  const stateSetters = { setCustomGoals, setSensoryProfile, setGameFeedback, setGameSessions, setGoalProgressHistory, setTemplateGoalToggles };
+  const stateSetters = { setCustomGoals, setSensoryProfile, setGameFeedback, setGameSessions, setGoalProgressHistory, setTemplateGoalToggles, setCompletedPlanSteps, setCustomStories };
 
   useEffect(() => {
     selectedChildIdRef.current = selectedChild?.id || null;
@@ -254,10 +292,7 @@ export function useTreatmentPageData() {
     if (!activeChildId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setChildEvents([]);
-       
       setRecentNotes([]);
-       
-       
       setDetailLoading(false);
       return;
     }
@@ -293,32 +328,27 @@ export function useTreatmentPageData() {
     return () => controller.abort();
   }, [activeChildId]);
 
-  // Load treatment state from dedicated table — no longer stored in privacySettings
   useEffect(() => {
     if (!activeChildId) {
-      applyTreatmentState({
-        customGoals: [],
-        sensoryProfile: DEFAULT_SENSORY_PROFILE,
-        gameFeedback: {},
-        gameSessions: [],
-        goalProgressHistory: [],
-        templateGoalToggles: {},
-      }, stateSetters);
+      applyTreatmentState(createEmptyTreatmentState(), stateSetters);
       return;
     }
 
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    applyTreatmentState(createEmptyTreatmentState(), stateSetters);
+
     treatmentStateService.get(activeChildId)
-      .then(state => applyTreatmentState(state, stateSetters))
+      .then(state => {
+        if (!cancelled) applyTreatmentState(state, stateSetters);
+      })
       .catch(() => {
-        applyTreatmentState({
-          customGoals: [],
-          sensoryProfile: DEFAULT_SENSORY_PROFILE,
-          gameFeedback: {},
-          gameSessions: [],
-          goalProgressHistory: [],
-          templateGoalToggles: {},
-        }, stateSetters);
+        if (!cancelled) applyTreatmentState(createEmptyTreatmentState(), stateSetters);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeChildId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const persistTreatmentState = async (
@@ -330,7 +360,6 @@ export function useTreatmentPageData() {
 
     try {
       setSavingTreatment(true);
-      // Prune sessions older than 90 days before saving
       const prunedSessions = pruneOldSessions(nextState.gameSessions);
       const stateToSave = { ...nextState, gameSessions: prunedSessions };
       await treatmentStateService.save(activeChildId, stateToSave);
@@ -350,17 +379,9 @@ export function useTreatmentPageData() {
 
   const toggleGameCompletion = async (gameId: string) => {
     if (savingTreatment) return;
-
     const rollbackState = currentTreatmentState();
-    const next = toggleGameSessionForDay({
-      gameId,
-      todayKey,
-      gameSessions,
-      gameFeedback,
-      games: supportPlan.games,
-    });
+    const next = toggleGameSessionForDay({ gameId, todayKey, gameSessions, gameFeedback, games: supportPlan.games });
     const nextState = createTreatmentState({ ...rollbackState, gameFeedback: next.gameFeedback, gameSessions: next.gameSessions });
-
     setGameFeedback(next.gameFeedback);
     setGameSessions(next.gameSessions);
     await persistTreatmentState(nextState, rollbackState);
@@ -368,26 +389,21 @@ export function useTreatmentPageData() {
 
   const saveGameFeedback = async (gameId: string, status: GameReflection) => {
     if (savingTreatment) return;
-
     const rollbackState = currentTreatmentState();
     const next = saveGameFeedbackForDay({ gameId, status, todayKey, gameSessions, gameFeedback, games: supportPlan.games });
     const nextState = createTreatmentState({ ...rollbackState, gameFeedback: next.gameFeedback, gameSessions: next.gameSessions });
-
     setGameFeedback(next.gameFeedback);
     setGameSessions(next.gameSessions);
     await persistTreatmentState(nextState, rollbackState, 'Oyun geri bildirimi kaydedildi.');
   };
 
-  const addCustomGoal = async (title: string, focusKey: FocusKey) => {
+  const addCustomGoal = async (title: string, focusKey: FocusKey, dueDate?: string) => {
     if (savingTreatment) return false;
-
     const trimmed = title.trim();
     if (!trimmed) return false;
-
     const rollbackState = currentTreatmentState();
-    const next = buildGoalAddResult({ title: trimmed, focusKey, customGoals, goalGroups: supportPlan.goalGroups, goalProgressHistory, todayKey });
+    const next = buildGoalAddResult({ title: trimmed, focusKey, dueDate, customGoals, goalGroups: supportPlan.goalGroups, goalProgressHistory, todayKey, templateGoalToggles });
     const nextState = createTreatmentState({ ...rollbackState, customGoals: next.customGoals, goalProgressHistory: next.goalProgressHistory });
-
     setCustomGoals(next.customGoals);
     setGoalProgressHistory(next.goalProgressHistory);
     return persistTreatmentState(nextState, rollbackState, 'Yeni hedef eklendi.');
@@ -395,26 +411,21 @@ export function useTreatmentPageData() {
 
   const toggleCustomGoal = async (goalId: string) => {
     if (savingTreatment) return;
-
     const rollbackState = currentTreatmentState();
-    const next = buildGoalToggleResult({ goalId, customGoals, goalGroups: supportPlan.goalGroups, goalProgressHistory, todayKey });
+    const next = buildGoalToggleResult({ goalId, customGoals, goalGroups: supportPlan.goalGroups, goalProgressHistory, todayKey, templateGoalToggles });
     const nextState = createTreatmentState({ ...rollbackState, customGoals: next.customGoals, goalProgressHistory: next.goalProgressHistory });
-
     setCustomGoals(next.customGoals);
     setGoalProgressHistory(next.goalProgressHistory);
     await persistTreatmentState(nextState, rollbackState, 'Hedef güncellendi.');
   };
 
-  const updateCustomGoal = async (goalId: string, title: string, focusKey: FocusKey) => {
+  const updateCustomGoal = async (goalId: string, title: string, focusKey: FocusKey, dueDate?: string) => {
     if (savingTreatment) return false;
-
     const trimmed = title.trim();
     if (!trimmed) return false;
-
     const rollbackState = currentTreatmentState();
-    const next = buildGoalUpdateResult({ goalId, title: trimmed, focusKey, customGoals, goalGroups: supportPlan.goalGroups, goalProgressHistory, todayKey });
+    const next = buildGoalUpdateResult({ goalId, title: trimmed, focusKey, dueDate, customGoals, goalGroups: supportPlan.goalGroups, goalProgressHistory, todayKey, templateGoalToggles });
     const nextState = createTreatmentState({ ...rollbackState, customGoals: next.customGoals, goalProgressHistory: next.goalProgressHistory });
-
     setCustomGoals(next.customGoals);
     setGoalProgressHistory(next.goalProgressHistory);
     return persistTreatmentState(nextState, rollbackState, 'Hedef düzenlendi.');
@@ -422,19 +433,54 @@ export function useTreatmentPageData() {
 
   const deleteCustomGoal = async (goalId: string) => {
     if (savingTreatment) return;
-
     const rollbackState = currentTreatmentState();
-    const next = buildGoalDeleteResult({ goalId, customGoals, goalGroups: supportPlan.goalGroups, goalProgressHistory, todayKey });
+    const next = buildGoalDeleteResult({ goalId, customGoals, goalGroups: supportPlan.goalGroups, goalProgressHistory, todayKey, templateGoalToggles });
     const nextState = createTreatmentState({ ...rollbackState, customGoals: next.customGoals, goalProgressHistory: next.goalProgressHistory });
-
     setCustomGoals(next.customGoals);
     setGoalProgressHistory(next.goalProgressHistory);
     await persistTreatmentState(nextState, rollbackState, 'Hedef silindi.');
   };
 
+  const toggleTemplateGoal = async (goalLabel: string) => {
+    if (savingTreatment) return;
+    const rollbackState = currentTreatmentState();
+    const next = buildTemplateGoalToggleResult({ goalLabel, templateGoalToggles, goalGroups: supportPlan.goalGroups, customGoals, goalProgressHistory, todayKey });
+    const nextState = createTreatmentState({ ...rollbackState, templateGoalToggles: next.templateGoalToggles, goalProgressHistory: next.goalProgressHistory });
+    setTemplateGoalToggles(next.templateGoalToggles);
+    setGoalProgressHistory(next.goalProgressHistory);
+    await persistTreatmentState(nextState, rollbackState, 'Hedef güncellendi.');
+  };
+
+  const togglePlanStep = async (stepId: string) => {
+    if (savingTreatment) return;
+    const rollbackState = currentTreatmentState();
+    const next = buildPlanStepToggleResult({ stepId, todayKey, completedPlanSteps });
+    const nextState = createTreatmentState({ ...rollbackState, completedPlanSteps: next.completedPlanSteps });
+    setCompletedPlanSteps(next.completedPlanSteps);
+    await persistTreatmentState(nextState, rollbackState);
+  };
+
+  const addCustomStory = async (story: Omit<CustomStoryData, 'id'>) => {
+    if (savingTreatment) return false;
+    const rollbackState = currentTreatmentState();
+    const newStory: CustomStoryData = { ...story, id: crypto.randomUUID() };
+    const nextCustomStories = [...customStories, newStory];
+    const nextState = createTreatmentState({ ...rollbackState, customStories: nextCustomStories });
+    setCustomStories(nextCustomStories);
+    return persistTreatmentState(nextState, rollbackState, 'Sosyal hikâye eklendi.');
+  };
+
+  const deleteCustomStory = async (storyId: string) => {
+    if (savingTreatment) return;
+    const rollbackState = currentTreatmentState();
+    const nextCustomStories = customStories.filter(s => s.id !== storyId);
+    const nextState = createTreatmentState({ ...rollbackState, customStories: nextCustomStories });
+    setCustomStories(nextCustomStories);
+    await persistTreatmentState(nextState, rollbackState, 'Hikâye silindi.');
+  };
+
   const saveSensoryProfile = async () => {
     if (savingTreatment) return;
-
     const rollbackState = currentTreatmentState();
     const nextState = createTreatmentState({ ...rollbackState, sensoryProfile });
     await persistTreatmentState(nextState, rollbackState, 'Duyusal profil güncellendi.');
@@ -453,6 +499,7 @@ export function useTreatmentPageData() {
     children,
     completedGoalCount,
     customGoals,
+    customStories,
     detailLoading,
     gameFeedback,
     gameSessions,
@@ -470,18 +517,24 @@ export function useTreatmentPageData() {
     supportPlan,
     templateGoalToggles,
     todayCompletedGames,
+    todayCompletedPlanSteps,
+    todayGameFeedback,
     todayMood,
     totalGoalCount,
     weeklyProgress,
     weeklySummary,
     actions: {
       addCustomGoal,
+      addCustomStory,
       deleteCustomGoal,
+      deleteCustomStory,
       saveGameFeedback,
       saveSensoryProfile,
       setSelectedChild: selectChild,
       toggleCustomGoal,
       toggleGameCompletion,
+      togglePlanStep,
+      toggleTemplateGoal,
       updateCustomGoal,
       updateSensoryProfile,
     },
