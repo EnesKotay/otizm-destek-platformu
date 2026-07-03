@@ -504,6 +504,16 @@ Yanıtını tam olarak aşağıdaki etiketleri kullanarak ver. Başka hiçbir a�
         )}
       </div>
 
+      <div className="rounded-2xl border border-amber-100 bg-amber-50/80 p-4 print:hidden">
+        <p className="flex items-center gap-2 text-sm font-bold text-amber-950">
+          <AlertCircle size={16} />
+          Klinik kullanım sınırı
+        </p>
+        <p className="mt-1 text-xs font-semibold leading-5 text-amber-800">
+          Bu ekran BEP taslağı ve eğitim hedefi hazırlamaya yardımcı olur; tıbbi tanı, tedavi veya ilaç kararı yerine geçmez. Nihai rapor yetkili uzman değerlendirmesiyle tamamlanmalıdır.
+        </p>
+      </div>
+
       {step === 1 ? (
         <div className="grid lg:grid-cols-[1fr_420px] gap-6 print:hidden">
           <div className="space-y-6">

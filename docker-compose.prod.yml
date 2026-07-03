@@ -68,6 +68,7 @@ services:
       - VAPID_SUBJECT=${VAPID_SUBJECT}
       # AI
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_API_URL=${GEMINI_API_URL:-https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent}
       # Flyway
       - SPRING_FLYWAY_ENABLED=true
       - SPRING_FLYWAY_BASELINE_ON_MIGRATE=false

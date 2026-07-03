@@ -6,18 +6,21 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
-import { 
-  HeartHandshake, 
-  User, 
-  Mail, 
-  Lock, 
-  Shield, 
-  Sparkles, 
-  Brain, 
-  Users, 
+import {
+  HeartHandshake,
+  User,
+  Mail,
+  Lock,
+  Shield,
+  Sparkles,
+  Brain,
+  Users,
   ArrowRight,
   Eye,
-  EyeOff
+  EyeOff,
+  CalendarCheck,
+  CheckCircle2,
+  Circle,
 } from 'lucide-react';
 
 const schema = z.object({
@@ -32,6 +35,13 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
+
+const PASSWORD_RULES = [
+  { label: 'En az 8 karakter', test: (p: string) => p.length >= 8 },
+  { label: 'Bir büyük harf', test: (p: string) => /[A-Z]/.test(p) },
+  { label: 'Bir rakam', test: (p: string) => /[0-9]/.test(p) },
+  { label: 'Bir özel karakter', test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+];
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   if (!password) return { score: 0, label: '', color: '' };
@@ -172,6 +182,17 @@ export function RegisterPage() {
                 <p className="text-xs text-slate-400 mt-1">Randevu, mesaj ve paylaşım izinlerini aynı yerden takip edin.</p>
               </div>
             </div>
+
+            {/* Prop 3 */}
+            <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300 group">
+              <div className="w-10 h-10 rounded-xl bg-indigo-400/20 flex items-center justify-center shrink-0 border border-indigo-400/30 group-hover:scale-110 transition-transform">
+                <CalendarCheck className="text-indigo-300" size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Günlük takip akışı</h4>
+                <p className="text-xs text-slate-400 mt-1">Duygu, uyku, ilaç ve kısa gözlemleri yorulmadan kaydedin.</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -302,20 +323,27 @@ export function RegisterPage() {
               </div>
               {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password.message}</p>}
 
-              {/* Password strength bar */}
+              {/* Password requirements checklist */}
               {(watchedPassword || passwordValue) && (
-                <div className="mt-2.5 space-y-1.5 p-2 bg-slate-50 border border-slate-100 rounded-lg">
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <div
-                        key={i}
-                        className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                          i <= strength.score ? strength.color : 'bg-gray-200'
-                        }`}
-                      />
-                    ))}
+                <div className="mt-2.5 space-y-2 p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                    {PASSWORD_RULES.map((rule) => {
+                      const met = rule.test(watchedPassword || passwordValue);
+                      return (
+                        <div key={rule.label} className="flex items-center gap-1.5">
+                          {met ? (
+                            <CheckCircle2 size={13} className="shrink-0 text-emerald-500" />
+                          ) : (
+                            <Circle size={13} className="shrink-0 text-gray-300" />
+                          )}
+                          <span className={`text-[11px] font-medium ${met ? 'text-emerald-700' : 'text-gray-400'}`}>
+                            {rule.label}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between border-t border-slate-200 pt-1.5">
                     <span className="text-[10px] text-gray-400">Şifre Gücü:</span>
                     <span className={`text-[10px] font-bold ${
                       strength.score <= 1 ? 'text-red-500' :

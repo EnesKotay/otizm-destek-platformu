@@ -9,6 +9,9 @@ import {
   BookOpen,
   Calendar,
   CalendarCheck,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   ClipboardCheck,
   ClipboardList,
   FileText,
@@ -18,20 +21,28 @@ import {
   HelpCircle,
   LayoutDashboard,
   ListChecks,
+  LockKeyhole,
   MapPin,
   MessageCircle,
   NotebookTabs,
+  Rocket,
   Search,
   Settings,
   ShieldAlert,
   ShieldCheck,
-  Smile,
   Star,
+  Target,
   TrendingUp,
+  UserCog,
   Users,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-import type { UserRole } from '@/config/roleAccess';
+import {
+  FEATURE_PERMISSIONS,
+  ROLE_LABELS,
+  getFeaturePermissionsForRole,
+  type UserRole,
+} from '@/config/roleAccess';
 import { cn } from '@/utils/cn';
 
 type GuidePage = {
@@ -50,6 +61,22 @@ type GuideGroup = {
   pages: GuidePage[];
 };
 
+type RoleStartStep = {
+  icon: ElementType;
+  title: string;
+  description: string;
+  to?: string;
+  badge: string;
+};
+
+type ProjectPhase = {
+  title: string;
+  status: 'Hazır' | 'Sıradaki' | 'Planlandı';
+  objective: string;
+  deliverables: string[];
+  owners: UserRole[];
+};
+
 const VISITED_KEY = 'guide-visited-routes';
 
 const PARENT_GUIDE: GuideGroup[] = [
@@ -62,7 +89,7 @@ const PARENT_GUIDE: GuideGroup[] = [
         title: 'Ana Sayfa',
         to: '/anasayfa',
         purpose: 'Bugün yapılacakları, hatırlatmaları ve kısa günlük planı tek yerde gösterir.',
-        useWhen: 'Siteye her girişte “bugün ne yapacağım?” diye bakmak istediğinde.',
+        useWhen: 'Siteye her girişte “bugün ne yapacağım?” diye bakmak istediğinizde.',
         badge: 'Her gün',
         keywords: ['ana sayfa', 'başlangıç', 'görev', 'bugün', 'dashboard'],
       },
@@ -70,17 +97,17 @@ const PARENT_GUIDE: GuideGroup[] = [
         icon: ClipboardList,
         title: 'Bugünkü Kayıt',
         to: '/gunluk-takip',
-        purpose: 'Ruh hali, uyku, ilaç ve kısa günlük gözlemleri kaydetmek için kullanılır.',
-        useWhen: 'Günün sonunda veya önemli bir değişiklik olduğunda kısa kayıt girmek istediğinde.',
+        purpose: 'Ruh hali, uyku, ilaç ve kısa günlük gözlemleri kaydetmek için kullanılır. Kendi ebeveyn refahınızı (stres, iyi oluş, öz bakım) da burada not edebilirsiniz.',
+        useWhen: 'Günün sonunda veya önemli bir değişiklik olduğunda kısa kayıt girmek istediğinizde.',
         badge: 'Kısa kayıt',
-        keywords: ['günlük', 'ruh hali', 'uyku', 'ilaç', 'kayıt', 'bugünkü kayıt'],
+        keywords: ['günlük', 'ruh hali', 'uyku', 'ilaç', 'kayıt', 'bugünkü kayıt', 'ebeveyn', 'refah', 'stres', 'iyi oluş', 'öz bakım', 'ebeveyn refahı'],
       },
       {
         icon: MessageCircle,
         title: 'Mesajlar',
         to: '/mesajlar',
         purpose: 'Uzmanlar ve platformdaki kişilerle güvenli yazışma alanıdır.',
-        useWhen: 'Randevu, soru veya takip için mesajlaşmak istediğinde.',
+        useWhen: 'Randevu, soru veya takip için mesajlaşmak istediğinizde.',
         keywords: ['mesaj', 'sohbet', 'iletişim', 'uzman', 'chat'],
       },
       {
@@ -88,7 +115,7 @@ const PARENT_GUIDE: GuideGroup[] = [
         title: 'Doktor & Terapi',
         to: '/randevular',
         purpose: 'Randevu talepleri, seans zamanı ve görüşme akışını yönetir.',
-        useWhen: 'Uzmanla görüşme planlamak veya yaklaşan randevuları görmek istediğinde.',
+        useWhen: 'Uzmanla görüşme planlamak veya yaklaşan randevuları görmek istediğinizde.',
         keywords: ['randevu', 'takvim', 'seans', 'görüşme', 'uzman', 'doktor', 'terapi'],
       },
       {
@@ -121,9 +148,9 @@ const PARENT_GUIDE: GuideGroup[] = [
         icon: Settings,
         title: 'Ayarlar',
         to: '/ayarlar',
-        purpose: 'Profilinizi, çocuk erişim izinlerini, şifrenizi ve bildirim tercihlerinizi düzenler.',
+        purpose: 'Profilinizi, çocuk erişim izinlerini, şifrenizi ve bildirim tercihlerinizi düzenler. Uzmanla hangi gelişim bilgisinin paylaşılacağını da burada kontrol edersiniz.',
         useWhen: 'Kişisel bilgilerinizi değiştirmek veya uzmana veri paylaşım izinlerini yönetmek istediğinizde.',
-        keywords: ['ayarlar', 'profil', 'şifre', 'gizlilik', 'izinler'],
+        keywords: ['ayarlar', 'profil', 'şifre', 'gizlilik', 'izinler', 'paylaşım', 'uzman', 'uzmanla paylaş', 'ilerleme'],
       },
     ],
   },
@@ -136,7 +163,7 @@ const PARENT_GUIDE: GuideGroup[] = [
         title: 'Çocuğumun Bilgileri',
         to: '/cocuklarim',
         purpose: 'Çocuğun temel bilgilerini, tanı notlarını, terapi ve ihtiyaç bilgilerini tutar.',
-        useWhen: 'İlk kurulumda veya çocukla ilgili bilgileri güncellemek istediğinde.',
+        useWhen: 'İlk kurulumda veya çocukla ilgili bilgileri güncellemek istediğinizde.',
         badge: 'İlk adım',
         keywords: ['çocuk', 'profil', 'tanı', 'terapi', 'bilgi', 'çocuğumun bilgileri'],
       },
@@ -145,7 +172,7 @@ const PARENT_GUIDE: GuideGroup[] = [
         title: 'Nasıl İlerliyoruz?',
         to: '/gelisim-paneli',
         purpose: 'Günlük kayıtları grafiklere ve haftalık eğilimlere dönüştürür.',
-        useWhen: 'Tek tek kayıtlardan daha büyük resmi görmek istediğinde.',
+        useWhen: 'Tek tek kayıtlardan daha büyük resmi görmek istediğinizde.',
         keywords: ['ilerleme', 'grafik', 'analiz', 'trend', 'gelişim', 'nasıl ilerliyoruz'],
       },
       {
@@ -153,7 +180,7 @@ const PARENT_GUIDE: GuideGroup[] = [
         title: 'Hedefler ve Egzersizler',
         to: '/tedavi',
         purpose: 'Küçük hedefler, ev çalışmaları ve günlük destek akışını toplar.',
-        useWhen: 'Bugün evde uygulanabilecek kısa etkinlik veya hedef aradığında.',
+        useWhen: 'Bugün evde uygulanabilecek kısa etkinlik veya hedef aradığınızda.',
         keywords: ['tedavi', 'plan', 'hedef', 'aktivite', 'ev çalışması', 'hedefler ve egzersizler'],
       },
       {
@@ -161,16 +188,16 @@ const PARENT_GUIDE: GuideGroup[] = [
         title: 'Ödevler',
         to: '/gorevler',
         purpose: 'Uzman tarafından verilen görevleri ve tamamlanma durumunu gösterir.',
-        useWhen: 'Seans sonrası verilen çalışmaları takip etmek istediğinde.',
+        useWhen: 'Seans sonrası verilen çalışmaları takip etmek istediğinizde.',
         keywords: ['görev', 'ödev', 'uzman', 'tamamlandı', 'takip', 'ödevler'],
       },
       {
         icon: NotebookTabs,
         title: 'Notlarım',
         to: '/notlar',
-        purpose: 'Davranış, gelişim, görüşme veya dikkat çeken olayları serbest not olarak saklar.',
-        useWhen: 'Uzmanla paylaşmak veya sonra hatırlamak istediğin kısa gözlemler olduğunda.',
-        keywords: ['not', 'gözlem', 'gelişim', 'davranış', 'hatırlatma', 'notlarım'],
+        purpose: 'Davranış, gelişim, görüşme veya dikkat çeken olayları serbest not olarak saklar. Davranışın öncesi/sonrasını da burada, "Davranış" kategorisiyle kaydedebilirsiniz.',
+        useWhen: 'Uzmanla paylaşmak, tekrarlayan bir davranışı anlamak veya sonra hatırlamak istediğiniz kısa gözlemler olduğunda.',
+        keywords: ['not', 'gözlem', 'gelişim', 'davranış', 'hatırlatma', 'notlarım', 'abc', 'öncesi', 'sonrası', 'örüntü', 'davranış notu'],
       },
       {
         icon: ShieldAlert,
@@ -181,27 +208,11 @@ const PARENT_GUIDE: GuideGroup[] = [
         keywords: ['acil', 'kart', 'güvenlik', 'bilgi', 'qr', 'acil durum kartı'],
       },
       {
-        icon: BookOpen,
-        title: 'Davranış Notu',
-        to: '/davranis-gunlugu',
-        purpose: 'Davranışın öncesi, davranış ve sonrasını daha düzenli kaydetmeye yarar.',
-        useWhen: 'Tekrarlayan bir davranışı anlamak ve örüntü görmek istediğinde.',
-        keywords: ['davranış', 'abc', 'öncesi', 'sonrası', 'örüntü', 'davranış notu'],
-      },
-      {
-        icon: ShieldCheck,
-        title: 'Uzmanla Paylaş',
-        to: '/paylasimli-ilerleme',
-        purpose: 'Hangi gelişim bilgisinin uzmanla paylaşılacağını kontrol etmeni sağlar.',
-        useWhen: 'Uzmanın kayıtları görmesini istiyor ama kontrol sende kalsın istiyorsan.',
-        keywords: ['paylaşım', 'uzman', 'izin', 'gizlilik', 'ilerleme', 'uzmanla paylaş'],
-      },
-      {
         icon: Calendar,
         title: 'Takvim',
         to: '/takvim',
         purpose: 'Randevu, okul, etkinlik ve hatırlatmaları tarihli şekilde tutar.',
-        useWhen: 'Yaklaşan planları unutmak istemediğinde.',
+        useWhen: 'Yaklaşan planları unutmak istemediğinizde.',
         keywords: ['takvim', 'etkinlik', 'hatırlatma', 'plan', 'randevu'],
       },
       {
@@ -209,7 +220,7 @@ const PARENT_GUIDE: GuideGroup[] = [
         title: 'Rutinler',
         to: '/rutinler',
         purpose: 'Günlük rutinleri adım adım takip etmeye yardımcı olur.',
-        useWhen: 'Sabah, okul, uyku veya geçiş rutinini görselleştirmek istediğinde.',
+        useWhen: 'Sabah, okul, uyku veya geçiş rutinini görselleştirmek istediğinizde.',
         keywords: ['rutin', 'program', 'adım', 'görsel', 'geçiş', 'rutinler'],
       },
     ],
@@ -231,7 +242,7 @@ const PARENT_GUIDE: GuideGroup[] = [
         title: 'Dertleşme Duvarı',
         to: '/dertlesme-duvari',
         purpose: 'Duygu ve deneyim paylaşımı için daha serbest bir destek alanıdır.',
-        useWhen: 'Soru sormaktan çok içini dökmek veya diğer ailelerden destek görmek istediğinde.',
+        useWhen: 'Soru sormaktan çok içinizi dökmek veya diğer ailelerden destek görmek istediğinizde.',
         keywords: ['dertleşme', 'duygu', 'paylaşım', 'destek', 'aile', 'dertleşme duvarı'],
       },
       {
@@ -262,17 +273,9 @@ const PARENT_GUIDE: GuideGroup[] = [
         icon: BookOpen,
         title: 'Bilgi Bankası',
         to: '/bilgi-bankasi',
-        purpose: 'Güvenilir yazılar, rehberler ve kaynak içerikleri toplar.',
-        useWhen: 'Bir konuyu sakin sakin okumak ve öğrenmek istediğinde.',
-        keywords: ['bilgi', 'makale', 'rehber', 'kaynak', 'öğrenme', 'bilgi bankası'],
-      },
-      {
-        icon: Smile,
-        title: 'Ebeveyn Refahı',
-        to: '/ebeveyn-refahi',
-        purpose: 'Ebeveynin iyi oluşu, stres ve öz bakım takibi için ayrılmıştır.',
-        useWhen: 'Sadece çocuğun değil kendi yükünü de izlemek istediğinde.',
-        keywords: ['ebeveyn', 'refah', 'stres', 'iyi oluş', 'öz bakım', 'ebeveyn refahı'],
+        purpose: 'Güvenilir yazıları, video rehberleri, podcastleri ve kaynak içerikleri toplar.',
+        useWhen: 'Bir konuyu sakin sakin okumak, izlemek veya öğrenmek istediğinizde.',
+        keywords: ['bilgi', 'makale', 'video', 'podcast', 'rehber', 'kaynak', 'öğrenme', 'bilgi bankası'],
       },
     ],
   },
@@ -297,7 +300,7 @@ const EXPERT_GUIDE: GuideGroup[] = [
         title: 'Ana Sayfa',
         to: '/anasayfa',
         purpose: 'Bugünkü randevuları, bekleyen onayları ve mesajları özetler.',
-        useWhen: 'Güne başlarken çalışma akışını görmek istediğinde.',
+        useWhen: 'Güne başlarken çalışma akışını görmek istediğinizde.',
         badge: 'Her gün',
         keywords: ['ana sayfa', 'özet', 'randevu', 'mesaj', 'dashboard'],
       },
@@ -305,16 +308,16 @@ const EXPERT_GUIDE: GuideGroup[] = [
         icon: Users,
         title: 'Danışanlarım',
         to: '/danisanlarim',
-        purpose: 'Danışan profilleri, görevleri, notları ve seans geçmişini toplar.',
-        useWhen: 'Bir danışanın durumuna veya görevlerine bakmak istediğinde.',
-        keywords: ['danışan', 'hasta', 'çocuk', 'görev', 'not'],
+        purpose: 'Danışan profilleri, görevleri, klinik notları ve seans geçmişini toplar. Acil dikkat isteyen davranış, gerileme veya kriz uyarıları da burada öne çıkar.',
+        useWhen: 'Bir danışanın durumuna, muayene öncesi son durumuna veya hangi danışana önce bakmanız gerektiğine bakmak istediğinizde.',
+        keywords: ['danışan', 'hasta', 'çocuk', 'görev', 'not', 'klinik takip', 'muayene', 'seans', 'hasta özeti', 'risk', 'uyarı', 'öncelik', 'kriz', 'gerileme', 'yan etki'],
       },
       {
         icon: CalendarCheck,
         title: 'Randevularım',
         to: '/randevular',
         purpose: 'Çalışma saatlerini, randevu taleplerini ve programı yönetir.',
-        useWhen: 'Müsaitlik ayarlamak veya randevu onaylamak istediğinde.',
+        useWhen: 'Müsaitlik ayarlamak veya randevu onaylamak istediğinizde.',
         keywords: ['randevu', 'müsaitlik', 'takvim', 'onay', 'program', 'randevularım'],
       },
       {
@@ -322,32 +325,16 @@ const EXPERT_GUIDE: GuideGroup[] = [
         title: 'BEP Raporu Yaz',
         to: '/bep-raporu',
         purpose: 'BEP ve gelişim raporlarını yapılandırılmış şekilde hazırlamaya yarar.',
-        useWhen: 'Danışan için yapılandırılmış rapor üretmek istediğinde.',
+        useWhen: 'Danışan için yapılandırılmış rapor üretmek istediğinizde.',
         badge: 'Belge',
         keywords: ['rapor', 'bep', 'gelişim raporu', 'çıktı', 'belge', 'bep raporu yaz'],
-      },
-      {
-        icon: ClipboardList,
-        title: 'Klinik Takip',
-        to: '/danisanlarim',
-        purpose: 'Danışanın son görüşme notları, görevleri ve seans geçmişini klinik bağlamda toplar.',
-        useWhen: 'Muayene öncesi hastanın son durumunu görmek veya görüşme sonrası kısa not düşmek istediğinde.',
-        keywords: ['klinik takip', 'muayene', 'seans', 'hasta özeti', 'not'],
-      },
-      {
-        icon: ShieldAlert,
-        title: 'Risk ve Öncelik Uyarıları',
-        to: '/danisanlarim',
-        purpose: 'Acil dikkat isteyen davranış, gerileme, yoğun kriz veya aile mesajlarını öne almanı sağlar.',
-        useWhen: 'Hangi danışana önce bakmalıyım sorusunu hızlı yanıtlamak istediğinde.',
-        keywords: ['risk', 'uyarı', 'öncelik', 'kriz', 'gerileme', 'yan etki'],
       },
       {
         icon: Activity,
         title: 'Terapi ve Ev Planı',
         to: '/gorevler',
         purpose: 'Seans hedeflerini, ev çalışmalarını ve tamamlanma durumunu izler.',
-        useWhen: 'Tedavi hedefi vermek, takip etmek veya aileye uygulanabilir görev bırakmak istediğinde.',
+        useWhen: 'Tedavi hedefi vermek, takip etmek veya aileye uygulanabilir görev bırakmak istediğinizde.',
         keywords: ['terapi', 'tedavi', 'ev planı', 'hedef', 'görev'],
       },
     ],
@@ -361,7 +348,7 @@ const EXPERT_GUIDE: GuideGroup[] = [
         title: 'Mesajlar',
         to: '/mesajlar',
         purpose: 'Danışan aileleriyle güvenli yazışma alanıdır.',
-        useWhen: 'Ailelerden gelen soruları ve takip mesajlarını yanıtlamak istediğinde.',
+        useWhen: 'Ailelerden gelen soruları ve takip mesajlarını yanıtlamak istediğinizde.',
         keywords: ['mesaj', 'aile', 'iletişim', 'sohbet', 'danışan'],
       },
       {
@@ -369,7 +356,7 @@ const EXPERT_GUIDE: GuideGroup[] = [
         title: 'Forum',
         to: '/forum',
         purpose: 'Topluluk sorularını ve uzman yanıtlarını bir araya getirir.',
-        useWhen: 'Genel sorulara katkı vermek veya topluluk nabzını görmek istediğinde.',
+        useWhen: 'Genel sorulara katkı vermek veya topluluk nabzını görmek istediğinizde.',
         keywords: ['forum', 'soru', 'cevap', 'topluluk', 'uzman'],
       },
       {
@@ -390,9 +377,9 @@ const EXPERT_GUIDE: GuideGroup[] = [
         icon: BookOpen,
         title: 'Bilgi Bankası',
         to: '/bilgi-bankasi',
-        purpose: 'Ailelere yönlendirebileceğin güvenilir içerikleri gösterir.',
-        useWhen: 'Bir konuyu destekleyen kaynak paylaşmak istediğinde.',
-        keywords: ['bilgi', 'kaynak', 'makale', 'rehber', 'aile'],
+        purpose: 'Ailelere yönlendirebileceğiniz güvenilir makale, video ve podcast içeriklerini gösterir.',
+        useWhen: 'Bir konuyu destekleyen kaynak veya video rehber paylaşmak istediğinizde.',
+        keywords: ['bilgi', 'kaynak', 'makale', 'video', 'podcast', 'rehber', 'aile'],
       },
       {
         icon: HelpCircle,
@@ -406,17 +393,9 @@ const EXPERT_GUIDE: GuideGroup[] = [
         icon: Settings,
         title: 'Ayarlar',
         to: '/ayarlar',
-        purpose: 'Profil, uzmanlık, hesap ve tercih bilgilerini düzenler.',
-        useWhen: 'Görünür profilini veya hesap tercihlerini güncellemek istediğinde.',
-        keywords: ['ayarlar', 'profil', 'hesap', 'uzmanlık', 'tercih'],
-      },
-      {
-        icon: ShieldCheck,
-        title: 'Paylaşım ve Mahremiyet',
-        to: '/paylasimli-ilerleme',
-        purpose: 'Aileyle paylaşılan ilerleme notlarını ve uzman-aile bilgi akışını kontrollü tutar.',
-        useWhen: 'Hangi bilginin aileyle paylaşıldığını kontrol etmek veya ortak kayıt oluşturmak istediğinde.',
-        keywords: ['mahremiyet', 'kvkk', 'izin', 'paylaşım', 'gizlilik'],
+        purpose: 'Profil, uzmanlık, hesap ve tercih bilgilerini düzenler. Aileyle paylaşılan ilerleme notlarını ve uzman-aile bilgi akışını da buradan kontrollü tutarsınız.',
+        useWhen: 'Görünür profilinizi, hesap tercihlerinizi veya hangi bilginin aileyle paylaşıldığını güncellemek istediğinizde.',
+        keywords: ['ayarlar', 'profil', 'hesap', 'uzmanlık', 'tercih', 'mahremiyet', 'kvkk', 'izin', 'paylaşım', 'gizlilik'],
       },
     ],
   },
@@ -441,7 +420,7 @@ const ADMIN_GUIDE: GuideGroup[] = [
         title: 'Ana Sayfa',
         to: '/anasayfa',
         purpose: 'Platform kullanıcıları, uzmanlar ve raporlarla ilgili günlük özeti gösterir.',
-        useWhen: 'Sistemin genel durumunu hızlıca kontrol etmek istediğinde.',
+        useWhen: 'Sistemin genel durumunu hızlıca kontrol etmek istediğinizde.',
         badge: 'Her gün',
         keywords: ['ana sayfa', 'özet', 'platform', 'admin', 'durum'],
       },
@@ -450,7 +429,7 @@ const ADMIN_GUIDE: GuideGroup[] = [
         title: 'Analitik',
         to: '/admin/analytics',
         purpose: 'Kullanım, büyüme ve sistem metriklerini takip eder.',
-        useWhen: 'Platformun nasıl kullanıldığını görmek istediğinde.',
+        useWhen: 'Platformun nasıl kullanıldığını görmek istediğinizde.',
         keywords: ['analitik', 'metrik', 'grafik', 'kullanım', 'büyüme'],
       },
       {
@@ -466,7 +445,7 @@ const ADMIN_GUIDE: GuideGroup[] = [
         title: 'Kullanıcı Yönetimi',
         to: '/admin/users',
         purpose: 'Kullanıcı hesapları, roller ve aktiflik durumlarını gösterir.',
-        useWhen: 'Bir kullanıcı hesabını kontrol etmek veya rolünü görmek istediğinde.',
+        useWhen: 'Bir kullanıcı hesabını kontrol etmek veya rolünü görmek istediğinizde.',
         keywords: ['kullanıcı', 'rol', 'hesap', 'aktif', 'admin'],
       },
       {
@@ -474,7 +453,7 @@ const ADMIN_GUIDE: GuideGroup[] = [
         title: 'İçerik Yönetimi',
         to: '/admin/content',
         purpose: 'Bilgi bankası ve kaynak içeriklerinin yönetildiği alandır.',
-        useWhen: 'İçerik eklemek, düzenlemek veya yayına almak istediğinde.',
+        useWhen: 'İçerik eklemek, düzenlemek veya yayına almak istediğinizde.',
         keywords: ['içerik', 'cms', 'makale', 'bilgi', 'yayın'],
       },
       {
@@ -490,7 +469,7 @@ const ADMIN_GUIDE: GuideGroup[] = [
         title: 'Aktivite Kaydı',
         to: '/admin/auditlog',
         purpose: 'Sistemdeki önemli işlem geçmişlerini takip eder.',
-        useWhen: 'Kim ne yaptı sorusuna kayıt üzerinden bakmak istediğinde.',
+        useWhen: 'Kim ne yaptı sorusuna kayıt üzerinden bakmak istediğinizde.',
         keywords: ['aktivite', 'log', 'geçmiş', 'işlem', 'denetim'],
       },
       {
@@ -563,6 +542,137 @@ const GUIDE_BY_ROLE: Record<UserRole, GuideGroup[]> = {
   ADMIN: ADMIN_GUIDE,
 };
 
+const ROLE_START_STEPS: Record<UserRole, RoleStartStep[]> = {
+  PARENT: [
+    {
+      icon: Baby,
+      title: 'Çocuk profilini oluştur',
+      description: 'Temel bilgiler, tanı notları ve ihtiyaçları girerek takip edilecek çocuğu hazırlayın.',
+      to: '/cocuklarim',
+      badge: 'İlk kurulum',
+    },
+    {
+      icon: ClipboardList,
+      title: 'İlk günlük kaydı ekle',
+      description: 'Uyku, ruh hali, ilaç ve gözlemleri kısa kayıtlarla düzenli hale getirin.',
+      to: '/gunluk-takip',
+      badge: 'Günlük rutin',
+    },
+    {
+      icon: CalendarCheck,
+      title: 'Uzmanla randevu planla',
+      description: 'Uygun uzmanı seçin, randevu talebi oluşturun ve görüşme akışını takip edin.',
+      to: '/randevular',
+      badge: 'Klinik destek',
+    },
+    {
+      icon: ShieldCheck,
+      title: 'Paylaşım izinlerini kontrol et',
+      description: 'Uzmanın hangi çocuk verilerini görebileceğini ayarlardan yönetin.',
+      to: '/ayarlar',
+      badge: 'Gizlilik',
+    },
+  ],
+  EXPERT: [
+    {
+      icon: Users,
+      title: 'Danışan listesini düzenle',
+      description: 'Aktif aileleri, bekleyen bağlantıları ve öncelikli danışanları tek listede takip edin.',
+      to: '/danisanlarim',
+      badge: 'Çalışma alanı',
+    },
+    {
+      icon: CalendarCheck,
+      title: 'Müsaitlik ve randevuları yönet',
+      description: 'Randevu taleplerini onaylayın, seans programını güncelleyin ve aileleri bilgilendirin.',
+      to: '/randevular',
+      badge: 'Takvim',
+    },
+    {
+      icon: ClipboardCheck,
+      title: 'Görev ve ev planı ver',
+      description: 'Danışan için uygulanabilir hedefler, ödevler ve takip adımları oluşturun.',
+      to: '/gorevler',
+      badge: 'Takip',
+    },
+    {
+      icon: FileText,
+      title: 'BEP raporu hazırla',
+      description: 'Doğrulanmış uzman hesabıyla yapılandırılmış rapor üretimini kullanın.',
+      to: '/bep-raporu',
+      badge: 'Belge',
+    },
+  ],
+  ADMIN: [
+    {
+      icon: UserCog,
+      title: 'Kullanıcı hesaplarını incele',
+      description: 'Aile, uzman ve yönetici hesaplarını filtreleyin, durumlarını ve rollerini kontrol edin.',
+      to: '/admin/users',
+      badge: 'Yönetim',
+    },
+    {
+      icon: GraduationCap,
+      title: 'Uzman başvurularını sonuçlandır',
+      description: 'Başvuru belgelerini inceleyin, doğrulama durumunu güncelleyin ve kullanıcıyı bilgilendirin.',
+      to: '/admin/experts',
+      badge: 'Doğrulama',
+    },
+    {
+      icon: AlertTriangle,
+      title: 'Moderasyon raporlarını ele al',
+      description: 'Şikayetleri, bildirilen içerikleri ve gerekli platform aksiyonlarını yönetin.',
+      to: '/admin/reports',
+      badge: 'Güvenlik',
+    },
+    {
+      icon: Settings,
+      title: 'Sistem ayarlarını denetle',
+      description: 'Bakım modu, platform yapılandırması ve genel ayarları güvenli şekilde yönetin.',
+      to: '/admin/settings',
+      badge: 'Sistem',
+    },
+  ],
+};
+
+const PROJECT_PHASES: ProjectPhase[] = [
+  {
+    title: 'Kapsam ve rol analizi',
+    status: 'Hazır',
+    objective: 'Kullanıcı türlerini, ana iş akışlarını ve erişim sınırlarını netleştirmek.',
+    deliverables: ['Rol listesi', 'Sayfa envanteri', 'Yetki matrisi'],
+    owners: ['ADMIN'],
+  },
+  {
+    title: 'Kullanım rehberi tasarımı',
+    status: 'Hazır',
+    objective: 'Her rol için başlangıç adımları, sayfa amaçları ve ne zaman kullanılır açıklamalarını hazırlamak.',
+    deliverables: ['Rol bazlı rehber', 'Arama ve kategori akışı', 'Hızlı başlangıç görevleri'],
+    owners: ['PARENT', 'EXPERT', 'ADMIN'],
+  },
+  {
+    title: 'Yetki uygulaması',
+    status: 'Hazır',
+    objective: 'Route, menü ve rehber görünümünü merkezi izin matrisine göre tutarlı hale getirmek.',
+    deliverables: ['Frontend izin matrisi', 'Rol bazlı görünürlük', 'Backend @PreAuthorize ve servis kontrol eşleştirmesi'],
+    owners: ['ADMIN'],
+  },
+  {
+    title: 'Test ve kabul',
+    status: 'Sıradaki',
+    objective: 'Aile, uzman ve admin hesaplarıyla kritik senaryoları doğrulamak.',
+    deliverables: ['Rol bazlı test senaryoları', 'Yetkisiz erişim kontrolü', 'Kabul notları'],
+    owners: ['PARENT', 'EXPERT', 'ADMIN'],
+  },
+  {
+    title: 'Yayın ve bakım',
+    status: 'Planlandı',
+    objective: 'Rehberi yeni özelliklerle güncel tutmak ve izin değişikliklerini kayıt altına almak.',
+    deliverables: ['Sürüm notu', 'Rehber güncelleme rutini', 'Admin kontrol listesi'],
+    owners: ['ADMIN'],
+  },
+];
+
 function readVisitedRoutes() {
   try {
     return new Set(JSON.parse(localStorage.getItem(VISITED_KEY) ?? '[]') as string[]);
@@ -615,6 +725,214 @@ function PageCard({ page, onVisit }: { page: GuidePage; onVisit: (to: string) =>
   );
 }
 
+function RoleStartPanel({ role, onVisit }: { role: UserRole; onVisit: (to: string) => void }) {
+  const steps = ROLE_START_STEPS[role];
+  return (
+    <section className="rounded-[28px] border border-indigo-100 bg-gradient-to-br from-white to-indigo-50/40 p-5 shadow-sm">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700">
+            <Rocket size={13} />
+            Bugün buradan başlayın
+          </p>
+          <h2 className="mt-3 text-xl font-black tracking-tight text-slate-950">{ROLE_LABELS[role]} için ilk adımlar</h2>
+          <p className="mt-1 max-w-3xl text-sm font-semibold leading-relaxed text-slate-500">
+            Bu bölüm rehberin kısa yoludur: önce bu adımları tamamlayın, sonra ihtiyacınıza göre aşağıdaki sayfa haritasına geçin.
+          </p>
+        </div>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-500">
+          {steps.length} adım
+        </span>
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {steps.map((step, index) => {
+          const Icon = step.icon;
+          const content = (
+            <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50/60 p-4 transition-all duration-300 hover:border-indigo-200 hover:bg-white hover:shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600 ring-1 ring-indigo-100">
+                  <Icon size={18} />
+                </span>
+                <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-extrabold text-slate-500 ring-1 ring-slate-200">
+                  {index + 1}. adım
+                </span>
+              </div>
+              <p className="mt-4 text-[10px] font-black uppercase tracking-wider text-emerald-600">{step.badge}</p>
+              <h3 className="mt-1 text-sm font-extrabold text-slate-950">{step.title}</h3>
+              <p className="mt-2 flex-1 text-xs font-semibold leading-relaxed text-slate-500">{step.description}</p>
+              {step.to && (
+                <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-extrabold text-indigo-600">
+                  İlgili sayfaya git
+                  <ArrowRight size={14} />
+                </span>
+              )}
+            </div>
+          );
+
+          return step.to ? (
+            <Link key={step.title} to={step.to} onClick={() => onVisit(step.to!)} className="block h-full">
+              {content}
+            </Link>
+          ) : (
+            <div key={step.title} className="h-full">{content}</div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function PermissionMatrix({ role }: { role: UserRole }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const activePermissions = getFeaturePermissionsForRole(role);
+  return (
+    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-600">
+            <LockKeyhole size={13} />
+            Neleri görebilirsiniz?
+          </p>
+          <h2 className="mt-3 text-xl font-black tracking-tight text-slate-950">Kullanıcı türlerine göre erişim</h2>
+          <p className="mt-1 max-w-3xl text-sm font-semibold leading-relaxed text-slate-500">
+            Kısa özet aşağıda. Ayrıntılı rol matrisini yalnızca ihtiyaç duyduğunuzda açabilirsiniz.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsOpen((value) => !value)}
+          className="inline-flex items-center justify-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-extrabold text-indigo-700 ring-1 ring-indigo-100 transition-colors hover:bg-indigo-100"
+          aria-expanded={isOpen}
+        >
+          {ROLE_LABELS[role]}: {activePermissions.length} yetki
+          {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {activePermissions.slice(0, 6).map((feature) => (
+          <span key={feature.key} className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+            {feature.title}
+          </span>
+        ))}
+        {activePermissions.length > 6 && (
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">
+            +{activePermissions.length - 6} diğer
+          </span>
+        )}
+      </div>
+
+      {isOpen && (
+      <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200">
+        <div className="min-w-[760px]">
+          <div className="grid grid-cols-[1.4fr_0.7fr_0.7fr_0.7fr] bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-500">
+            <div className="px-4 py-3">Özellik</div>
+            {(['PARENT', 'EXPERT', 'ADMIN'] as UserRole[]).map((itemRole) => (
+              <div key={itemRole} className={cn(
+                "px-3 py-3 text-center",
+                itemRole === role && "bg-indigo-50 text-indigo-700"
+              )}>
+                {ROLE_LABELS[itemRole]}
+              </div>
+            ))}
+          </div>
+          {FEATURE_PERMISSIONS.map((feature) => (
+            <div key={feature.key} className="grid grid-cols-[1.4fr_0.7fr_0.7fr_0.7fr] border-t border-slate-100 bg-white">
+              <div className="min-w-0 px-4 py-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-extrabold text-slate-900">{feature.title}</p>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold text-slate-500">
+                    {feature.category}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">{feature.description}</p>
+              </div>
+              {(['PARENT', 'EXPERT', 'ADMIN'] as UserRole[]).map((itemRole) => {
+                const allowed = feature.allowedRoles.includes(itemRole);
+                return (
+                  <div key={itemRole} className={cn(
+                    "flex items-center justify-center border-l border-slate-100 px-3 py-3",
+                    itemRole === role && "bg-indigo-50/40"
+                  )}>
+                    <span
+                      title={feature.accessByRole[itemRole] ?? 'Bu role açık değil'}
+                      className={cn(
+                        "inline-flex h-7 w-7 items-center justify-center rounded-full ring-1",
+                        allowed
+                          ? "bg-emerald-50 text-emerald-600 ring-emerald-100"
+                          : "bg-slate-50 text-slate-300 ring-slate-100"
+                      )}
+                    >
+                      {allowed ? <CheckCircle2 size={15} /> : <LockKeyhole size={14} />}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+      )}
+    </section>
+  );
+}
+
+function ProjectRoadmap() {
+  const statusClass: Record<ProjectPhase['status'], string> = {
+    Hazır: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+    Sıradaki: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+    Planlandı: 'bg-slate-100 text-slate-600 ring-slate-200',
+  };
+
+  return (
+    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+      <div>
+        <p className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-700">
+          <Target size={13} />
+          Yönetici planı
+        </p>
+        <h2 className="mt-3 text-xl font-black tracking-tight text-slate-950">Rehber ve yetki geliştirme planı</h2>
+        <p className="mt-1 max-w-3xl text-sm font-semibold leading-relaxed text-slate-500">
+          Bu bölüm yalnızca yönetici rolünde görünür; ürün kabulü, yetki kontrolü ve bakım işlerini takip eder.
+        </p>
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-5">
+        {PROJECT_PHASES.map((phase, index) => (
+          <div key={phase.title} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 ring-1 ring-slate-200">
+                {index + 1}
+              </span>
+              <span className={cn("rounded-full px-2.5 py-1 text-[10px] font-extrabold ring-1", statusClass[phase.status])}>
+                {phase.status}
+              </span>
+            </div>
+            <h3 className="mt-4 text-sm font-extrabold text-slate-950">{phase.title}</h3>
+            <p className="mt-2 text-xs font-semibold leading-relaxed text-slate-500">{phase.objective}</p>
+            <div className="mt-4 space-y-2">
+              {phase.deliverables.map((deliverable) => (
+                <div key={deliverable} className="flex items-start gap-2 text-xs font-bold text-slate-600">
+                  <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-500" />
+                  <span>{deliverable}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {phase.owners.map((owner) => (
+                <span key={owner} className="rounded-full bg-white px-2 py-0.5 text-[10px] font-extrabold text-slate-500 ring-1 ring-slate-200">
+                  {ROLE_LABELS[owner]}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function UserGuidePage() {
   const user = useAuthStore((s) => s.user);
   const role = user?.role ?? 'PARENT';
@@ -662,8 +980,12 @@ export function UserGuidePage() {
       <section className="space-y-5">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-slate-950">Kullanıcı Rehberi</h1>
-          <p className="mt-1 text-sm font-medium text-slate-500">Platformdaki tüm sayfaları, özellik gruplarını ve ne zaman kullanılacaklarını buradan keşfet.</p>
+          <p className="mt-1 text-sm font-medium text-slate-500">
+            {ROLE_LABELS[role]} rolü için ilk adımları, sayfa amaçlarını ve destek kanallarını tek yerde görün.
+          </p>
         </div>
+
+        {!isSearching && <RoleStartPanel role={role} onVisit={handleRouteVisit} />}
 
         {/* Search Bar */}
         <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
@@ -743,6 +1065,8 @@ export function UserGuidePage() {
         )}
       </section>
 
+      {!isSearching && <PermissionMatrix role={role} />}
+
       {!isSearching && featuredPages.length > 0 && activeGroupIndex === 0 && (
         <section className="grid gap-3 md:grid-cols-4">
           {featuredPages.map((page) => {
@@ -798,6 +1122,8 @@ export function UserGuidePage() {
           </section>
         ))
       )}
+
+      {!isSearching && role === 'ADMIN' && <ProjectRoadmap />}
 
       {/* Summary Box */}
       <section className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/60 to-teal-50/40 p-5 shadow-sm">

@@ -29,6 +29,7 @@ const ROUTE_HELP: Array<{ match: string; title: string; steps: string[] }> = [
   { match: '/acil-kart', title: 'Acil durumda paylaşılacak bilgileri hazır tutun.', steps: ['İletişim bilgilerini kontrol edin.', 'Duyusal hassasiyetleri yazın.', 'Paylaşım bağlantısını yalnızca gerektiğinde kullanın.'] },
   { match: '/notlar', title: 'Kısa gözlem notları ekleyin.', steps: ['Bugün fark ettiğiniz bir şeyi yazın.', 'Kısa cümleler yeterli.', 'İsterseniz uzmanla paylaşılacak özete ekleyin.'] },
   { match: '/tedavi', title: 'Günlük plan ve gelişim hedefleri burada.', steps: ['Bugünkü küçük adıma bakın.', 'Zor gelirse süreyi kısaltın.', 'Tamamlanan adımları işaretleyin.'] },
+  { match: '/kullanici-rehberi', title: 'Platform haritasında doğru sayfayı bulun.', steps: ['Önce rolünüze özel ilk adımlara bakın.', 'Sayfa veya konu arayın.', 'İhtiyaç duyduğunuz karta tıklayın.'] },
   { match: '/yardim', title: 'Takıldığınız yerde buradan başlayın.', steps: ['Aradığınız konuyu seçin.', 'İlk adımı okuyun.', 'Gerekirse destek alanına geçin.'] },
   { match: '/', title: 'Bugün neye ihtiyacınız varsa onu seçin.', steps: ['Bugünün kaydını girebilirsiniz.', 'Randevu ve mesajlara bakabilirsiniz.', 'Zor bir an varsa rehbere geçebilirsiniz.'] },
 ];
@@ -189,6 +190,15 @@ export function AppLayout() {
                 <span className="hidden sm:inline">Ara veya komut ver...</span>
                 <kbd className="hidden rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 sm:inline">⌘K</kbd>
               </button>
+              {isAuthenticated && user?.role === 'PARENT' && (
+                <Link
+                  to="/kriz-rehberi"
+                  className="flex shrink-0 items-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 ring-1 ring-rose-100 transition-colors hover:bg-rose-100"
+                >
+                  <AlertTriangle size={14} />
+                  <span className="hidden sm:inline">Zor an</span>
+                </Link>
+              )}
               {isAuthenticated && routeHelp && (
                 <button
                   type="button"
@@ -205,25 +215,16 @@ export function AppLayout() {
           </div>
           {isAuthenticated && isHelpOpen && routeHelp && (
             <section className="mb-6 rounded-2xl border border-sky-100 bg-sky-50 p-4 shadow-sm print:hidden">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-900">{routeHelp.title}</p>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                    {routeHelp.steps.map((step, index) => (
-                      <div key={step} className="rounded-xl bg-white/80 px-3 py-2 text-xs font-semibold leading-5 text-slate-600 ring-1 ring-sky-100">
-                        <span className="mr-1 text-sky-700">{index + 1}.</span>
-                        {step}
-                      </div>
-                    ))}
-                  </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-slate-900">{routeHelp.title}</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {routeHelp.steps.map((step, index) => (
+                    <div key={step} className="rounded-xl bg-white/80 px-3 py-2 text-xs font-semibold leading-5 text-slate-600 ring-1 ring-sky-100">
+                      <span className="mr-1 text-sky-700">{index + 1}.</span>
+                      {step}
+                    </div>
+                  ))}
                 </div>
-                <Link
-                  to="/kriz-rehberi"
-                  className="hidden shrink-0 items-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 ring-1 ring-rose-100 transition-colors hover:bg-rose-100 sm:inline-flex"
-                >
-                  <AlertTriangle size={14} />
-                  Zor an
-                </Link>
               </div>
             </section>
           )}

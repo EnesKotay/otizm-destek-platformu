@@ -454,9 +454,9 @@ function DailyTrackerCore() {
   };
 
   const TABS = [
-    { key: 'mood',       icon: Smile, label: '1. Duygu' },
-    { key: 'sleep',      icon: Moon,  label: '2. Uyku' },
-    { key: 'medication', icon: Pill,  label: '3. İlaç' },
+    { key: 'mood',       icon: Smile, label: 'Duygu' },
+    { key: 'sleep',      icon: Moon,  label: 'Uyku' },
+    { key: 'medication', icon: Pill,  label: 'İlaç' },
   ] as const;
 
 
@@ -572,7 +572,7 @@ function DailyTrackerCore() {
           <div className="border-t border-slate-100 bg-slate-50/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Hazırlık</p>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Bugünün İlerlemesi</p>
                 <p className="mt-1 text-2xl font-bold text-slate-950">{dailyProgress}%</p>
               </div>
               <button
@@ -667,49 +667,18 @@ function DailyTrackerCore() {
         />
       ) : (
         <>
-          {/* Günlük özet şeridi */}
-          <div className={`rounded-xl border p-4 flex items-center gap-4 flex-wrap shadow-sm ${completedAll ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200'}`}>
-            <div className="flex items-center gap-2">
-              <span className={`text-sm font-semibold ${completedAll ? 'text-emerald-800' : 'text-slate-800'}`}>
-                {completedAll ? 'Bugün için ana kayıtlar tamamlandı' : 'Bugünün kısa özeti'}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap ml-auto">
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold border uppercase tracking-wider ${
-                allMedsDone ? 'bg-slate-800 text-white border-slate-800' :
-                takenCount > 0 ? 'bg-slate-100 text-slate-700 border-slate-300' :
-                'bg-white text-slate-500 border-slate-200'
-              }`}>
-                <Pill size={12} />
-                {totalCount === 0 ? 'İlaç yok' : `${takenCount}/${totalCount} ilaç`}
-              </div>
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold border uppercase tracking-wider ${
-                moodDone ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200'
-              }`}>
-                <Smile size={12} />
-                {moodDone ? `Ruh hali: ${MOOD_OPTIONS.find(o => o.level === todayMood?.moodLevel)?.label ?? 'Kaydedildi'}` : 'Ruh hali bekleniyor'}
-              </div>
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold border uppercase tracking-wider ${
-                sleepDone ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200'
-              }`}>
-                <Moon size={12} />
-                {sleepDone
-                  ? todaySleep?.durationMinutes
-                    ? `Uyku: ${Math.floor(todaySleep.durationMinutes / 60)}s ${todaySleep.durationMinutes % 60}dk`
-                    : 'Uyku kaydedildi'
-                  : 'Uyku bekleniyor'}
-              </div>
-            </div>
-          </div>
-
           {/* Sekmeler */}
           <div className="flex gap-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-xl">
-            {TABS.map(t => (
-              <button key={t.key} onClick={() => setTab(t.key)}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${tab === t.key ? 'bg-white shadow-sm text-slate-800 border border-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}>
-                <t.icon size={16} /> {t.label}
-              </button>
-            ))}
+            {TABS.map(t => {
+              const done = dailySteps.find(s => s.key === t.key)?.done ?? false;
+              return (
+                <button key={t.key} onClick={() => setTab(t.key)}
+                  className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${tab === t.key ? 'bg-white shadow-sm text-slate-800 border border-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}>
+                  <t.icon size={16} /> {t.label}
+                  {done && <Check size={13} className="text-emerald-500" />}
+                </button>
+              );
+            })}
           </div>
 
           {/* ─── İLAÇ ─── */}

@@ -21,6 +21,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final WebPushService webPushService;
+    private final FcmPushService fcmPushService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
@@ -36,6 +37,9 @@ public class NotificationService {
                 .build();
         Notification saved = notificationRepository.save(notification);
         webPushService.sendToUser(userId, title, body, link);
+        if (isAppointmentNotification(type, link)) {
+            fcmPushService.sendAppointmentNotification(userId, title, body, null);
+        }
         
         try {
             messagingTemplate.convertAndSendToUser(
@@ -99,6 +103,11 @@ public class NotificationService {
     public void deleteNotifications(List<UUID> ids, UUID userId) {
         if (ids == null || ids.isEmpty()) return;
         notificationRepository.deleteByIdInAndUserId(ids, userId);
+    }
+
+    private boolean isAppointmentNotification(String type, String link) {
+        return (type != null && type.startsWith("APPOINTMENT"))
+                || "/randevular".equals(link);
     }
 
     private NotificationDto toDto(Notification n) {

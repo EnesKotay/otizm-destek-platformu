@@ -2,6 +2,7 @@ package com.autismsupport.platform.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,12 +12,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.method.HandlerMethod;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,9 +44,18 @@ class RateLimitInterceptorTest {
 
     @BeforeEach
     void setUp() {
+        SecurityContextHolder.clearContext();
+        lenient().when(request.getHeader("CF-Connecting-IP")).thenReturn(null);
+        lenient().when(request.getHeader("X-Real-IP")).thenReturn(null);
+        lenient().when(request.getHeader("X-Forwarded-For")).thenReturn(null);
         rateLimit = mock(RateLimit.class);
         when(rateLimit.limit()).thenReturn(2);
         when(rateLimit.duration()).thenReturn(10);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -58,12 +71,12 @@ class RateLimitInterceptorTest {
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         // First request: count = 1
-        when(valueOperations.increment(eq("rate_limit:127.0.0.1:/api/test"), eq(1L))).thenReturn(1L);
+        when(valueOperations.increment(eq("rate_limit:ip:127.0.0.1:/api/test"), eq(1L))).thenReturn(1L);
 
         boolean result = rateLimitInterceptor.preHandle(request, response, handlerMethod);
 
         assertThat(result).isTrue();
-        verify(redisTemplate).expire(eq("rate_limit:127.0.0.1:/api/test"), any(Duration.class));
+        verify(redisTemplate).expire(eq("rate_limit:ip:127.0.0.1:/api/test"), any(Duration.class));
     }
 
     @Test
@@ -83,13 +96,35 @@ class RateLimitInterceptorTest {
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         // Request limit was 2. Return 3 (limit exceeded)
-        when(valueOperations.increment(eq("rate_limit:127.0.0.1:/api/test"), eq(1L))).thenReturn(3L);
+        when(valueOperations.increment(eq("rate_limit:ip:127.0.0.1:/api/test"), eq(1L))).thenReturn(3L);
 
         boolean result = rateLimitInterceptor.preHandle(request, response, handlerMethod);
 
         assertThat(result).isFalse();
         verify(response).setStatus(429);
         assertThat(sw.toString()).contains("Çok fazla istek gönderdiniz");
+    }
+
+    @Test
+    @DisplayName("preHandle: oturum acmis kullanici icin IP yerine kullanici anahtari kullanir")
+    void preHandle_authenticatedUser_usesUserScopedKey() throws Exception {
+        ReflectionTestUtils.setField(rateLimitInterceptor, "redisTemplate", redisTemplate);
+        ReflectionTestUtils.setField(rateLimitInterceptor, "redisEnabled", true);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("user@example.com", null, List.of())
+        );
+
+        when(handlerMethod.getMethodAnnotation(RateLimit.class)).thenReturn(rateLimit);
+        when(request.getRequestURI()).thenReturn("/api/test");
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.increment(eq("rate_limit:user:user@example.com:/api/test"), eq(1L))).thenReturn(1L);
+
+        boolean result = rateLimitInterceptor.preHandle(request, response, handlerMethod);
+
+        assertThat(result).isTrue();
+        verify(redisTemplate).expire(eq("rate_limit:user:user@example.com:/api/test"), any(Duration.class));
+        verify(request, never()).getRemoteAddr();
     }
 
     @Test

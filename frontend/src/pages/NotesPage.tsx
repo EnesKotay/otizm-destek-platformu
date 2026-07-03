@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FileText, Plus, Smile, Meh, Frown, Pencil, Trash2, Search, X, Zap, Camera, ImageIcon } from 'lucide-react';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Card } from '@/components/ui/Card';
@@ -81,6 +82,7 @@ export function NotesPage() {
   const { children, setChildren, selectedChild, setSelectedChild } = useChildStore();
   const [notes, setNotes] = useState<DevelopmentNote[]>([]);
   const [demoMode, setDemoMode] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     if (notes.length > 0) {
@@ -118,6 +120,19 @@ export function NotesPage() {
       if (data.length > 0 && !selectedChild) setSelectedChild(data[0]);
     }).catch(() => {});
   }, [setChildren, setSelectedChild, selectedChild]);
+
+  useEffect(() => {
+    if (searchParams.get('open') !== '1' || children.length === 0) return;
+    const category = searchParams.get('category');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (category) setForm(f => ({ ...f, category }));
+    setShowModal(true);
+    setSearchParams(prev => {
+      prev.delete('open');
+      prev.delete('category');
+      return prev;
+    }, { replace: true });
+  }, [searchParams, children.length, setSearchParams]);
 
   useEffect(() => {
     if (selectedChild) {

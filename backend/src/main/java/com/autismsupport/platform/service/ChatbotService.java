@@ -61,16 +61,20 @@ public class ChatbotService {
         return "Merhaba! Ben **AutiBot**, otizm destek platformunuzun AI asistanıyım. Otizm, terapi yöntemleri, platform kullanımı veya Türkiye'deki haklar hakkında sorularınızı yanıtlayabilirim.\n\nNasıl yardımcı olabilirim?";
     }
 
-    private void streamFallbackResponse(String message, SseEmitter emitter) {
+    private void sendFallbackResponse(String message, SseEmitter emitter) throws Exception {
         String response = buildFallbackResponse(message);
+        for (String word : response.split("(?<=\\s)|(?=\\n)")) {
+            emitter.send(SseEmitter.event().name("chunk").data(word));
+            Thread.sleep(25);
+        }
+        emitter.send(SseEmitter.event().name("done").data("[DONE]"));
+        emitter.complete();
+    }
+
+    private void streamFallbackResponse(String message, SseEmitter emitter) {
         executor.submit(() -> {
             try {
-                for (String word : response.split("(?<=\\s)|(?=\\n)")) {
-                    emitter.send(SseEmitter.event().name("chunk").data(word));
-                    Thread.sleep(25);
-                }
-                emitter.send(SseEmitter.event().name("done").data("[DONE]"));
-                emitter.complete();
+                sendFallbackResponse(message, emitter);
             } catch (Exception e) {
                 try { emitter.completeWithError(e); } catch (Exception ignored) {}
             }
@@ -236,7 +240,7 @@ public class ChatbotService {
             return ChatbotResponse.success(extractReply(response));
         } catch (Exception e) {
             log.error("Chatbot API hatasi: {}", e.getMessage(), e);
-            return ChatbotResponse.error("Uzgunum, su anda yanit veremiyorum. Lutfen daha sonra tekrar deneyin.");
+            return ChatbotResponse.success(buildFallbackResponse(userMessage));
         }
     }
 
@@ -280,9 +284,12 @@ public class ChatbotService {
                                         errorBody.append(line).append("\n");
                                     }
                                     log.error("Gemini API Hatasi (HTTP {}): {}", resp.getStatusCode(), errorBody);
-                                    emitter.send(SseEmitter.event().name("error").data("Gemini API hatasi: " + resp.getStatusCode() + " - " + resp.getStatusText()));
                                 } catch (Exception ignored) {}
-                                emitter.complete();
+                                try {
+                                    sendFallbackResponse(userMessage, emitter);
+                                } catch (Exception e) {
+                                    emitter.completeWithError(e);
+                                }
                                 return null;
                             }
 

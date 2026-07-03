@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   BookOpen, Plus, Search, Eye, CheckCircle, XCircle, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight,
-  FileText, Video, Mic, Link as LinkIcon, MessageCircle, Send
+  FileText, Video, Mic, Link as LinkIcon, MessageCircle, Send, ShieldCheck
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -56,6 +56,24 @@ const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   video: '🎬 Video',
   podcast: '🎙 Podcast',
 };
+
+const WATCHED_VIDEOS_KEY = 'knowledge-watched-video-ids';
+
+function readWatchedVideos() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(WATCHED_VIDEOS_KEY) ?? '[]') as string[]);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function writeWatchedVideos(ids: Set<string>) {
+  try {
+    localStorage.setItem(WATCHED_VIDEOS_KEY, JSON.stringify([...ids]));
+  } catch {
+    // localStorage may be unavailable in restricted browser contexts.
+  }
+}
 
 /** Parses the content field to detect embedded media prefix */
 function parseContent(content: string): { type: ContentType; mediaUrl: string; text: string } {
@@ -157,6 +175,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   const [editingArticle, setEditingArticle] = useState<KnowledgeArticle | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleteArticleId, setDeleteArticleId] = useState<string | null>(null);
+  const [watchedVideoIds, setWatchedVideoIds] = useState(() => readWatchedVideos());
   const [form, setForm] = useState({
     title: '',
     content: '',
@@ -299,6 +318,15 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
     } catch { toast.error('Yayın durumu değiştirilemedi.'); }
   };
 
+  const markVideoWatched = (articleId: string) => {
+    setWatchedVideoIds((current) => {
+      const next = new Set(current);
+      next.add(articleId);
+      writeWatchedVideos(next);
+      return next;
+    });
+  };
+
   // Filter articles by content type (client-side)
   const filteredArticles = articles.filter(a => {
     const matchesSearch = !searchQuery ||
@@ -313,6 +341,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   // Article detail view
   if (selectedArticle) {
     const parsed = parseContent(selectedArticle.content);
+    const isWatchedVideo = parsed.type === 'video' && watchedVideoIds.has(selectedArticle.id);
     return (
       <div className="space-y-6">
         <button
@@ -364,8 +393,33 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
 
           {/* Media player */}
           {parsed.type === 'video' && parsed.mediaUrl && (
-            <div className="mb-6">
+            <div className="mb-6 space-y-3">
               <VideoPlayer url={parsed.mediaUrl} />
+              <div className="rounded-2xl border border-red-100 bg-red-50/70 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1.5 text-sm font-bold text-red-950">
+                      <Video size={15} />
+                      Video rehber
+                    </p>
+                    <p className="mt-1 text-xs font-semibold leading-5 text-red-700">
+                      İzlerken kısa not alın; kişisel tanı, tedavi veya ilaç kararı için mutlaka kendi uzmanınıza danışın.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => markVideoWatched(selectedArticle.id)}
+                    className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${
+                      isWatchedVideo
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-white text-red-700 ring-1 ring-red-100 hover:bg-red-100'
+                    }`}
+                  >
+                    <CheckCircle size={14} />
+                    {isWatchedVideo ? 'İzlendi' : 'İzlendi olarak işaretle'}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
           {parsed.type === 'podcast' && parsed.mediaUrl && (
@@ -381,6 +435,16 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
               dangerouslySetInnerHTML={{ __html: parsed.text }}
             />
           )}
+
+          <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+            <p className="flex items-center gap-1.5 text-sm font-bold text-amber-950">
+              <ShieldCheck size={15} />
+              Güvenli kullanım notu
+            </p>
+            <p className="mt-1 text-xs font-semibold leading-5 text-amber-800">
+              Bu içerik bilgilendirme amaçlıdır; tanı, tedavi, ilaç veya kriz müdahalesi kararı yerine geçmez.
+            </p>
+          </div>
 
           {isExpert && selectedArticle.author?.id === user?.id && (
             <div className="flex gap-2 mt-6 pt-4 border-t border-gray-100">
@@ -513,6 +577,21 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
             <p className="text-gray-600 text-sm max-w-lg leading-relaxed">
               Uzmanların hazırladığı makaleler, videolar ve podcastler ile çocuğunuzun gelişimini destekleyin.
             </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              {[
+                { icon: Video, label: 'Video rehberler', text: 'YouTube veya direkt video' },
+                { icon: CheckCircle, label: 'Uzman onayı', text: 'Yazar ve kategori görünür' },
+                { icon: ShieldCheck, label: 'Güvenli not', text: 'Tıbbi karar yerine geçmez' },
+              ].map(({ icon: Icon, label, text }) => (
+                <div key={label} className="rounded-2xl border border-white/70 bg-white/75 px-3 py-2 shadow-sm">
+                  <p className="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                    <Icon size={13} className="text-primary-600" />
+                    {label}
+                  </p>
+                  <p className="mt-0.5 text-[10px] font-semibold text-slate-500">{text}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -665,20 +744,33 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                   {/* Content type preview thumbnail for video */}
                   {parsed.type === 'video' && parsed.mediaUrl && (() => {
                     const ytId = getYouTubeId(parsed.mediaUrl);
-                    return ytId ? (
+                    return (
                       <div className="relative w-full rounded-xl overflow-hidden bg-gray-900 mb-3" style={{ paddingTop: '52%' }}>
+                        {ytId && (
                         <img
                           src={`https://img.youtube.com/vi/${ytId}/mqdefault.jpg`}
                           alt=""
                           className="absolute inset-0 w-full h-full object-cover opacity-80"
                         />
+                        )}
+                        {!ytId && (
+                          <div className="absolute inset-0 bg-gradient-to-br from-red-700 to-slate-950" />
+                        )}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg">
                             <div className="w-0 h-0 border-t-[8px] border-b-[8px] border-l-[16px] border-t-transparent border-b-transparent border-l-white ml-1" />
                           </div>
                         </div>
+                        <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">
+                          Video rehber
+                        </div>
+                        {watchedVideoIds.has(article.id) && (
+                          <div className="absolute right-3 top-3 rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] font-black text-white">
+                            İzlendi
+                          </div>
+                        )}
                       </div>
-                    ) : null;
+                    );
                   })()}
 
                   {/* Podcast icon for podcast type */}

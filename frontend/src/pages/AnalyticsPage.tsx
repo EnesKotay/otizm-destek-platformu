@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users, TrendingUp, Moon, Smile, BookOpen, Award, Baby, Calendar, ClipboardList, Printer,
-  Download, Lightbulb, Activity, Target, ArrowRight, AlertCircle, Brain, Zap, BarChart2, Copy, Check,
+  Download, Lightbulb, Activity, Target, ArrowRight, AlertCircle, Brain, Zap, BarChart2, Copy, Check, Info,
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -462,9 +462,14 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-gray-900">Son {rangeDays} gün</p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-gray-500">Kayıt yoğunluğu ve temel göstergelerden hesaplandı.</p>
+                  <p
+                    className="mt-1 flex items-start gap-1 text-[11px] leading-relaxed text-gray-500"
+                    title="Puan; ruh hali, uyku, aktivite kayıtları ve doldurulan veri alanı sayısına göre hesaplanır."
+                  >
+                    <span>Ruh hali, uyku ve aktivite kayıtlarından hesaplandı.</span>
+                    <Info size={11} className="mt-0.5 shrink-0 text-gray-300" />
+                  </p>
                   <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-500 border border-slate-100">{dataTypesWithRecords}/6 alan aktif</span>
                     <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-500 border border-slate-100">{rangeDays} günlük görünüm</span>
                   </div>
                 </div>
@@ -501,8 +506,8 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
             </div>
             <div className="space-y-4 my-auto">
               <ProgressMetric label="Ruh hali" value={moodScore} detail={Number.isFinite(avgMoodNumber) ? `${avgMood}/5` : 'Veri yok'} color="bg-yellow-500" />
-              <ProgressMetric label="Uyku" value={sleepScore} detail={avgSleepHours} color="bg-indigo-500" />
-              <ProgressMetric label="Aktivite" value={activityScore} detail={`${notes.length + milestones.length + completedAppointments + screeningResults.length} kayıt`} color="bg-emerald-500" />
+              <ProgressMetric label="Uyku" value={sleepScore} detail={avgSleep ? `${avgSleepHours} (hedef 8-10 sa)` : 'Veri yok'} color="bg-indigo-500" />
+              <ProgressMetric label="Aktivite" value={activityScore} detail={`${notes.length + milestones.length + completedAppointments + screeningResults.length}/8 kayıt`} color="bg-emerald-500" />
             </div>
           </div>
 

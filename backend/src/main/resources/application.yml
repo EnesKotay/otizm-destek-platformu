@@ -78,7 +78,7 @@ server:
 gemini:
   api:
     key: ${GEMINI_API_KEY:}
-    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+    url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent}
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
@@ -99,6 +99,11 @@ app:
     vapid-public-key: ${VAPID_PUBLIC_KEY:}
     vapid-private-key: ${VAPID_PRIVATE_KEY:}
     vapid-subject: ${VAPID_SUBJECT:mailto:admin@otizmdestek.com}
+  firebase:
+    enabled: ${FIREBASE_ENABLED:true}
+    service-account-json: ${FIREBASE_SERVICE_ACCOUNT_JSON:}
+    service-account-json-base64: ${FIREBASE_SERVICE_ACCOUNT_JSON_BASE64:}
+    service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
 
 management:
   endpoints:

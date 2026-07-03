@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AlertTriangle, Volume2, Zap, Heart, Phone, ChevronDown, Sparkles, Activity, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
+import { Card } from '@/components/ui/Card';
 
 interface CrisisCard {
   id: string;
@@ -128,7 +129,7 @@ function CrisisCardItem({ card }: { card: CrisisCard }) {
   const Icon = card.icon;
 
   return (
-    <div className={`rounded-3xl border overflow-hidden transition-all duration-300 ${open ? 'shadow-lg scale-[1.01]' : 'shadow-sm'} ${card.borderColor}`}>
+    <Card className={`rounded-3xl border overflow-hidden transition-all duration-300 ${open ? 'shadow-lg scale-[1.01]' : 'shadow-sm'} ${card.borderColor}`}>
       <button
         onClick={() => setOpen(o => !o)}
         className={`w-full flex items-center gap-4 p-5 text-left relative overflow-hidden transition-all duration-300 ${card.bgColor} ${open ? 'bg-opacity-100' : 'bg-opacity-50 hover:bg-opacity-70'}`}
@@ -191,7 +192,7 @@ function CrisisCardItem({ card }: { card: CrisisCard }) {
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -278,75 +279,21 @@ export function CrisisGuidePage() {
           <AlertTriangle size={20} className="text-white" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Kriz Rehberi</h1>
-          <p className="text-xs text-gray-500">Zor anlarda adım adım rehber</p>
+          <h1 className="text-xl font-bold text-gray-900">Zor Anlarda Ne Yapmalı?</h1>
+          <p className="text-xs text-gray-500">Kriz Rehberi — zor anlarda adım adım yardım</p>
         </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500/30 bg-gradient-to-r from-amber-100 to-yellow-50 p-5 shadow-sm">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 text-amber-500/10 pointer-events-none">
-          <AlertTriangle size={120} />
-        </div>
-        <div className="relative z-10 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <div className="bg-amber-500 text-white p-3 rounded-xl shadow-md shrink-0">
-            <Activity size={24} />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-sm font-black text-amber-900 uppercase tracking-widest mb-1">ÖNEMLİ TIBBİ UYARI</h3>
-            <p className="text-xs text-amber-800/90 leading-relaxed font-semibold">
-              Bu rehber profesyonel tıbbi veya psikiyatrik müdahalenin yerine geçmez. Bilinç kaybı, şiddetli nöbet, solunum güçlüğü veya ciddi zarar verme durumlarında vakit kaybetmeden <strong className="text-amber-950 font-black">112 Acil Yardım Hattı'nı</strong> arayın.
-            </p>
-          </div>
-          <Link to="/tibbi-uyari" className="shrink-0 bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm">
-            Detaylı Bilgi
-          </Link>
-        </div>
-      </div>
-
-      {/* emergency contacts */}
-      <div className="relative overflow-hidden rounded-[32px] p-6 sm:p-8 bg-slate-900 shadow-2xl">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black opacity-80"></div>
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-purple-500 to-red-500 opacity-50"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-            </span>
-            <p className="text-xs font-extrabold text-slate-300 uppercase tracking-[0.2em]">Acil Durum Müdahale</p>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {EMERGENCY_CONTACTS.map(c => (
-              <a
-                key={c.number}
-                href={`tel:${c.number}`}
-                className={`${c.color} group relative rounded-[28px] p-6 sm:p-8 flex flex-col items-center justify-center text-center hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 cursor-pointer overflow-hidden border border-white/10`}
-              >
-                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="h-16 w-16 mb-4 bg-white/20 rounded-full flex items-center justify-center shrink-0 backdrop-blur-md border border-white/20 group-hover:scale-110 transition-transform duration-500">
-                  <Phone size={28} className="drop-shadow-lg" />
-                </div>
-                <p className="text-sm uppercase font-black tracking-widest text-white/90 drop-shadow-sm mb-1">{c.label}</p>
-                <p className="text-[10px] font-bold text-white/70 tracking-wider mb-3">{c.desc}</p>
-                <p className="text-5xl sm:text-6xl font-black drop-shadow-xl tracking-tighter">{c.number}</p>
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Breathing Guide */}
+      {/* Interactive Breathing Guide — en önce: en hızlı sakinleşme adımı */}
       <div className="bg-slate-900 rounded-[32px] p-8 shadow-2xl relative overflow-hidden flex flex-col items-center text-center space-y-8 border border-slate-800">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/20 via-slate-900 to-slate-900"></div>
-        
+
         <div className="relative z-10 space-y-2">
           <h4 className="text-base font-black text-white flex items-center justify-center gap-2">
             <Sparkles size={18} className="text-indigo-400 animate-pulse" />
             Nefes Regülatörü
           </h4>
-          <p className="text-xs text-slate-400 max-w-md">Kriz anında bedeninizi sakinleştirmek için <span className="text-indigo-300 font-bold">başlatın</span> ve sesli yönergeleri halkanın büyüme-küçülme hızına uydurun.</p>
+          <p className="text-xs text-slate-400 max-w-md">Önce siz sakinleşin. <span className="text-indigo-300 font-bold">Başlatın</span> ve sesli yönergeleri halkanın büyüme-küçülme hızına uydurun.</p>
         </div>
 
         <div className="relative h-64 w-64 flex items-center justify-center z-10 mt-4 mb-4">
@@ -408,6 +355,60 @@ export function CrisisGuidePage() {
         </button>
       </div>
 
+      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500/30 bg-gradient-to-r from-amber-100 to-yellow-50 p-5 shadow-sm">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 text-amber-500/10 pointer-events-none">
+          <AlertTriangle size={120} />
+        </div>
+        <div className="relative z-10 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="bg-amber-500 text-white p-3 rounded-xl shadow-md shrink-0">
+            <Activity size={24} />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-black text-amber-900 uppercase tracking-widest mb-1">ÖNEMLİ TIBBİ UYARI</h3>
+            <p className="text-xs text-amber-800/90 leading-relaxed font-semibold">
+              Bu rehber profesyonel tıbbi veya psikiyatrik müdahalenin yerine geçmez. Bilinç kaybı, şiddetli nöbet, solunum güçlüğü veya ciddi zarar verme durumlarında vakit kaybetmeden <strong className="text-amber-950 font-black">112 Acil Yardım Hattı'nı</strong> arayın.
+            </p>
+          </div>
+          <Link to="/tibbi-uyari" className="shrink-0 bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm">
+            Detaylı Bilgi
+          </Link>
+        </div>
+      </div>
+
+      {/* emergency contacts */}
+      <div className="relative overflow-hidden rounded-[32px] p-6 sm:p-8 bg-slate-900 shadow-2xl">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black opacity-80"></div>
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-purple-500 to-red-500 opacity-50"></div>
+
+        <div className="relative z-10">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+            <p className="text-xs font-extrabold text-slate-300 uppercase tracking-[0.2em]">Acil Durum Müdahale</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {EMERGENCY_CONTACTS.map(c => (
+              <a
+                key={c.number}
+                href={`tel:${c.number}`}
+                className={`${c.color} group relative rounded-[28px] p-6 sm:p-8 flex flex-col items-center justify-center text-center hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 cursor-pointer overflow-hidden border border-white/10`}
+              >
+                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="h-16 w-16 mb-4 bg-white/20 rounded-full flex items-center justify-center shrink-0 backdrop-blur-md border border-white/20 group-hover:scale-110 transition-transform duration-500">
+                  <Phone size={28} className="drop-shadow-lg" />
+                </div>
+                <p className="text-sm uppercase font-black tracking-widest text-white/90 drop-shadow-sm mb-1">{c.label}</p>
+                <p className="text-[10px] font-bold text-white/70 tracking-wider mb-3">{c.desc}</p>
+                <p className="text-5xl sm:text-6xl font-black drop-shadow-xl tracking-tighter">{c.number}</p>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* quick tip banner */}
       <div className="bg-indigo-50/70 border border-indigo-100/50 rounded-2xl p-4 text-sm text-indigo-900 shadow-sm shadow-indigo-50/30">
         <span className="font-bold text-indigo-700">İlk kural:</span> Siz sakin olun. Çocuk sizin duygusal durumunuzu
@@ -422,7 +423,7 @@ export function CrisisGuidePage() {
       </div>
 
       {/* after crisis section */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3 shadow-sm hover:border-gray-200/60 transition-colors">
+      <Card className="border-gray-100 p-5 space-y-3 hover:border-gray-200/60 transition-colors">
         <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
           <Heart size={15} className="text-emerald-500" />
           Kriz Sonrası — İyileşme Zamanı
@@ -441,7 +442,7 @@ export function CrisisGuidePage() {
             </li>
           ))}
         </ul>
-      </div>
+      </Card>
 
       <p className="text-xs text-center text-gray-400 pb-4">
         Bu rehber genel bilgi amacıyla hazırlanmıştır. Ağır vakalarda mutlaka uzman desteği alın.

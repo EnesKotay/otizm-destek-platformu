@@ -361,29 +361,36 @@ export function LoginPage() {
             {/* Kartlar */}
             <div className="grid gap-3 sm:grid-cols-2">
               <Link to="/kayit"
-                className="group flex items-center gap-3 rounded-2xl border border-primary-100 bg-primary-50/50 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50 hover:shadow-md"
+                className="group flex flex-col gap-3 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 p-4 text-left shadow-md shadow-primary-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-600/30"
               >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-primary-700 ring-1 ring-primary-100">
-                  <Users size={18} className="text-primary-600" />
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/20">
+                    <Users size={18} />
+                  </div>
+                  <ArrowRight size={16} className="shrink-0 text-white transition-transform group-hover:translate-x-0.5" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-black text-slate-900">Veli hesabı</p>
-                  <p className="mt-1 text-xs font-semibold text-slate-500">Ücretsiz kaydol</p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-black text-white">Veli hesabı</p>
+                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Ücretsiz</span>
+                  </div>
+                  <p className="mt-1 text-xs font-bold text-primary-100">Hemen kaydol</p>
                 </div>
-                <ArrowRight size={16} className="shrink-0 text-primary-600 transition-transform group-hover:translate-x-0.5" />
               </Link>
 
               <Link to="/kayit/uzman"
-                className="group flex items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-indigo-50 hover:shadow-md"
+                className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-indigo-50/60 hover:shadow-md"
               >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-indigo-700 ring-1 ring-indigo-100">
-                  <Brain size={18} className="text-indigo-600" />
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-indigo-700 ring-1 ring-slate-200">
+                    <Brain size={18} className="text-indigo-600" />
+                  </div>
+                  <ArrowRight size={16} className="shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-indigo-600" />
                 </div>
-                <div className="min-w-0 flex-1">
+                <div>
                   <p className="text-sm font-black text-slate-900">Uzman hesabı</p>
                   <p className="mt-1 text-xs font-semibold text-slate-500">Başvuru yap</p>
                 </div>
-                <ArrowRight size={16} className="shrink-0 text-indigo-600 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
 

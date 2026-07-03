@@ -1,9 +1,11 @@
 package com.autismsupport.platform.controller;
 
 import com.autismsupport.platform.dto.ApiResponse;
+import com.autismsupport.platform.dto.DeviceTokenRequest;
 import com.autismsupport.platform.dto.PushSubscriptionRequest;
 import com.autismsupport.platform.security.CurrentUser;
 import com.autismsupport.platform.security.UserPrincipal;
+import com.autismsupport.platform.service.DeviceTokenService;
 import com.autismsupport.platform.service.PushSubscriptionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PushController {
     private final PushSubscriptionService pushSubscriptionService;
+    private final DeviceTokenService deviceTokenService;
 
     @GetMapping({"/vapid-public-key", "/public-key"})
     public ResponseEntity<ApiResponse<Map<String, String>>> getPublicKey() {
@@ -38,5 +41,21 @@ public class PushController {
             @CurrentUser UserPrincipal principal) {
         pushSubscriptionService.unsubscribe(principal.getId(), request);
         return ResponseEntity.ok(ApiResponse.success("Push aboneligi kaldirildi", null));
+    }
+
+    @PostMapping("/device-token")
+    public ResponseEntity<ApiResponse<Void>> upsertDeviceToken(
+            @Valid @RequestBody DeviceTokenRequest request,
+            @CurrentUser UserPrincipal principal) {
+        deviceTokenService.upsertToken(principal.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Cihaz tokeni kaydedildi", null));
+    }
+
+    @DeleteMapping("/device-token")
+    public ResponseEntity<ApiResponse<Void>> deleteDeviceToken(
+            @RequestParam String token,
+            @CurrentUser UserPrincipal principal) {
+        deviceTokenService.deleteToken(principal.getId(), token);
+        return ResponseEntity.ok(ApiResponse.success("Cihaz tokeni kaldirildi", null));
     }
 }

@@ -24,6 +24,7 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <webpush.version>5.1.1</webpush.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
+        <firebase-admin.version>9.4.3</firebase-admin.version>
     </properties>
 
     <dependencies>
@@ -134,6 +135,11 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
             <version>${bouncycastle.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>${firebase-admin.version}</version>
         </dependency>
 
         <!-- Test -->

@@ -41,17 +41,7 @@ import { toast } from '@/store/toastStore';
 import { uploadService } from '@/services/uploadService';
 import { userService } from '@/services/userService';
 import { cn } from '@/utils/cn';
-
-const CITIES = [
-  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya', 'Ankara', 'Antalya', 'Ardahan', 'Artvin',
-  'Aydın', 'Balıkesir', 'Bartın', 'Batman', 'Bayburt', 'Bilecik', 'Bingöl', 'Bitlis', 'Bolu', 'Burdur',
-  'Bursa', 'Çanakkale', 'Çankırı', 'Çorum', 'Denizli', 'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan',
-  'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari', 'Hatay', 'Iğdır', 'Isparta', 'İstanbul',
-  'İzmir', 'Kahramanmaraş', 'Karabük', 'Karaman', 'Kars', 'Kastamonu', 'Kayseri', 'Kilis', 'Kırıkkale', 'Kırklareli',
-  'Kırşehir', 'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa', 'Mardin', 'Mersin', 'Muğla', 'Muş',
-  'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye', 'Rize', 'Sakarya', 'Samsun', 'Şanlıurfa', 'Siirt', 'Sinop',
-  'Sivas', 'Şırnak', 'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Uşak', 'Van', 'Yalova', 'Yozgat', 'Zonguldak',
-];
+import { TURKISH_CITIES } from '@/constants/turkishCities';
 
 function readPreference(key: string, fallback = true) {
   return localStorage.getItem(key) !== String(!fallback);
@@ -506,7 +496,7 @@ function SettingsCore() {
                   className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">Şehir seçin</option>
-                  {CITIES.map((cityName) => (
+                  {TURKISH_CITIES.map((cityName) => (
                     <option key={cityName} value={cityName}>{cityName}</option>
                   ))}
                 </select>

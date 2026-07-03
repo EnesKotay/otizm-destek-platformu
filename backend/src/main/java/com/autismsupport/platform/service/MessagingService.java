@@ -43,6 +43,7 @@ public class MessagingService {
     private final MessageReactionRepository reactionRepository;
     private final MessageReadReceiptRepository readReceiptRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final FcmPushService fcmPushService;
 
     @Transactional(readOnly = true)
     public List<ConversationDto> getConversations(UUID userId) {
@@ -232,6 +233,7 @@ public class MessagingService {
                     )
             );
         }
+        sendMobileMessageNotifications(conversation, message, sender);
 
         return messageDto;
     }
@@ -507,6 +509,53 @@ public class MessagingService {
         if (conversation.getType() != ConversationType.GROUP) {
             throw new RuntimeException("Bu işlem yalnızca grup konuşmaları için geçerlidir");
         }
+    }
+
+    private void sendMobileMessageNotifications(Conversation conversation, Message message, User sender) {
+        for (User participant : conversation.getParticipants()) {
+            if (participant.getId().equals(sender.getId())) {
+                continue;
+            }
+            if (conversation.getMutedBy().contains(participant.getId())) {
+                continue;
+            }
+            String conversationTitle = conversationTitleForNotification(conversation, sender);
+            fcmPushService.sendMessageNotification(
+                    participant.getId(),
+                    conversationTitle,
+                    messageNotificationBody(conversation, message, sender),
+                    conversation.getId(),
+                    conversationTitle
+            );
+        }
+    }
+
+    private String conversationTitleForNotification(Conversation conversation, User sender) {
+        if (conversation.getType() == ConversationType.GROUP) {
+            return conversation.getTitle() == null || conversation.getTitle().isBlank()
+                    ? "Grup sohbeti"
+                    : conversation.getTitle();
+        }
+        return sender.getFullName();
+    }
+
+    private String messageNotificationBody(Conversation conversation, Message message, User sender) {
+        String content = switch (message.getMessageType()) {
+            case "IMAGE" -> "Gorsel gonderdi";
+            case "FILE" -> "Dosya gonderdi";
+            case "PECS" -> "PECS mesaji gonderdi";
+            default -> message.getContent();
+        };
+        if (content == null || content.isBlank()) {
+            content = "Yeni mesaj";
+        }
+        if (content.length() > 120) {
+            content = content.substring(0, 117) + "...";
+        }
+        if (conversation.getType() == ConversationType.GROUP) {
+            return sender.getFullName() + ": " + content;
+        }
+        return content;
     }
 
     private String normalizeGroupTitle(String title) {

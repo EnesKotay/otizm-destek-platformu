@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import {
   HelpCircle, ChevronDown, ChevronUp, Mail, MessageCircle,
   BookOpen, Users, Calendar, Baby, ShieldCheck, Star,
-  CheckCircle, ArrowRight, Search, Flag, X, Zap,
-  Video, Clock,
+  Compass, Search, Flag, X, Zap,
+  Video,
   ChevronRight, Bot,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -15,49 +15,6 @@ const QUICK_LINKS = [
   { icon: Calendar, label: 'Randevu Al', desc: 'Uzman bul & planla', to: '/uzmanlar', color: 'bg-green-50 text-green-600 border-green-100' },
   { icon: Users, label: 'Gruplara Katıl', desc: 'Topluluk & destek', to: '/gruplar', color: 'bg-purple-50 text-purple-600 border-purple-100' },
   { icon: BookOpen, label: 'Bilgi Bankası', desc: 'Makaleler & rehber', to: '/bilgi-bankasi', color: 'bg-orange-50 text-orange-600 border-orange-100' },
-];
-
-const FIRST_WEEK_STEPS = [
-  {
-    icon: Baby,
-    color: 'bg-blue-100 text-blue-600',
-    title: 'Çocuk profili oluşturun',
-    desc: '"Çocuklarım" sayfasına gidin, "Yeni Çocuk Ekle" butonuna tıklayın ve temel bilgileri doldurun. Doğum tarihi, tanı bilgisi ve notları girebilirsiniz.',
-    to: '/cocuklarim',
-    time: '~3 dk',
-  },
-  {
-    icon: Calendar,
-    color: 'bg-green-100 text-green-600',
-    title: 'İlk randevunuzu planlayın',
-    desc: '"Uzmanlar" sayfasından uzmanlık alanına göre filtreleyerek bir uzman bulun, profiline tıklayın ve "Randevu Al" butonuyla uygun bir saat seçin.',
-    to: '/uzmanlar',
-    time: '~5 dk',
-  },
-  {
-    icon: Users,
-    color: 'bg-purple-100 text-purple-600',
-    title: 'Bir gruba katılın',
-    desc: '"Gruplar" sayfasında çocuğunuzun durumuna benzer grupları keşfedin. Katıldıktan sonra grup içi canlı sohbet panelini kullanabilirsiniz.',
-    to: '/gruplar',
-    time: '~2 dk',
-  },
-  {
-    icon: BookOpen,
-    color: 'bg-orange-100 text-orange-600',
-    title: 'Bilgi Bankası\'nı keşfedin',
-    desc: 'Uzmanlar tarafından yazılmış otizm, terapi yöntemleri ve erken müdahale hakkında rehber makaleleri okuyun.',
-    to: '/bilgi-bankasi',
-    time: '~5 dk',
-  },
-  {
-    icon: ShieldCheck,
-    color: 'bg-emerald-100 text-emerald-600',
-    title: 'Ayarlarınızı kişiselleştirin',
-    desc: '"Ayarlar" sayfasında bildirim tercihlerinizi ve erişilebilirlik seçeneklerinizi (büyük yazı, sakin mod, yüksek kontrast) yapılandırın.',
-    to: '/ayarlar',
-    time: '~2 dk',
-  },
 ];
 
 interface FaqItem { q: string; a: string }
@@ -222,13 +179,13 @@ function AccordionItem({ item, search }: { item: FaqItem; search: string }) {
   }, [open]);
 
   return (
-    <div className={`border rounded-2xl overflow-hidden transition-all duration-200 ${open ? 'border-primary-200 shadow-sm' : 'border-gray-100'}`}>
+    <Card className={`overflow-hidden transition-all duration-200 ${open ? 'border-primary-200 shadow-sm' : 'border-gray-100 shadow-none'}`}>
       <button
         onClick={() => setOpen(o => !o)}
         className={`w-full flex items-center justify-between px-4 py-3.5 text-left transition-colors ${open ? 'bg-primary-50' : 'bg-white hover:bg-gray-50'}`}
         aria-expanded={open}
       >
-        <span className="text-sm font-medium text-gray-800 pr-4">
+        <span className="text-sm font-semibold text-gray-800 pr-4">
           <Highlight text={item.q} query={search} />
         </span>
         <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 ${open ? 'bg-primary-100 text-primary-600 rotate-0' : 'bg-gray-100 text-gray-400'}`}>
@@ -242,7 +199,7 @@ function AccordionItem({ item, search }: { item: FaqItem; search: string }) {
           <Highlight text={item.a} query={search} />
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -279,6 +236,13 @@ export function HelpPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
+      <header className="space-y-1">
+        <p className="text-xs font-bold uppercase tracking-wide text-primary-600">SSS ve destek</p>
+        <h1 className="text-2xl font-black tracking-tight text-gray-950">Yardım Merkezi</h1>
+        <p className="text-sm font-medium leading-6 text-gray-500">
+          Platformda takıldığınız konular için sık sorulan soruları ve destek kanallarını burada bulabilirsiniz. Rolünüze özel başlangıç adımları ve sayfa haritası için Kullanıcı Rehberi'ne bakın.
+        </p>
+      </header>
 
       {/* Search */}
       <div className="space-y-3">
@@ -358,54 +322,22 @@ export function HelpPage() {
         </section>
       )}
 
-      {/* First Week Guide */}
+      {/* Kullanıcı Rehberi'ne yönlendirme — başlangıç adımları ve sayfa haritası tekrar burada listelenmez */}
       {!search && (
         <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <CheckCircle size={18} className="text-primary-500" />
-            İlk hafta ne yapmalıyım?
-          </h2>
-          <div className="relative">
-            {/* Vertical connector line */}
-            <div className="absolute left-[30px] top-9 bottom-9 w-px bg-gradient-to-b from-primary-200 via-primary-100 to-transparent hidden sm:block" />
-            <div className="space-y-3">
-              {FIRST_WEEK_STEPS.map((step, i) => {
-                const Icon = step.icon;
-                return (
-                  <div
-                    key={i}
-                    className="flex items-start gap-4 bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md hover:border-primary-100 transition-all group"
-                  >
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-primary-700 text-xs font-bold ring-2 ring-white ring-offset-0 z-10">
-                        {i + 1}
-                      </span>
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${step.color}`}>
-                        <Icon size={18} />
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-sm font-semibold text-gray-900">{step.title}</p>
-                        <span className="flex items-center gap-0.5 text-xs text-gray-400">
-                          <Clock size={10} />
-                          {step.time}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 leading-relaxed">{step.desc}</p>
-                    </div>
-                    <button
-                      onClick={() => navigate(step.to)}
-                      className="shrink-0 p-2 rounded-xl text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-colors group-hover:bg-primary-50 group-hover:text-primary-500"
-                      aria-label={`${step.title} sayfasına git`}
-                    >
-                      <ArrowRight size={16} />
-                    </button>
-                  </div>
-                );
-              })}
+          <button
+            onClick={() => navigate('/kullanici-rehberi')}
+            className="w-full flex items-center gap-4 rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-white p-4 text-left shadow-sm transition-all hover:shadow-md hover:border-indigo-200 group"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-indigo-100 flex items-center justify-center shrink-0">
+              <Compass size={22} className="text-indigo-600" />
             </div>
-          </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900">Yeni misiniz? Kullanıcı Rehberi'nden başlayın</p>
+              <p className="text-xs text-gray-500 mt-0.5">Rolünüze özel ilk adımlar ve platformdaki tüm sayfaların amacı tek yerde.</p>
+            </div>
+            <ChevronRight size={18} className="text-indigo-400 shrink-0 transition-transform group-hover:translate-x-0.5" />
+          </button>
         </section>
       )}
 

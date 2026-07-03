@@ -12,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -27,6 +29,7 @@ public class GroupService {
     private final GroupMeetingRepository meetingRepository;
     private final MessageReadReceiptRepository readReceiptRepository;
     private final GroupBanRepository groupBanRepository;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public List<GroupDto> getMyGroups(UUID userId) {
@@ -107,6 +110,17 @@ public class GroupService {
         if (conversation != null && conversation.getParticipants().stream().noneMatch(u -> u.getId().equals(userId))) {
             conversation.getParticipants().add(user);
             conversationRepository.save(group.getConversation());
+        }
+
+        User creator = group.getCreatedBy();
+        if (creator != null && !creator.getId().equals(userId)) {
+            notificationService.createNotification(
+                    creator.getId(),
+                    "GROUP_MEMBER_JOINED",
+                    "Grubunuza Yeni Üye Katıldı",
+                    user.getFullName() + " \"" + group.getName() + "\" grubuna katıldı.",
+                    "/gruplar"
+            );
         }
     }
 
@@ -252,6 +266,20 @@ public class GroupService {
                 .build();
 
         meeting = meetingRepository.save(meeting);
+
+        String dateStr = meeting.getStartTime().format(DateTimeFormatter.ofPattern("d MMMM HH:mm", Locale.forLanguageTag("tr")));
+        String body = "\"" + group.getName() + "\" grubunda yeni bir buluşma planlandı: " + meeting.getTitle() + " — " + dateStr;
+        for (GroupMember member : group.getMembers()) {
+            if (member.getUser() == null || member.getUser().getId().equals(userId)) continue;
+            notificationService.createNotification(
+                    member.getUser().getId(),
+                    "GROUP_MEETING_SCHEDULED",
+                    "Yeni Grup Buluşması",
+                    body,
+                    "/gruplar"
+            );
+        }
+
         return toMeetingDto(meeting);
     }
 

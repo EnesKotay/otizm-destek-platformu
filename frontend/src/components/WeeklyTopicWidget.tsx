@@ -1,18 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MessageSquare, ChevronRight, Flame, PenLine } from 'lucide-react';
-
-const WEEKLY_TOPICS = [
-  { tag: '#otizmvetoplum', title: 'Otizmli çocuklar sosyal etkinliklere nasıl dahil edilmeli?', replies: 47 },
-  { tag: '#terapi', title: 'ABA ve Floortime arasındaki farklar neler?', replies: 31 },
-  { tag: '#okul', title: 'Entegrasyon sınıfı deneyimleriniz nasıl?', replies: 58 },
-  { tag: '#duyusal', title: 'Duyusal hassasiyeti yönetmek için hangi stratejileri kullanıyorsunuz?', replies: 24 },
-  { tag: '#aile', title: 'Kardeş ilişkilerini desteklemek için önerileriniz?', replies: 19 },
-];
-
-function getWeeklyTopic() {
-  const weekNum = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
-  return WEEKLY_TOPICS[weekNum % WEEKLY_TOPICS.length];
-}
+import { communityService } from '@/services/communityService';
 
 export interface WeeklyTopic {
   tag: string;
@@ -26,7 +15,25 @@ interface WeeklyTopicWidgetProps {
 }
 
 export function WeeklyTopicWidget({ variant = 'dashboard', onJoin }: WeeklyTopicWidgetProps) {
-  const topic = getWeeklyTopic();
+  const [topic, setTopic] = useState<WeeklyTopic | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    communityService.getWeeklyQuestions()
+      .then(questions => {
+        if (cancelled || !questions[0]) return;
+        const current = questions[0];
+        setTopic({
+          tag: current.tag ?? '',
+          title: current.question,
+          replies: current.answers.length,
+        });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!topic) return null;
 
   if (variant === 'forum') {
     return (
@@ -54,7 +61,7 @@ export function WeeklyTopicWidget({ variant = 'dashboard', onJoin }: WeeklyTopic
   }
 
   return (
-    <Link to="/forum">
+    <Link to="/haftalik-soru">
       <div className="bg-gradient-to-r from-violet-50 to-indigo-50 border border-indigo-100 rounded-2xl p-4 hover:shadow-md transition-shadow cursor-pointer">
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">

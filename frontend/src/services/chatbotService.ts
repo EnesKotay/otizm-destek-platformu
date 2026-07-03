@@ -95,7 +95,8 @@ export const chatbotService = {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          throw new Error('Sunucu hatası: ' + response.status);
+          const errorText = await response.text().catch(() => '');
+          throw new Error(`Sunucu hatası: ${response.status}${errorText ? ` - ${errorText}` : ''}`);
         }
 
         const reader = response.body?.getReader();
@@ -140,14 +141,17 @@ export const chatbotService = {
         if (cancelled) return;
 
         /* Retry mantığı */
-        if ((err as { name?: string }).name !== 'AbortError' && retryCount < MAX_RETRIES) {
+        const classifiedError = classifyError(err);
+        if ((err as { name?: string }).name !== 'AbortError'
+            && classifiedError.type !== 'rateLimit'
+            && retryCount < MAX_RETRIES) {
           await delay(RETRY_DELAY_MS);
           if (!cancelled) return attempt(retryCount + 1);
         }
 
         const error = err as Error;
         if (error.name !== 'AbortError') {
-          onError(classifyError(error));
+          onError(classifiedError);
         }
       }
     };

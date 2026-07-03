@@ -2,21 +2,19 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Baby, Tag as TagIcon, Users, ChevronRight, ChevronDown,
-  ChevronLeft, Check, Sparkles, ArrowRight, Activity, GraduationCap,
+  ChevronLeft, Check, Sparkles, ArrowRight, Activity,
   MessageCircle, TrendingUp, BookOpen, HeartHandshake,
-  FileText, ShieldAlert, ShieldCheck, Search
+  CalendarCheck, FileText, ShieldAlert, ShieldCheck, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { TextArea } from '@/components/ui/TextArea';
 import { childService } from '@/services/childService';
 import { tagService } from '@/services/tagService';
-import { groupService } from '@/services/groupService';
-import { expertService } from '@/services/expertService';
 import { useAuthStore } from '@/store/authStore';
 import { useChildStore } from '@/store/childStore';
 import { toast } from '@/store/toastStore';
-import type { Tag, Group, User, Child } from '@/types';
+import type { Tag, Child } from '@/types';
 
 const CATEGORY_LABELS: Record<string, string> = {
   ILETISIM: 'İletişim',
@@ -48,22 +46,8 @@ const CATEGORY_SELECTED_COLORS: Record<string, string> = {
 
 const STEPS = [
   { label: 'Çocuk Profili',   icon: Baby,           color: 'text-indigo-600', bg: 'bg-indigo-100' },
-  { label: 'Semptomlar',      icon: TagIcon,         color: 'text-purple-600', bg: 'bg-purple-100' },
-  { label: 'Topluluk',        icon: Users,           color: 'text-green-600',  bg: 'bg-green-100'  },
-  { label: 'Terapi Programı', icon: Activity,        color: 'text-orange-600', bg: 'bg-orange-100' },
-  { label: 'Uzman Eşleştir',  icon: GraduationCap,  color: 'text-teal-600',   bg: 'bg-teal-100'   },
-];
-
-const THERAPY_OPTIONS: [string, string][] = [
-  ['ABA Terapisi', 'Ödüllendirme yoluyla davranış ve öğrenme desteği'],
-  ['Dil ve Konuşma Terapisi', 'Konuşma, anlama ve ifade etme becerileri'],
-  ['Mesleki Terapi (OT)', 'Günlük yaşam becerileri ve el-kol koordinasyonu'],
-  ['Özel Eğitim', 'Bireysel eğitim programı ile akademik destek'],
-  ['Duyu Bütünleme', 'Ses, dokunma ve ışık hassasiyetini dengeleme'],
-  ['Sosyal Beceri Eğitimi', 'Arkadaşlık kurma ve sosyal davranış pratiği'],
-  ['Davranış Desteği', 'Zorlayıcı davranışları azaltma ve yönetme'],
-  ['Müzik Terapisi', 'Müzik aracılığıyla duygusal ve sosyal gelişim'],
-  ['Spor ve Fizik Egzersiz', 'Motor gelişim ve beden koordinasyonu'],
+  { label: 'Destek Alanları', icon: TagIcon,         color: 'text-purple-600', bg: 'bg-purple-100' },
+  { label: 'Başlangıç Planı', icon: Sparkles,        color: 'text-teal-600',   bg: 'bg-teal-100'   },
 ];
 
 const FOCUS_OPTIONS = ['İletişim', 'Sosyal oyun', 'Duyusal düzenleme', 'Davranış takibi'];
@@ -156,6 +140,8 @@ export function OnboardingPage() {
   const [tagsByCategory, setTagsByCategory] = useState<Record<string, Tag[]>>({});
   const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [tagsLoading, setTagsLoading] = useState(true);
+  const [tagsLoadError, setTagsLoadError] = useState(false);
 
   const filteredTagsByCategory = useMemo(() => {
     if (!searchQuery.trim()) return tagsByCategory;
@@ -170,26 +156,19 @@ export function OnboardingPage() {
     return result;
   }, [tagsByCategory, searchQuery]);
 
-  // Step 3
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
-  const [joiningId, setJoiningId] = useState<string | null>(null);
-
-  // Step 4
-  const [selectedTherapies, setSelectedTherapies] = useState<Set<string>>(new Set());
-  const [therapyFrequency, setTherapyFrequency] = useState('');
-
-  // Step 5
-  const [experts, setExperts] = useState<User[]>([]);
+  const selectedTags = useMemo(() => {
+    const allTags = Object.values(tagsByCategory).flat();
+    return allTags.filter(tag => selectedTagIds.has(tag.id));
+  }, [selectedTagIds, tagsByCategory]);
 
   useEffect(() => {
-    tagService.getTagsByCategory().then(setTagsByCategory).catch(() => {});
+    setTagsLoading(true);
+    setTagsLoadError(false);
+    tagService.getTagsByCategory()
+      .then(setTagsByCategory)
+      .catch(() => setTagsLoadError(true))
+      .finally(() => setTagsLoading(false));
   }, []);
-
-  useEffect(() => {
-    if (step === 3) groupService.search('').then(setGroups).catch(() => {});
-    if (step === 5) expertService.getAll().then(exps => setExperts(exps.slice(0, 3))).catch(() => {});
-  }, [step]);
 
   const handleStep1 = async () => {
     if (!form.name.trim()) {
@@ -231,30 +210,6 @@ export function OnboardingPage() {
       setLoading(false);
     }
     setStep(3);
-  };
-
-  const handleJoinGroup = async (id: string) => {
-    setJoiningId(id);
-    try {
-      await groupService.join(id);
-      setJoinedIds(prev => new Set([...prev, id]));
-    } catch { toast.error('Gruba katılınamadı.'); }
-    setJoiningId(null);
-  };
-
-  const handleStep4 = async () => {
-    if (createdChildId && selectedTherapies.size > 0) {
-      setLoading(true);
-      try {
-        const therapiesStr = [
-          ...Array.from(selectedTherapies),
-          therapyFrequency ? `Sıklık: ${therapyFrequency}` : '',
-        ].filter(Boolean).join(' · ');
-        await childService.update(createdChildId, { therapies: therapiesStr });
-      } catch { /* skip */ }
-      setLoading(false);
-    }
-    setStep(5);
   };
 
   const handleFinish = () => {
@@ -449,11 +404,11 @@ export function OnboardingPage() {
                     ) : '!'}
                   </h1>
                   <p className="mt-3 text-sm font-medium text-indigo-100/75 leading-relaxed">
-                    Çocuğunuza en iyi desteği sunabilmek için kişiselleştirilmiş bir platform hazırladık.
+                    Sadece temel bilgileri alacağız. Tüm seçimleri daha sonra değiştirebilir veya tamamlayabilirsiniz.
                   </p>
                   <div className="flex flex-wrap gap-2 mt-5">
                     {[
-                      { label: 'Kişisel terapi planı', emoji: '🎯' },
+                      { label: 'Günlük destek planı', emoji: '🎯' },
                       { label: 'Uzman desteği',        emoji: '👨‍⚕️' },
                       { label: 'Aile toplulukları',    emoji: '👨‍👩‍👧' },
                       { label: 'İlerleme takibi',      emoji: '📊' },
@@ -483,9 +438,9 @@ export function OnboardingPage() {
 
                 <div className="space-y-2.5">
                   {[
-                    { n: 1, title: 'Çocuk Profili',      desc: 'İsim, doğum tarihi, tanı ve destek ihtiyaçları.',   icon: Baby,          g: 'from-indigo-500 to-indigo-600', glow: 'shadow-indigo-200' },
-                    { n: 2, title: 'Semptom & Topluluk', desc: 'Belirtileri işaretleyin, benzer ailelerle buluşun.', icon: Users,         g: 'from-violet-500 to-purple-600', glow: 'shadow-violet-200' },
-                    { n: 3, title: 'Terapi & Uzman',     desc: 'Terapi programı ve uzman eşleştirme.',              icon: GraduationCap, g: 'from-emerald-500 to-teal-600', glow: 'shadow-emerald-200' },
+                    { n: 1, title: 'Çocuk Profili',      desc: 'Ad, yaş ve varsa kısa notlarla başlayın.',         icon: Baby,      g: 'from-indigo-500 to-indigo-600', glow: 'shadow-indigo-200' },
+                    { n: 2, title: 'Destek Alanları',    desc: 'Gözlemlediğiniz alanları seçin; öneriler sadeleşsin.', icon: TagIcon,   g: 'from-violet-500 to-purple-600', glow: 'shadow-violet-200' },
+                    { n: 3, title: 'Başlangıç Planı',    desc: 'İlk günlük kayıt, uzman ve kaynak yolunu seçin.', icon: Sparkles,  g: 'from-emerald-500 to-teal-600', glow: 'shadow-emerald-200' },
                   ].map(item => (
                     <div key={item.n} className="group flex items-start gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 px-4 py-3.5 hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all duration-200 cursor-default">
                       <div className={`relative shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br ${item.g} flex items-center justify-center shadow-sm ${item.glow} group-hover:scale-105 transition-transform duration-200`}>
@@ -529,7 +484,7 @@ export function OnboardingPage() {
                     <ChevronRight size={16} className="relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
                   </button>
                   <p className="text-center text-[10px] font-medium text-slate-400 mt-2.5">
-                    ⏱ Ortalama kurulum süresi: <span className="text-indigo-500 font-bold">3 dakika</span>
+                    Ortalama kurulum süresi: <span className="text-indigo-500 font-bold">3 dakika</span>
                   </p>
                 </div>
               </div>
@@ -545,12 +500,12 @@ export function OnboardingPage() {
                   <Baby size={22} className="text-white" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Adım 1 / 5</span>
+                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Adım 1 / 3</span>
                   <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Çocuk Profili</h2>
-                  <p className="mt-2 text-xs font-medium text-slate-500 leading-relaxed">Temel bilgilerle başlayın. Bu profil benzer ailelerle eşleşmenizi sağlar.</p>
+                  <p className="mt-2 text-xs font-medium text-slate-500 leading-relaxed">Temel bilgilerle başlayın. Bu profil ana sayfa önerilerini çocuğunuza göre düzenler.</p>
                 </div>
                 <div className="hidden sm:flex flex-col gap-2.5 mt-1">
-                  {['Ad ve doğum tarihi', 'Tanı bilgisi', 'Başlangıç odağı ve iletişim düzeyi'].map(item => (
+                  {['Ad ve doğum tarihi', 'Varsa tanı veya kısa not', 'Başlangıç odağı ve iletişim düzeyi'].map(item => (
                     <div key={item} className="flex items-start gap-2 text-[11px] text-slate-500 font-medium">
                       <div className="w-4 h-4 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
                         <Check size={9} className="text-indigo-600 stroke-[3]" />
@@ -588,10 +543,10 @@ export function OnboardingPage() {
                     className="border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/40 rounded-xl h-11"
                   />
                   <TextArea
-                    label="Tanı Bilgisi"
+                    label="Tanı / Kısa Not"
                     value={form.diagnosisInfo}
                     onChange={e => setForm(f => ({ ...f, diagnosisInfo: e.target.value }))}
-                    placeholder="Otizm spektrum bozukluğu, seviye... gibi"
+                    placeholder="Varsa tanı, hassasiyet veya önemli bir not yazabilirsiniz"
                     className="border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/40 rounded-xl min-h-[72px]"
                   />
                   <div className="rounded-2xl bg-indigo-50/50 border border-indigo-100/60 p-4 space-y-3">
@@ -654,12 +609,12 @@ export function OnboardingPage() {
                   <TagIcon size={22} className="text-white" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Adım 2 / 5</span>
-                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Semptom Etiketleri</h2>
-                  <p className="mt-2 text-xs font-medium text-slate-500 leading-relaxed">Gözlemlenen belirtileri seçin. Eşleştirme ve öneriler için kullanılır.</p>
+                  <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Adım 2 / 3</span>
+                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Destek Alanları</h2>
+                  <p className="mt-2 text-xs font-medium text-slate-500 leading-relaxed">Gözlemlediğiniz alanları seçin. Bu bilgiler tanı koymaz; sadece önerileri kişiselleştirir.</p>
                 </div>
                 <div className="hidden sm:flex flex-col gap-2.5 mt-1">
-                  {['Kategori bazlı etiketler', 'Hızlı arama desteği', 'Benzer aile eşleşmesi'].map(item => (
+                  {['Kategori bazlı alanlar', 'Hızlı arama desteği', 'Sonradan değiştirilebilir'].map(item => (
                     <div key={item} className="flex items-start gap-2 text-[11px] text-slate-500 font-medium">
                       <div className="w-4 h-4 rounded-full bg-purple-100 flex items-center justify-center shrink-0 mt-0.5">
                         <Check size={9} className="text-purple-600 stroke-[3]" />
@@ -671,24 +626,67 @@ export function OnboardingPage() {
                 {selectedTagIds.size > 0 && (
                   <div className="hidden sm:flex items-center gap-2 mt-auto rounded-xl bg-purple-600 px-3 py-2">
                     <Check size={13} className="text-white stroke-[3] shrink-0" />
-                    <span className="text-xs font-black text-white">{selectedTagIds.size} etiket seçildi</span>
+                    <span className="text-xs font-black text-white">{selectedTagIds.size} alan seçildi</span>
                   </div>
                 )}
               </div>
               {/* İçerik */}
               <div className="flex-1 flex flex-col min-w-0">
                 <div className="flex-1 px-7 py-6 space-y-4 overflow-y-auto">
-                  <div className="relative">
-                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    <Input placeholder="Semptomlarda ara..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                      className="pl-10 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/40 rounded-xl h-10 w-full" />
+                  <div className="rounded-2xl border border-purple-100 bg-purple-50/60 px-4 py-3">
+                    <p className="text-xs font-bold text-purple-950">Bu adım opsiyonel</p>
+                    <p className="mt-1 text-[11px] font-medium leading-5 text-purple-700">
+                      Emin olmadığınız alanları seçmek zorunda değilsiniz. Daha sonra çocuk profilinden değiştirebilirsiniz.
+                    </p>
                   </div>
                   <div className="relative">
+                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <Input placeholder="Destek alanlarında ara..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                      className="pl-10 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/40 rounded-xl h-10 w-full" />
+                  </div>
+                  {selectedTags.length > 0 && (
+                    <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-black text-slate-800">{selectedTags.length} alan seçildi</p>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTagIds(new Set())}
+                          className="text-[11px] font-bold text-slate-400 transition-colors hover:text-purple-600"
+                        >
+                          Temizle
+                        </button>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {selectedTags.slice(0, 5).map(tag => (
+                          <span key={tag.id} className="rounded-full bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-700">
+                            {tag.name}
+                          </span>
+                        ))}
+                        {selectedTags.length > 5 && (
+                          <span className="rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-500">
+                            +{selectedTags.length - 5} daha
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="relative">
                     <div className="space-y-4 max-h-[340px] overflow-y-auto pr-1 pb-8">
-                      {Object.keys(filteredTagsByCategory).length === 0 && (
-                        <p className="text-sm text-slate-400 text-center py-8 font-medium">Aramanıza uygun etiket bulunamadı.</p>
+                      {tagsLoading && (
+                        <p className="text-sm text-slate-400 text-center py-8 font-medium">Destek alanları yükleniyor...</p>
                       )}
-                      {Object.entries(filteredTagsByCategory).map(([cat, tags]) => (
+                      {!tagsLoading && tagsLoadError && (
+                        <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-center">
+                          <p className="text-sm font-bold text-amber-900">Destek alanları yüklenemedi</p>
+                          <p className="mt-1 text-xs font-medium leading-5 text-amber-700">Bu adımı sonra çocuk profilinden tamamlayabilirsiniz.</p>
+                        </div>
+                      )}
+                      {!tagsLoading && !tagsLoadError && Object.keys(filteredTagsByCategory).length === 0 && (
+                        <p className="text-sm text-slate-400 text-center py-8 font-medium">
+                          {searchQuery.trim() ? 'Aramanıza uygun destek alanı bulunamadı.' : 'Henüz destek alanı bulunmuyor. Bu adımı sonra tamamlayabilirsiniz.'}
+                        </p>
+                      )}
+                      {!tagsLoading && !tagsLoadError && Object.entries(filteredTagsByCategory).map(([cat, tags]) => (
                         <div key={cat} className="space-y-2">
                           <div>
                             <p className="text-xs font-bold text-slate-700">{CATEGORY_LABELS[cat] || cat}</p>
@@ -727,7 +725,7 @@ export function OnboardingPage() {
                     <ChevronLeft size={16} className="mr-1" /> Geri
                   </Button>
                   <Button onClick={handleStep2} loading={loading} className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 font-bold rounded-2xl shadow-md shadow-indigo-100 cursor-pointer text-white">
-                    {selectedTagIds.size === 0 ? 'Şimdilik geç' : 'Devam Et'} <ChevronRight size={16} className="ml-1" />
+                    {selectedTagIds.size === 0 ? 'Sonra tamamla' : 'Devam Et'} <ChevronRight size={16} className="ml-1" />
                   </Button>
                 </div>
               </div>
@@ -738,182 +736,17 @@ export function OnboardingPage() {
           {step === 3 && (
             <div className="bg-white border border-slate-100 shadow-xl shadow-slate-100/50 rounded-[28px] overflow-hidden flex flex-col sm:flex-row">
               {/* Sidebar */}
-              <div className="sm:w-[240px] shrink-0 bg-gradient-to-br from-emerald-50/80 to-slate-50/50 border-b sm:border-b-0 sm:border-r border-slate-100 p-7 flex flex-col gap-5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-200/60">
-                  <Users size={22} className="text-white" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Adım 3 / 5</span>
-                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Topluluk Grupları</h2>
-                  <p className="mt-2 text-xs font-medium text-slate-500 leading-relaxed">Benzer ailelerin bulunduğu destek gruplarına katılın.</p>
-                </div>
-                <div className="hidden sm:flex flex-col gap-2.5 mt-1">
-                  {['Özel destek grupları', 'Anında katılım', 'İstediğinizde ayrılabilirsiniz'].map(item => (
-                    <div key={item} className="flex items-start gap-2 text-[11px] text-slate-500 font-medium">
-                      <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check size={9} className="text-emerald-600 stroke-[3]" />
-                      </div>
-                      {item}
-                    </div>
-                  ))}
-                </div>
-                {joinedIds.size > 0 && (
-                  <div className="hidden sm:flex items-center gap-2 mt-auto rounded-xl bg-emerald-600 px-3 py-2">
-                    <Check size={13} className="text-white stroke-[3] shrink-0" />
-                    <span className="text-xs font-black text-white">{joinedIds.size} gruba katıldınız</span>
-                  </div>
-                )}
-              </div>
-              {/* İçerik */}
-              <div className="flex-1 flex flex-col min-w-0">
-                <div className="relative flex-1">
-                  <div className="px-7 py-6 space-y-3 max-h-[400px] overflow-y-auto pb-10">
-                    {groups.length === 0 && (
-                      <div className="text-center py-12">
-                        <Users size={32} className="mx-auto text-slate-200 mb-3" />
-                        <p className="text-sm font-bold text-slate-400">Henüz grup bulunmuyor.</p>
-                        <p className="text-xs text-slate-300 mt-1">Topluluklar oluştukça burada görünecek.</p>
-                      </div>
-                    )}
-                    {groups.map(group => (
-                      <div key={group.id} className="flex items-center gap-3.5 p-4 rounded-2xl border border-slate-100 bg-slate-50/40 hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all duration-200 group">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 font-extrabold text-white text-sm shadow-sm">
-                          {group.name.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-slate-800 text-sm truncate">{group.name}</p>
-                          <p className="text-[11px] font-medium text-slate-400 mt-0.5 flex items-center gap-1.5">
-                            <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded text-[9px] font-black uppercase">{group.category || 'Destek'}</span>
-                            {group.memberCount} üye
-                          </p>
-                        </div>
-                        <button onClick={() => handleJoinGroup(group.id)} disabled={joinedIds.has(group.id) || joiningId === group.id}
-                          className={`shrink-0 h-8 px-4 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1 cursor-pointer ${joinedIds.has(group.id) ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-indigo-600 text-white hover:bg-indigo-700'} disabled:opacity-70`}>
-                          {joiningId === group.id ? <span className="animate-spin rounded-full h-3 w-3 border-2 border-white/30 border-t-white" /> : joinedIds.has(group.id) ? <><Check size={11} className="stroke-[3]" /> Katıldı</> : 'Katıl'}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  {groups.length > 3 && (
-                    <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-white via-white/80 to-transparent flex items-end justify-center pb-1.5">
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                        <ChevronDown size={12} className="animate-bounce" /> kaydır
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div className="px-7 pb-7 pt-5 border-t border-slate-100 flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 h-11 border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-2xl cursor-pointer">
-                    <ChevronLeft size={16} className="mr-1" /> Geri
-                  </Button>
-                  <Button onClick={() => setStep(4)} className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 font-bold rounded-2xl shadow-md shadow-indigo-100 cursor-pointer text-white">
-                    Devam Et <ChevronRight size={16} className="ml-1" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ──── STEP 4 ──── */}
-          {step === 4 && (
-            <div className="bg-white border border-slate-100 shadow-xl shadow-slate-100/50 rounded-[28px] overflow-hidden flex flex-col sm:flex-row">
-              {/* Sidebar */}
-              <div className="sm:w-[240px] shrink-0 bg-gradient-to-br from-orange-50/80 to-slate-50/50 border-b sm:border-b-0 sm:border-r border-slate-100 p-7 flex flex-col gap-5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md shadow-orange-200/60">
-                  <Activity size={22} className="text-white" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Adım 4 / 5</span>
-                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Terapi Programı</h2>
-                  <p className="mt-2 text-xs font-medium text-slate-500 leading-relaxed">Alınan veya planlanan terapileri ve sıklığını belirleyin.</p>
-                </div>
-                <div className="hidden sm:flex flex-col gap-2.5 mt-1">
-                  {['Terapi türü seçimi', 'Seans sıklığı', 'Uzman önerileri için veri'].map(item => (
-                    <div key={item} className="flex items-start gap-2 text-[11px] text-slate-500 font-medium">
-                      <div className="w-4 h-4 rounded-full bg-orange-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check size={9} className="text-orange-500 stroke-[3]" />
-                      </div>
-                      {item}
-                    </div>
-                  ))}
-                </div>
-                {selectedTherapies.size > 0 && (
-                  <div className="hidden sm:flex items-center gap-2 mt-auto rounded-xl bg-orange-500 px-3 py-2">
-                    <Check size={13} className="text-white stroke-[3] shrink-0" />
-                    <span className="text-xs font-black text-white">{selectedTherapies.size} terapi seçildi</span>
-                  </div>
-                )}
-              </div>
-              {/* İçerik */}
-              <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex-1 px-7 py-6 space-y-5 overflow-y-auto">
-                  <div>
-                    <p className="text-sm font-bold text-slate-700 mb-3">Hangi terapiler alınıyor veya planlanıyor?</p>
-                    <div className="relative">
-                      <div className="grid grid-cols-1 gap-2 max-h-[280px] overflow-y-auto pr-1 pb-8">
-                        {THERAPY_OPTIONS.map(([name, desc]) => {
-                          const sel = selectedTherapies.has(name);
-                          return (
-                            <button key={name} type="button"
-                              onClick={() => setSelectedTherapies(prev => { const n = new Set(prev); if (sel) { n.delete(name); } else { n.add(name); } return n; })}
-                              className={`px-4 py-3 rounded-xl border text-left cursor-pointer transition-all duration-200 flex items-start gap-3 ${sel ? 'bg-orange-500 border-orange-500 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-700 hover:border-orange-300 hover:bg-orange-50/20'}`}>
-                              <span className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${sel ? 'border-white bg-white/20' : 'border-slate-300'}`}>
-                                {sel && <Check size={8} className="stroke-[3] text-white" />}
-                              </span>
-                              <span className="min-w-0">
-                                <span className="block text-sm font-bold leading-tight">{name}</span>
-                                <span className={`block text-xs mt-0.5 leading-snug ${sel ? 'text-white/80' : 'text-slate-400'}`}>{desc}</span>
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white via-white/80 to-transparent flex items-end justify-center pb-1">
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                          <ChevronDown size={12} className="animate-bounce" /> kaydır
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Haftada kaç gün terapi yapılıyor?</label>
-                    <div className="relative">
-                      <select value={therapyFrequency} onChange={e => setTherapyFrequency(e.target.value)}
-                        className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-orange-400 focus:ring-4 focus:ring-orange-100/30 transition-all outline-none cursor-pointer appearance-none">
-                        <option value="">Seçiniz</option>
-                        {['Haftada 1','Haftada 2-3','Haftada 4-5','Her gün'].map(o => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                      <ChevronDown size={14} className="absolute right-3 top-3 pointer-events-none text-slate-400" />
-                    </div>
-                  </div>
-                </div>
-                <div className="px-7 pb-7 pt-5 border-t border-slate-100 flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 h-11 border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-2xl cursor-pointer">
-                    <ChevronLeft size={16} className="mr-1" /> Geri
-                  </Button>
-                  <Button onClick={handleStep4} loading={loading} className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 font-bold rounded-2xl shadow-md shadow-indigo-100 cursor-pointer text-white">
-                    {selectedTherapies.size === 0 ? 'Şimdilik geç' : 'Kaydet ve Devam'} <ChevronRight size={16} className="ml-1" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ──── STEP 5 ──── */}
-          {step === 5 && (
-            <div className="bg-white border border-slate-100 shadow-xl shadow-slate-100/50 rounded-[28px] overflow-hidden flex flex-col sm:flex-row">
-              {/* Sidebar */}
               <div className="sm:w-[240px] shrink-0 bg-gradient-to-br from-teal-50/80 to-slate-50/50 border-b sm:border-b-0 sm:border-r border-slate-100 p-7 flex flex-col gap-5">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-600 flex items-center justify-center shadow-md shadow-teal-200/60">
-                  <GraduationCap size={22} className="text-white" />
+                  <Sparkles size={22} className="text-white" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black text-teal-500 uppercase tracking-widest">Adım 5 / 5</span>
-                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Uzman Eşleştirme</h2>
-                  <p className="mt-2 text-xs font-medium text-slate-500 leading-relaxed">Platformumuzdaki onaylı uzman kadromuzu keşfedin.</p>
+                  <span className="text-[10px] font-black text-teal-500 uppercase tracking-widest">Adım 3 / 3</span>
+                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Başlangıç Planı</h2>
+                  <p className="mt-2 text-xs font-medium text-slate-500 leading-relaxed">Kurulum tamam. Bundan sonrası ihtiyacınıza göre sakin adımlarla ilerler.</p>
                 </div>
                 <div className="hidden sm:flex flex-col gap-2.5 mt-1">
-                  {['Onaylı uzman profilleri', 'Detaylı filtreleme', 'Online randevu kolaylığı'].map(item => (
+                  {['Bugünkü kısa kayıt', 'Uzman ve randevu akışı', 'Topluluk ve kaynaklar'].map(item => (
                     <div key={item} className="flex items-start gap-2 text-[11px] text-slate-500 font-medium">
                       <div className="w-4 h-4 rounded-full bg-teal-100 flex items-center justify-center shrink-0 mt-0.5">
                         <Check size={9} className="text-teal-600 stroke-[3]" />
@@ -924,56 +757,74 @@ export function OnboardingPage() {
                 </div>
                 <div className="hidden sm:block mt-auto rounded-2xl bg-teal-50 border border-teal-100/60 p-3">
                   <p className="text-[10px] font-black text-teal-700 flex items-center gap-1.5 mb-1">
-                    <Sparkles size={11} className="text-teal-600" /> Son adım
+                    <ShieldCheck size={11} className="text-teal-600" /> Güvenli başlangıç
                   </p>
                   <p className="text-[10px] font-medium text-teal-600 leading-relaxed">
-                    Kurulum sonrası Uzmanlar sayfasından tüm kadroyu filtreleyebilirsiniz.
+                    Platform takip ve iletişim desteği sağlar; tanı veya tedavi kararı yerine geçmez.
                   </p>
                 </div>
               </div>
               {/* İçerik */}
               <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex-1 px-7 py-6 space-y-3 overflow-y-auto">
-                  {experts.length === 0 && (
-                    <div className="text-center py-12">
-                      <GraduationCap size={32} className="mx-auto text-slate-200 mb-3 animate-pulse" />
-                      <p className="text-sm font-bold text-slate-400">Uzmanlar yükleniyor...</p>
-                    </div>
-                  )}
-                  <div className="relative">
-                    <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1 pb-8">
-                      {experts.map(expert => (
-                        <div key={expert.id} className="flex items-center gap-3.5 p-4 rounded-2xl border border-slate-100 bg-slate-50/40 hover:bg-white hover:border-teal-200 hover:shadow-sm transition-all duration-200">
-                          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-500 flex items-center justify-center shrink-0 font-extrabold text-white text-sm shadow-md shadow-teal-100/50">
-                            {expert.fullName?.charAt(0)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-extrabold text-slate-800">{expert.fullName}</p>
-                            <p className="text-xs font-medium text-slate-400 mt-0.5">{expert.expertTitle || 'Uzman Danışman'}</p>
-                          </div>
-                          {expert.verified && (
-                            <span className="flex items-center gap-1 text-[10px] font-black text-teal-700 bg-teal-50 border border-teal-100 px-2.5 py-1 rounded-lg">
-                              <Check size={10} className="stroke-[3]" /> Onaylı
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    {experts.length > 3 && (
-                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-white via-white/80 to-transparent flex items-end justify-center pb-1.5">
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                          <ChevronDown size={12} className="animate-bounce" /> kaydır
+                <div className="flex-1 px-7 py-6 space-y-4">
+                  <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4">
+                    <p className="text-sm font-black text-teal-950">Profil hazır</p>
+                    <p className="mt-1 text-xs font-semibold leading-5 text-teal-700">
+                      İlk kaydı bugün girmeniz yeterli. Topluluk, destek planı ve uzman adımlarını ana sayfadan istediğiniz zaman tamamlayabilirsiniz.
+                    </p>
+                  </div>
+                  <div className="grid gap-3">
+                    {[
+                      {
+                        icon: Activity,
+                        title: 'Bugünkü kısa kaydı girin',
+                        desc: 'Uyku, duygu, ilaç ve kısa gözlemi 1 dakikada kaydedin.',
+                        to: '/gunluk-takip',
+                        tone: 'bg-rose-50 text-rose-600 border-rose-100',
+                      },
+                      {
+                        icon: CalendarCheck,
+                        title: 'Uzman veya randevu akışına bakın',
+                        desc: 'Uygun uzmanları inceleyin ve gerektiğinde randevu talebi oluşturun.',
+                        to: '/uzmanlar',
+                        tone: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+                      },
+                      {
+                        icon: Users,
+                        title: 'Topluluk ve kaynakları sonra keşfedin',
+                        desc: 'Forum, gruplar ve bilgi bankası kurulumdan bağımsız kullanılabilir.',
+                        to: '/bilgi-bankasi',
+                        tone: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+                      },
+                    ].map(({ icon: Icon, title, desc, to, tone }) => (
+                      <button
+                        key={title}
+                        type="button"
+                        onClick={() => {
+                          if (createdChild) addChild(createdChild);
+                          setOnboardingCompleted();
+                          navigate(to, { replace: true });
+                        }}
+                        className="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 text-left transition-all hover:border-teal-200 hover:bg-teal-50/20 hover:shadow-sm"
+                      >
+                        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${tone}`}>
+                          <Icon size={19} />
                         </span>
-                      </div>
-                    )}
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-extrabold text-slate-900">{title}</span>
+                          <span className="mt-0.5 block text-xs font-medium leading-5 text-slate-500">{desc}</span>
+                        </span>
+                        <ArrowRight size={16} className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-teal-600" />
+                      </button>
+                    ))}
                   </div>
                 </div>
                 <div className="px-7 pb-7 pt-5 border-t border-slate-100 flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(4)} className="flex-1 h-11 border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-2xl cursor-pointer">
+                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 h-11 border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-2xl cursor-pointer">
                     <ChevronLeft size={16} className="mr-1" /> Geri
                   </Button>
-                  <Button onClick={handleFinish} className="flex-1 h-11 bg-gradient-to-r from-teal-600 to-emerald-600 font-bold rounded-2xl shadow-md shadow-teal-100 cursor-pointer text-white flex items-center justify-center gap-1.5">
-                    <Sparkles size={14} /> Platforma Başla
+                  <Button onClick={handleFinish} className="flex-1 h-11 bg-gradient-to-r from-teal-600 to-emerald-600 font-bold rounded-2xl shadow-md shadow-teal-100 cursor-pointer text-white">
+                    Ana Sayfaya Başla <ChevronRight size={16} className="ml-1" />
                   </Button>
                 </div>
               </div>
@@ -981,7 +832,7 @@ export function OnboardingPage() {
           )}
 
           <p className="text-center text-[10px] font-semibold text-slate-400 mt-4">
-            {step === 0 ? 'Başlangıç kurulumu · Profil sonrası adımları ana sayfada tamamlayabilirsiniz' : `Adım ${step} / ${STEPS.length} · İstediğiniz zaman atlayabilirsiniz`}
+            {step === 0 ? 'Başlangıç kurulumu · 3 kısa adım · Tüm seçimleri sonra değiştirebilirsiniz' : `Adım ${step} / ${STEPS.length} · İstediğiniz zaman sonra tamamlayabilirsiniz`}
           </p>
         </div>
       </div>

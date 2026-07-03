@@ -49,6 +49,8 @@ class MessagingServiceTest {
     private MessageReadReceiptRepository readReceiptRepository;
     @Mock
     private SimpMessagingTemplate messagingTemplate;
+    @Mock
+    private FcmPushService fcmPushService;
 
     @InjectMocks
     private MessagingService messagingService;

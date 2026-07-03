@@ -144,7 +144,9 @@ public class ForumService {
 
         post.setTitle(requireText(dto.getTitle(), "Başlık zorunludur"));
         post.setContent(sanitizeRequiredHtml(dto.getContent(), "İçerik zorunludur"));
-        post.setCategory(normalizeOptional(dto.getCategory()));
+        if (dto.getCategory() != null) {
+            post.setCategory(normalizeOptional(dto.getCategory()));
+        }
         if (dto.getPostType() != null) {
             post.setPostType(normalizePostType(dto.getPostType()));
         }

@@ -68,10 +68,11 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
     },
     {
       label: 'Topluluk',
-      defaultOpen: false,
+      defaultOpen: true,
       items: [
         { to: '/bilgi-bankasi', icon: Library, label: 'Bilgi Bankası', description: 'Makaleler, rehberler ve kaynaklar', keywords: ['makale', 'rehber', 'bilgi', 'kaynak'] },
         { to: '/forum', icon: BookOpen, label: 'Forum', description: 'Sorular, yanıtlar ve deneyim paylaşımı', keywords: ['soru', 'cevap', 'paylaşım', 'forum'] },
+        { to: '/gruplar', icon: Users, label: 'Gruplar', description: 'Benzer deneyim gruplarına katılın', keywords: ['grup', 'topluluk', 'sohbet', 'aile'] },
         { to: '/haftalik-soru', icon: Flame, label: 'Haftanın Sorusu', description: 'Her hafta bir konu, aileler birlikte cevaplar', keywords: ['soru', 'hafta', 'topluluk', 'deneyim'] },
         { to: '/dertlesme-duvari', icon: Heart, label: 'Dertleşme Duvarı', description: 'Duygu ve deneyim paylaşımı için destek alanı', keywords: ['destek', 'duygu', 'paylaşım', 'dertleşme'] },
         { to: '/benzer-aileler', icon: Users, label: 'Benzer Aileler', description: 'Sizinle aynı süreci yaşayan ailelerle tanışın', keywords: ['aile', 'benzer', 'topluluk', 'tanış'] },
@@ -82,7 +83,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       label: 'Destek & Rehber',
       defaultOpen: false,
       items: [
-        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'Platform sayfaları ve kullanım amaçları', keywords: ['tanıtım', 'rehber', 'başlangıç', 'yardım'] },
+        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'İlk adımlar ve platform sayfa haritası', keywords: ['tanıtım', 'rehber', 'başlangıç', 'sayfa haritası'] },
         { to: '/kriz-rehberi', icon: AlertTriangle, label: 'Zor Anlarda Ne Yapmalı?', description: 'Sakinleşmek için kısa adımlar', keywords: ['kriz', 'sakinleşme', 'destek'], badgeKey: 'crisis', simple: true },
         { to: '/acil-kart', icon: ShieldAlert, label: 'Acil Durum Kartı', description: 'Acil durumda paylaşılacak bilgiler', keywords: ['acil', 'kart', 'güvenlik'], requiresChild: true },
       ],
@@ -113,8 +114,8 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       defaultOpen: false,
       items: [
         { to: '/bilgi-bankasi', icon: Library, label: 'Bilgi Bankası', description: 'Kaynak yazılar ve rehber içerikler', keywords: ['makale', 'rehber', 'bilgi'] },
-        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'Platform başlangıç akışı', keywords: ['başlangıç', 'rehber', 'kullanım', 'yardım'] },
-        { to: '/yardim', icon: HelpCircle, label: 'Yardım Merkezi', description: 'SSS, başlangıç rehberi ve destek', keywords: ['yardım', 'sss', 'destek'] },
+        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'İlk adımlar ve platform sayfa haritası', keywords: ['başlangıç', 'rehber', 'kullanım', 'sayfa haritası'] },
+        { to: '/yardim', icon: HelpCircle, label: 'Yardım Merkezi', description: 'SSS ve destek kanalları', keywords: ['yardım', 'sss', 'destek'] },
       ],
     },
   ],
@@ -152,8 +153,8 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       defaultOpen: false,
       items: [
         { to: '/bilgi-bankasi', icon: Library, label: 'Bilgi Bankası', description: 'Yayınlanan kaynak içerikleri', keywords: ['makale', 'rehber', 'bilgi'] },
-        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'Yeni kullanıcı başlangıç akışı', keywords: ['başlangıç', 'rehber', 'kullanım', 'yardım'] },
-        { to: '/yardim', icon: HelpCircle, label: 'Yardım Merkezi', description: 'SSS ve kullanıcı destek sayfası', keywords: ['yardım', 'sss', 'destek'] },
+        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'İlk adımlar ve platform sayfa haritası', keywords: ['başlangıç', 'rehber', 'kullanım', 'sayfa haritası'] },
+        { to: '/yardim', icon: HelpCircle, label: 'Yardım Merkezi', description: 'SSS ve destek kanalları', keywords: ['yardım', 'sss', 'destek'] },
         { to: '/admin/settings', icon: Settings, label: 'Sistem Ayarları', description: 'Genel sistem konfigürasyonu', keywords: ['ayar', 'konfigürasyon', 'sistem'] },
       ],
     },

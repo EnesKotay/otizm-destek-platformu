@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ElementType } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, AlertTriangle, ArrowRight, Baby, BarChart2, Bell, BookOpen, Brain, Calendar, CalendarCheck, CheckCircle, ClipboardList, Clock, FileText, GraduationCap, Heart, MessageCircle, Pill, Search, Settings, ShieldCheck, Smile, Sparkles, Target, Timer, TrendingUp, UserPlus, Users, XCircle } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, Baby, BarChart2, Bell, Brain, Calendar, CalendarCheck, CheckCircle, ClipboardList, Clock, FileText, GraduationCap, Heart, MessageCircle, Pill, Search, Settings, ShieldCheck, Sparkles, Target, Timer, TrendingUp, UserPlus, Users, XCircle } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -27,19 +27,6 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { toast } from '@/store/toastStore';
 import { formatDateTime } from '@/utils/date';
 import type { AdminStats, AppointmentRecord, CalendarEvent, DevelopmentNote, ExpertStats, ExpertTask, Medication, MoodEntry, PatientSummary, Report, ExpertConnectionRequest } from '@/types';
-
-type FollowUpSuggestion = {
-  id?: string;
-  to: string;
-  icon: ElementType;
-  title: string;
-  detail: string;
-  cta: string;
-  badge: string;
-  priorityLabel?: string;
-  tone: string;
-  iconTone: string;
-};
 
 // Fix: parse gerçek adı — "Dr. Kemal Aydın" → "Kemal"
 const HONORIFICS = new Set(['Dr.', 'Prof.', 'Av.', 'Doç.', 'Op.', 'Uzm.', 'Yrd.', 'Fzt.']);
@@ -85,15 +72,6 @@ function getPendingMedicationSlots(medications: Medication[]): number {
     return count + scheduledTimes.filter((time) => !med.todayLogs?.some((log) => log.scheduledTime === time && log.taken)).length;
   }, 0);
 }
-
-const EVENT_TYPE_META: Record<string, { label: string; textColor: string; bgColor: string }> = {
-  TERAPI:      { label: 'Terapi',    textColor: 'text-indigo-700', bgColor: 'bg-indigo-100' },
-  DOKTOR:      { label: 'Doktor',    textColor: 'text-emerald-700', bgColor: 'bg-emerald-100' },
-  EGITIM:      { label: 'Eğitim',   textColor: 'text-amber-700',   bgColor: 'bg-amber-100' },
-  AKTIVITE:    { label: 'Aktivite',  textColor: 'text-rose-700',    bgColor: 'bg-rose-100' },
-  APPOINTMENT: { label: 'Randevu',   textColor: 'text-sky-700',     bgColor: 'bg-sky-100' },
-  DIGER:       { label: 'Etkinlik',  textColor: 'text-slate-600',   bgColor: 'bg-slate-100' },
-};
 
 
 
@@ -365,14 +343,14 @@ export function DashboardPage() {
       tone: 'bg-rose-50 text-rose-700 ring-rose-100',
     },
     {
-      to: '/davranis-gunlugu',
+      to: `/notlar?open=1&category=${encodeURIComponent('Davranış')}`,
       label: 'Davranış notu',
-      detail: 'Önce ve sonrası',
+      detail: '"Davranış" kategorisiyle yeni not',
       icon: AlertTriangle,
       tone: 'bg-amber-50 text-amber-700 ring-amber-100',
     },
     {
-      to: '/notlar',
+      to: '/notlar?open=1',
       label: 'Gözlem notu',
       detail: recentNotes.length ? `${recentNotes.length} son not` : 'Kısa not ekle',
       icon: FileText,
@@ -389,24 +367,16 @@ export function DashboardPage() {
   const pendingMedicationSlots = getPendingMedicationSlots(todayMeds);
   const nextEvent = activeChildEvents[0];
   const nextEventCountdown = nextEvent ? getEventCountdown(nextEvent.startTime) : null;
-  const nextEventType = nextEvent ? (EVENT_TYPE_META[nextEvent.eventType] ?? EVENT_TYPE_META.DIGER) : null;
-  const nextAppointment = activeChild
-    ? upcomingEvents.find(
-        (event) =>
-          (!event.childId || event.childId === activeChild.id) &&
-          ['APPOINTMENT', 'TERAPI', 'DOKTOR'].includes(event.eventType)
-      )
-    : null;
 
   const todayTasks = activeChild ? (() => {
     type Task = {
       to: string; icon: React.ElementType; title: string; detail: string;
-      reason: string; duration: string; done: boolean;
+      duration: string; done: boolean; urgency: number; safety?: boolean;
       tone: string; cta: string; doneCta: string;
     };
     const tasks: Task[] = [];
 
-    // 1. Günlük kayıt — her zaman
+    // Günlük kayıt — her zaman
     tasks.push({
       to: '/gunluk-takip',
       icon: Heart,
@@ -414,91 +384,88 @@ export function DashboardPage() {
       detail: todayMood
         ? 'Ruh hali girildi; uyku, ilaç veya kısa not ekleyebilirsiniz.'
         : 'Ruh hali, uyku ve ilaç bilgisini 1 dakikada işaretleyin.',
-      reason: todayMood ? 'Bugünkü ruh hali kaydı var.' : 'Ruh hali bugün kaydedilmedi.',
       duration: '1 dk',
       done: Boolean(todayMood),
+      urgency: 1,
       tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
       cta: todayMood ? 'Güncelle' : 'Kaydet',
       doneCta: 'Kaydı görüntüle',
     });
 
-    // 2. İlaç — sadece bekleyen varsa
+    // İlaç — sadece bekleyen varsa; gecikmiş bir doz her zaman en acil iştir
     if (pendingMedicationSlots > 0) {
-      const pendingNames = todayMeds
-        .filter(m => (m.scheduledTimes ?? []).some(t => !(m.todayLogs ?? []).find(l => l.scheduledTime === t && l.taken)))
-        .map(m => m.name).join(', ');
       tasks.push({
         to: '/gunluk-takip',
         icon: Pill,
         title: 'İlaç kontrolünü tamamla',
         detail: `${pendingMedicationSlots} doz henüz işaretlenmedi.`,
-        reason: pendingNames || 'Aktif ilaç takibinde eksik doz var.',
         duration: '2 dk',
         done: false,
+        urgency: 0,
         tone: 'bg-amber-50 text-amber-700 ring-amber-100',
         cta: 'Kontrol et',
         doneCta: 'Tamam',
       });
     }
 
-    // 3. Okunmamış mesaj — sadece varsa
+    // Okunmamış mesaj — sadece varsa
     if (unreadMessagesCount > 0) {
       tasks.push({
         to: '/mesajlar',
         icon: MessageCircle,
         title: 'Mesajları yanıtla',
         detail: `${unreadMessagesCount} okunmamış mesajın var.`,
-        reason: 'Uzman veya aile mesajı yanıt bekliyor.',
         duration: '2 dk',
         done: false,
+        urgency: 2,
         tone: 'bg-orange-50 text-orange-700 ring-orange-100',
         cta: 'Mesajlara git',
         doneCta: 'Mesajlar',
       });
     }
 
-    // 4. Uzman bağlantı isteği — sadece varsa
+    // Uzman bağlantı isteği — sadece varsa
     if (connectionRequests.length > 0) {
       tasks.push({
         to: '/cocuklarim#uzman-istekleri',
         icon: UserPlus,
         title: `${connectionRequests.length} uzman erişim isteği`,
         detail: `${connectionRequests.map(r => r.expertName).join(', ')} bağlantı bekliyor.`,
-        reason: 'Onaylayana kadar uzman profiline erişemez.',
         duration: '1 dk',
         done: false,
+        urgency: 2,
         tone: 'bg-violet-50 text-violet-700 ring-violet-100',
         cta: 'İncele',
         doneCta: 'Tamam',
       });
     }
 
-    // 5. Bugün/yarın etkinlik — varsa kendi kartı
+    // Bugün/yarın etkinlik — varsa kendi kartı, yaklaşan saat kadar acil
     if (nextEvent && nextEventCountdown?.urgent) {
       tasks.push({
         to: '/takvim',
         icon: CalendarCheck,
         title: nextEvent.title,
         detail: `${nextEventCountdown.label} — saat ${nextEventCountdown.timeLabel}`,
-        reason: nextEventType?.label ?? 'Yaklaşan etkinlik',
         duration: '30 sn',
         done: false,
+        urgency: 0,
         tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
         cta: 'Takvimi aç',
         doneCta: 'Planı gör',
       });
     }
 
-    // 6. Gözlem notu
+    // Gözlem notu
     if (recentNotes.length === 0) {
       tasks.push({
         to: '/notlar',
         icon: FileText,
         title: 'Kısa gözlem notu ekle',
         detail: 'Bugün fark ettiğin bir şeyi not et.',
-        reason: 'Henüz gözlem notu yok — ilk not takibi başlatır.',
         duration: '2 dk',
         done: false,
+        urgency: 3,
         tone: 'bg-sky-50 text-sky-700 ring-sky-100',
         cta: 'Not ekle',
         doneCta: 'Notları gör',
@@ -509,16 +476,40 @@ export function DashboardPage() {
         icon: FileText,
         title: 'Gözlem notlarını gözden geçir',
         detail: `${recentNotes.length} not mevcut — yeni bir şey ekleyebilirsin.`,
-        reason: 'Düzenli not takibi örüntüleri ortaya çıkarır.',
         duration: '2 dk',
         done: true,
+        urgency: 3,
         tone: 'bg-sky-50 text-sky-700 ring-sky-100',
         cta: 'Not ekle',
         doneCta: 'Notları gör',
       });
     }
 
-    // 7. Takvim — acil etkinlik yoksa genel kontrol
+    // Topluluk — kullanıcıya haber verir ama günlük akışı bölmeyecek kadar düşük önceliklidir.
+    const hasVisitedCommunity = [
+      '/haftalik-soru',
+      '/forum',
+      '/benzer-aileler',
+      '/dertlesme-duvari',
+      '/bulusmalar',
+    ].some(route => visitedRoutes.has(route));
+
+    tasks.push({
+      to: '/haftalik-soru',
+      icon: Users,
+      title: hasVisitedCommunity ? 'Topluluk alanlarını takip et' : 'Topluluğu keşfet',
+      detail: hasVisitedCommunity
+        ? 'Haftanın sorusu, forum ve benzer aileler alanında yeni paylaşımları görebilirsiniz.'
+        : 'Haftanın sorusuna bakın; benzer süreçlerden geçen aileleri ve paylaşımları görün.',
+      duration: '1 dk',
+      done: hasVisitedCommunity,
+      urgency: 6,
+      tone: 'bg-purple-50 text-purple-700 ring-purple-100',
+      cta: 'Topluluğa bak',
+      doneCta: 'Yeni paylaşımlar',
+    });
+
+    // Takvim — acil etkinlik yoksa genel kontrol
     if (!nextEvent || !nextEventCountdown?.urgent) {
       tasks.push({
         to: '/takvim',
@@ -527,41 +518,42 @@ export function DashboardPage() {
         detail: nextEvent
           ? `${nextEvent.title} — ${nextEventCountdown?.label}`
           : 'Randevu, okul veya etkinlik varsa ekleyin.',
-        reason: nextEvent ? 'Takvimde sıradaki plan.' : 'Bugün için plan görünmüyor.',
         duration: '30 sn',
         done: Boolean(nextEvent),
+        urgency: 4,
         tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
         cta: 'Takvimi aç',
         doneCta: 'Planı gör',
       });
     }
 
-    // 8. Duyusal Profil — doldurulmadıysa öner
+    // Duyusal Profil — doldurulmadıysa öner
     if (!hasSensoryProfile) {
       tasks.push({
         to: '/duyusal-profil',
         icon: Brain,
         title: 'Duyusal profili tamamla',
         detail: 'Çocuğunuzu rahatlatan ve zorlayan ses, ışık gibi durumları belirleyin.',
-        reason: 'Hassasiyetleri bilmek doğru planlama yapmayı sağlar.',
         duration: '3 dk',
         done: false,
+        urgency: 5,
         tone: 'bg-violet-50 text-violet-700 ring-violet-100',
         cta: 'Profili Doldur',
         doneCta: 'Profili Gör',
       });
     }
 
-    // 9. Acil Durum Kartı — doldurulmadıysa öner
+    // Acil Durum Kartı — doldurulmadıysa öner; isteğe bağlı değil, güvenlik önerisi
     if (!hasEmergencyCard) {
       tasks.push({
         to: '/acil-kart',
         icon: ShieldCheck,
         title: 'Acil Durum Kartı oluştur',
         detail: 'Kritik tıbbi ve acil durum bilgilerini içeren QR kodlu kartı hazırlayın.',
-        reason: 'Acil durumlarda ilk müdahale için hayati önem taşır.',
         duration: '2 dk',
         done: false,
+        urgency: 5,
+        safety: true,
         tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
         cta: 'Kartı Hazırla',
         doneCta: 'Kartı Gör',
@@ -575,9 +567,9 @@ export function DashboardPage() {
       icon: Baby,
       title: 'İlk çocuk profilini oluştur',
       detail: 'Profil eklenince menü ve öneriler çocuğunuza göre sadeleşir.',
-      reason: 'Uygulama henüz kime göre kişiselleşeceğini bilmiyor.',
       duration: '3 dk',
       done: false,
+      urgency: 1,
       tone: 'bg-blue-50 text-blue-700 ring-blue-100',
       cta: 'Başla',
       doneCta: 'Profili gör',
@@ -587,9 +579,9 @@ export function DashboardPage() {
       icon: ClipboardList,
       title: 'Uygulamanın kısa yolunu görün',
       detail: 'Hangi sayfanın ne işe yaradığını hızlıca öğrenin.',
-      reason: 'İlk girişte menü kalabalık gelebilir.',
       duration: '1 dk',
       done: false,
+      urgency: 2,
       tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
       cta: 'Yardımı aç',
       doneCta: 'Yardımı aç',
@@ -599,26 +591,32 @@ export function DashboardPage() {
       icon: GraduationCap,
       title: 'Uzman desteğini keşfet',
       detail: 'Randevu almadan önce uzman profillerini inceleyebilirsiniz.',
-      reason: 'Destek seçeneklerini erken görmek karar vermeyi kolaylaştırır.',
       duration: '2 dk',
       done: false,
+      urgency: 3,
       tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
       cta: 'Uzman bul',
       doneCta: 'Uzman bul',
     },
   ];
 
-  let pendingCount = 0;
-  let stepCounter = 0;
-  const guidedTodayTasks = todayTasks.map((task) => {
+  // Bekleyenler gerçek aciliyete göre öne alınır (sabit ekleme sırasına değil);
+  // tamamlananlar akışı bölmemesi için listenin sonuna taşınır.
+  const sortedTodayTasks = [...todayTasks].sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return a.urgency - b.urgency;
+  });
+
+  const pendingSortedTasks = sortedTodayTasks.filter((task) => !task.done);
+  const guidedTodayTasks = sortedTodayTasks.map((task) => {
     if (task.done) return { ...task, priorityLabel: 'Tamam', stepNumber: null };
-    pendingCount += 1;
-    stepCounter += 1;
+    const stepNumber = pendingSortedTasks.indexOf(task) + 1;
     const priorityLabel =
-      pendingCount === 1 ? 'Şimdi bunu yap' :
-      pendingCount === 2 ? 'Sonra' :
+      stepNumber === 1 ? 'Şimdi bunu yap' :
+      stepNumber === 2 ? 'Sonra' :
+      ('safety' in task && task.safety) ? 'Güvenlik' :
       'İsteğe bağlı';
-    return { ...task, priorityLabel, stepNumber: stepCounter };
+    return { ...task, priorityLabel, stepNumber };
   });
   const completedTodayTasks = todayTasks.filter((task) => task.done).length;
   const pendingTodayTasks = todayTasks.filter((task) => !task.done);
@@ -1932,7 +1930,7 @@ export function DashboardPage() {
           {/* Clean, Uniform Task List */}
           <div className="relative z-10 flex flex-col gap-3.5">
             {guidedTodayTasks.map((task, idx) => {
-              const { to, icon: Icon, title, detail, reason, duration, done, tone, cta, doneCta, priorityLabel } = task;
+              const { to, icon: Icon, title, detail, duration, done, tone, cta, doneCta, priorityLabel } = task;
               const isPrimary = priorityLabel === 'Şimdi bunu yap';
               
               return (
@@ -1986,7 +1984,9 @@ export function DashboardPage() {
                                 ? 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200/50'
                                 : priorityLabel === 'Sonra'
                                   ? 'bg-amber-100 text-amber-700'
-                                  : 'bg-slate-100 text-slate-600'
+                                  : priorityLabel === 'Güvenlik'
+                                    ? 'bg-rose-100 text-rose-700 ring-1 ring-rose-200/50'
+                                    : 'bg-slate-100 text-slate-600'
                           }`}>
                             {priorityLabel}
                           </span>
@@ -2003,11 +2003,6 @@ export function DashboardPage() {
                         <p className={`text-sm mt-0.5 leading-relaxed ${done ? 'text-slate-400/80' : 'text-slate-600'}`}>
                           {detail}
                         </p>
-                        <div className={`mt-2.5 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold border ${
-                          done ? 'bg-emerald-50/50 border-emerald-100/50 text-emerald-700/80' : 'bg-slate-50 border-slate-100 text-slate-600'
-                        }`}>
-                          <Target size={11} /> {reason}
-                        </div>
                       </div>
                     </div>
 
@@ -2040,16 +2035,16 @@ export function DashboardPage() {
       {!loading && activeChild && todayMood && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {quickCaptureActions.map(({ to, label, detail, icon: Icon, tone }) => {
-            const hoverBorderColor = 
+            const hoverBorderColor =
               to === '/gunluk-takip' ? 'hover:border-rose-300 hover:shadow-rose-100/50' :
-              to === '/davranis-gunlugu' ? 'hover:border-amber-300 hover:shadow-amber-100/50' :
-              to === '/notlar' ? 'hover:border-sky-300 hover:shadow-sky-100/50' :
+              to.startsWith('/notlar?open=1&category=') ? 'hover:border-amber-300 hover:shadow-amber-100/50' :
+              to.startsWith('/notlar') ? 'hover:border-sky-300 hover:shadow-sky-100/50' :
               'hover:border-indigo-300 hover:shadow-indigo-100/50';
 
             const softGradient =
               to === '/gunluk-takip' ? 'group-hover:to-rose-50/40' :
-              to === '/davranis-gunlugu' ? 'group-hover:to-amber-50/40' :
-              to === '/notlar' ? 'group-hover:to-sky-50/40' :
+              to.startsWith('/notlar?open=1&category=') ? 'group-hover:to-amber-50/40' :
+              to.startsWith('/notlar') ? 'group-hover:to-sky-50/40' :
               'group-hover:to-indigo-50/40';
 
             return (
@@ -2212,21 +2207,21 @@ export function DashboardPage() {
                       {
                         id: 'wellbeing',
                         done: hasWellbeingLog,
-                        title: 'Ebeveyn Refahı Testi',
-                        desc: 'Kendi stres seviyenizi ve iyi oluş durumunuzu izleyin.',
+                        title: 'Ebeveyn refahı notu',
+                        desc: 'Günlük takip içinde kendi yükünüzü de görünür kılın.',
                         icon: Heart,
-                        to: '/ebeveyn-refahi',
+                        to: '/gunluk-takip',
                         cta: 'Raporu Gör',
-                        startCta: 'Testi Çöz',
+                        startCta: 'Kayıt Ekle',
                         tone: 'text-rose-600 bg-rose-50 border-rose-100/50'
                       },
                       {
                         id: 'behavior',
                         done: hasBehaviorLog,
                         title: 'Davranış notu ekle',
-                        desc: 'Davranıştan önce ve sonra ne olduğunu kısa not alın.',
+                        desc: 'Notlar içinde davranıştan önce ve sonra ne olduğunu yazın.',
                         icon: ClipboardList,
-                        to: '/davranis-gunlugu',
+                        to: '/notlar',
                         cta: 'Notları Gör',
                         startCta: 'Not Ekle',
                         tone: 'text-sky-600 bg-sky-50 border-sky-100/50'
@@ -2295,7 +2290,7 @@ export function DashboardPage() {
                       // Gelişim
                       { to: '/gelisim-paneli', label: 'İlerleme Özeti', cat: 'growth', desc: 'Grafikler & analiz' },
                       { to: '/notlar', label: 'Gözlem Notları', cat: 'growth', desc: 'Serbest günlük notlar' },
-                      { to: '/davranis-gunlugu', label: 'Davranış Notu', cat: 'growth', desc: 'Önce/sonra takibi' },
+                      { to: '/notlar', label: 'Davranış Notu', cat: 'growth', desc: 'Notlar içinde önce/sonra' },
                       { to: '/duyusal-profil', label: 'Rahatlatan Şeyler', cat: 'growth', desc: 'Hassasiyet anketi' },
                       { to: '/tarama', label: 'Tarama Testleri', cat: 'growth', desc: 'M-CHAT / gelişim testleri' },
                       // Sosyal
@@ -2312,10 +2307,10 @@ export function DashboardPage() {
                       { to: '/gorevler', label: 'Ev Görevleri', cat: 'safety', desc: 'Uzmandan ev ödevleri' },
                       // Refah & Sağlık
                       { to: '/beslenme', label: 'Beslenme Günlüğü', cat: 'wellbeing', desc: 'Gıda & reaksiyon takibi' },
-                      { to: '/ebeveyn-refahi', label: 'Ebeveyn Refahı', cat: 'wellbeing', desc: 'Stres & iyi oluş takibi' },
+                      { to: '/gunluk-takip', label: 'Ebeveyn Refahı', cat: 'wellbeing', desc: 'Günlük takip içinde' },
                       { to: '/uzmanlar', label: 'Uzmanlar', cat: 'wellbeing', desc: 'Uzman arama & profil' },
                       { to: '/randevular', label: 'Randevular', cat: 'wellbeing', desc: 'Randevu & seans planı' },
-                      { to: '/uzman-harita', label: 'Uzman Haritası', cat: 'wellbeing', desc: 'Yakındaki klinikler' }
+                      { to: '/uzmanlar', label: 'Uzman Haritası', cat: 'wellbeing', desc: 'Uzmanlar içinde konum' }
                     ]
                       .filter(item => libraryFilter === 'all' || item.cat === libraryFilter)
                       .map((item) => (

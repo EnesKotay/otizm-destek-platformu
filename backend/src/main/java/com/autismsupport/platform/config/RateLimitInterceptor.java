@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
@@ -49,8 +51,7 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         int limit = rateLimit.limit();
         int duration = rateLimit.duration();
 
-        String ip = getClientIp(request);
-        String key = ip + ":" + request.getRequestURI();
+        String key = buildRateLimitKey(request);
 
         boolean allowed = true;
         try {
@@ -100,12 +101,47 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         return true;
     }
 
-    private String getClientIp(HttpServletRequest request) {
-        String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader == null) {
-            return request.getRemoteAddr();
+    private String buildRateLimitKey(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && authentication.getName() != null
+                && !"anonymousUser".equals(authentication.getName())) {
+            return "user:" + authentication.getName() + ":" + request.getRequestURI();
         }
-        return xfHeader.split(",")[0].trim();
+        return "ip:" + getClientIp(request) + ":" + request.getRequestURI();
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String cfConnectingIp = firstHeaderValue(request.getHeader("CF-Connecting-IP"));
+        if (cfConnectingIp != null) {
+            return cfConnectingIp;
+        }
+
+        String realIp = firstHeaderValue(request.getHeader("X-Real-IP"));
+        if (realIp != null) {
+            return realIp;
+        }
+
+        String forwardedFor = firstHeaderValue(request.getHeader("X-Forwarded-For"));
+        if (forwardedFor != null) {
+            return forwardedFor;
+        }
+
+        return request.getRemoteAddr();
+    }
+
+    private String firstHeaderValue(String headerValue) {
+        if (headerValue == null || headerValue.isBlank()) {
+            return null;
+        }
+        for (String part : headerValue.split(",")) {
+            String value = part.trim();
+            if (!value.isBlank() && !"unknown".equalsIgnoreCase(value)) {
+                return value;
+            }
+        }
+        return null;
     }
 
     // Her 5 dakikada bir eski in-memory kayıtları temizle (bellek sızıntısı önlemi)
