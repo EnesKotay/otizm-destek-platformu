@@ -7,6 +7,7 @@ export interface SearchParams {
   sort?: 'relevance' | 'newest' | 'oldest';
   dateFrom?: string;
   dateTo?: string;
+  category?: string;
 }
 
 export const searchService = {
@@ -17,7 +18,8 @@ export const searchService = {
     if (params.sort) queryParams.sort = params.sort;
     if (params.dateFrom) queryParams.dateFrom = params.dateFrom;
     if (params.dateTo) queryParams.dateTo = params.dateTo;
-    
+    if (params.category) queryParams.category = params.category;
+
     return api.get<{ data: SearchResult[] }>('/search', { params: queryParams }).then(r => r.data.data);
   }
 };

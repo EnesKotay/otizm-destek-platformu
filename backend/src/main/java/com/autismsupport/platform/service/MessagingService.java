@@ -345,7 +345,17 @@ public class MessagingService {
             throw new RuntimeException("Bu mesajı silme yetkiniz yok");
         }
 
+        UUID conversationId = message.getConversation().getId();
         messageRepository.delete(message);
+
+        // Silme işlemini konuşmadaki diğer katılımcılara gerçek zamanlı bildir
+        messagingTemplate.convertAndSend(
+                "/topic/conversation/" + conversationId,
+                Map.of(
+                        "type", "MESSAGE_DELETED",
+                        "messageId", messageId.toString()
+                )
+        );
     }
 
     @Transactional

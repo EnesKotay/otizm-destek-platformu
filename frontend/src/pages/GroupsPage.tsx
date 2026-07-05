@@ -74,7 +74,13 @@ function GroupChatPanel({ chatState, onClose }: { chatState: ChatState; onClose:
   useEffect(() => {
     const topic = `/topic/conversation/${conversationId}`;
     subscribe(topic, (body: unknown) => {
+      const event = body as { type?: string; messageId?: string };
+      if (event?.type === 'MESSAGE_DELETED' && event.messageId) {
+        setMessages(prev => prev.filter(m => m.id !== event.messageId));
+        return;
+      }
       const msg = body as Message;
+      if (!msg?.id) return;
       setMessages(prev => {
         if (prev.some(m => m.id === msg.id)) return prev;
         return [...prev, msg];

@@ -19,6 +19,7 @@ import { childService } from '@/services/childService';
 import { matchingService } from '@/services/matchingService';
 import { messagingService } from '@/services/messagingService';
 import { buddyService, type BuddyDto } from '@/services/buddyService';
+import { meetupRequestService, type MeetupRequestDto } from '@/services/meetupRequestService';
 import { userService } from '@/services/userService';
 import { useAuthStore } from '@/store/authStore';
 import { useChildStore } from '@/store/childStore';
@@ -534,6 +535,9 @@ export function SimilarFamiliesPage() {
     location: '',
     message: '',
   });
+  const [meetupRequests, setMeetupRequests] = useState<MeetupRequestDto[]>([]);
+  const [meetupRequestsLoading, setMeetupRequestsLoading] = useState(false);
+  const [respondingMeetupId, setRespondingMeetupId] = useState<string | null>(null);
 
   // Filters
   const [minScore, setMinScore] = useState(0.05);
@@ -729,6 +733,22 @@ export function SimilarFamiliesPage() {
     fetchBuddiesData();
   }, [fetchBuddiesData]);
 
+  const fetchMeetupRequests = useCallback(async () => {
+    setMeetupRequestsLoading(true);
+    try {
+      const list = await meetupRequestService.getMyRequests();
+      setMeetupRequests(list || []);
+    } catch {
+      toast.error('Buluşma istekleri yüklenirken bir hata oluştu.');
+    }
+    setMeetupRequestsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchMeetupRequests();
+  }, [fetchMeetupRequests]);
+
   useEffect(() => {
     if (!selectedBlip) return;
     const freshBuddy = nearbyBuddies.find(buddy => buddy.buddyId === selectedBlip.buddyId);
@@ -868,39 +888,34 @@ export function SimilarFamiliesPage() {
     }
     setMeetingLoading(true);
     try {
-      const conv = await messagingService.getOrCreateDirect(meetingFamily.parentId);
-      const typeLabel = meetingForm.type === 'ONLINE' ? '🌐 Online (görüntülü)' : '🤝 Yüz Yüze';
-      const dateFormatted = new Date(meetingForm.date).toLocaleDateString('tr-TR', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      await meetupRequestService.createRequest({
+        recipientId: meetingFamily.parentId,
+        type: meetingForm.type,
+        proposedDate: meetingForm.date,
+        proposedTime: meetingForm.time,
+        location: meetingForm.type === 'YUZEYUZE' ? meetingForm.location || undefined : undefined,
+        message: meetingForm.message || undefined,
       });
-      const lines = [
-        '📅 Buluşma İsteği',
-        '',
-        'Merhaba! Benzer çocuklarımızın deneyimlerini paylaşmak için bir buluşma önermek istedim.',
-        '',
-        `🗓 Tarih: ${dateFormatted}`,
-        `⏰ Saat: ${meetingForm.time}`,
-        `📍 Tür: ${typeLabel}`,
-        ...(meetingForm.type === 'YUZEYUZE' && meetingForm.location
-          ? [`🗺 Konum: ${meetingForm.location}`]
-          : []),
-        ...(meetingForm.message ? ['', `💬 ${meetingForm.message}`] : []),
-        '',
-        'Yanıt seçenekleri:',
-        '✅ Uygun, kabul ediyorum',
-        '🔁 Farklı bir tarih/saat öneriyorum',
-        '⏳ Şimdilik uygun değil',
-        '',
-        'Güvenli buluşma notu: İlk görüşmede platform içi mesajlaşmayı sürdürmeyi, yüz yüze ise halka açık ve sakin bir yer seçmeyi öneririm.',
-      ];
-      await messagingService.sendMessage(conv.id, lines.join('\n'));
       setMeetingFamily(null);
       toast.success('Buluşma isteği gönderildi! 🎉');
-      navigate('/mesajlar', { state: { openConversationId: conv.id } });
-    } catch {
-      toast.error('Buluşma isteği gönderilemedi.');
+      fetchMeetupRequests();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
+      toast.error(e?.message || 'Buluşma isteği gönderilemedi.');
     }
     setMeetingLoading(false);
+  };
+
+  const handleRespondMeetup = async (requestId: string, status: 'ACCEPTED' | 'DECLINED') => {
+    setRespondingMeetupId(requestId);
+    try {
+      await meetupRequestService.updateStatus(requestId, status);
+      toast.success(status === 'ACCEPTED' ? 'Buluşma isteği kabul edildi! 🎉' : 'Buluşma isteği reddedildi.');
+      fetchMeetupRequests();
+    } catch {
+      toast.error('İşlem başarısız oldu.');
+    }
+    setRespondingMeetupId(null);
   };
 
   const hasNoTags = selectedChild && (!selectedChild.tags || selectedChild.tags.length === 0);
@@ -955,6 +970,7 @@ export function SimilarFamiliesPage() {
   };
   const visiblePendingBuddies = pendingBuddies.filter(matchesCircleFilter);
   const visibleMyBuddies = myBuddies.filter(matchesCircleFilter);
+  const incomingMeetupRequests = meetupRequests.filter(r => r.status === 'PENDING' && r.recipientId === user?.id);
 
   return (
     <div className="max-w-[92rem] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
@@ -1085,9 +1101,9 @@ export function SimilarFamiliesPage() {
             }`}
           >
             <Handshake size={16} /> Sosyal Çember
-            {pendingBuddies.length > 0 && (
+            {(pendingBuddies.length + incomingMeetupRequests.length) > 0 && (
               <span className="absolute top-1 right-2 bg-red-500 text-white rounded-full min-w-5 h-5 px-1 text-[10px] font-bold flex items-center justify-center">
-                {pendingBuddies.length}
+                {pendingBuddies.length + incomingMeetupRequests.length}
               </span>
             )}
           </button>
@@ -1926,6 +1942,61 @@ export function SimilarFamiliesPage() {
               </div>
             </div>
           </Card>
+
+          {/* Incoming Meetup Requests Section */}
+          {!meetupRequestsLoading && incomingMeetupRequests.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-black text-indigo-500 uppercase tracking-wider flex items-center gap-2">
+                📅 Gelen Buluşma İstekleri ({incomingMeetupRequests.length})
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {incomingMeetupRequests.map((req) => (
+                  <Card key={req.id} className="border-indigo-150 bg-indigo-50/10 hover:shadow-md transition-all duration-300">
+                    <div className="flex items-start gap-4">
+                      <div className="w-11 h-11 rounded-full shrink-0 bg-gradient-to-tr from-indigo-400 to-purple-500 flex items-center justify-center text-white font-extrabold">
+                        {req.requesterName?.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-extrabold text-slate-800 text-sm truncate">{req.requesterName}</h4>
+                          <span className="text-[9px] font-bold text-indigo-650 bg-indigo-50 border border-indigo-150 px-1.5 py-0.2 rounded-full uppercase tracking-wider">
+                            {req.type === 'ONLINE' ? 'Online' : 'Yüz Yüze'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-450 mt-1">
+                          {new Date(req.proposedDate).toLocaleDateString('tr-TR')} · {req.proposedTime}
+                          {req.location ? ` · ${req.location}` : ''}
+                        </p>
+                        {req.message && (
+                          <div className="mt-3 rounded-xl border border-indigo-100 bg-white/70 p-3">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-indigo-400">Davet notu</p>
+                            <p className="mt-1 text-xs leading-relaxed text-slate-650">{req.message}</p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 mt-4">
+                          <button
+                            onClick={() => handleRespondMeetup(req.id, 'ACCEPTED')}
+                            disabled={respondingMeetupId === req.id}
+                            className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer transition-colors disabled:opacity-50"
+                          >
+                            Kabul Et
+                          </button>
+                          <button
+                            onClick={() => handleRespondMeetup(req.id, 'DECLINED')}
+                            disabled={respondingMeetupId === req.id}
+                            className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer transition-colors disabled:opacity-50"
+                          >
+                            Reddet
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Pending Requests Section */}
           {pendingBuddies.length > 0 && (

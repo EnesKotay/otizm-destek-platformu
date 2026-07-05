@@ -199,6 +199,14 @@ const ONBOARDING_HELP_COMMANDS = [
   }
 ];
 
+const SEARCH_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: 'Tümü' },
+  { value: 'POST', label: 'Forum' },
+  { value: 'ARTICLE', label: 'Makale' },
+  { value: 'GROUP', label: 'Grup' },
+  { value: 'EXPERT', label: 'Uzman' },
+];
+
 function CommandPalette({
   badges,
   context,
@@ -216,6 +224,8 @@ function CommandPalette({
   const [query, setQuery] = useState('');
   const [remoteResults, setRemoteResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [typeFilter, setTypeFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const navigate = useNavigate();
   const navItems = useMemo(
     () => flattenNavItems(groups).map((item) => ({ ...item, kind: 'nav' as const })),
@@ -285,10 +295,14 @@ function CommandPalette({
     }
 
     const timeout = window.setTimeout(() => {
-      searchService.search({ q: query }).then(setRemoteResults).catch(() => setRemoteResults([]));
+      searchService.search({
+        q: query,
+        type: typeFilter || undefined,
+        category: categoryFilter.trim() || undefined,
+      }).then(setRemoteResults).catch(() => setRemoteResults([]));
     }, 250);
     return () => window.clearTimeout(timeout);
-  }, [query]);
+  }, [query, typeFilter, categoryFilter]);
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/20 px-4 py-20 backdrop-blur-sm" onMouseDown={onClose}>
@@ -307,6 +321,31 @@ function CommandPalette({
           />
           <kbd className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-400">Esc</kbd>
         </div>
+        {query.trim().length >= 2 && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-2.5">
+            <div className="flex flex-wrap gap-1">
+              {SEARCH_TYPE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setTypeFilter(option.value)}
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                    typeFilter === option.value ? 'bg-primary-50 text-primary-700' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <input
+              value={categoryFilter}
+              onChange={(event) => setCategoryFilter(event.target.value)}
+              placeholder="Kategoriye göre daralt..."
+              className="ml-auto min-w-0 max-w-[10rem] rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-600 outline-none placeholder:text-slate-400"
+            />
+          </div>
+        )}
         <div className="max-h-[26rem] overflow-y-auto p-2">
           {filteredItems.length > 0 ? (
             filteredItems.map((item) => {

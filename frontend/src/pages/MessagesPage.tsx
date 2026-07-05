@@ -92,6 +92,10 @@ type ReadReceiptEvent = {
   type?: 'READ_RECEIPT';
   readBy?: string;
 };
+type MessageDeletedEvent = {
+  type?: 'MESSAGE_DELETED';
+  messageId?: string;
+};
 type BrowserAudioWindow = Window & {
   webkitAudioContext?: typeof AudioContext;
 };
@@ -417,9 +421,15 @@ export function MessagesPage() {
         return;
       }
 
+      const maybeDeleted = msg as MessageDeletedEvent;
+      if (maybeDeleted?.type === 'MESSAGE_DELETED' && maybeDeleted.messageId) {
+        setMessages(prev => prev.filter(m => m.id !== maybeDeleted.messageId));
+        return;
+      }
+
       const incoming = msg as Message;
       if (!incoming?.id) return;
-      
+
       if (processedMessageIds.current.has(incoming.id)) return;
       processedMessageIds.current.add(incoming.id);
 
@@ -604,12 +614,13 @@ export function MessagesPage() {
 
     try {
       let fileAttachment;
+      let messageType: string | undefined;
       if (selectedFile) {
         const url = await uploadService.upload(selectedFile);
-        let type = 'DOCUMENT';
-        if (selectedFile.type.startsWith('image/')) type = 'IMAGE';
-        else if (selectedFile.type.startsWith('video/')) type = 'VIDEO';
-        fileAttachment = { fileUrl: url, fileName: selectedFile.name, fileType: type };
+        // fileType MIME öneki ile saklanır (mesaj listesinde "image/..." kontrolü için);
+        // messageType ise backend'in kabul ettiği TEXT/FILE/IMAGE/PECS setine ait olmalı.
+        fileAttachment = { fileUrl: url, fileName: selectedFile.name, fileType: selectedFile.type };
+        messageType = selectedFile.type.startsWith('image/') ? 'IMAGE' : 'FILE';
         setSelectedFile(null);
       }
 
@@ -617,7 +628,7 @@ export function MessagesPage() {
         selectedConv.id, content,
         fileAttachment,
         replyToId,
-        fileAttachment ? fileAttachment.fileType : undefined,
+        messageType,
       );
       // Backend yine WebSocket broadcast yapıyor; bu ekleme aynı sekmede boş kalmayı önler.
       processedMessageIds.current.add(msg.id);

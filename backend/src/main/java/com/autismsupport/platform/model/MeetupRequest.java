@@ -5,41 +5,50 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "family_meetings")
+@Table(name = "meetup_requests")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FamilyMeeting {
+public class MeetupRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "host_parent_id", nullable = false)
-    private User hostParent;
+    @JoinColumn(name = "requester_id", nullable = false)
+    private User requester;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "guest_parent_id", nullable = false)
-    private User guestParent;
-
-    @Column(nullable = false)
-    private LocalDateTime scheduledTime;
-
-    @Column(length = 500)
-    private String meetingLink;
+    @JoinColumn(name = "recipient_id", nullable = false)
+    private User recipient;
 
     @Column(nullable = false)
     @Builder.Default
-    private String status = "PENDING"; // PENDING, ACCEPTED, DECLINED, COMPLETED, CANCELLED
+    private String type = "YUZEYUZE"; // ONLINE, YUZEYUZE
 
-    private String notes;
+    @Column(name = "proposed_date", nullable = false)
+    private LocalDate proposedDate;
+
+    @Column(name = "proposed_time", nullable = false, length = 5)
+    private String proposedTime;
+
+    @Column(length = 300)
+    private String location;
+
+    @Column(length = 600)
+    private String message;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private String status = "PENDING"; // PENDING, ACCEPTED, DECLINED, CANCELLED
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
