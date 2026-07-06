@@ -14,7 +14,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,16 +25,38 @@ public class KnowledgeArticleService {
     private final UserRepository userRepository;
     private final ArticleCommentRepository commentRepository;
 
+    @Transactional(readOnly = true)
     public Page<KnowledgeArticleDto> getPublishedArticles(Pageable pageable) {
         return articleRepository.findByPublishedTrueOrderByCreatedAtDesc(pageable).map(this::toDto);
     }
 
+    @Transactional(readOnly = true)
     public Page<KnowledgeArticleDto> getByCategory(String category, Pageable pageable) {
         return articleRepository.findByCategoryAndPublishedTrue(category, pageable).map(this::toDto);
     }
 
+    @Transactional(readOnly = true)
     public Page<KnowledgeArticleDto> getByFormat(String format, Pageable pageable) {
         return articleRepository.findByFormatAndPublishedTrue(format, pageable).map(this::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<KnowledgeArticleDto> filterArticles(String q, String category, String format, Pageable pageable) {
+        String qParam = q == null ? "" : q.trim();
+        String categoryParam = category == null ? "" : category;
+        String formatParam = format == null ? "" : format;
+        return articleRepository.filterPublished(qParam, categoryParam, formatParam, pageable).map(this::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<KnowledgeArticleDto> getRelatedArticles(UUID id) {
+        KnowledgeArticle article = articleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
+        if (article.getCategory() == null || article.getCategory().isBlank()) {
+            return List.of();
+        }
+        return articleRepository.findTop4ByCategoryAndPublishedTrueAndIdNotOrderByViewCountDesc(article.getCategory(), id)
+                .stream().map(this::toDto).collect(Collectors.toList());
     }
 
     @Transactional
@@ -57,6 +81,8 @@ public class KnowledgeArticleService {
                 .category(dto.getCategory())
                 .format(dto.getFormat() != null ? dto.getFormat() : "TEXT")
                 .mediaUrl(dto.getMediaUrl())
+                .sourceName(blankToNull(dto.getSourceName()))
+                .sourceUrl(blankToNull(dto.getSourceUrl()))
                 .author(author)
                 .published(dto.isPublished())
                 .build();
@@ -76,6 +102,8 @@ public class KnowledgeArticleService {
         article.setCategory(dto.getCategory());
         if (dto.getFormat() != null) article.setFormat(dto.getFormat());
         if (dto.getMediaUrl() != null) article.setMediaUrl(dto.getMediaUrl());
+        article.setSourceName(blankToNull(dto.getSourceName()));
+        article.setSourceUrl(blankToNull(dto.getSourceUrl()));
         article.setPublished(dto.isPublished());
         return toDto(articleRepository.save(article));
     }
@@ -103,6 +131,7 @@ public class KnowledgeArticleService {
         return toDto(articleRepository.save(article));
     }
 
+    @Transactional(readOnly = true)
     public Page<KnowledgeArticleDto> getMyArticles(UUID userId, Pageable pageable) {
         return articleRepository.findByAuthorIdOrderByCreatedAtDesc(userId, pageable).map(this::toDto);
     }
@@ -137,11 +166,46 @@ public class KnowledgeArticleService {
                 .category(a.getCategory())
                 .format(a.getFormat())
                 .mediaUrl(a.getMediaUrl())
+                .sourceName(a.getSourceName())
+                .sourceUrl(a.getSourceUrl())
+                .pendingReview(a.isPendingReview())
                 .author(authorDto)
                 .published(a.isPublished())
                 .viewCount(a.getViewCount())
                 .createdAt(a.getCreatedAt())
                 .updatedAt(a.getUpdatedAt())
                 .build();
+    }
+
+    private String blankToNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    /* ── Dış kaynaklı taslakların admin onay akışı ──────────────────────────── */
+
+    @Transactional(readOnly = true)
+    public List<KnowledgeArticleDto> getPendingReviewArticles() {
+        return articleRepository.findByPendingReviewTrueOrderByCreatedAtDesc().stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public KnowledgeArticleDto approveExternalDraft(UUID id) {
+        KnowledgeArticle article = articleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
+        article.setPublished(true);
+        article.setPendingReview(false);
+        return toDto(articleRepository.save(article));
+    }
+
+    @Transactional
+    public KnowledgeArticleDto rejectExternalDraft(UUID id) {
+        KnowledgeArticle article = articleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
+        article.setPendingReview(false);
+        return toDto(articleRepository.save(article));
     }
 }

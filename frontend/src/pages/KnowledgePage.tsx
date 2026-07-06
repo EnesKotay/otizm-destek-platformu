@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   BookOpen, Plus, Search, Eye, CheckCircle, XCircle, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight,
-  FileText, Video, Mic, Link as LinkIcon, MessageCircle, Send, ShieldCheck
+  FileText, Video, Mic, Link as LinkIcon, MessageCircle, Send, ShieldCheck, Sparkles, Clock, Printer,
+  ExternalLink, LayoutGrid, Brain, GraduationCap, HeartPulse, Apple, Users, Home, Scale, Info
 } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
@@ -23,17 +23,57 @@ const CATEGORIES = [
   { key: 'Davranış', label: 'Davranış' },
   { key: 'Eğitim', label: 'Eğitim' },
   { key: 'Sağlık', label: 'Sağlık' },
-  { key: 'Aile', label: 'Aile' },
+  { key: 'Beslenme', label: 'Beslenme & Diyet' },
+  { key: 'Duyusal Gelişim', label: 'Duyusal Gelişim' },
+  { key: 'Sosyal Beceriler', label: 'Sosyal Beceriler' },
+  { key: 'Aile', label: 'Aile & Ebeveynlik' },
+  { key: 'Yasal Haklar', label: 'Yasal Haklar & Haklar' },
+  { key: 'Erken Tanı', label: 'Erken Tanı & Takip' },
   { key: 'Genel', label: 'Genel' },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'İletişim': 'bg-blue-100 text-blue-700',
-  'Davranış': 'bg-orange-100 text-orange-700',
-  'Eğitim': 'bg-teal-100 text-teal-700',
-  'Sağlık': 'bg-red-100 text-red-700',
-  'Aile': 'bg-purple-100 text-purple-700',
-  'Genel': 'bg-gray-100 text-gray-700',
+  'İletişim': 'bg-blue-50 text-blue-700 border border-blue-200/40',
+  'Davranış': 'bg-orange-50 text-orange-700 border border-orange-200/40',
+  'Eğitim': 'bg-teal-50 text-teal-700 border border-teal-200/40',
+  'Sağlık': 'bg-red-50 text-red-700 border border-red-200/40',
+  'Beslenme': 'bg-rose-50 text-rose-700 border border-rose-200/40',
+  'Duyusal Gelişim': 'bg-emerald-50 text-emerald-700 border border-emerald-200/40',
+  'Sosyal Beceriler': 'bg-cyan-50 text-cyan-700 border border-cyan-200/40',
+  'Aile': 'bg-purple-50 text-purple-700 border border-purple-200/40',
+  'Yasal Haklar': 'bg-amber-50 text-amber-700 border border-amber-200/40',
+  'Erken Tanı': 'bg-indigo-50 text-indigo-700 border border-indigo-200/40',
+  'Genel': 'bg-gray-50 text-gray-700 border border-gray-200/40',
+};
+
+const CATEGORY_ICONS: Record<string, any> = {
+  '': LayoutGrid,
+  'İletişim': MessageCircle,
+  'Davranış': Brain,
+  'Eğitim': GraduationCap,
+  'Sağlık': HeartPulse,
+  'Beslenme': Apple,
+  'Duyusal Gelişim': Sparkles,
+  'Sosyal Beceriler': Users,
+  'Aile': Home,
+  'Yasal Haklar': Scale,
+  'Erken Tanı': Search,
+  'Genel': Info,
+};
+
+const CATEGORY_ACTIVE_COLORS: Record<string, string> = {
+  '': 'bg-indigo-50 text-indigo-700 border-indigo-200/60 shadow-sm',
+  'İletişim': 'bg-blue-50 text-blue-700 border-blue-200/60 shadow-sm',
+  'Davranış': 'bg-orange-50 text-orange-700 border-orange-200/60 shadow-sm',
+  'Eğitim': 'bg-teal-50 text-teal-700 border-teal-200/60 shadow-sm',
+  'Sağlık': 'bg-red-50 text-red-700 border-red-200/60 shadow-sm',
+  'Beslenme': 'bg-rose-50 text-rose-700 border-rose-200/60 shadow-sm',
+  'Duyusal Gelişim': 'bg-emerald-50 text-emerald-700 border-emerald-200/60 shadow-sm',
+  'Sosyal Beceriler': 'bg-cyan-50 text-cyan-700 border-cyan-200/60 shadow-sm',
+  'Aile': 'bg-purple-50 text-purple-700 border-purple-200/60 shadow-sm',
+  'Yasal Haklar': 'bg-amber-50 text-amber-700 border-amber-200/60 shadow-sm',
+  'Erken Tanı': 'bg-indigo-50 text-indigo-700 border-indigo-200/60 shadow-sm',
+  'Genel': 'bg-gray-100 text-gray-700 border-gray-200/60 shadow-sm',
 };
 
 type ContentType = 'makale' | 'video' | 'podcast';
@@ -75,26 +115,16 @@ function writeWatchedVideos(ids: Set<string>) {
   }
 }
 
-/** Parses the content field to detect embedded media prefix */
-function parseContent(content: string): { type: ContentType; mediaUrl: string; text: string } {
-  if (!content) return { type: 'makale', mediaUrl: '', text: '' };
-  const match = content.match(/^\[MEDIA:(video|podcast):([^\]]+)\]\n?([\s\S]*)$/);
-  if (match) {
-    return {
-      type: match[1] as ContentType,
-      mediaUrl: match[2].trim(),
-      text: match[3],
-    };
-  }
-  return { type: 'makale', mediaUrl: '', text: content };
-}
+const FORMAT_TO_TYPE: Record<string, ContentType> = { TEXT: 'makale', VIDEO: 'video', PODCAST: 'podcast', STORY: 'makale' };
+const TYPE_TO_FORMAT: Record<ContentType, string> = { makale: 'TEXT', video: 'VIDEO', podcast: 'PODCAST' };
 
-/** Builds content string with media prefix */
-function buildContent(type: ContentType, mediaUrl: string, text: string): string {
-  if (type !== 'makale' && mediaUrl.trim()) {
-    return `[MEDIA:${type}:${mediaUrl.trim()}]\n${text}`;
-  }
-  return text;
+/** Derives the content type/media/text view of an article from its format & mediaUrl fields */
+function getArticleView(article: Pick<KnowledgeArticle, 'format' | 'mediaUrl' | 'content'>): { type: ContentType; mediaUrl: string; text: string } {
+  return {
+    type: FORMAT_TO_TYPE[article.format || 'TEXT'] || 'makale',
+    mediaUrl: article.mediaUrl || '',
+    text: article.content || '',
+  };
 }
 
 /** Extract YouTube video ID from various URL formats */
@@ -103,28 +133,30 @@ function getYouTubeId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-/** Render a video embed for YouTube or generic video URL */
-function VideoPlayer({ url }: { url: string }) {
-  const ytId = getYouTubeId(url);
-  if (ytId) {
-    return (
-      <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ paddingTop: '56.25%' }}>
-        <iframe
-          className="absolute inset-0 w-full h-full"
-          src={`https://www.youtube.com/embed/${ytId}`}
-          title="Video"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-    );
-  }
-  // Generic video file
+/** Render a video external link card for YouTube or generic video URL to avoid embed restrictions and copyright issues */
+function VideoPlayer({ url, onWatched }: { url: string; onWatched?: () => void }) {
   return (
-    <video controls className="w-full rounded-xl bg-black max-h-96">
-      <source src={url} />
-      <p className="text-sm text-gray-500 p-4">Tarayıcınız bu video formatını desteklemiyor.</p>
-    </video>
+    <div className="p-5 bg-gradient-to-r from-red-50 to-red-100/30 border border-red-100 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center text-white shadow-md shadow-red-200 shrink-0">
+          <Video size={22} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-red-950">Eğitici Video İçeriği</p>
+          <p className="text-xs text-red-600 truncate max-w-xs sm:max-w-md">{url}</p>
+        </div>
+      </div>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onWatched}
+        className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-xl flex items-center gap-2 transition-all shadow-sm shadow-red-200 hover:shadow-md shrink-0 cursor-pointer text-center w-full sm:w-auto justify-center"
+      >
+        <Video size={14} />
+        Videoyu Kaynağında İzle
+      </a>
+    </div>
   );
 }
 
@@ -149,6 +181,61 @@ function AudioPlayer({ url }: { url: string }) {
   );
 }
 
+function getReadingTime(htmlContent: string): number {
+  if (!htmlContent) return 1;
+  const text = htmlContent.replace(/<[^>]*>/g, '');
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+  const time = Math.ceil(wordCount / 200);
+  return time > 0 ? time : 1;
+}
+
+function isForeignResource(article: KnowledgeArticle): boolean {
+  if (!article) return false;
+  const sourceUrl = article.sourceUrl?.trim();
+  const sourceName = article.sourceName?.trim();
+  
+  if (!sourceUrl && !sourceName) {
+    return false; // Yerli Kaynak
+  }
+  
+  if (sourceUrl) {
+    try {
+      const url = new URL(sourceUrl);
+      const hostname = url.hostname.toLowerCase();
+      if (hostname.endsWith('.tr') || hostname.includes('.gov.tr') || hostname.includes('.edu.tr') || hostname.includes('.org.tr')) {
+        return false; // Yerli Kaynak
+      }
+    } catch {
+      const lowerUrl = sourceUrl.toLowerCase();
+      if (lowerUrl.includes('.tr')) {
+        return false;
+      }
+    }
+  }
+  
+  if (sourceName) {
+    const lowerName = sourceName.toLowerCase();
+    const turkishIndicators = ['vakfı', 'vakfi', 'derneği', 'dernegi', 'bakanlığı', 'bakanligi', 'müdürlüğü', 'mudurlugu', 'üniversitesi', 'universitesi', 'hastanesi', 'türkiye', 'turkiye', 'türk', 'turk', 'yerli', 'meb'];
+    if (turkishIndicators.some(indicator => lowerName.includes(indicator))) {
+      return false; // Yerli Kaynak
+    }
+  }
+  
+  if (sourceUrl) {
+    return true; // Yabancı Kaynak
+  }
+  
+  if (sourceName) {
+    const lowerName = sourceName.toLowerCase();
+    const foreignNames = ['autism speaks', 'cdc', 'nhs', 'who', 'pubmed', 'ncbi', 'webmd', 'mayo clinic', 'nature', 'psychology today', 'healthline', 'sciencedirect', 'cochrane', 'scholar', 'springer', 'elsevier', 'healthychildren', 'autism.org', 'star institute', 'sensory', 'pyramid', 'pecs'];
+    if (foreignNames.some(name => lowerName.includes(name))) {
+      return true; // Yabancı Kaynak
+    }
+  }
+  
+  return false;
+}
+
 export function KnowledgePage() {
   const location = useLocation();
   return <KnowledgeContent location={location} />;
@@ -160,13 +247,17 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
 
   const [articles, setArticles] = useState<KnowledgeArticle[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedArticleId = searchParams.get('id');
   const [activeCategory, setActiveCategory] = useState('');
   const [activeContentType, setActiveContentType] = useState<ContentType | ''>('');
   const [showMyArticles, setShowMyArticles] = useState(false);
   const [analytics, setAnalytics] = useState<ExpertAnalytics | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [relatedArticles, setRelatedArticles] = useState<KnowledgeArticle[]>([]);
   const [comments, setComments] = useState<ArticleComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loadingComments, setLoadingComments] = useState(false);
@@ -182,7 +273,35 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
     category: 'Genel',
     contentType: 'makale' as ContentType,
     mediaUrl: '',
+    sourceName: '',
+    sourceUrl: '',
   });
+
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [generatingDraft, setGeneratingDraft] = useState(false);
+
+  const handleGenerateAiDraft = async () => {
+    if (!aiPrompt.trim()) return;
+    setGeneratingDraft(true);
+    try {
+      const draft = await knowledgeService.generateAiDraft(aiPrompt);
+      setForm({
+        title: draft.title,
+        category: draft.category || 'Genel',
+        content: draft.content,
+        contentType: 'makale',
+        mediaUrl: '',
+        sourceName: '',
+        sourceUrl: '',
+      });
+      setAiPrompt('');
+      toast.success('Yapay zeka taslağı başarıyla oluşturuldu ve forma yüklendi!');
+    } catch {
+      toast.error('Taslak oluşturulurken bir hata oluştu.');
+    } finally {
+      setGeneratingDraft(false);
+    }
+  };
 
   const loadArticles = async () => {
     try {
@@ -193,10 +312,13 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
           const stats = await knowledgeService.getMyAnalytics();
           setAnalytics(stats);
         }
-      } else if (activeCategory) {
-        data = await knowledgeService.getByCategory(activeCategory, page);
       } else {
-        data = await knowledgeService.getAll(page);
+        data = await knowledgeService.search({
+          q: debouncedSearch || undefined,
+          category: activeCategory || undefined,
+          format: activeContentType ? TYPE_TO_FORMAT[activeContentType] : undefined,
+          page,
+        });
       }
       setArticles(data.content);
       setTotalPages(data.totalPages);
@@ -215,8 +337,20 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   useEffect(() => {
     if (selectedArticle) {
       queueMicrotask(() => loadComments(selectedArticle.id));
+      knowledgeService.getRelated(selectedArticle.id).then(setRelatedArticles).catch(() => setRelatedArticles([]));
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRelatedArticles([]);
     }
   }, [loadComments, selectedArticle]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+      setPage(0);
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   const handleAddComment = async () => {
     if (!newComment.trim() || !selectedArticle) return;
@@ -236,68 +370,93 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadArticles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory, page, showMyArticles]);
+  }, [activeCategory, activeContentType, debouncedSearch, page, showMyArticles]);
+
+  useEffect(() => {
+    if (selectedArticleId) {
+      knowledgeService.getOne(selectedArticleId)
+        .then(setSelectedArticle)
+        .catch(() => {
+          setSelectedArticle(null);
+          setSearchParams({});
+        });
+    } else {
+      setSelectedArticle(null);
+    }
+  }, [selectedArticleId, setSearchParams]);
 
   useEffect(() => {
     const openArticleId = (location.state as { openArticleId?: string } | null)?.openArticleId;
     if (openArticleId) {
-      knowledgeService.getOne(openArticleId).then(setSelectedArticle).catch(() => {});
+      setSearchParams({ id: openArticleId }, { replace: true });
       window.history.replaceState({}, '');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleViewArticle = async (article: KnowledgeArticle) => {
-    try {
-      const full = await knowledgeService.getOne(article.id);
-      setSelectedArticle(full);
-    } catch { /* ignore */ }
+  const handleViewArticle = (article: KnowledgeArticle) => {
+    setSearchParams({ id: article.id });
   };
 
   const handleOpenCreate = () => {
     setEditingArticle(null);
-    setForm({ title: '', content: '', category: 'Genel', contentType: 'makale', mediaUrl: '' });
+    setForm({ title: '', content: '', category: 'Genel', contentType: 'makale', mediaUrl: '', sourceName: '', sourceUrl: '' });
+    setAiPrompt('');
     setShowModal(true);
   };
 
   const handleOpenEdit = (article: KnowledgeArticle, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingArticle(article);
-    const parsed = parseContent(article.content);
+    const view = getArticleView(article);
     setForm({
       title: article.title,
-      content: parsed.text,
+      content: view.text,
       category: article.category || 'Genel',
-      contentType: parsed.type,
-      mediaUrl: parsed.mediaUrl,
+      contentType: view.type,
+      mediaUrl: view.mediaUrl,
+      sourceName: article.sourceName || '',
+      sourceUrl: article.sourceUrl || '',
     });
     setShowModal(true);
   };
 
   const handleSave = async (publish: boolean) => {
-    if (!form.title || (!form.content && !form.mediaUrl)) {
-      toast.error('Başlık ve içerik gerekli.');
+    if (!form.title || (form.contentType === 'makale' && !form.content) || (form.contentType !== 'makale' && !form.mediaUrl)) {
+      toast.error('Lütfen gerekli alanları doldurun.');
       return;
     }
     setLoading(true);
     try {
-      const finalContent = buildContent(form.contentType, form.mediaUrl, form.content);
+      const payload = {
+        title: form.title,
+        content: form.content,
+        category: form.category,
+        format: TYPE_TO_FORMAT[form.contentType],
+        mediaUrl: form.contentType !== 'makale' ? form.mediaUrl : undefined,
+        published: publish,
+        sourceName: form.sourceName || undefined,
+        sourceUrl: form.sourceUrl || undefined,
+      };
+
       if (editingArticle) {
-        await knowledgeService.update(editingArticle.id, { title: form.title, content: finalContent, category: form.category, published: publish });
+        await knowledgeService.update(editingArticle.id, payload);
         setShowModal(false);
         loadArticles();
         toast.success(publish ? 'İçerik güncellendi ve yayınlandı.' : 'İçerik güncellendi.');
       } else {
-        await knowledgeService.create({ title: form.title, content: finalContent, category: form.category, published: publish });
+        await knowledgeService.create(payload);
         setShowModal(false);
         setActiveCategory('');
         setPage(0);
         setShowMyArticles(true);
         toast.success(publish ? 'İçerik başarıyla yayınlandı.' : 'İçerik taslak olarak kaydedildi.');
-        // loadArticles will be triggered via useEffect because showMyArticles changes
       }
-    } catch { toast.error('İçerik kaydedilemedi.'); }
-    setLoading(false);
+    } catch {
+      toast.error('İçerik kaydedilirken bir hata oluştu.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -327,92 +486,131 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
     });
   };
 
-  // Filter articles by content type (client-side)
+  // "İçeriklerim" sekmesinde arama/kategori/tür backend'den gelmediği için client-side filtrelenir;
+  // diğer durumlarda backend zaten filtrelemiş olsa da bu filtre zararsız bir ek güvencedir.
   const filteredArticles = articles.filter(a => {
     const matchesSearch = !searchQuery ||
       a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const parsed = parseContent(a.content);
-    const matchesType = !activeContentType || parsed.type === activeContentType;
+    const matchesType = !activeContentType || getArticleView(a).type === activeContentType;
     const matchesCategory = !showMyArticles || !activeCategory || a.category === activeCategory;
     return matchesSearch && matchesType && matchesCategory;
   });
 
   // Article detail view
   if (selectedArticle) {
-    const parsed = parseContent(selectedArticle.content);
+    const parsed = getArticleView(selectedArticle);
     const isWatchedVideo = parsed.type === 'video' && watchedVideoIds.has(selectedArticle.id);
-    return (
-      <div className="space-y-6">
-        <button
-          onClick={() => setSelectedArticle(null)}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 cursor-pointer"
-        >
-          <ArrowLeft size={18} /> Geri
-        </button>
+    const readingTime = getReadingTime(parsed.text);
 
-        <Card>
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
-              {/* Content type badge */}
-              {parsed.type !== 'makale' && (
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${CONTENT_TYPE_COLORS[parsed.type]}`}>
-                  {CONTENT_TYPE_LABELS[parsed.type]}
-                </span>
-              )}
-              {selectedArticle.category && (
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${CATEGORY_COLORS[selectedArticle.category] || 'bg-gray-100 text-gray-700'}`}>
-                  {selectedArticle.category}
-                </span>
-              )}
-              {selectedArticle.author?.expertTitle && (
-                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                  <CheckCircle size={12} className="fill-emerald-100" /> Uzman Onaylı
-                </span>
-              )}
-              <span className="flex items-center gap-1 text-xs text-gray-400">
-                <Eye size={12} /> {selectedArticle.viewCount} görüntülenme
+    return (
+      <div className="max-w-3xl mx-auto space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-6 duration-300">
+        {/* Navigation Bar */}
+        <div className="flex items-center justify-between print:hidden">
+          <button
+            onClick={() => setSearchParams({})}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-100 rounded-full shadow-sm hover:text-indigo-600 hover:border-indigo-100 hover:shadow-md transition-all cursor-pointer group"
+          >
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform duration-200" />
+            <span>Geri Dön</span>
+          </button>
+          
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-100 rounded-full shadow-sm hover:text-indigo-600 hover:border-indigo-100 hover:shadow-md transition-all cursor-pointer"
+          >
+            <Printer size={16} />
+            <span>Yazdır</span>
+          </button>
+        </div>
+
+        {/* Article Details Card */}
+        <div className="bg-white rounded-3xl border border-gray-100/80 shadow-md shadow-gray-100/50 p-6 sm:p-10 overflow-hidden">
+          <div className="flex items-center gap-2 mb-6 flex-wrap">
+            {isForeignResource(selectedArticle) ? (
+              <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/50 flex items-center gap-1">
+                🌍 Yabancı Kaynak
               </span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">{selectedArticle.title}</h1>
-            {selectedArticle.author && (
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <span className="text-indigo-700 text-sm font-medium">{selectedArticle.author.fullName?.charAt(0)}</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{selectedArticle.author.fullName}</p>
-                  {selectedArticle.author.expertTitle && (
-                    <p className="text-xs text-gray-500">{selectedArticle.author.expertTitle}</p>
-                  )}
-                </div>
-                <span className="text-xs text-gray-400 ml-2">{formatDate(selectedArticle.createdAt)}</span>
-              </div>
+            ) : (
+              <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/50 flex items-center gap-1">
+                🇹🇷 Yerli Kaynak
+              </span>
             )}
+            {parsed.type !== 'makale' && (
+              <span className={`px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide uppercase ${CONTENT_TYPE_COLORS[parsed.type]}`}>
+                {CONTENT_TYPE_LABELS[parsed.type]}
+              </span>
+            )}
+            {selectedArticle.category && (
+              <span className={`px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide uppercase ${CATEGORY_COLORS[selectedArticle.category] || 'bg-gray-100 text-gray-700'}`}>
+                {selectedArticle.category}
+              </span>
+            )}
+            {selectedArticle.author?.expertTitle && (
+              <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1">
+                <CheckCircle size={12} className="fill-emerald-50 text-emerald-600" /> Uzman Onaylı
+              </span>
+            )}
+            <span className="flex items-center gap-1 text-xs text-gray-400 ml-auto">
+              <Eye size={12} /> {selectedArticle.viewCount} görüntülenme
+            </span>
           </div>
 
-          {/* Media player */}
+          {/* Title */}
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-6 leading-tight tracking-tight">
+            {selectedArticle.title}
+          </h1>
+
+          {/* Author info */}
+          {selectedArticle.author && (
+            <div className="flex items-center justify-between border-b border-gray-100 pb-6 mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-sm font-semibold text-base ring-4 ring-indigo-50">
+                  {selectedArticle.author.fullName?.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">{selectedArticle.author.fullName}</p>
+                  {selectedArticle.author.expertTitle ? (
+                    <p className="text-xs text-gray-500 font-medium">{selectedArticle.author.expertTitle}</p>
+                  ) : (
+                    <p className="text-xs text-gray-400">Yazar</p>
+                  )}
+                </div>
+              </div>
+              <div className="text-right text-xs text-gray-400 space-y-1 font-medium">
+                <p className="flex items-center justify-end gap-1">
+                  <Clock size={12} />
+                  <span>{readingTime} dk okuma süresi</span>
+                </p>
+                <p>{formatDate(selectedArticle.createdAt)}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Media players */}
           {parsed.type === 'video' && parsed.mediaUrl && (
-            <div className="mb-6 space-y-3">
-              <VideoPlayer url={parsed.mediaUrl} />
-              <div className="rounded-2xl border border-red-100 bg-red-50/70 p-4">
+            <div className="mb-8 space-y-4">
+              <div className="shadow-lg rounded-2xl overflow-hidden">
+                <VideoPlayer url={parsed.mediaUrl} />
+              </div>
+              <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 text-sm font-bold text-red-950">
-                      <Video size={15} />
-                      Video rehber
+                    <p className="flex items-center gap-1.5 text-sm font-bold text-rose-950">
+                      <Video size={15} className="text-rose-600" />
+                      Video Rehber
                     </p>
-                    <p className="mt-1 text-xs font-semibold leading-5 text-red-700">
+                    <p className="mt-1 text-xs font-semibold leading-relaxed text-rose-700">
                       İzlerken kısa not alın; kişisel tanı, tedavi veya ilaç kararı için mutlaka kendi uzmanınıza danışın.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => markVideoWatched(selectedArticle.id)}
-                    className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${
+                    className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-sm cursor-pointer ${
                       isWatchedVideo
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-white text-red-700 ring-1 ring-red-100 hover:bg-red-100'
+                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                        : 'bg-white text-rose-700 ring-1 ring-rose-100 hover:bg-rose-100'
                     }`}
                   >
                     <CheckCircle size={14} />
@@ -423,37 +621,72 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
             </div>
           )}
           {parsed.type === 'podcast' && parsed.mediaUrl && (
-            <div className="mb-6">
+            <div className="mb-8 shadow-sm">
               <AudioPlayer url={parsed.mediaUrl} />
             </div>
           )}
 
-          {/* Text content */}
+          {/* Prose Content */}
           {parsed.text && (
             <div 
-              className="prose max-w-none prose-indigo prose-a:text-indigo-600 hover:prose-a:text-indigo-500"
+              className="prose max-w-none prose-indigo hover:prose-a:text-indigo-500 mb-8"
               dangerouslySetInnerHTML={{ __html: parsed.text }}
             />
           )}
 
-          <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
-            <p className="flex items-center gap-1.5 text-sm font-bold text-amber-950">
-              <ShieldCheck size={15} />
-              Güvenli kullanım notu
-            </p>
-            <p className="mt-1 text-xs font-semibold leading-5 text-amber-800">
-              Bu içerik bilgilendirme amaçlıdır; tanı, tedavi, ilaç veya kriz müdahalesi kararı yerine geçmez.
-            </p>
+          {/* Source Citation */}
+          {selectedArticle.sourceName && (
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 sm:p-5 flex gap-3 shadow-sm mb-6">
+              <BookOpen size={20} className="text-indigo-600 shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-indigo-950">
+                  Kaynak
+                </p>
+                {selectedArticle.sourceUrl ? (
+                  <a
+                    href={selectedArticle.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900 hover:underline break-words"
+                  >
+                    {selectedArticle.sourceName}
+                    <ExternalLink size={12} className="shrink-0" />
+                  </a>
+                ) : (
+                  <p className="mt-1 text-xs font-semibold text-indigo-800">
+                    {selectedArticle.sourceName}
+                  </p>
+                )}
+                <p className="mt-1 text-[11px] text-indigo-600/80">
+                  Daha ayrıntılı bilgi için resmi kaynağı ziyaret edebilirsiniz.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Secure Usage Note */}
+          <div className="rounded-2xl border-l-4 border-amber-500 bg-amber-50/40 p-4 sm:p-5 flex gap-3 shadow-sm">
+            <ShieldCheck size={20} className="text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-amber-950">
+                Güvenli Kullanım Notu
+              </p>
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-800">
+                Bu içerik bilgilendirme amaçlıdır; tanı, tedavi, ilaç veya kriz müdahalesi kararı yerine geçmez. Sağlık durumunuzla ilgili kararları bir uzmana danışarak almalısınız.
+              </p>
+            </div>
           </div>
 
+          {/* Author Admin Action buttons */}
           {isExpert && selectedArticle.author?.id === user?.id && (
-            <div className="flex gap-2 mt-6 pt-4 border-t border-gray-100">
+            <div className="flex gap-3 mt-8 pt-6 border-t border-gray-100 print:hidden">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={(e) => { setSelectedArticle(null); handleOpenEdit(selectedArticle, e); }}
+                onClick={(e) => { setSearchParams({}); handleOpenEdit(selectedArticle, e); }}
+                className="rounded-xl px-4 font-semibold text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center gap-1.5"
               >
-                <Edit2 size={14} className="mr-1" /> Düzenle
+                <Edit2 size={14} /> Düzenle
               </Button>
               <Button
                 variant={selectedArticle.published ? 'ghost' : 'outline'}
@@ -465,79 +698,170 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                     loadArticles();
                   } catch { /* ignore */ }
                 }}
+                className="rounded-xl px-4 font-semibold flex items-center gap-1.5"
               >
                 {selectedArticle.published ? (
-                  <><XCircle size={14} className="mr-1" /> Yayından Kaldır</>
+                  <><XCircle size={14} className="text-red-500" /> Yayından Kaldır</>
                 ) : (
-                  <><CheckCircle size={14} className="mr-1" /> Yayınla</>
+                  <><CheckCircle size={14} className="text-emerald-600" /> Yayınla</>
                 )}
               </Button>
             </div>
           )}
-        </Card>
+        </div>
+
+        {/* Related Articles */}
+        {relatedArticles.length > 0 && (
+          <div className="bg-white rounded-3xl border border-gray-100/80 shadow-md shadow-gray-100/50 p-6 sm:p-8 print:hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <BookOpen size={18} className="text-indigo-600" />
+              <span>İlgili İçerikler</span>
+            </h3>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {relatedArticles.map(ra => {
+                const raView = getArticleView(ra);
+                return (
+                  <button
+                    key={ra.id}
+                    type="button"
+                    onClick={() => setSearchParams({ id: ra.id })}
+                    className="text-left flex flex-col gap-1 p-4 rounded-2xl border border-gray-100 hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer"
+                  >
+                    <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wide">{ra.category}</span>
+                    <span className="text-sm font-bold text-gray-900 line-clamp-2">{ra.title}</span>
+                    <span className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                      {raView.type === 'video' ? <Video size={12} /> : raView.type === 'podcast' ? <Mic size={12} /> : <FileText size={12} />}
+                      {CONTENT_TYPE_LABELS[raView.type]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Comments Section */}
-        <div className="mt-8 bg-white rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <MessageCircle className="text-indigo-600" />
-            Sorular ve Yorumlar ({comments.length})
-          </h3>
+        <div className="bg-white rounded-3xl border border-gray-100/80 shadow-md shadow-gray-100/50 p-6 sm:p-10 print:hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 flex items-center gap-2.5">
+              <MessageCircle size={22} className="text-indigo-600 animate-pulse" />
+              <span>Sorular & Tartışmalar</span>
+              <span className="relative flex h-5 min-w-5 items-center justify-center">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-20"></span>
+                <span className="relative inline-flex items-center justify-center text-xs font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-100">
+                  {comments.length}
+                </span>
+              </span>
+            </h3>
+          </div>
 
-          <div className="flex gap-4 mb-8">
-            <img 
-              src={user?.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'U')}&background=random`} 
-              alt="Profil" 
-              className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-indigo-50"
-            />
+          {/* New Comment Input Row */}
+          <div className="flex gap-3 mb-8">
+            <div className="relative shrink-0">
+              <img 
+                src={user?.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'U')}&background=random`} 
+                alt="Profil" 
+                className="w-10 h-10 rounded-2xl object-cover ring-2 ring-indigo-50/70 shadow-sm"
+              />
+              {(user?.role === 'EXPERT' || user?.role === 'ADMIN') && (
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-indigo-600 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                  <ShieldCheck size={9} className="text-white" />
+                </div>
+              )}
+            </div>
             <div className="flex-1 flex gap-2">
               <input
                 type="text"
                 value={newComment}
                 onChange={e => setNewComment(e.target.value)}
                 placeholder="Aklınıza takılan bir soru sorun veya yorum yapın..."
-                className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all text-sm"
+                className="flex-1 px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all text-sm placeholder:text-gray-400"
                 onKeyDown={e => e.key === 'Enter' && handleAddComment()}
               />
               <Button 
                 onClick={handleAddComment} 
                 loading={submittingComment}
-                className="rounded-2xl px-6 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200"
+                className="rounded-2xl px-5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200 transition-all cursor-pointer group/btn flex items-center justify-center"
               >
-                <Send size={18} />
+                <Send size={16} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
               </Button>
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {loadingComments ? (
-              <div className="flex justify-center py-8">
-                <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+              <div className="flex justify-center py-10">
+                <div className="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
               </div>
             ) : comments.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">
-                <MessageCircle size={48} className="mx-auto mb-3 text-gray-200" />
-                <p>İlk soruyu siz sorun!</p>
+              <div className="relative overflow-hidden text-center py-16 px-4 bg-slate-50/40 rounded-3xl border border-slate-100/80">
+                <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-indigo-50/40 rounded-full -translate-x-1/2 -translate-y-1/2 blur-2xl pointer-events-none" />
+                <div className="relative">
+                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100 shadow-md shadow-slate-100/60">
+                    <MessageCircle size={28} className="text-slate-300" />
+                  </div>
+                  <p className="text-sm text-slate-700 font-extrabold">Henüz yorum yapılmamış</p>
+                  <p className="text-xs text-slate-400 mt-1.5 max-w-[280px] mx-auto leading-relaxed">
+                    İlk soruyu sorarak diğer aileler ve uzmanlarla tartışmayı başlatın!
+                  </p>
+                </div>
               </div>
             ) : (
-              comments.map(comment => (
-                <div key={comment.id} className="flex gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors">
-                  <img 
-                    src={comment.author?.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author?.fullName || 'U')}&background=random`} 
-                    alt="Profil" 
-                    className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-gray-100"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-gray-900 text-sm">{comment.author?.fullName}</span>
-                      {comment.author?.role === 'EXPERT' && (
-                        <span className="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-bold">UZMAN</span>
-                      )}
-                      <span className="text-xs text-gray-400">• {formatRelative(comment.createdAt)}</span>
+              <div className="space-y-4 max-h-[550px] overflow-y-auto pr-1.5 scrollbar-thin">
+                {comments.map(comment => {
+                  const isAuthorExpert = comment.author?.role === 'EXPERT' || comment.author?.role === 'ADMIN';
+                  return (
+                    <div 
+                      key={comment.id} 
+                      className={`flex gap-3.5 p-5 rounded-3xl border transition-all duration-300 hover:shadow-md hover:shadow-indigo-500/5 ${
+                        isAuthorExpert
+                          ? 'bg-gradient-to-br from-indigo-50/40 via-indigo-50/20 to-primary-50/10 border-indigo-100/60 shadow-sm'
+                          : 'bg-white border-slate-100'
+                      }`}
+                    >
+                      <div className="relative shrink-0">
+                        <img 
+                          src={comment.author?.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author?.fullName || 'U')}&background=random`} 
+                          alt="Profil" 
+                          className="w-10 h-10 rounded-2xl object-cover ring-2 ring-white shadow-sm"
+                        />
+                        {isAuthorExpert && (
+                          <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-indigo-600 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                            <ShieldCheck size={9} className="text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 flex-wrap mb-2">
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                                {comment.author?.fullName}
+                              </span>
+                              {isAuthorExpert && (
+                                <span className="bg-indigo-600 text-white text-[8px] px-2 py-0.5 rounded-md font-extrabold uppercase tracking-wider">
+                                  UZMAN
+                                </span>
+                              )}
+                            </div>
+                            {isAuthorExpert && comment.author?.expertTitle && (
+                              <p className="text-[10px] font-semibold text-indigo-600/80 mt-0.5">
+                                {comment.author.expertTitle}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-medium text-slate-400 whitespace-nowrap">
+                            {formatRelative(comment.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                          {comment.content}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{comment.content}</p>
-                  </div>
-                </div>
-              ))
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
@@ -629,42 +953,38 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {/* Content type filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {CONTENT_TYPE_TABS.map(tab => (
+      {/* Category Tabs Container */}
+      <div className="bg-slate-50/50 border border-slate-100/80 rounded-3xl p-3 sm:p-4 my-3">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Kategoriye Göre Filtrele</span>
+          {activeCategory && (
             <button
-              key={tab.key}
-              onClick={() => setActiveContentType(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
-                activeContentType === tab.key
-                  ? 'bg-primary-600 text-white shadow-md shadow-primary-200 scale-105'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:text-gray-900'
-              }`}
+              onClick={() => { setActiveCategory(''); setPage(0); setShowMyArticles(false); }}
+              className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
             >
-              <div className={`${activeContentType === tab.key ? 'text-primary-100' : 'text-gray-400'}`}>
-                {tab.icon}
-              </div>
-              {tab.label}
+              Filtreyi Temizle
             </button>
-          ))}
+          )}
         </div>
-
-        {/* Category tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat.key}
-              onClick={() => { setActiveCategory(cat.key); setPage(0); setShowMyArticles(false); }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap cursor-pointer border ${
-                activeCategory === cat.key && !showMyArticles
-                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm'
-                  : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+        <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+          {CATEGORIES.map(cat => {
+            const IconComponent = CATEGORY_ICONS[cat.key] || LayoutGrid;
+            const isActive = activeCategory === cat.key && !showMyArticles;
+            return (
+              <button
+                key={cat.key}
+                onClick={() => { setActiveCategory(cat.key); setPage(0); setShowMyArticles(false); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border-2 hover:-translate-y-0.5 transform duration-200 ${
+                  isActive
+                    ? CATEGORY_ACTIVE_COLORS[cat.key] || 'bg-indigo-50 text-indigo-700 border-indigo-200/60 shadow-sm'
+                    : 'bg-white border-slate-100 hover:border-slate-200 text-slate-500 hover:text-slate-700 shadow-sm'
+                }`}
+              >
+                <IconComponent size={14} className={isActive ? 'opacity-90' : 'text-slate-400'} />
+                <span>{cat.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -733,7 +1053,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
         <>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredArticles.map((article, index) => {
-              const parsed = parseContent(article.content);
+              const parsed = getArticleView(article);
               return (
                 <div 
                   key={article.id} 
@@ -782,6 +1102,15 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
 
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
+                      {isForeignResource(article) ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/50 flex items-center gap-1">
+                          🌍 Yabancı Kaynak
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200/50 flex items-center gap-1">
+                          🇹🇷 Yerli Kaynak
+                        </span>
+                      )}
                       {parsed.type !== 'makale' && (
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${CONTENT_TYPE_COLORS[parsed.type]}`}>
                           {CONTENT_TYPE_LABELS[parsed.type]}
@@ -887,105 +1216,145 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         title={editingArticle ? 'İçeriği Düzenle' : 'Yeni İçerik'}
+        size="xl"
       >
-        <div className="space-y-5 px-1 py-2">
-          <Input
-            label="Başlık *"
-            value={form.title}
-            onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-            placeholder="İçerik başlığı"
-          />
-
-          {/* Content type selector */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">İçerik Türü</label>
-            <div className="grid grid-cols-3 gap-3">
-              {(['makale', 'video', 'podcast'] as ContentType[]).map(type => (
-                <button
-                  key={type}
-                  onClick={() => setForm(f => ({ ...f, contentType: type, mediaUrl: '' }))}
-                  className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 text-sm font-semibold transition-all cursor-pointer ${
-                    form.contentType === type
-                      ? 'border-primary-500 bg-primary-50/50 text-primary-700 shadow-md shadow-primary-100 scale-[1.02]'
-                      : 'border-gray-100 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
+        <div className="space-y-6 px-1 py-1">
+          {/* AI Drafting Section */}
+          {!editingArticle && (
+            <div className="p-4 bg-gradient-to-r from-indigo-50/70 to-primary-50/50 rounded-2xl border border-indigo-100/50 flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-primary-600 animate-pulse" />
+                <span className="text-sm font-bold text-gray-800">Yapay Zeka ile Taslak Oluştur</span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Makale yazmak istediğiniz konuyu kısaca belirtin (örn: "Otizmde beslenme düzeni"), yapay zeka taslak olarak başlığı ve içeriği otomatik doldursun.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={aiPrompt}
+                  onChange={e => setAiPrompt(e.target.value)}
+                  placeholder="Konu veya makale başlığı girin..."
+                  className="flex-1 px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400/50 focus:border-primary-400"
+                  disabled={generatingDraft}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleGenerateAiDraft();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handleGenerateAiDraft}
+                  loading={generatingDraft}
+                  disabled={!aiPrompt.trim()}
+                  className="px-4 py-2.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm cursor-pointer whitespace-nowrap"
                 >
-                  <div className={`p-2 rounded-xl ${form.contentType === type ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-400'}`}>
-                    {type === 'makale' && <FileText size={22} />}
-                    {type === 'video' && <Video size={22} />}
-                    {type === 'podcast' && <Mic size={22} />}
-                  </div>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Kategori</label>
-            <select
-              value={form.category}
-              onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-400 bg-gray-50/50 hover:bg-white transition-all cursor-pointer"
-            >
-              {CATEGORIES.filter(c => c.key).map(c => (
-                <option key={c.key} value={c.key}>{c.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Media URL for video/podcast */}
-          {form.contentType !== 'makale' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                <LinkIcon size={14} className="inline mr-1.5 text-gray-400" />
-                {form.contentType === 'video' ? 'Video URL (YouTube veya direkt link) *' : 'Podcast URL (ses dosyası) *'}
-              </label>
-              <input
-                type="url"
-                value={form.mediaUrl}
-                onChange={e => setForm(f => ({ ...f, mediaUrl: e.target.value }))}
-                placeholder={
-                  form.contentType === 'video'
-                    ? 'https://www.youtube.com/watch?v=...'
-                    : 'https://example.com/podcast.mp3'
-                }
-                className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-400 bg-gray-50/50 hover:bg-white transition-all"
-              />
-              {form.contentType === 'video' && form.mediaUrl && getYouTubeId(form.mediaUrl) && (
-                <div className="mt-3 p-3 bg-gradient-to-r from-red-50 to-red-100/50 border border-red-100 rounded-2xl flex items-center gap-3 animate-in fade-in zoom-in-95">
-                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                    <Video size={16} className="text-red-600" />
-                  </div>
-                  <span className="text-sm font-semibold text-red-800">YouTube videosu algılandı ✓</span>
-                </div>
-              )}
+                  Taslak Üret
+                </Button>
+              </div>
             </div>
           )}
 
-          {/* Text content */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              {form.contentType === 'makale' ? 'İçerik *' : 'Açıklama (isteğe bağlı)'}
-            </label>
-            {form.contentType === 'makale' ? (
-              <RichTextEditor
-                value={form.content}
-                onChange={content => setForm(f => ({ ...f, content }))}
-                placeholder="Makale içeriğini buraya yazın..."
-                rows={12}
-                textareaClassName="min-h-[250px]"
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left side inputs: Title, Type, Category, Source */}
+            <div className="lg:col-span-5 space-y-5">
+              <Input
+                label="Başlık *"
+                value={form.title}
+                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                placeholder="İçerik başlığı"
               />
-            ) : (
-              <textarea
-                value={form.content}
-                onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                rows={4}
-                placeholder="Bu içerik hakkında kısa bir açıklama..."
-                className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-400 bg-gray-50/50 hover:bg-white transition-all resize-none"
-              />
-            )}
+
+              {/* Kategori ve İçerik Türü Side-by-Side */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kategori</label>
+                  <select
+                    value={form.category}
+                    onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-400 bg-gray-50/50 hover:bg-white transition-all cursor-pointer font-medium"
+                  >
+                    {CATEGORIES.filter(c => c.key).map(c => (
+                      <option key={c.key} value={c.key}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">İçerik Türü</label>
+                  <div className="flex bg-slate-100/70 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200/50">
+                    {[
+                      { key: 'makale', label: 'Makale' },
+                      { key: 'video', label: 'Video' },
+                      { key: 'podcast', label: 'Pod' }
+                    ].map(t => (
+                      <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, contentType: t.key as ContentType }))}
+                        className={`flex-1 py-1.5 px-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          form.contentType === t.key
+                            ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/40'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Media URL if Video/Podcast */}
+              {form.contentType !== 'makale' && (
+                <Input
+                  label={form.contentType === 'video' ? 'Video URL *' : 'Podcast Medya URL *'}
+                  value={form.mediaUrl}
+                  onChange={e => setForm(f => ({ ...f, mediaUrl: e.target.value }))}
+                  placeholder={form.contentType === 'video' ? 'Örn: https://www.youtube.com/watch?v=...' : 'Örn: https://example.com/audio.mp3'}
+                />
+              )}
+
+              {/* Source fields - Clean and modern container */}
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-4">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                  <span>Kaynak Bilgileri (Opsiyonel)</span>
+                  <span className="text-[10px] font-medium text-slate-400 normal-case">Yerli/Yabancı tespiti için</span>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  <Input
+                    label="Kaynak Kuruluş / Yazar"
+                    value={form.sourceName}
+                    onChange={e => setForm(f => ({ ...f, sourceName: e.target.value }))}
+                    placeholder="Örn: National Autistic Society"
+                    className="bg-white"
+                  />
+                  <Input
+                    label="Kaynak Adresi / URL"
+                    value={form.sourceUrl}
+                    onChange={e => setForm(f => ({ ...f, sourceUrl: e.target.value }))}
+                    placeholder="Örn: https://www.autism.org.uk/..."
+                    className="bg-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Right side: Rich Text Editor */}
+            <div className="lg:col-span-7 flex flex-col h-full self-stretch">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                İçerik {form.contentType === 'makale' ? '*' : '(Açıklama/Özet)'}
+              </label>
+              <div className="flex-1 flex flex-col min-h-[350px] lg:min-h-[420px]">
+                <RichTextEditor
+                  value={form.content}
+                  onChange={content => setForm(f => ({ ...f, content }))}
+                  placeholder={form.contentType === 'makale' ? 'Makale içeriğini buraya yazın...' : 'İçeriğin kısa açıklamasını veya özetini buraya yazın...'}
+                  rows={15}
+                  textareaClassName="flex-1 min-h-[300px] lg:min-h-[370px]"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-gray-100">

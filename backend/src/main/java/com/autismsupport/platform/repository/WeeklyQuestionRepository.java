@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface WeeklyQuestionRepository extends JpaRepository<WeeklyQuestion, UUID> {
     List<WeeklyQuestion> findByActiveTrueOrderBySortOrderAsc();
+    List<WeeklyQuestion> findByActiveTrueOrderByCreatedAtDesc();
 }

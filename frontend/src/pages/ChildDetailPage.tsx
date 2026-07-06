@@ -661,42 +661,83 @@ function ChildDetailContent() {
   const latestBepProgress = latestBepReport?.goals.length
     ? Math.round(latestBepReport.goals.reduce((total, goal) => total + (goal.progress || 0), 0) / latestBepReport.goals.length)
     : 0;
+  const profileStats = [
+    { label: 'Not', value: notes.length, icon: FileText },
+    { label: 'Milestone', value: milestones.length, icon: Star },
+    { label: 'Etiket', value: child.tags?.length || 0, icon: TagIcon },
+  ];
+  const statusItems = [
+    {
+      label: 'Son tarama',
+      value: latestScreening ? `Skor ${latestScreening.score}/20` : 'Kayıt yok',
+      detail: latestScreening ? RISK_LABELS[latestScreening.riskLevel].label : 'Henüz tarama eklenmemiş',
+      icon: ClipboardList,
+      tone: 'bg-indigo-50 text-indigo-600',
+      detailClassName: latestScreening ? RISK_LABELS[latestScreening.riskLevel].className : 'text-slate-400',
+    },
+    {
+      label: 'Son aktivite',
+      value: latestActivity?.activityTitle || 'Aktivite yok',
+      detail: latestActivity ? `${latestActivity.score}/${latestActivity.total} · ${formatDate(latestActivity.completedAt)}` : 'Henüz aktivite tamamlanmamış',
+      icon: Gamepad2,
+      tone: 'bg-violet-50 text-violet-600',
+      detailClassName: 'text-slate-500',
+    },
+    {
+      label: 'Son not',
+      value: latestNote?.title || 'Not yok',
+      detail: latestNote ? formatDate(latestNote.noteDate || latestNote.createdAt) : 'İlk notu ekleyebilirsiniz',
+      icon: FileText,
+      tone: 'bg-blue-50 text-blue-600',
+      detailClassName: 'text-slate-500',
+    },
+    {
+      label: 'Yaklaşan plan',
+      value: upcomingAppointment?.expertName || upcomingEvent?.title || 'Plan yok',
+      detail: upcomingAppointment
+        ? `${formatDate(upcomingAppointment.date)} · ${upcomingAppointment.time}`
+        : upcomingEvent
+          ? formatDate(upcomingEvent.startTime)
+          : 'Planlanmış kayıt bulunmuyor',
+      icon: Bell,
+      tone: 'bg-amber-50 text-amber-600',
+      detailClassName: 'text-slate-500',
+    },
+  ];
+  const quickActions = [
+    { label: 'Not Ekle', icon: FileText, to: `/notlar?child=${id}&new=1` },
+    { label: 'Randevu', icon: CalendarDays, to: '/randevular' },
+    { label: 'BEP Oluştur', icon: GraduationCap, to: `/bep-raporu?child=${id}` },
+  ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
-      {/* Hero Header Card */}
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 shadow-2xl shadow-indigo-900/30">
-        {/* Decorative mesh glow */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full -translate-y-1/3 translate-x-1/4 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-indigo-400/5 rounded-full -translate-x-1/2 -translate-y-1/2 blur-2xl pointer-events-none" />
-
-        <div className="relative p-6 sm:p-8">
-          {/* Back Button */}
-          <Link to="/cocuklarim" className="inline-flex items-center gap-1.5 text-white/50 hover:text-white/90 text-xs font-semibold transition-colors mb-5 group">
-            <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="p-5 sm:p-6">
+          <Link to="/cocuklarim" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-900 text-sm font-semibold transition-colors mb-5">
+            <ArrowLeft size={15} />
             Tüm Profiller
           </Link>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-            {/* Avatar */}
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center min-w-0">
             <div className="relative group shrink-0">
               {child.profileImageUrl ? (
                 <img
                   src={child.profileImageUrl}
                   alt={child.name}
-                  className="w-[88px] h-[88px] rounded-2xl object-cover shadow-2xl shadow-indigo-500/20 ring-[3px] ring-white/15"
+                    className="w-20 h-20 rounded-2xl object-cover ring-1 ring-slate-200"
                 />
               ) : (
-                <div className="w-[88px] h-[88px] rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white font-extrabold text-2xl shrink-0 shadow-2xl shadow-indigo-500/20 ring-[3px] ring-white/15">
+                  <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-700 font-extrabold text-2xl shrink-0 ring-1 ring-slate-200">
                   {initials}
                 </div>
               )}
               <button
                 onClick={() => photoInputRef.current?.click()}
                 disabled={uploadingPhoto}
-                className="absolute inset-0 rounded-2xl bg-black/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
+                className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                 title="Fotoğraf değiştir"
               >
                 {uploadingPhoto
@@ -707,182 +748,114 @@ function ChildDetailContent() {
               <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
             </div>
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{child.name}</h1>
-              <div className="flex flex-wrap items-center gap-2 mt-2.5">
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">{child.name}</h1>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
                 {child.birthDate && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/8 border border-white/10 text-white/70 text-xs font-medium">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
                     <CalendarDays size={12} />
                     {formatDate(child.birthDate)}
                   </span>
                 )}
                 {age !== null && (
-                  <span className="px-3 py-1 rounded-full bg-indigo-500/25 border border-indigo-400/20 text-indigo-200 text-xs font-semibold">
+                    <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
                     {age}
                   </span>
                 )}
                 {genderLabel && (
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${child.gender === 'ERKEK' ? 'bg-sky-500/20 border-sky-400/20 text-sky-200' : 'bg-pink-500/20 border-pink-400/20 text-pink-200'}`}>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${child.gender === 'ERKEK' ? 'bg-sky-50 text-sky-700' : 'bg-pink-50 text-pink-700'}`}>
                     {genderLabel}
                   </span>
                 )}
                 {child.diagnosisInfo && (
-                  <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 text-xs font-medium truncate max-w-[220px]">
+                    <span className="px-2.5 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-medium truncate max-w-[260px]">
                     {child.diagnosisInfo}
                   </span>
                 )}
               </div>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {profileStats.map(s => {
+                    const Icon = s.icon;
+                    return (
+                      <div key={s.label} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <Icon size={14} className="text-slate-400" />
+                        <span className="text-sm font-extrabold text-slate-900">{s.value}</span>
+                        <span className="text-xs font-medium text-slate-500">{s.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
-            {/* Actions */}
             <div className="flex flex-wrap gap-2 shrink-0">
               <Link to="/tedavi">
-                <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-indigo-700 hover:bg-indigo-50 text-sm font-bold transition-all duration-200 shadow-lg shadow-white/10">
+                <Button className="bg-blue-600 hover:bg-blue-700">
                   <HeartPulse size={15} />
                   Tedavi Planı
-                </button>
+                </Button>
               </Link>
-              <button
+              <Button
+                variant="outline"
                 onClick={handleDownloadPdf}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/8 hover:bg-white/15 border border-white/10 text-white/80 hover:text-white text-sm font-semibold transition-all duration-200 backdrop-blur-sm"
               >
                 <Download size={15} />
                 Rapor
-              </button>
+              </Button>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Stats Capsules */}
-          <div className="grid grid-cols-3 gap-3 mt-7">
-            {[
-              { label: 'Gelişim Notu', value: notes.length, icon: FileText },
-              { label: 'Milestone', value: milestones.length, icon: Star },
-              { label: 'Etiket', value: child.tags?.length || 0, icon: TagIcon },
-            ].map(s => {
-              const Icon = s.icon;
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Takip Merkezi</p>
+            <h2 className="mt-1 text-lg font-bold text-slate-950">Özet durum</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {quickActions.map(item => {
+              const Icon = item.icon;
               return (
-                <div key={s.label} className="text-center bg-white/5 backdrop-blur-sm border border-white/8 rounded-2xl p-4 hover:bg-white/10 transition-all duration-300 group/stat cursor-default">
-                  <p className="text-2xl sm:text-3xl font-extrabold text-white group-hover/stat:scale-105 transition-transform duration-300">{s.value}</p>
-                  <div className="flex items-center justify-center gap-1.5 mt-1.5">
-                    <Icon size={12} className="text-indigo-300/60" />
-                    <p className="text-indigo-200/50 text-[11px] font-semibold tracking-wide">{s.label}</p>
-                  </div>
-                </div>
+                <Link key={item.label} to={item.to}>
+                  <Button variant="outline" size="sm">
+                    <Icon size={14} />
+                    {item.label}
+                  </Button>
+                </Link>
               );
             })}
           </div>
         </div>
-      </div>
 
-      {/* Takip Merkezi */}
-      <div>
-        <div className="mb-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-500">Takip Merkezi</p>
-          <h2 className="text-lg font-bold text-gray-900 mt-0.5">Çocuğa özel son durum</h2>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Son Tarama */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-t-2xl" />
-            <div className="flex items-center justify-between mb-3 pt-1">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 group-hover:scale-105 transition-all duration-300">
-                <ClipboardList size={18} className="text-indigo-500" />
+        <div className="grid divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
+          {statusItems.map(item => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className="flex gap-3 p-5">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.tone}`}>
+                  <Icon size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-400">{item.label}</p>
+                  <p className="mt-1 text-sm font-bold text-slate-900 line-clamp-1">{item.value}</p>
+                  <p className={`mt-1 text-xs font-medium line-clamp-1 ${item.detailClassName}`}>{item.detail}</p>
+                </div>
               </div>
-              {latestScreening && (
-                <div className={`w-2.5 h-2.5 rounded-full ring-2 ring-white ${latestScreening.riskLevel === 'LOW' ? 'bg-green-400' : latestScreening.riskLevel === 'MEDIUM' ? 'bg-yellow-400' : 'bg-red-400'}`} />
-              )}
-            </div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Son Tarama</p>
-            {latestScreening && (
-              <>
-                <p className="mt-1.5 text-base font-bold text-gray-900">Skor {latestScreening.score}/20</p>
-                <span className={`inline-block mt-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${RISK_LABELS[latestScreening.riskLevel].className}`}>
-                  {RISK_LABELS[latestScreening.riskLevel].label}
-                </span>
-              </>
-            )}
-          </div>
-
-          {/* Son Aktivite */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-t-2xl" />
-            <div className="flex items-center justify-between mb-3 pt-1">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 group-hover:scale-105 transition-all duration-300">
-                <Gamepad2 size={18} className="text-purple-500" />
-              </div>
-            </div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Son Aktivite</p>
-            {latestActivity ? (
-              <>
-                <p className="mt-1.5 text-sm font-bold text-gray-900 line-clamp-1">{latestActivity.activityTitle}</p>
-                <p className="mt-1 text-xs text-gray-500">{latestActivity.score}/{latestActivity.total} · {formatDate(latestActivity.completedAt)}</p>
-              </>
-            ) : (
-              <p className="mt-3 text-xs text-gray-400 font-medium">Henüz aktivite yok</p>
-            )}
-          </div>
-
-          {/* Son Not */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-t-2xl" />
-            <div className="flex items-center justify-between mb-3 pt-1">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 group-hover:scale-105 transition-all duration-300">
-                <FileText size={18} className="text-blue-500" />
-              </div>
-            </div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Son Not</p>
-            {latestNote ? (
-              <>
-                <p className="mt-1.5 text-sm font-bold text-gray-900 line-clamp-1">{latestNote.title}</p>
-                <p className="mt-1 text-xs text-gray-500">{formatDate(latestNote.noteDate || latestNote.createdAt)}</p>
-              </>
-            ) : (
-              <Link to={`/notlar?child=${id}&new=1`} className="mt-3 inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-semibold transition-colors group/link">
-                Not Ekle
-                <ArrowLeft size={12} className="rotate-180 group-hover/link:translate-x-0.5 transition-transform" />
-              </Link>
-            )}
-          </div>
-
-          {/* Yaklaşan Plan */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500 rounded-t-2xl" />
-            <div className="flex items-center justify-between mb-3 pt-1">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-amber-100 group-hover:scale-105 transition-all duration-300">
-                <Bell size={18} className="text-amber-500" />
-              </div>
-              {(upcomingAppointment || upcomingEvent) && (
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse ring-2 ring-white" />
-              )}
-            </div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Yaklaşan Plan</p>
-            {upcomingAppointment ? (
-              <>
-                <p className="mt-1.5 text-sm font-bold text-gray-900 line-clamp-1">{upcomingAppointment.expertName}</p>
-                <p className="mt-1 text-xs text-gray-500">{formatDate(upcomingAppointment.date)} · {upcomingAppointment.time}</p>
-              </>
-            ) : upcomingEvent ? (
-              <>
-                <p className="mt-1.5 text-sm font-bold text-gray-900 line-clamp-1">{upcomingEvent.title}</p>
-                <p className="mt-1 text-xs text-gray-500">{formatDate(upcomingEvent.startTime)}</p>
-              </>
-            ) : (
-              <p className="mt-3 text-xs text-gray-400 font-medium">Planlanmış kayıt yok</p>
-            )}
-          </div>
+            );
+          })}
         </div>
 
         {latestBepReport && (
-          <div className="mt-4 bg-white rounded-2xl border border-indigo-100 shadow-sm p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between hover:shadow-md transition-all duration-300">
+          <div className="border-t border-slate-100 p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                <BarChart2 size={17} className="text-indigo-600" />
+              <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                <BarChart2 size={17} />
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-500">Paylaşılan BEP</p>
-                <p className="text-sm font-semibold text-gray-900 mt-0.5">
-                  {latestBepReport.schoolYear} · {latestBepReport.goals.length} hedef · <span className="text-indigo-600">%{latestBepProgress} ilerleme</span>
+                <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-400">Paylaşılan BEP</p>
+                <p className="text-sm font-semibold text-slate-900 mt-0.5">
+                  {latestBepReport.schoolYear} · {latestBepReport.goals.length} hedef · <span className="text-blue-600">%{latestBepProgress} ilerleme</span>
                 </p>
               </div>
             </div>
@@ -891,37 +864,15 @@ function ChildDetailContent() {
             </Link>
           </div>
         )}
-      </div>
-
-      {/* Hızlı Eylemler */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Not Ekle', desc: 'Gelişim gözlemi', icon: FileText, to: `/notlar?child=${id}&new=1`, color: 'text-blue-600', bg: 'bg-blue-50/80', gradient: 'from-blue-500 to-cyan-500' },
-          { label: 'Randevu', desc: 'Uzman görüşmesi', icon: CalendarDays, to: '/randevular', color: 'text-violet-600', bg: 'bg-violet-50/80', gradient: 'from-violet-500 to-purple-500' },
-          { label: 'BEP Oluştur', desc: 'Eğitim planı', icon: GraduationCap, to: `/bep-raporu?child=${id}`, color: 'text-orange-600', bg: 'bg-orange-50/80', gradient: 'from-orange-500 to-amber-500' },
-        ].map(item => {
-          const Icon = item.icon;
-          return (
-            <Link key={item.label} to={item.to}>
-              <div className={`rounded-2xl p-4 ${item.bg} hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border border-white/60 relative overflow-hidden`}>
-                <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${item.gradient}`} />
-                <div className={`w-10 h-10 rounded-xl bg-white/80 flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon size={18} className={item.color} />
-                </div>
-                <p className={`text-sm font-bold ${item.color}`}>{item.label}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5 font-medium">{item.desc}</p>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      </section>
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Sol Kolon */}
         <div className="lg:col-span-1 space-y-6">
 
           {/* Profil Bilgileri */}
-          <Card>
+          <Card className="relative overflow-hidden hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-purple-500 to-indigo-500 rounded-l-2xl" />
             <CardHeader className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
@@ -1304,7 +1255,8 @@ function ChildDetailContent() {
         <div className="lg:col-span-2 space-y-6">
 
           {/* Son Gelişim Notları */}
-          <Card>
+          <Card className="relative overflow-hidden hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-indigo-500 rounded-l-2xl" />
             <CardHeader className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
@@ -1343,29 +1295,29 @@ function ChildDetailContent() {
                     const catColor = note.category ? CATEGORY_COLORS[note.category] : '';
                     const catLabel = note.category ? CATEGORY_LABELS[note.category] || note.category : '';
                     return (
-                      <div key={note.id} className="group flex items-start gap-0 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all duration-200 overflow-hidden">
-                        <div className={`w-1 self-stretch shrink-0 ${
-                          note.category === 'ILETISIM' ? 'bg-blue-400'
-                          : note.category === 'SOSYAL' ? 'bg-green-400'
-                          : note.category === 'DUYUSAL' ? 'bg-purple-400'
-                          : note.category === 'DAVRANIS' ? 'bg-orange-400'
-                          : note.category === 'MOTOR' ? 'bg-red-400'
-                          : note.category === 'EGITIM' ? 'bg-teal-400'
-                          : 'bg-indigo-400'
+                      <div key={note.id} className="group flex items-start gap-0 rounded-2xl border border-gray-100 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 hover:border-gray-200 dark:hover:border-slate-700/80 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
+                        <div className={`w-1.5 self-stretch shrink-0 ${
+                          note.category === 'ILETISIM' ? 'bg-gradient-to-b from-blue-400 to-blue-600'
+                          : note.category === 'SOSYAL' ? 'bg-gradient-to-b from-green-400 to-green-600'
+                          : note.category === 'DUYUSAL' ? 'bg-gradient-to-b from-purple-400 to-purple-600'
+                          : note.category === 'DAVRANIS' ? 'bg-gradient-to-b from-orange-400 to-orange-600'
+                          : note.category === 'MOTOR' ? 'bg-gradient-to-b from-red-400 to-red-600'
+                          : note.category === 'EGITIM' ? 'bg-gradient-to-b from-teal-400 to-teal-600'
+                          : 'bg-gradient-to-b from-indigo-400 to-indigo-600'
                         }`} />
-                        <div className="flex-1 min-w-0 p-3.5">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="font-semibold text-gray-900 text-sm leading-snug">{note.title}</p>
+                        <div className="flex-1 min-w-0 p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="font-bold text-gray-900 dark:text-white text-sm leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{note.title}</p>
                             {catLabel && (
-                              <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0 ${catColor || 'bg-gray-100 text-gray-700'}`}>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide shrink-0 ${catColor || 'bg-gray-100 text-gray-700'}`}>
                                 {catLabel}
                               </span>
                             )}
                           </div>
                           {note.content && (
-                            <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">{note.content}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-3 leading-relaxed">{note.content}</p>
                           )}
-                          <p className="text-[10px] text-gray-400 mt-2 font-medium">{formatDate(note.noteDate)}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-3 font-semibold">{formatDate(note.noteDate)}</p>
                         </div>
                       </div>
                     );
@@ -1386,7 +1338,8 @@ function ChildDetailContent() {
           </Card>
 
           {/* Milestone'lar */}
-          <Card>
+          <Card className="relative overflow-hidden hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-yellow-500 to-amber-500 rounded-l-2xl" />
             <CardHeader className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-yellow-50 flex items-center justify-center">
@@ -1418,14 +1371,14 @@ function ChildDetailContent() {
                   const Icon = catDef?.icon || TrendingUp;
                   const isLast = idx === milestones.length - 1;
                   return (
-                    <div key={m.id} className="group flex items-start gap-3 relative">
+                    <div key={m.id} className="group flex items-start gap-4 relative animate-slide-up">
                       {/* Timeline line */}
                       {!isLast && (
-                        <div className="absolute left-[19px] top-10 bottom-0 w-0.5 bg-gray-100 z-0" />
+                        <div className="absolute left-[21px] top-11 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-800/80 group-hover:bg-indigo-300/40 transition-colors duration-300 z-0" />
                       )}
                       {/* Icon */}
                       <div
-                        className="relative z-10 w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border-2 border-white"
+                        className="relative z-10 w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border-[3px] border-white dark:border-slate-900 group-hover:scale-110 group-hover:shadow-md transition-all duration-300"
                         style={{ backgroundColor: catDef?.bgLight || '#FFFBEB', color: catDef?.color || '#F59E0B' }}
                       >
                         <Icon size={16} />
@@ -1477,8 +1430,9 @@ function ChildDetailContent() {
 
           {/* İlaç & Davranış Korelasyon Analizi */}
           {(abcEntries.length > 0 || medicationLogs.length > 0) && (
-            <Card>
-              <CardHeader className="flex items-center justify-between">
+            <Card className="relative overflow-hidden hover:shadow-md transition-all duration-300">
+              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-rose-500 to-pink-500 rounded-l-2xl" />
+              <CardHeader className="flex items-center justify-between pb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center">
                     <HeartPulse size={16} className="text-rose-500" />
@@ -1576,7 +1530,8 @@ function ChildDetailContent() {
 
           {/* Gelişim Analizi */}
           {notes.length > 0 && (
-            <Card>
+            <Card className="relative overflow-hidden hover:shadow-md transition-all duration-300">
+              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500 rounded-l-2xl" />
               <CardHeader className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center">

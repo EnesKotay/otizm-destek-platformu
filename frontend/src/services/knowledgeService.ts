@@ -8,8 +8,12 @@ export const knowledgeService = {
     api.get<{ data: PageResponse<KnowledgeArticle> }>('/knowledge', { params: { page, size } }).then(r => r.data.data),
   getByCategory: (category: string, page = 0) =>
     api.get<{ data: PageResponse<KnowledgeArticle> }>(`/knowledge/category/${category}`, { params: { page } }).then(r => r.data.data),
+  search: (params: { q?: string; category?: string; format?: string; page?: number; size?: number }) =>
+    api.get<{ data: PageResponse<KnowledgeArticle> }>('/knowledge/search', { params }).then(r => r.data.data),
   getOne: (id: string) =>
     api.get<{ data: KnowledgeArticle }>(`/knowledge/${id}`).then(r => r.data.data),
+  getRelated: (id: string) =>
+    api.get<{ data: KnowledgeArticle[] }>(`/knowledge/${id}/related`).then(r => r.data.data),
   getMy: (page = 0, size = 12) =>
     api.get<{ data: PageResponse<KnowledgeArticle> }>('/knowledge/my', { params: { page, size } }).then(r => r.data.data),
   getMyAnalytics: () =>
@@ -25,4 +29,6 @@ export const knowledgeService = {
     api.get<{ data: PageResponse<ArticleComment> }>(`/knowledge/${articleId}/comments`, { params: { page, size } }).then(r => r.data.data),
   addComment: (articleId: string, content: string) =>
     api.post<{ data: ArticleComment }>(`/knowledge/${articleId}/comments`, { content }).then(r => r.data.data),
+  generateAiDraft: (prompt: string) =>
+    api.post<{ data: { title: string; category: string; content: string } }>('/knowledge/ai-draft', { prompt }).then(r => r.data.data),
 };

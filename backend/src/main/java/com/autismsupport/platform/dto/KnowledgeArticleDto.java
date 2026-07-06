@@ -14,6 +14,9 @@ public class KnowledgeArticleDto {
     private String summary;
     private String format;
     private String mediaUrl;
+    private String sourceName;
+    private String sourceUrl;
+    private boolean pendingReview;
     private UserDto author;
     private boolean published;
     private int viewCount;

@@ -8,7 +8,10 @@ import com.autismsupport.platform.exception.ResourceNotFoundException;
 import com.autismsupport.platform.exception.ValidationException;
 import com.autismsupport.platform.model.*;
 import com.autismsupport.platform.repository.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +21,13 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CommunityService {
     // Monday reference point the weekly rotation counts forward from.
     private static final LocalDate WEEK_ROTATION_ANCHOR = LocalDate.of(2024, 1, 1);
@@ -32,23 +38,99 @@ public class CommunityService {
     private final CommunityMeetupRepository meetupRepository;
     private final CommunityMeetupAttendeeRepository attendeeRepository;
     private final UserRepository userRepository;
+    private final GeminiService geminiService;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public List<WeeklyQuestionDto> getWeeklyQuestions(UUID userId) {
-        List<WeeklyQuestion> pool = weeklyQuestionRepository.findByActiveTrueOrderBySortOrderAsc();
+        List<WeeklyQuestion> pool = weeklyQuestionRepository.findByActiveTrueOrderByCreatedAtDesc();
         if (pool.isEmpty()) {
             return List.of();
         }
 
-        int poolSize = pool.size();
-        int currentIndex = currentRotationIndex(poolSize);
-
-        List<WeeklyQuestionDto> ordered = new ArrayList<>(poolSize);
-        for (int offset = 0; offset < poolSize; offset++) {
-            int index = Math.floorMod(currentIndex - offset, poolSize);
-            ordered.add(toWeeklyQuestionDto(pool.get(index), userId, weekLabelFor(offset)));
+        List<WeeklyQuestionDto> ordered = new ArrayList<>(pool.size());
+        for (int offset = 0; offset < pool.size(); offset++) {
+            ordered.add(toWeeklyQuestionDto(pool.get(offset), userId, weekLabelFor(offset)));
         }
         return ordered;
+    }
+
+    @Transactional
+    public WeeklyQuestionDto generateWeeklyQuestionWithAI() {
+        List<WeeklyQuestion> existingQuestions = weeklyQuestionRepository.findAll();
+        String oldQuestionsText = existingQuestions.stream()
+                .map(WeeklyQuestion::getQuestion)
+                .collect(Collectors.joining("\n"));
+
+        String prompt = "Otizm spektrumundaki çocukların aileleri ve uzmanlar arasındaki haftalık " +
+                "tartışma paneli için yeni ve son derece destekleyici, empati dolu ve etkileşim artırıcı " +
+                "bir soru ve buna uygun kısa bir hashtag/etiket üret. " +
+                "Soru 150 karakteri geçmesin, samimi ve Türkçe olsun. " +
+                "Dönüş formatı sadece şu ham JSON yapısında olsun, başka hiçbir açıklama veya markdown backtick bloğu içermesin: " +
+                "{\"question\": \"çocuklarda uyku geçişlerinde hangi rutini uyguluyorsunuz?\", \"tag\": \"#rutin\"} " +
+                "Etiket şu listeden seçilmelidir: #oyun, #duyusal, #rutin, #eğitim, #kriz-yönetimi. " +
+                "Daha önce sorulan şu soruları kesinlikle tekrar etme: " + oldQuestionsText;
+
+        String response = geminiService.sendMessage(prompt, List.of(), "Haftanın sorusu üreticisi");
+        if (response == null || response.isBlank()) {
+            throw new RuntimeException("Yapay zekadan yanıt alınamadı.");
+        }
+
+        // Clean markdown code blocks if any
+        String cleanJson = response.trim();
+        if (cleanJson.startsWith("```json")) {
+            cleanJson = cleanJson.substring(7);
+        } else if (cleanJson.startsWith("```")) {
+            cleanJson = cleanJson.substring(3);
+        }
+        if (cleanJson.endsWith("```")) {
+            cleanJson = cleanJson.substring(0, cleanJson.length() - 3);
+        }
+        cleanJson = cleanJson.trim();
+
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, String> data = objectMapper.readValue(cleanJson, Map.class);
+            String questionText = data.get("question");
+            String tagText = data.get("tag");
+
+            // Set default if empty
+            if (questionText == null || questionText.isBlank()) {
+                questionText = "Çocuğunuzun günlük rutinlerini kolaylaştırmak için hangi görsel araçları kullanıyorsunuz?";
+            }
+            if (tagText == null || tagText.isBlank()) {
+                tagText = "#rutin";
+            }
+
+            int maxSortOrder = existingQuestions.stream()
+                    .mapToInt(WeeklyQuestion::getSortOrder)
+                    .max()
+                    .orElse(0);
+
+            WeeklyQuestion newQuestion = WeeklyQuestion.builder()
+                    .question(questionText)
+                    .tag(tagText)
+                    .sortOrder(maxSortOrder + 1)
+                    .active(true)
+                    .build();
+
+            WeeklyQuestion saved = weeklyQuestionRepository.save(newQuestion);
+            return toWeeklyQuestionDto(saved, null, "Bu Hafta");
+        } catch (Exception e) {
+            log.error("Failed to generate AI weekly question", e);
+            throw new RuntimeException("Yapay zeka sorusu ayrıştırılamadı: " + e.getMessage());
+        }
+    }
+
+    @Scheduled(cron = "0 0 0 * * MON")
+    public void scheduleWeeklyAiQuestion() {
+        log.info("Starting automated AI weekly question generation...");
+        try {
+            generateWeeklyQuestionWithAI();
+            log.info("Automated AI weekly question generated successfully.");
+        } catch (Exception e) {
+            log.error("Failed to execute scheduled weekly AI question generation", e);
+        }
     }
 
     private int currentRotationIndex(int poolSize) {
@@ -180,6 +262,8 @@ public class CommunityService {
                 .id(answer.getId())
                 .author(author != null ? author.getFullName() : "Kullanıcı")
                 .city(author != null ? author.getCity() : null)
+                .authorRole(author != null && author.getRole() != null ? author.getRole().name() : null)
+                .expertTitle(author != null ? author.getExpertTitle() : null)
                 .text(answer.getText())
                 .likes(answer.getLikeCount())
                 .liked(userId != null && weeklyAnswerLikeRepository.existsByAnswerIdAndUserId(answer.getId(), userId))

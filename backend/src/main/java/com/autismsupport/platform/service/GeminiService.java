@@ -307,4 +307,121 @@ public class GeminiService {
         return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"")
                 .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t") + "\"";
     }
+
+    /* ── Yapay Zeka Makale Taslağı Oluşturma ──────────────────────────────────── */
+
+    public com.autismsupport.platform.dto.AiDraftResponse generateArticleDraft(String prompt) {
+        String systemInstruction = """
+            Sen otizm destek platformunda görevli uzman bir editörsün.
+            Kullanıcının verdiği konu başlığı veya açıklamaya göre Türkçe, bilgilendirici, bilimsel ve ebeveyn dostu bir eğitim makalesi taslağı hazırlamalısın.
+            
+            Yanıtını MUTLAKA şu yapıda geçerli bir JSON olarak döndür (başka hiçbir metin veya markdown işareti ```json içerme):
+            {
+              "title": "Makale Başlığı",
+              "category": "Sağlık" | "Eğitim" | "Davranış" | "Aile" | "Genel",
+              "content": "HTML etiketleri ile biçimlendirilmiş makale içeriği. Başlıklar için <h3>, paragraflar için <p>, listeler için <ul>/<li> kullan. Markdown işaretleri (örn. **kalın**, # başlık) kesinlikle kullanma, sadece HTML kullan."
+            }
+            """;
+
+        String responseJson = null;
+        if (apiKey != null && !apiKey.isBlank()) {
+            responseJson = sendCustomMessage(systemInstruction, prompt);
+        }
+
+        if (responseJson == null || responseJson.isBlank()) {
+            // Fallback mock response in Turkish if API is unavailable
+            return com.autismsupport.platform.dto.AiDraftResponse.builder()
+                    .title(prompt + " Hakkında Rehber (Taslak)")
+                    .category("Genel")
+                    .content("<h3>" + prompt + " Giriş</h3><p>Bu makale taslağı <b>" + prompt + "</b> konusu hakkında bilgilendirme amacıyla yapay zeka tarafından taslak olarak hazırlanmıştır. Yapay zeka servis anahtarı yapılandırılmadığı için bu varsayılan şablon gösterilmektedir.</p><h3>Öneriler ve Detaylar</h3><ul><li>Çocuğunuzun bireysel gelişim planına sadık kalın.</li><li>Uzman tavsiyelerini ve seans takvimini düzenli takip edin.</li><li>Benzer durumdaki diğer ailelerle forum üzerinden bilgi alışverişinde bulunun.</li></ul>")
+                    .build();
+        }
+
+        try {
+            return objectMapper.readValue(responseJson, com.autismsupport.platform.dto.AiDraftResponse.class);
+        } catch (Exception e) {
+            log.error("Failed to parse Gemini draft response JSON: {}, error: {}", responseJson, e.getMessage());
+            // Safe fallback if JSON parsing failed but we got some text
+            return com.autismsupport.platform.dto.AiDraftResponse.builder()
+                    .title(prompt)
+                    .category("Genel")
+                    .content("<p>" + responseJson.replace("\n", "<br/>") + "</p>")
+                    .build();
+        }
+    }
+
+    /* ── Dış Kaynaklı Özet Çevirisi (PubMed vb.) ──────────────────────────────── */
+
+    /** Verilen bilimsel özete sadık kalarak Türkçe'ye çevirir. API anahtarı yoksa veya ayrıştırma başarısızsa null döner (fallback üretmez). */
+    public com.autismsupport.platform.dto.AiDraftResponse summarizeExternalAbstract(String sourceTitle, String abstractText) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return null;
+        }
+        String systemInstruction = """
+            Sen otizm destek platformunda görevli, tıbbi doğruluğa önem veren bir editörsün.
+            Sana bilimsel bir makalenin başlığı ve özeti (abstract) verilecek. Görevin bu özeti Türkçe'ye çevirip ebeveyn dostu, anlaşılır bir dille özetlemektir.
+            SADECE verilen özette yer alan bilgileri kullan; uydurma bilgi, tavsiye veya istatistik ekleme.
+
+            Yanıtını MUTLAKA şu yapıda geçerli bir JSON olarak döndür (başka hiçbir metin veya markdown işareti ```json içerme):
+            {
+              "title": "Türkçe başlık",
+              "category": "Sağlık" | "Eğitim" | "Davranış" | "Aile" | "Genel",
+              "content": "HTML etiketleri ile biçimlendirilmiş özet. Başlıklar için <h3>, paragraflar için <p> kullan. Markdown işaretleri kesinlikle kullanma, sadece HTML kullan."
+            }
+            """;
+        String userMessage = "Başlık: " + sourceTitle + "\n\nÖzet:\n" + abstractText;
+
+        String responseJson = sendCustomMessage(systemInstruction, userMessage);
+        if (responseJson == null || responseJson.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(responseJson, com.autismsupport.platform.dto.AiDraftResponse.class);
+        } catch (Exception e) {
+            log.error("Failed to parse Gemini external summary JSON: {}, error: {}", responseJson, e.getMessage());
+            return null;
+        }
+    }
+
+    public String sendCustomMessage(String systemInstruction, String userMessage) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return null;
+        }
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append("{");
+            sb.append("\"system_instruction\":{\"parts\":[{\"text\":");
+            sb.append(jsonString(systemInstruction));
+            sb.append("}]},");
+            sb.append("\"contents\":[");
+            sb.append("{\"role\":\"user\",\"parts\":[{\"text\":").append(jsonString(userMessage)).append("}]}");
+            sb.append("],");
+            sb.append("\"generationConfig\":{");
+            sb.append("\"responseMimeType\":\"application/json\",");
+            sb.append("\"temperature\":0.7,");
+            sb.append("\"topK\":40,");
+            sb.append("\"topP\":0.95,");
+            sb.append("\"maxOutputTokens\":2048,");
+            sb.append("\"candidateCount\":1");
+            sb.append("}}");
+
+            String body = sb.toString();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(apiUrl + "?key=" + apiKey))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .timeout(Duration.ofSeconds(30))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                log.error("Gemini API custom call failed (HTTP {}): {}", response.statusCode(), response.body());
+                return null;
+            }
+            return parseGeminiResponse(response.body());
+        } catch (Exception e) {
+            log.error("Gemini API custom error: {}", e.getMessage());
+            return null;
+        }
+    }
 }

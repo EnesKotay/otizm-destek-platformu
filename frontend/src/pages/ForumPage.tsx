@@ -743,23 +743,48 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
   // Main list view
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Forum</h1>
-          <p className="text-gray-500 mt-0.5 text-sm">Diğer ailelerle soru sorun, deneyim paylaşın</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={toggleIntro}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100 transition-colors"
-          >
-            <HelpCircle size={13} />
-            {showIntro ? 'Kılavuzu Gizle' : 'Nasıl çalışır?'}
-          </button>
-          <Button onClick={() => openCreatePost(activeTab)}>
-            <Plus size={18} className="mr-2" />
-            {activeTab === 'QUESTION' ? 'Soru Sor' : 'Gönderi Paylaş'}
-          </Button>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-50 via-white to-blue-50 border border-sky-100/60 shadow-sm p-6 sm:p-8">
+        {/* Dekoratif arka plan öğeleri */}
+        <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-64 h-64 bg-sky-200/30 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 translate-y-1/4 -translate-x-1/4 w-48 h-48 bg-blue-200/30 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row gap-6 md:items-center justify-between">
+          <div className="flex-1">
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Forum</h1>
+            <p className="text-gray-600 text-sm max-w-lg leading-relaxed">
+              Diğer ailelerle soru sorun, deneyim paylaşın, topluluk içinde yardımlaşın.
+            </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              {[
+                { icon: HelpCircle, label: 'Soru & Cevap', text: 'Uzman ve ailelerden yanıtlar' },
+                { icon: EyeOff, label: 'Anonimlik', text: 'İsterseniz isimsiz paylaşım' },
+                { icon: ShieldCheck, label: 'Güvenli Alan', text: 'Topluluk kuralları korunur' },
+              ].map(({ icon: Icon, label, text }) => (
+                <div key={label} className="rounded-2xl border border-white/70 bg-white/75 px-3 py-2 shadow-sm">
+                  <p className="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                    <Icon size={13} className="text-sky-600" />
+                    {label}
+                  </p>
+                  <p className="mt-0.5 text-[10px] font-semibold text-slate-500">{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+            <button
+              onClick={toggleIntro}
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm transition-all cursor-pointer"
+            >
+              <HelpCircle size={14} className="text-slate-500" />
+              {showIntro ? 'Kılavuzu Gizle' : 'Nasıl çalışır?'}
+            </button>
+            <Button onClick={() => openCreatePost(activeTab)} className="shadow-md shadow-sky-500/10">
+              <Plus size={18} className="mr-2" />
+              {activeTab === 'QUESTION' ? 'Soru Sor' : 'Gönderi Paylaş'}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -770,21 +795,21 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
         <div className="grid gap-4 lg:grid-cols-[1.22fr_0.78fr]">
           <Card className="overflow-hidden border-slate-200/80 bg-gradient-to-br from-slate-50/50 via-white to-primary-50/10 p-0 shadow-sm">
             <div className="border-b border-slate-100 bg-slate-50/40 px-5 py-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-primary-600">Topluluğa giriş</p>
                   <h2 className="mt-1 text-lg font-black text-slate-900 leading-tight">Deneyimleri paylaşın, doğru adımlarla başlayın</h2>
                 </div>
-                <div className="flex flex-wrap gap-2 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center shrink-0">
                   {[
                     [communityStats.unansweredQuestions, 'Cevap bekleyen'],
                     [communityStats.answeredQuestions, 'Yanıtlanmış'],
                     [communityStats.anonymousPosts, 'Anonim'],
                     [communityStats.activeTags, 'Etiket'],
                   ].map(([val, label]) => (
-                    <div key={String(label)} className="rounded-xl border border-slate-150 bg-white px-3 py-1.5 shadow-sm min-w-[70px]">
-                      <p className="text-sm font-black text-slate-900">{val}</p>
-                      <p className="text-[10px] font-bold text-slate-500 mt-0.5">{label}</p>
+                    <div key={String(label)} className="rounded-2xl border border-slate-150 bg-white px-3 py-2.5 shadow-sm shadow-slate-100/50 min-w-[85px] hover:shadow-md hover:border-slate-200 transition-all duration-200">
+                      <p className="text-base font-black text-slate-900">{val}</p>
+                      <p className="text-[10px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">{label}</p>
                     </div>
                   ))}
                 </div>
@@ -793,53 +818,77 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
             <div className="grid gap-3 p-5 md:grid-cols-2">
               <button
                 onClick={() => openCreatePost('QUESTION')}
-                className="group flex items-center gap-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/70 hover:shadow-md hover:shadow-blue-100/30 cursor-pointer"
+                className="group flex flex-col justify-between rounded-2xl border border-sky-100 bg-sky-50/30 p-4.5 text-left transition-all hover:-translate-y-0.5 hover:border-sky-200/80 hover:bg-sky-50/60 hover:shadow-md hover:shadow-sky-100/20 cursor-pointer min-h-[120px]"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm border border-blue-100/50 group-hover:scale-105 transition-transform">
-                  <HelpCircle size={18} />
+                <div className="flex gap-4 items-start">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm border border-sky-100/40 group-hover:scale-105 transition-transform">
+                    <HelpCircle size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-slate-900">Uzman cevaplı sorular</p>
+                    <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Sorunuzu Soru-Cevap\'ta sorun, uzman onaylı cevap alın.</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-extrabold text-slate-900">Uzman cevaplı sorular</p>
-                  <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Sorunuzu Soru-Cevap'ta sorun, uzman onaylı cevap alın.</p>
+                <div className="mt-3 flex items-center text-[11px] font-bold text-sky-600 group-hover:translate-x-1 transition-all pl-14">
+                  <span>Yeni Soru Sor</span>
+                  <span className="ml-1">→</span>
                 </div>
               </button>
 
               <button
                 onClick={openAnonymousShare}
-                className="group flex items-center gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/70 hover:shadow-md hover:shadow-emerald-100/30 cursor-pointer"
+                className="group flex flex-col justify-between rounded-2xl border border-sky-100 bg-sky-50/30 p-4.5 text-left transition-all hover:-translate-y-0.5 hover:border-sky-200/80 hover:bg-sky-50/60 hover:shadow-md hover:shadow-sky-100/20 cursor-pointer min-h-[120px]"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm border border-emerald-100/50 group-hover:scale-105 transition-transform">
-                  <EyeOff size={18} />
+                <div className="flex gap-4 items-start">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm border border-sky-100/40 group-hover:scale-105 transition-transform">
+                    <EyeOff size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-slate-900">Anonim paylaşım</p>
+                    <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Adınızı gizleyerek toplulukta rahatça paylaşım yapın.</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-extrabold text-slate-900">Anonim paylaşım</p>
-                  <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Adınızı gizleyerek toplulukta rahatça paylaşım yapın.</p>
+                <div className="mt-3 flex items-center text-[11px] font-bold text-sky-600 group-hover:translate-x-1 transition-all pl-14">
+                  <span>Anonim Paylaş</span>
+                  <span className="ml-1">→</span>
                 </div>
               </button>
 
               <button
                 onClick={() => navigate('/benzer-aileler')}
-                className="group flex items-center gap-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/70 hover:shadow-md hover:shadow-violet-100/30 cursor-pointer"
+                className="group flex flex-col justify-between rounded-2xl border border-sky-100 bg-sky-50/30 p-4.5 text-left transition-all hover:-translate-y-0.5 hover:border-sky-200/80 hover:bg-sky-50/60 hover:shadow-md hover:shadow-sky-100/20 cursor-pointer min-h-[120px]"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm border border-violet-100/50 group-hover:scale-105 transition-transform">
-                  <Users size={18} />
+                <div className="flex gap-4 items-start">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm border border-sky-100/40 group-hover:scale-105 transition-transform">
+                    <Users size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-slate-900">Benzer aileler</p>
+                    <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Sizinle benzer süreçlerden geçen ailelerle tanışın.</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-extrabold text-slate-900">Benzer aileler</p>
-                  <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Sizinle benzer süreçlerden geçen ailelerle tanışın.</p>
+                <div className="mt-3 flex items-center text-[11px] font-bold text-sky-600 group-hover:translate-x-1 transition-all pl-14">
+                  <span>Aileleri Listele</span>
+                  <span className="ml-1">→</span>
                 </div>
               </button>
 
               <button
                 onClick={() => setSortMode('expert')}
-                className="group flex items-center gap-4 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/70 hover:shadow-md hover:shadow-amber-100/30 cursor-pointer"
+                className="group flex flex-col justify-between rounded-2xl border border-sky-100 bg-sky-50/30 p-4.5 text-left transition-all hover:-translate-y-0.5 hover:border-sky-200/80 hover:bg-sky-50/60 hover:shadow-md hover:shadow-sky-100/20 cursor-pointer min-h-[120px]"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm border border-amber-100/50 group-hover:scale-105 transition-transform">
-                  <ShieldCheck size={18} />
+                <div className="flex gap-4 items-start">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm border border-sky-100/40 group-hover:scale-105 transition-transform">
+                    <ShieldCheck size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-slate-900">Uzman onaylı akış</p>
+                    <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Uzman hekim ve terapistlerce doğrulanmış paylaşımlar.</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-extrabold text-slate-900">Uzman onaylı akış</p>
-                  <p className="text-xs text-slate-500 mt-1 font-semibold leading-relaxed">Uzman hekim ve terapistlerce doğrulanmış paylaşımlar.</p>
+                <div className="mt-3 flex items-center text-[11px] font-bold text-sky-600 group-hover:translate-x-1 transition-all pl-14">
+                  <span>Akışı Göster</span>
+                  <span className="ml-1">→</span>
                 </div>
               </button>
             </div>

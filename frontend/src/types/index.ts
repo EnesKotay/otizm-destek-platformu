@@ -270,6 +270,11 @@ export interface KnowledgeArticle {
   content: string;
   category?: string;
   summary?: string;
+  format?: string;
+  mediaUrl?: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  pendingReview?: boolean;
   author?: User;
   published: boolean;
   viewCount: number;

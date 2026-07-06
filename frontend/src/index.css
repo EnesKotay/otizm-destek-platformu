@@ -48,6 +48,97 @@
   }
 }
 
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-8px) rotate(1deg); }
+  66% { transform: translateY(4px) rotate(-1deg); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.4; filter: blur(40px); }
+  50% { opacity: 0.7; filter: blur(50px); }
+}
+
+@keyframes slide-up-fade {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes border-glow {
+  0%, 100% { border-color: rgba(99, 102, 241, 0.15); }
+  50% { border-color: rgba(99, 102, 241, 0.35); }
+}
+
+@keyframes shine {
+  0% { left: -75%; }
+  100% { left: 125%; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 8s ease-in-out 2s infinite;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up-fade 0.5s ease-out both;
+}
+
+.animate-border-glow {
+  animation: border-glow 3s ease-in-out infinite;
+}
+
+/* Staggered animation delays for children */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+
+/* Shimmer overlay effect for cards */
+.shimmer-effect {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  transform: skewX(-15deg);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.shimmer-effect:hover::after {
+  opacity: 1;
+  animation: shine 0.8s ease-out;
+}
+
 body {
   color-scheme: light;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -165,3 +256,70 @@ body {
   outline-offset: 3px !important;
   border-radius: 4px;
 }
+
+/* ── Makale Detayı / Rich Text Stilleri (Prose) ── */
+.prose {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #374151; /* text-gray-700 */
+}
+
+.prose p {
+  margin-bottom: 1.25rem;
+}
+
+.prose h3 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1e3a8a; /* primary-900 */
+  margin-top: 2rem;
+  margin-bottom: 0.85rem;
+  letter-spacing: -0.02em;
+}
+
+.prose h3:first-child {
+  margin-top: 0;
+}
+
+.prose ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding-left: 0.25rem;
+}
+
+.prose ol {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding-left: 0.25rem;
+}
+
+.prose li {
+  margin-bottom: 0.5rem;
+  padding-left: 0.15rem;
+}
+
+.prose li::marker {
+  color: #3b82f6; /* primary-500 */
+}
+
+.prose a {
+  color: #2563eb; /* primary-600 */
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: #bfdbfe; /* primary-200 */
+  transition: all 0.2s ease-in-out;
+}
+
+.prose a:hover {
+  color: #1d4ed8; /* primary-700 */
+  text-decoration-color: #2563eb; /* primary-600 */
+}
+
+.prose strong {
+  font-weight: 700;
+  color: #111827; /* text-gray-900 */
+}
+

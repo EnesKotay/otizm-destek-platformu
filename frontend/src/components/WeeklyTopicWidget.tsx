@@ -39,15 +39,15 @@ export function WeeklyTopicWidget({ variant = 'dashboard', onJoin }: WeeklyTopic
     return (
       <div
         className="rounded-2xl p-5 flex items-center gap-4"
-        style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' }}
       >
         <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
           <Flame size={20} className="text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-indigo-200 text-xs font-medium mb-0.5">🔥 Haftanın Konusu</p>
+          <p className="text-sky-100 text-xs font-medium mb-0.5">🔥 Haftanın Konusu</p>
           <p className="text-white font-semibold text-sm leading-snug line-clamp-2">{topic.title}</p>
-          <p className="text-indigo-300 text-xs mt-1">{topic.tag} · {topic.replies} yanıt</p>
+          <p className="text-sky-200 text-xs mt-1">{topic.tag} · {topic.replies} yanıt</p>
         </div>
         <button
           onClick={() => onJoin?.(topic)}

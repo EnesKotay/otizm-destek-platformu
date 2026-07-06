@@ -48,6 +48,16 @@ public class KnowledgeArticle {
     @Column(length = 500)
     private String mediaUrl;
 
+    @Column(name = "source_name", length = 120)
+    private String sourceName;
+
+    @Column(name = "source_url", length = 500)
+    private String sourceUrl;
+
+    @Column(name = "pending_review", nullable = false)
+    @Builder.Default
+    private boolean pendingReview = false;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

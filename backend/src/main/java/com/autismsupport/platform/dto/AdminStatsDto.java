@@ -17,4 +17,5 @@ public class AdminStatsDto {
     private long totalMessages;
     private long newUsersThisWeek;
     private long pendingReports;
+    private long pendingArticles;
 }

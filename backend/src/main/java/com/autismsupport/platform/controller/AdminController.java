@@ -8,9 +8,11 @@ import com.autismsupport.platform.dto.PlatformSettingsDto;
 import com.autismsupport.platform.dto.ReportDto;
 import com.autismsupport.platform.dto.ReportTargetPreviewDto;
 import com.autismsupport.platform.dto.UserDto;
+import com.autismsupport.platform.dto.WeeklyQuestionDto;
 import com.autismsupport.platform.security.CurrentUser;
 import com.autismsupport.platform.security.UserPrincipal;
 import com.autismsupport.platform.service.AdminService;
+import com.autismsupport.platform.service.CommunityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -38,6 +40,16 @@ import java.util.UUID;
 public class AdminController {
 
     private final AdminService adminService;
+    private final com.autismsupport.platform.service.KnowledgeArticleService knowledgeArticleService;
+    private final CommunityService communityService;
+
+    @PostMapping("/weekly-questions/generate-ai")
+    public ResponseEntity<ApiResponse<WeeklyQuestionDto>> generateWeeklyQuestionWithAI() {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Yapay zeka haftanın sorusunu başarıyla üretti",
+                communityService.generateWeeklyQuestionWithAI()
+        ));
+    }
 
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<AdminStatsDto>> getStats() {
@@ -102,6 +114,27 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(
                 "Hedef icerik kaldirildi",
                 adminService.removeReportTarget(reportId, principal.getId())
+        ));
+    }
+
+    @GetMapping("/articles/pending")
+    public ResponseEntity<ApiResponse<List<com.autismsupport.platform.dto.KnowledgeArticleDto>>> getPendingArticles() {
+        return ResponseEntity.ok(ApiResponse.success(knowledgeArticleService.getPendingReviewArticles()));
+    }
+
+    @PostMapping("/articles/{articleId}/approve")
+    public ResponseEntity<ApiResponse<com.autismsupport.platform.dto.KnowledgeArticleDto>> approveArticle(@PathVariable UUID articleId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Makale yayina alindi",
+                knowledgeArticleService.approveExternalDraft(articleId)
+        ));
+    }
+
+    @PostMapping("/articles/{articleId}/reject")
+    public ResponseEntity<ApiResponse<com.autismsupport.platform.dto.KnowledgeArticleDto>> rejectArticle(@PathVariable UUID articleId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Makale taslagi reddedildi",
+                knowledgeArticleService.rejectExternalDraft(articleId)
         ));
     }
 

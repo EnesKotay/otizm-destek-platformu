@@ -18,6 +18,7 @@ import {
   Power
 } from 'lucide-react';
 import { adminService, type AuditLogEntry } from '@/services/adminService';
+import { communityService } from '@/services/communityService';
 import type { AdminStats, User, Report } from '@/types';
 import { formatDate } from '@/utils/date';
 import { toast } from '@/store/toastStore';
@@ -28,6 +29,8 @@ export function AdminOverviewPage() {
   const [pendingReports, setPendingReports] = useState<Report[]>([]);
   const [recentLogs, setRecentLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentQuestion, setCurrentQuestion] = useState<any>(null);
+  const [generatingAi, setGeneratingAi] = useState(false);
 
   // System Health — gerçek API metrikleri
   const [cpuUsage, setCpuUsage] = useState<number | null>(null);
@@ -44,6 +47,19 @@ export function AdminOverviewPage() {
       .catch(() => {});
   };
 
+  const handleGenerateAiQuestion = async () => {
+    setGeneratingAi(true);
+    try {
+      const newQuestion = await adminService.generateWeeklyQuestionWithAI();
+      setCurrentQuestion(newQuestion);
+      toast.success('Yapay zeka ile yeni haftalık soru başarıyla üretildi ve yayınlandı.');
+    } catch {
+      toast.error('Soru üretilirken hata oluştu.');
+    } finally {
+      setGeneratingAi(false);
+    }
+  };
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
@@ -51,7 +67,12 @@ export function AdminOverviewPage() {
       adminService.getStats().then(setStats),
       adminService.getPendingExperts().then(res => setPendingExperts(res.slice(0, 3))),
       adminService.getReports('pending').then(res => setPendingReports(res.slice(0, 3))),
-      adminService.getAuditLogs(0, 5).then(res => setRecentLogs(res.content || []))
+      adminService.getAuditLogs(0, 5).then(res => setRecentLogs(res.content || [])),
+      communityService.getWeeklyQuestions().then(questions => {
+        if (questions && questions.length > 0) {
+          setCurrentQuestion(questions[0]);
+        }
+      })
     ])
       .finally(() => setLoading(false));
 
@@ -347,6 +368,54 @@ export function AdminOverviewPage() {
           </div>
         </Card>
       </div>
+
+      {/* AI Weekly Question Management */}
+      <Card className="rounded-[28px] border-slate-200 p-6 relative overflow-hidden bg-gradient-to-br from-indigo-50/40 via-white to-sky-50/20">
+        <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-64 h-64 bg-indigo-100/30 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row gap-6 md:items-center justify-between">
+          <div className="flex-1 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm">
+                <Sparkles size={15} />
+              </div>
+              <h3 className="text-xs font-black text-indigo-900 uppercase tracking-wider">Yapay Zeka Soru Yönetimi</h3>
+            </div>
+            
+            <div className="space-y-1.5">
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wide">Aktif Haftanın Sorusu</p>
+              {currentQuestion ? (
+                <div className="bg-white/80 border border-slate-100 rounded-2xl p-4 shadow-sm space-y-2">
+                  <p className="text-sm font-bold text-slate-800 leading-relaxed">
+                    "{currentQuestion.question}"
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full">
+                      {currentQuestion.tag}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-400">
+                      {currentQuestion.weekLabel || 'Aktif'}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400 italic">Yükleniyor veya aktif haftalık soru bulunamadı...</p>
+              )}
+            </div>
+          </div>
+
+          <div className="shrink-0 flex items-center">
+            <Button 
+              onClick={handleGenerateAiQuestion} 
+              disabled={generatingAi}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-indigo-600/10 flex items-center gap-2 hover:-translate-y-0.5 transition-all cursor-pointer"
+            >
+              <Sparkles size={16} className={generatingAi ? 'animate-spin' : ''} />
+              {generatingAi ? 'Yeni Soru Üretiliyor...' : 'Yapay Zeka ile Soru Üret ve Yayınla'}
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       {/* Audit Logs & Action Buttons */}
       <div className="grid lg:grid-cols-3 gap-6">

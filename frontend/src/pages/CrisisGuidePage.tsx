@@ -273,14 +273,41 @@ export function CrisisGuidePage() {
         ]}
       />
 
-      {/* header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg shadow-red-100">
-          <AlertTriangle size={20} className="text-white" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Zor Anlarda Ne Yapmalı?</h1>
-          <p className="text-xs text-gray-500">Kriz Rehberi — zor anlarda adım adım yardım</p>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-50 via-white to-orange-50/30 border border-red-100/60 shadow-sm p-6 sm:p-8">
+        {/* Dekoratif arka plan öğeleri */}
+        <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-64 h-64 bg-red-200/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 translate-y-1/4 -translate-x-1/4 w-48 h-48 bg-orange-200/20 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row gap-6 md:items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+              <span className="text-red-600 text-xs font-black uppercase tracking-wider">Kriz Rehberi</span>
+            </div>
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Zor Anlarda Ne Yapmalı?</h1>
+            <p className="text-gray-600 text-sm max-w-lg leading-relaxed">
+              Çocuğunuz bunaldığında veya zor bir an yaşandığında sakin kalmanıza ve doğru adımları atmanıza yardımcı olacak hızlı rehber.
+            </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              {[
+                { icon: Sparkles, label: 'Nefes Regülatörü', text: 'Sakinleşmek için nefes egzersizi' },
+                { icon: Phone, label: 'Acil Durum Hattı', text: 'Tek tıkla hızlı arama butonları' },
+                { icon: AlertTriangle, label: 'Kriz Kartları', text: 'Adım adım müdahale rehberleri' },
+              ].map(({ icon: Icon, label, text }) => (
+                <div key={label} className="rounded-2xl border border-white/70 bg-white/75 px-3 py-2 shadow-sm">
+                  <p className="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                    <Icon size={13} className="text-red-500" />
+                    {label}
+                  </p>
+                  <p className="mt-0.5 text-[10px] font-semibold text-slate-500">{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -347,7 +374,7 @@ export function CrisisGuidePage() {
           onClick={() => setBreathingStep(prev => prev === 'idle' ? 'inhale' : 'idle')}
           className={`relative z-10 px-8 py-3.5 rounded-full text-sm font-black tracking-widest uppercase transition-all duration-300 cursor-pointer ${
             breathingStep === 'idle'
-              ? 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white shadow-[0_10px_20px_-10px_rgba(99,102,241,0.8)] hover:-translate-y-1'
+              ? 'bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white shadow-[0_10px_20px_-10px_rgba(56,189,248,0.8)] hover:-translate-y-1'
               : 'bg-white/10 hover:bg-white/20 text-slate-300 backdrop-blur-md border border-white/10'
           }`}
         >
@@ -410,9 +437,11 @@ export function CrisisGuidePage() {
       </div>
 
       {/* quick tip banner */}
-      <div className="bg-indigo-50/70 border border-indigo-100/50 rounded-2xl p-4 text-sm text-indigo-900 shadow-sm shadow-indigo-50/30">
-        <span className="font-bold text-indigo-700">İlk kural:</span> Siz sakin olun. Çocuk sizin duygusal durumunuzu
-        ayna gibi yansıtır. Derin nefes alın, yavaş hareket edin.
+      <div className="bg-sky-50/70 border border-sky-100/50 rounded-2xl p-4 text-sm text-sky-900 shadow-sm shadow-sky-50/30 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-sky-500" />
+        <p className="pl-2.5 font-medium leading-relaxed">
+          <strong className="font-bold text-sky-700">İlk kural:</strong> Siz sakin olun. Çocuk sizin duygusal durumunuzu ayna gibi yansıtır. Derin nefes alın, yavaş hareket edin.
+        </p>
       </div>
 
       {/* crisis cards */}

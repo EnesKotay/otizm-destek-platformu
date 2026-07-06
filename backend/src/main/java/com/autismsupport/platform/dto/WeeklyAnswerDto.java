@@ -17,6 +17,8 @@ public class WeeklyAnswerDto {
     private UUID id;
     private String author;
     private String city;
+    private String authorRole;
+    private String expertTitle;
 
     @NotBlank(message = "Cevap zorunludur")
     private String text;
@@ -25,3 +27,4 @@ public class WeeklyAnswerDto {
     private boolean liked;
     private LocalDateTime createdAt;
 }
+

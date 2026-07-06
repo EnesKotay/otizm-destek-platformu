@@ -5,6 +5,8 @@ export interface WeeklyAnswer {
   id: string;
   author: string;
   city?: string;
+  authorRole?: string;
+  expertTitle?: string;
   text: string;
   likes: number;
   liked: boolean;

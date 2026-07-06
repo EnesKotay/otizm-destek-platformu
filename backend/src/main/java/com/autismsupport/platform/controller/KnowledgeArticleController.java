@@ -3,9 +3,12 @@ package com.autismsupport.platform.controller;
 import com.autismsupport.platform.dto.ApiResponse;
 import com.autismsupport.platform.dto.KnowledgeArticleDto;
 import com.autismsupport.platform.dto.ExpertAnalyticsDto;
+import com.autismsupport.platform.dto.AiDraftRequest;
+import com.autismsupport.platform.dto.AiDraftResponse;
 import com.autismsupport.platform.security.CurrentUser;
 import com.autismsupport.platform.security.UserPrincipal;
 import com.autismsupport.platform.service.KnowledgeArticleService;
+import com.autismsupport.platform.service.GeminiService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,6 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class KnowledgeArticleController {
     private final KnowledgeArticleService service;
+    private final GeminiService geminiService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<KnowledgeArticleDto>>> getAll(
@@ -47,9 +51,25 @@ public class KnowledgeArticleController {
                 service.getByFormat(format, PageRequest.of(page, size))));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<KnowledgeArticleDto>>> search(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String format,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return ResponseEntity.ok(ApiResponse.success(
+                service.filterArticles(q, category, format, PageRequest.of(page, size, Sort.by("createdAt").descending()))));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<KnowledgeArticleDto>> getOne(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(service.getArticle(id)));
+    }
+
+    @GetMapping("/{id}/related")
+    public ResponseEntity<ApiResponse<java.util.List<KnowledgeArticleDto>>> getRelated(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(service.getRelatedArticles(id)));
     }
 
     @GetMapping("/my")
@@ -94,5 +114,16 @@ public class KnowledgeArticleController {
             @PathVariable UUID id,
             @CurrentUser UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.success(service.togglePublish(id, principal.getId())));
+    }
+
+    @PostMapping("/ai-draft")
+    public ResponseEntity<ApiResponse<AiDraftResponse>> generateAiDraft(
+            @Valid @RequestBody AiDraftRequest request,
+            @CurrentUser UserPrincipal principal) {
+        if (!"EXPERT".equals(principal.getRole()) && !"ADMIN".equals(principal.getRole())) {
+            return ResponseEntity.status(403).body(ApiResponse.error("Sadece uzmanlar ve yöneticiler taslak oluşturabilir"));
+        }
+        AiDraftResponse draft = geminiService.generateArticleDraft(request.getPrompt());
+        return ResponseEntity.ok(ApiResponse.success("Taslak başarıyla oluşturuldu", draft));
     }
 }

@@ -180,4 +180,7 @@ export const adminService = {
       uptimeMs: number;
       availableProcessors: number;
     }>>('/admin/metrics').then(r => r.data.data),
+
+  generateWeeklyQuestionWithAI: () =>
+    api.post<ApiResponse<any>>('/admin/weekly-questions/generate-ai').then(r => r.data.data),
 };

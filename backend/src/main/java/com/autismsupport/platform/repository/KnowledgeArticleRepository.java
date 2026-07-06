@@ -18,11 +18,20 @@ public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArtic
     long countByAuthorId(UUID authorId);
     long countByAuthorIdAndPublishedTrue(UUID authorId);
 
+    boolean existsBySourceUrl(String sourceUrl);
+    List<KnowledgeArticle> findByPendingReviewTrueOrderByCreatedAtDesc();
+    long countByPendingReviewTrue();
+    List<KnowledgeArticle> findTop4ByCategoryAndPublishedTrueAndIdNotOrderByViewCountDesc(String category, UUID id);
+
     @Query("SELECT SUM(a.viewCount) FROM KnowledgeArticle a WHERE a.author.id = :authorId")
     Long sumViewCountByAuthorId(@Param("authorId") UUID authorId);
 
-    @Query("SELECT a FROM KnowledgeArticle a WHERE a.published = true AND (LOWER(a.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(a.content) LIKE LOWER(CONCAT('%', :q, '%')))")
-    Page<KnowledgeArticle> searchPublished(@Param("q") String q, Pageable pageable);
+    @Query("SELECT a FROM KnowledgeArticle a WHERE a.published = true "
+            + "AND (:q = '' OR LOWER(a.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(a.content) LIKE LOWER(CONCAT('%', :q, '%'))) "
+            + "AND (:category = '' OR a.category = :category) "
+            + "AND (:format = '' OR a.format = :format)")
+    Page<KnowledgeArticle> filterPublished(@Param("q") String q, @Param("category") String category,
+                                            @Param("format") String format, Pageable pageable);
 
     @Query("SELECT a.author.id AS authorId, COUNT(a) AS articleCount FROM KnowledgeArticle a WHERE a.author.id IN :authorIds GROUP BY a.author.id")
     List<ArticleCountProjection> findArticleCountsByAuthorIds(@Param("authorIds") List<UUID> authorIds);

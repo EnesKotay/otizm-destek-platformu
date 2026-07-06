@@ -27,7 +27,7 @@ jobs:
           cache: maven
 
       - name: Run backend tests
-        run: mvn -q test
+        run: mvn -q verify
 
       - name: Build backend image
         run: docker build .
