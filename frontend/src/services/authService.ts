@@ -9,7 +9,7 @@ export const authService = {
     phone?: string;
     city?: string;
     kvkkConsent: boolean;
-    role?: 'PARENT' | 'EXPERT';
+    role?: 'PARENT' | 'EXPERT' | 'TEACHER';
     expertTitle?: string;
     institution?: string;
     licenseNumber?: string;
