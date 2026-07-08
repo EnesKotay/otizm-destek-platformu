@@ -7,6 +7,7 @@ import com.autismsupport.platform.model.UserRole;
 import com.autismsupport.platform.repository.KnowledgeArticleRepository;
 import com.autismsupport.platform.repository.TagRepository;
 import com.autismsupport.platform.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,7 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final KnowledgeArticleRepository knowledgeArticleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EntityManager entityManager;
 
     @Value("${app.bootstrap.admin-email:}")
     private String bootstrapAdminEmail;
@@ -47,6 +49,9 @@ public class DataInitializer implements CommandLineRunner {
             initTags();
             initParentCoordinates();
             initKnowledgeArticles();
+            // Hibernate insert'leri commit'e erteler; commit'te patlayan bir hata
+            // (ör. eksik sütun) bu catch'in dışında kalır. Flush ile şimdi tetikle.
+            entityManager.flush();
         } catch (Exception e) {
             // Seed data isteğe bağlıdır; burada oluşan bir hata (ör. şemayla eşleşmeyen
             // bir sütun) tüm uygulamanın açılışını engellememeli / çökme döngüsüne
