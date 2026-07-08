@@ -60,6 +60,7 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 }
 
 export function RegisterPage() {
+  const [selectedRole, setSelectedRole] = useState<'PARENT' | 'TEACHER'>('PARENT');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [passwordValue, setPasswordValue] = useState('');
@@ -101,10 +102,10 @@ export function RegisterPage() {
         email: data.email,
         password: data.password,
         kvkkConsent: data.kvkkConsent,
-        role: 'PARENT',
+        role: selectedRole,
       });
       setAuth(response.user, response.accessToken, response.refreshToken);
-      navigate('/baslangic');
+      navigate(selectedRole === 'TEACHER' ? '/' : '/baslangic');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Kayıt olurken bir hata oluştu';
       setError(message);
@@ -252,6 +253,35 @@ export function RegisterPage() {
           ) : null}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {/* Hesap Türü */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Hesap Türü</label>
+              <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole('PARENT')}
+                  className={`py-2 rounded-lg text-xs font-bold transition-all ${
+                    selectedRole === 'PARENT'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  Veli (Ebeveyn)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole('TEACHER')}
+                  className={`py-2 rounded-lg text-xs font-bold transition-all ${
+                    selectedRole === 'TEACHER'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  Eğitimci (Öğretmen)
+                </button>
+              </div>
+            </div>
+
             {/* Ad Soyad */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Ad Soyad</label>

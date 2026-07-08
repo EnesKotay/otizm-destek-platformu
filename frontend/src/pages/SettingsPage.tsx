@@ -228,6 +228,47 @@ function SettingsCore() {
   const [a11yHighContrast, setA11yHighContrast] = useState(() => localStorage.getItem('access-high-contrast') === 'true');
   const [a11yKeyboardFocus, setA11yKeyboardFocus] = useState(() => localStorage.getItem('access-keyboard-focus') === 'true');
 
+  // PWA states
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [swDevEnabled, setSwDevEnabled] = useState(localStorage.getItem('enable-sw-dev') === 'true');
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    }
+  };
+
+  const handleToggleSwDev = (value: boolean) => {
+    setSwDevEnabled(value);
+    if (value) {
+      localStorage.setItem('enable-sw-dev', 'true');
+      toast.success('Hizmet İşçisi Geliştirme Modu aktif! Sayfa yenileniyor...');
+    } else {
+      localStorage.removeItem('enable-sw-dev');
+      toast.success('Hizmet İşçisi Geliştirme Modu pasif! Sayfa yenileniyor...');
+    }
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+  };
+
   const roleLabel = user?.role === 'ADMIN' ? 'Yönetici' : user?.role === 'EXPERT' ? 'Uzman' : 'Aile';
   const isExpert = user?.role === 'EXPERT';
   const isParent = user?.role !== 'EXPERT' && user?.role !== 'ADMIN';
@@ -958,6 +999,35 @@ function SettingsCore() {
                   <p className="text-xs text-slate-500">Veri işleme tercihleri hesabınızda tutulur</p>
                 </div>
               </div>
+            </div>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <div className="flex items-center gap-2">
+                  <Smartphone size={20} aria-hidden="true" /> Mobil ve Çevrimdışı (PWA)
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <div className="px-5 pb-5 space-y-3">
+              <div className="rounded-2xl bg-indigo-50 px-4 py-3 text-xs text-indigo-700 leading-relaxed">
+                Uygulamayı mobil cihazınıza veya bilgisayarınıza yükleyerek çevrimdışı kullanabilir ve hızlı erişim sağlayabilirsiniz.
+              </div>
+              
+              <SettingRow
+                icon={Smartphone}
+                label="Geliştirme Modunda Aktif Et"
+                description="Yerel geliştirme ortamında service worker'ı aktif eder (Sayfayı yeniler)"
+                checked={swDevEnabled}
+                onChange={handleToggleSwDev}
+              />
+
+              {isInstallable && (
+                <Button onClick={handleInstallApp} className="w-full mt-2 font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 shadow-md shadow-indigo-100 flex items-center justify-center gap-2">
+                  <Smartphone size={16} /> Uygulamayı Cihaza Yükle
+                </Button>
+              )}
             </div>
           </Card>
 

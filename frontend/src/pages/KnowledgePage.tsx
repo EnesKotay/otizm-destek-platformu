@@ -678,7 +678,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
           </div>
 
           {/* Author Admin Action buttons */}
-          {isExpert && selectedArticle.author?.id === user?.id && (
+          {((isExpert && selectedArticle.author?.id === user?.id) || user?.role === 'ADMIN') && (
             <div className="flex gap-3 mt-8 pt-6 border-t border-gray-100 print:hidden">
               <Button
                 variant="outline"
@@ -1157,7 +1157,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                     </div>
                   )}
 
-                  {isExpert && article.author?.id === user?.id && (
+                  {((isExpert && article.author?.id === user?.id) || user?.role === 'ADMIN') && (
                     <div className="flex gap-1 mt-2" onClick={e => e.stopPropagation()}>
                       <button
                         onClick={(e) => handleTogglePublish(article.id, e)}

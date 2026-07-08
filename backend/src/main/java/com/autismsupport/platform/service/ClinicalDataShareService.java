@@ -40,8 +40,8 @@ public class ClinicalDataShareService {
         User expert = userRepository.findById(dto.getExpertId())
                 .orElseThrow(() -> new RuntimeException("Paylasilacak uzman bulunamadi"));
 
-        if (expert.getRole() != com.autismsupport.platform.model.UserRole.EXPERT) {
-            throw new RuntimeException("Veriler sadece EXPERT (uzman/doktor/terapist) rolundeki kisilerle paylasilabilir.");
+        if (expert.getRole() != com.autismsupport.platform.model.UserRole.EXPERT && expert.getRole() != com.autismsupport.platform.model.UserRole.TEACHER) {
+            throw new RuntimeException("Veriler sadece EXPERT (uzman) veya TEACHER (öğretmen) rolündeki kişilerle paylaşılabilir.");
         }
 
         // Zaten aktif bir paylasim varsa pasife cek

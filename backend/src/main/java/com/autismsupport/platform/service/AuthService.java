@@ -40,7 +40,14 @@ public class AuthService {
             throw new ValidationException("KVKK onayı zorunludur");
         }
 
-        boolean isExpert = "EXPERT".equalsIgnoreCase(request.getRole());
+        UserRole role = UserRole.PARENT;
+        if (request.getRole() != null) {
+            try {
+                role = UserRole.valueOf(request.getRole().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Keep default PARENT
+            }
+        }
 
         User user = User.builder()
                 .email(request.getEmail())
@@ -48,7 +55,7 @@ public class AuthService {
                 .fullName(request.getFullName())
                 .phone(request.getPhone())
                 .city(request.getCity())
-                .role(isExpert ? UserRole.EXPERT : UserRole.PARENT)
+                .role(role)
                 .verified(false)
                 .expertTitle(request.getExpertTitle())
                 .institution(request.getInstitution())

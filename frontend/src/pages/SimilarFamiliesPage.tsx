@@ -50,13 +50,15 @@ const SORT_OPTIONS = [
   { value: 'tags',  label: 'Ortak Etiket Sayısı' },
   { value: 'age',   label: 'Yaş Sırası' },
   { value: 'therapy', label: 'Terapi Uyumu' },
+  { value: 'sensory', label: 'Duyusal Uyum' },
 ];
 
-const FOCUS_SORT_MAP: Record<'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY', string> = {
+const FOCUS_SORT_MAP: Record<'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY' | 'SENSORY', string> = {
   BALANCED: 'score',
   SYMPTOMS: 'tags',
   AGE: 'age',
   THERAPY: 'therapy',
+  SENSORY: 'sensory',
 };
 
 const MEETING_TIMES = [
@@ -75,6 +77,7 @@ const DEFAULT_MATCHING_PREFERENCES: MatchingPreferences = {
   sameCityOnly: false,
   commonTagsOnly: false,
   closeAgeOnly: false,
+  similarSensoryOnly: false,
 };
 
 function readJsonMap<T>(key: string, fallback: T): T {
@@ -94,6 +97,7 @@ interface MatchingPreferences {
   sameCityOnly: boolean;
   commonTagsOnly: boolean;
   closeAgeOnly: boolean;
+  similarSensoryOnly: boolean;
 }
 
 interface MeetingTemplate {
@@ -357,6 +361,7 @@ function FamilyMatchCard({
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
             <ScoreBar label="Etiket" value={family.tagScore} color="bg-indigo-500" icon={<Tag size={12} />} />
             <ScoreBar label="Yaş" value={family.ageScore} color="bg-blue-500" icon={<Smile size={12} />} />
+            <ScoreBar label="Duyusal" value={family.sensoryScore} color="bg-amber-500" icon={<Sparkles size={12} />} />
             <ScoreBar label="Terapi" value={family.therapyScore} color="bg-teal-500" icon={<Activity size={12} />} />
             <ScoreBar label="Eğitim" value={family.educationScore} color="bg-emerald-500" icon={<GraduationCap size={12} />} />
           </div>
@@ -512,7 +517,7 @@ export function SimilarFamiliesPage() {
   const [circleQuery, setCircleQuery] = useState('');
 
   // AI priority sort focus state
-  const [priorityFocus, setPriorityFocus] = useState<'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY'>('BALANCED');
+  const [priorityFocus, setPriorityFocus] = useState<'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY' | 'SENSORY'>('BALANCED');
 
   // Quick-Chat Drawer states
   const [activeChatBuddy, setActiveChatBuddy] = useState<BuddyDto | null>(null);
@@ -924,6 +929,7 @@ export function SimilarFamiliesPage() {
     if ((cityOnly || matchingPreferences.sameCityOnly) && user?.city && normalizeCity(family.parentCity) !== normalizeCity(user.city)) return false;
     if (matchingPreferences.commonTagsOnly && family.totalCommonTags <= 0) return false;
     if (matchingPreferences.closeAgeOnly && family.ageScore < 0.67) return false;
+    if (matchingPreferences.similarSensoryOnly && family.sensoryScore < 0.70) return false;
     return true;
   });
 
@@ -943,6 +949,9 @@ export function SimilarFamiliesPage() {
     }
     if (priorityFocus === 'THERAPY') {
       return baseList.sort((a, b) => (b.therapyScore + getFeedbackBoost(b.parentId)) - (a.therapyScore + getFeedbackBoost(a.parentId)));
+    }
+    if (priorityFocus === 'SENSORY') {
+      return baseList.sort((a, b) => (b.sensoryScore + getFeedbackBoost(b.parentId)) - (a.sensoryScore + getFeedbackBoost(a.parentId)));
     }
     return baseList.sort((a, b) => (b.similarityScore + getFeedbackBoost(b.parentId)) - (a.similarityScore + getFeedbackBoost(a.parentId)));
   };
@@ -1249,6 +1258,7 @@ export function SimilarFamiliesPage() {
                       { key: 'sameCityOnly', label: 'Aynı şehir', detail: user?.city || 'Şehir bilgisi' },
                       { key: 'commonTagsOnly', label: 'Ortak etiket şartı', detail: 'En az 1 ortak alan' },
                       { key: 'closeAgeOnly', label: 'Yakın yaş aralığı', detail: 'Akran etkileşimi' },
+                      { key: 'similarSensoryOnly', label: 'Duyusal profil uyumu', detail: 'Benzer duyusal toleranslar' },
                     ].map(option => {
                       const prefKey = option.key as keyof MatchingPreferences;
                       const active = matchingPreferences[prefKey];
@@ -1287,13 +1297,14 @@ export function SimilarFamiliesPage() {
                       { id: 'BALANCED', label: '⚖️ Dengeli Analiz', desc: 'Genel klinik ve sosyal sinerji dengesi' },
                       { id: 'SYMPTOMS', label: '🧬 Belirtiler & Hassasiyetler', desc: 'Benzer semptom ve duyusal hassasiyetler' },
                       { id: 'AGE', label: '🧸 Akran Etkileşimi (Yaş)', desc: 'Yakın yaş aralığı ve gelişim evresi' },
+                      { id: 'SENSORY', label: '🧘 Duyusal Profil', desc: 'Ses, dokunma ve görsel hassasiyet benzerliği' },
                       { id: 'THERAPY', label: '🩺 Terapi & Eğitim', desc: 'Ortak konuşma, duyu bütünleme veya ergoterapi' }
                     ].map(focus => (
                       <button
                         key={focus.id}
                         type="button"
                         onClick={() => {
-                          const focusId = focus.id as 'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY';
+                          const focusId = focus.id as 'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY' | 'SENSORY';
                           const mappedSort = FOCUS_SORT_MAP[focusId];
                           setPriorityFocus(focusId);
                           setSortBy(mappedSort);

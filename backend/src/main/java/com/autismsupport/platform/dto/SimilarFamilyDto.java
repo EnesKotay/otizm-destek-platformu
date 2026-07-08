@@ -25,6 +25,7 @@ public class SimilarFamilyDto {
     private double ageScore;
     private double therapyScore;
     private double educationScore;
+    private double sensoryScore;
     private List<String> matchReasons;
     private String relationshipStatus;
     private Boolean mentorRelation;

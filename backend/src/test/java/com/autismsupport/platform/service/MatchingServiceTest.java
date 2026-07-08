@@ -6,6 +6,7 @@ import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.repository.BuddyRelationshipRepository;
 import com.autismsupport.platform.repository.ChildRepository;
 import com.autismsupport.platform.repository.UserRepository;
+import com.autismsupport.platform.repository.SensoryProfileRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,9 +32,16 @@ class MatchingServiceTest {
     @Mock ChildRepository childRepository;
     @Mock UserRepository userRepository;
     @Mock BuddyRelationshipRepository buddyRelationshipRepository;
+    @Mock SensoryProfileRepository sensoryProfileRepository;
     @Mock TagService tagService;
+    @Mock com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @InjectMocks MatchingService matchingService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        lenient().when(sensoryProfileRepository.findAll()).thenReturn(List.of());
+    }
 
     // ── findSimilarFamilies — güvenlik ────────────────────────────────────────
 

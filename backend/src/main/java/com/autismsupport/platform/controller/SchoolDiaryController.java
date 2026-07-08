@@ -24,7 +24,7 @@ public class SchoolDiaryController {
 
     @GetMapping("/child/{childId}")
     public ResponseEntity<ApiResponse<List<SchoolDiaryEntry>>> get(@PathVariable UUID childId, @CurrentUser UserPrincipal p) {
-        return ResponseEntity.ok(ApiResponse.success(service.getEntries(childId)));
+        return ResponseEntity.ok(ApiResponse.success(service.getEntries(childId, p.getId())));
     }
 
     @PostMapping("/child/{childId}")

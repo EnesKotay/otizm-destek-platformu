@@ -4,6 +4,7 @@ import com.autismsupport.platform.model.SchoolDiaryEntry;
 import com.autismsupport.platform.repository.SchoolDiaryEntryRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,13 +21,20 @@ public class SchoolDiaryService {
 
     private final SchoolDiaryEntryRepository repository;
     private final ObjectMapper objectMapper;
+    private final ClinicalDataShareService clinicalDataShareService;
 
-    public List<SchoolDiaryEntry> getEntries(UUID childId) {
+    public List<SchoolDiaryEntry> getEntries(UUID childId, UUID userId) {
+        if (!clinicalDataShareService.verifyAccess(userId, childId, "tracker")) {
+            throw new AccessDeniedException("Bu çocuğun okul günlüğü verilerine erişim izniniz bulunmuyor.");
+        }
         return repository.findByChildIdOrderByDateDescCreatedAtDesc(childId);
     }
 
     @Transactional
     public SchoolDiaryEntry createEntry(UUID childId, UUID userId, SchoolDiaryEntryRequest request) {
+        if (!clinicalDataShareService.verifyAccess(userId, childId, "tracker")) {
+            throw new AccessDeniedException("Bu çocuğun okul günlüğüne giriş ekleme izniniz bulunmuyor.");
+        }
         SchoolDiaryEntry entry = SchoolDiaryEntry.builder()
                 .childId(childId)
                 .userId(userId)
@@ -44,6 +52,9 @@ public class SchoolDiaryService {
     public SchoolDiaryEntry addReply(UUID entryId, UUID userId, SchoolDiaryReplyRequest request) throws Exception {
         SchoolDiaryEntry entry = repository.findById(entryId)
                 .orElseThrow(() -> new RuntimeException("Kayit bulunamadi"));
+        if (!clinicalDataShareService.verifyAccess(userId, entry.getChildId(), "tracker")) {
+            throw new AccessDeniedException("Bu çocuğun okul günlüğü girişine yanıt yazma izniniz bulunmuyor.");
+        }
         List<Map<String, Object>> replies = objectMapper.readValue(entry.getReplies(),
                 objectMapper.getTypeFactory().constructCollectionType(List.class, Map.class));
         Map<String, Object> reply = Map.of(

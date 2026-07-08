@@ -9,9 +9,12 @@ import com.autismsupport.platform.model.BuddyRelationship;
 import com.autismsupport.platform.model.Child;
 import com.autismsupport.platform.model.Tag;
 import com.autismsupport.platform.model.User;
+import com.autismsupport.platform.model.SensoryProfile;
 import com.autismsupport.platform.repository.BuddyRelationshipRepository;
 import com.autismsupport.platform.repository.ChildRepository;
 import com.autismsupport.platform.repository.UserRepository;
+import com.autismsupport.platform.repository.SensoryProfileRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -30,10 +33,13 @@ public class MatchingService {
     private final ChildRepository childRepository;
     private final UserRepository userRepository;
     private final BuddyRelationshipRepository buddyRelationshipRepository;
+    private final SensoryProfileRepository sensoryProfileRepository;
     private final TagService tagService;
+    private final ObjectMapper objectMapper;
 
-    private static final double TAG_WEIGHT = 0.60;
-    private static final double AGE_WEIGHT = 0.20;
+    private static final double TAG_WEIGHT = 0.50;
+    private static final double AGE_WEIGHT = 0.15;
+    private static final double SENSORY_WEIGHT = 0.15;
     private static final double THERAPY_WEIGHT = 0.10;
     private static final double EDUCATION_WEIGHT = 0.10;
     private static final int AGE_TOLERANCE_YEARS = 2;
@@ -66,6 +72,13 @@ public class MatchingService {
             return Collections.emptyList();
         }
 
+        // Single query for all sensory profiles to avoid N+1
+        List<SensoryProfile> allProfiles = sensoryProfileRepository.findAll();
+        Map<UUID, String> childToSensoryDomains = allProfiles.stream()
+                .collect(Collectors.toMap(SensoryProfile::getChildId, SensoryProfile::getDomains, (a, b) -> a));
+
+        Map<String, Integer> mySensoryDomains = parseSensoryDomains(childToSensoryDomains.get(childId));
+
         // Single query with JOIN FETCH — eliminates N+1
         List<Child> allChildren = childRepository.findAllWithTagsAndParentForMatching();
         List<ScoredFamily> scored = new ArrayList<>();
@@ -85,8 +98,12 @@ public class MatchingService {
             double therapyScore = textSimilarity(myChild.getTherapies(), other.getTherapies());
             double educationScore = textSimilarity(myChild.getEducationProgram(), other.getEducationProgram());
 
+            Map<String, Integer> otherSensoryDomains = parseSensoryDomains(childToSensoryDomains.get(other.getId()));
+            double sensoryScore = calculateSensorySimilarity(mySensoryDomains, otherSensoryDomains);
+
             double totalScore = (tagScore * TAG_WEIGHT)
                     + (ageScore * AGE_WEIGHT)
+                    + (sensoryScore * SENSORY_WEIGHT)
                     + (therapyScore * THERAPY_WEIGHT)
                     + (educationScore * EDUCATION_WEIGHT);
 
@@ -100,7 +117,7 @@ public class MatchingService {
                         .collect(Collectors.toList());
 
                 scored.add(new ScoredFamily(other, totalScore, tagScore, ageScore,
-                        therapyScore, educationScore, commonTags));
+                        therapyScore, educationScore, sensoryScore, commonTags));
             }
         }
 
@@ -111,6 +128,7 @@ public class MatchingService {
                                sf.child.getBirthDate() == null ? Integer.MAX_VALUE :
                                Period.between(sf.child.getBirthDate(), LocalDate.now()).getYears());
             case "therapy" -> (a, b) -> Double.compare(b.therapyScore, a.therapyScore);
+            case "sensory" -> (a, b) -> Double.compare(b.sensoryScore, a.sensoryScore);
             default        -> (a, b) -> Double.compare(b.score, a.score);
         };
         scored.sort(comparator);
@@ -138,6 +156,7 @@ public class MatchingService {
                             .ageScore(Math.round(sf.ageScore * 100.0) / 100.0)
                             .therapyScore(Math.round(sf.therapyScore * 100.0) / 100.0)
                             .educationScore(Math.round(sf.educationScore * 100.0) / 100.0)
+                            .sensoryScore(Math.round(sf.sensoryScore * 100.0) / 100.0)
                             .matchReasons(buildMatchReasons(myChild, sf.child, sf))
                             .relationshipStatus(relationship.map(BuddyRelationship::getStatus).orElse("NONE"))
                             .mentorRelation(relationship.map(BuddyRelationship::getIsMentorRelation).orElse(false))
@@ -189,7 +208,7 @@ public class MatchingService {
             return "score";
         }
         String normalized = sortBy.trim().toLowerCase(Locale.ROOT);
-        if (!Set.of("score", "tags", "age", "therapy").contains(normalized)) {
+        if (!Set.of("score", "tags", "age", "therapy", "sensory").contains(normalized)) {
             throw new ValidationException("Geçersiz sıralama tipi");
         }
         return normalized;
@@ -225,6 +244,37 @@ public class MatchingService {
         return (double) intersection.size() / union.size();
     }
 
+    @SuppressWarnings("unchecked")
+    private Map<String, Integer> parseSensoryDomains(String domainsJson) {
+        if (domainsJson == null || domainsJson.isBlank()) {
+            return Collections.emptyMap();
+        }
+        try {
+            return objectMapper.readValue(domainsJson, Map.class);
+        } catch (Exception e) {
+            return Collections.emptyMap();
+        }
+    }
+
+    private double calculateSensorySimilarity(Map<String, Integer> p1, Map<String, Integer> p2) {
+        if (p1.isEmpty() || p2.isEmpty()) {
+            return 0.0;
+        }
+        try {
+            int sound1 = ((Number) p1.getOrDefault("sound", 50)).intValue();
+            int sound2 = ((Number) p2.getOrDefault("sound", 50)).intValue();
+            int touch1 = ((Number) p1.getOrDefault("touch", 50)).intValue();
+            int touch2 = ((Number) p2.getOrDefault("touch", 50)).intValue();
+            int visual1 = ((Number) p1.getOrDefault("visual", 50)).intValue();
+            int visual2 = ((Number) p2.getOrDefault("visual", 50)).intValue();
+
+            int diff = Math.abs(sound1 - sound2) + Math.abs(touch1 - touch2) + Math.abs(visual1 - visual2);
+            return 1.0 - ((double) diff / 300.0);
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
     private List<String> buildMatchReasons(Child myChild, Child otherChild, ScoredFamily scoredFamily) {
         List<String> reasons = new ArrayList<>();
         if (!scoredFamily.commonTags.isEmpty()) {
@@ -236,6 +286,9 @@ public class MatchingService {
         }
         if (scoredFamily.ageScore >= 0.67) {
             reasons.add("Yaş aralığı yakın olduğu için akran etkileşimi potansiyeli yüksek");
+        }
+        if (scoredFamily.sensoryScore >= 0.70) {
+            reasons.add("Duyusal profilleri (ses, dokunma, görsel hassasiyetleri) oldukça benzer");
         }
         if (scoredFamily.therapyScore > 0) {
             reasons.add("Terapi notlarında ortak kelimeler bulunuyor");
@@ -280,5 +333,6 @@ public class MatchingService {
             Child child, double score,
             double tagScore, double ageScore,
             double therapyScore, double educationScore,
+            double sensoryScore,
             List<TagDto> commonTags) {}
 }
