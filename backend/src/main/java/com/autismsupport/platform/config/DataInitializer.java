@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
@@ -41,10 +42,19 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        initAdminUser();
-        initTags();
-        initParentCoordinates();
-        initKnowledgeArticles();
+        try {
+            initAdminUser();
+            initTags();
+            initParentCoordinates();
+            initKnowledgeArticles();
+        } catch (Exception e) {
+            // Seed data isteğe bağlıdır; burada oluşan bir hata (ör. şemayla eşleşmeyen
+            // bir sütun) tüm uygulamanın açılışını engellememeli / çökme döngüsüne
+            // sokmamalı. Hatayı logla, işlemi rollback-only işaretle ve normal başlat.
+            log.error("Başlangıç verisi (seed data) yüklenirken hata oluştu; " +
+                    "uygulama yine de başlatılıyor: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+        }
     }
 
     private void initParentCoordinates() {

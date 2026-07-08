@@ -21,6 +21,9 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        // application-test.yml H2 sürücüsünü ayarlıyor; URL Postgres'e yönlendirildiği
+        // için sürücüyü de container'ınkiyle değiştirmek gerekiyor.
+        registry.add("spring.datasource.driver-class-name", postgres::getDriverClassName);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
     }
 }
