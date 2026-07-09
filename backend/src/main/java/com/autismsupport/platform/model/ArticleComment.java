@@ -26,6 +26,16 @@ public class ArticleComment {
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
+    @Column(name = "is_experience", nullable = false)
+    @Builder.Default
+    private boolean isExperience = false;
+
+    @Column(name = "duration_tried", length = 50)
+    private String durationTried;
+
+    @Column(name = "effectiveness_rating")
+    private Integer effectivenessRating;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

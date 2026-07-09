@@ -335,7 +335,6 @@ export function useTreatmentPageData() {
     }
 
     let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     applyTreatmentState(createEmptyTreatmentState(), stateSetters);
 
     treatmentStateService.get(activeChildId)

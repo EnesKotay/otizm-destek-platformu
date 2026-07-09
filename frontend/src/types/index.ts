@@ -276,6 +276,7 @@ export interface KnowledgeArticle {
   sourceName?: string;
   sourceUrl?: string;
   pendingReview?: boolean;
+  bookmarked?: boolean;
   author?: User;
   published: boolean;
   viewCount: number;
@@ -529,6 +530,9 @@ export interface ArticleComment {
   content: string;
   articleId: string;
   author: User;
+  isExperience?: boolean;
+  durationTried?: string;
+  effectivenessRating?: number;
   createdAt: string;
 }
 

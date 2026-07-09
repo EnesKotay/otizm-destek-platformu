@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   BookOpen, Plus, Search, Eye, CheckCircle, XCircle, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight,
-  FileText, Video, Mic, Link as LinkIcon, MessageCircle, Send, ShieldCheck, Sparkles, Clock, Printer,
-  ExternalLink, LayoutGrid, Brain, GraduationCap, HeartPulse, Apple, Users, Home, Scale, Info
+  FileText, Video, Mic, MessageCircle, Send, ShieldCheck, Sparkles, Clock, Printer,
+  ExternalLink, LayoutGrid, Brain, GraduationCap, HeartPulse, Apple, Users, Home, Scale, Info, Bookmark, Star,
+  type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -46,7 +47,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Genel': 'bg-gray-50 text-gray-700 border border-gray-200/40',
 };
 
-const CATEGORY_ICONS: Record<string, any> = {
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
   '': LayoutGrid,
   'İletişim': MessageCircle,
   'Davranış': Brain,
@@ -246,12 +247,17 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   const isExpert = user?.role === 'EXPERT' || user?.role === 'ADMIN';
 
   const [articles, setArticles] = useState<KnowledgeArticle[]>([]);
+  const [recommendations, setRecommendations] = useState<KnowledgeArticle[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedArticleId = searchParams.get('id');
   const [activeCategory, setActiveCategory] = useState('');
   const [activeContentType, setActiveContentType] = useState<ContentType | ''>('');
   const [showMyArticles, setShowMyArticles] = useState(false);
+  const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
+  const [isExperience, setIsExperience] = useState(false);
+  const [durationTried, setDurationTried] = useState('1 hafta');
+  const [effectivenessRating, setEffectivenessRating] = useState(5);
   const [analytics, setAnalytics] = useState<ExpertAnalytics | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -306,6 +312,12 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   const loadArticles = async () => {
     try {
       let data;
+      if (showBookmarksOnly) {
+        const bookmarksData = await knowledgeService.getBookmarks();
+        setArticles(bookmarksData);
+        setTotalPages(1);
+        return;
+      }
       if (showMyArticles) {
         data = await knowledgeService.getMy(page);
         if (isExpert && page === 0) {
@@ -352,13 +364,32 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
+  const handleToggleBookmark = async (articleId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const bookmarked = await knowledgeService.toggleBookmark(articleId);
+      setArticles(prev => prev.map(a => a.id === articleId ? { ...a, bookmarked } : a));
+      setSelectedArticle(prev => prev && prev.id === articleId ? { ...prev, bookmarked } : prev);
+      setRecommendations(prev => prev.map(a => a.id === articleId ? { ...a, bookmarked } : a));
+      toast.success(bookmarked ? 'Yer imlerine kaydedildi.' : 'Yer imlerinden kaldırıldı.');
+    } catch {
+      toast.error('İşlem başarısız oldu.');
+    }
+  };
+
   const handleAddComment = async () => {
     if (!newComment.trim() || !selectedArticle) return;
     setSubmittingComment(true);
     try {
-      const comment = await knowledgeService.addComment(selectedArticle.id, newComment);
+      const experienceData = isExperience ? {
+        isExperience: true,
+        durationTried,
+        effectivenessRating
+      } : undefined;
+      const comment = await knowledgeService.addComment(selectedArticle.id, newComment, experienceData);
       setComments([comment, ...comments]);
       setNewComment('');
+      setIsExperience(false);
       toast.success('Yorumunuz eklendi.');
     } catch {
       toast.error('Yorum eklenirken hata oluştu.');
@@ -367,10 +398,21 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   };
 
   useEffect(() => {
+    if (user?.role === 'PARENT') {
+      knowledgeService.getRecommendations()
+        .then(setRecommendations)
+        .catch(() => setRecommendations([]));
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRecommendations([]);
+    }
+  }, [user]);
+
+  useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadArticles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory, activeContentType, debouncedSearch, page, showMyArticles]);
+  }, [activeCategory, activeContentType, debouncedSearch, page, showMyArticles, showBookmarksOnly]);
 
   useEffect(() => {
     if (selectedArticleId) {
@@ -381,6 +423,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
           setSearchParams({});
         });
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedArticle(null);
     }
   }, [selectedArticleId, setSearchParams]);
@@ -515,13 +558,23 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
             <span>Geri Dön</span>
           </button>
           
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-100 rounded-full shadow-sm hover:text-indigo-600 hover:border-indigo-100 hover:shadow-md transition-all cursor-pointer"
-          >
-            <Printer size={16} />
-            <span>Yazdır</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => handleToggleBookmark(selectedArticle.id, e)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-100 rounded-full shadow-sm hover:text-indigo-600 hover:border-indigo-100 hover:shadow-md transition-all cursor-pointer"
+            >
+              <Bookmark size={16} className={selectedArticle.bookmarked ? 'fill-indigo-600 text-indigo-600' : 'text-gray-400'} />
+              <span>{selectedArticle.bookmarked ? 'Kaydedildi' : 'Kaydet'}</span>
+            </button>
+
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-100 rounded-full shadow-sm hover:text-indigo-600 hover:border-indigo-100 hover:shadow-md transition-all cursor-pointer"
+            >
+              <Printer size={16} />
+              <span>Yazdır</span>
+            </button>
+          </div>
         </div>
 
         {/* Article Details Card */}
@@ -644,10 +697,10 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                 </p>
                 {selectedArticle.sourceUrl ? (
                   <a
-                    href={selectedArticle.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900 hover:underline break-words"
+                     href={selectedArticle.sourceUrl}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900 hover:underline break-words"
                   >
                     {selectedArticle.sourceName}
                     <ExternalLink size={12} className="shrink-0" />
@@ -756,36 +809,87 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
           </div>
 
           {/* New Comment Input Row */}
-          <div className="flex gap-3 mb-8">
-            <div className="relative shrink-0">
-              <img 
-                src={user?.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'U')}&background=random`} 
-                alt="Profil" 
-                className="w-10 h-10 rounded-2xl object-cover ring-2 ring-indigo-50/70 shadow-sm"
-              />
-              {(user?.role === 'EXPERT' || user?.role === 'ADMIN') && (
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-indigo-600 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
-                  <ShieldCheck size={9} className="text-white" />
-                </div>
-              )}
+          <div className="space-y-3 mb-8">
+            <div className="flex gap-3">
+              <div className="relative shrink-0">
+                <img 
+                  src={user?.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'U')}&background=random`} 
+                  alt="Profil" 
+                  className="w-10 h-10 rounded-2xl object-cover ring-2 ring-indigo-50/70 shadow-sm"
+                />
+                {(user?.role === 'EXPERT' || user?.role === 'ADMIN') && (
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-indigo-600 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                    <ShieldCheck size={9} className="text-white" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 flex gap-2">
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={e => setNewComment(e.target.value)}
+                  placeholder="Aklınıza takılan bir soru sorun veya yorum yapın..."
+                  className="flex-1 px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all text-sm placeholder:text-gray-400"
+                  onKeyDown={e => e.key === 'Enter' && handleAddComment()}
+                />
+                <Button 
+                  onClick={handleAddComment} 
+                  loading={submittingComment}
+                  className="rounded-2xl px-5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200 transition-all cursor-pointer group/btn flex items-center justify-center"
+                >
+                  <Send size={16} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+                </Button>
+              </div>
             </div>
-            <div className="flex-1 flex gap-2">
-              <input
-                type="text"
-                value={newComment}
-                onChange={e => setNewComment(e.target.value)}
-                placeholder="Aklınıza takılan bir soru sorun veya yorum yapın..."
-                className="flex-1 px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all text-sm placeholder:text-gray-400"
-                onKeyDown={e => e.key === 'Enter' && handleAddComment()}
-              />
-              <Button 
-                onClick={handleAddComment} 
-                loading={submittingComment}
-                className="rounded-2xl px-5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200 transition-all cursor-pointer group/btn flex items-center justify-center"
-              >
-                <Send size={16} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
-              </Button>
-            </div>
+
+            {/* Experience Inputs */}
+            {user?.role === 'PARENT' && (
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3 shadow-inner">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isExperience}
+                    onChange={e => setIsExperience(e.target.checked)}
+                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                  />
+                  <span className="text-xs font-bold text-slate-700">Evde deneme deneyimi paylaş (Deneyim Köşesi)</span>
+                </label>
+                
+                {isExperience && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-200/50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Deneme Süresi</label>
+                      <select
+                        value={durationTried}
+                        onChange={e => setDurationTried(e.target.value)}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-semibold text-slate-700 cursor-pointer"
+                      >
+                        <option value="Birkaç gün">Birkaç gün</option>
+                        <option value="1 hafta">1 hafta</option>
+                        <option value="2-4 hafta">2-4 hafta</option>
+                        <option value="1-3 ay">1-3 ay</option>
+                        <option value="3 ay+">3 ay+</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Fayda Derecesi</label>
+                      <div className="flex items-center gap-1.5 mt-2">
+                        {[1, 2, 3, 4, 5].map(rating => (
+                          <button
+                            key={rating}
+                            type="button"
+                            onClick={() => setEffectivenessRating(rating)}
+                            className="p-0.5 text-amber-400 hover:scale-110 transition-transform cursor-pointer"
+                          >
+                            <Star size={20} className={rating <= effectivenessRating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -810,13 +914,16 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
               <div className="space-y-4 max-h-[550px] overflow-y-auto pr-1.5 scrollbar-thin">
                 {comments.map(comment => {
                   const isAuthorExpert = comment.author?.role === 'EXPERT' || comment.author?.role === 'ADMIN';
+                  const isExp = comment.isExperience;
                   return (
                     <div 
                       key={comment.id} 
                       className={`flex gap-3.5 p-5 rounded-3xl border transition-all duration-300 hover:shadow-md hover:shadow-indigo-500/5 ${
-                        isAuthorExpert
-                          ? 'bg-gradient-to-br from-indigo-50/40 via-indigo-50/20 to-primary-50/10 border-indigo-100/60 shadow-sm'
-                          : 'bg-white border-slate-100'
+                        isExp
+                          ? 'bg-gradient-to-br from-emerald-50/50 via-white to-emerald-50/10 border-emerald-100 shadow-sm'
+                          : isAuthorExpert
+                            ? 'bg-gradient-to-br from-indigo-50/40 via-indigo-50/20 to-primary-50/10 border-indigo-100/60 shadow-sm'
+                            : 'bg-white border-slate-100'
                       }`}
                     >
                       <div className="relative shrink-0">
@@ -828,6 +935,11 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                         {isAuthorExpert && (
                           <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-indigo-600 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
                             <ShieldCheck size={9} className="text-white" />
+                          </div>
+                        )}
+                        {isExp && !isAuthorExpert && (
+                          <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-emerald-600 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                            <HeartPulse size={9} className="text-white" />
                           </div>
                         )}
                       </div>
@@ -843,6 +955,11 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                                   UZMAN
                                 </span>
                               )}
+                              {isExp && (
+                                <span className="bg-emerald-600 text-white text-[8px] px-2 py-0.5 rounded-md font-extrabold uppercase tracking-wider flex items-center gap-0.5">
+                                  <Star size={8} className="fill-white" /> EV DENEYİMİ
+                                </span>
+                              )}
                             </div>
                             {isAuthorExpert && comment.author?.expertTitle && (
                               <p className="text-[10px] font-semibold text-indigo-600/80 mt-0.5">
@@ -854,6 +971,18 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                             {formatRelative(comment.createdAt)}
                           </span>
                         </div>
+                        {isExp && (
+                          <div className="flex items-center gap-3 mt-1 mb-2 bg-emerald-50/50 px-2.5 py-1 rounded-xl w-fit border border-emerald-100/30 text-[10px] font-bold text-emerald-800">
+                            <span>Deneme Süresi: {comment.durationTried}</span>
+                            <span className="w-1 h-1 bg-emerald-300 rounded-full" />
+                            <span className="flex items-center gap-0.5">
+                              Fayda: 
+                              {[1, 2, 3, 4, 5].map(star => (
+                                <Star key={star} size={9} className={star <= (comment.effectivenessRating || 0) ? 'fill-emerald-600 text-emerald-600' : 'text-slate-300'} />
+                              ))}
+                            </span>
+                          </div>
+                        )}
                         <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap font-medium">
                           {comment.content}
                         </p>
@@ -933,60 +1062,143 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
               />
             </div>
 
-            {isExpert && (
-              <div className="flex gap-2">
-                <Button 
-                  variant={showMyArticles ? 'primary' : 'outline'} 
-                  onClick={() => { setShowMyArticles(!showMyArticles); setActiveCategory(''); setPage(0); }}
-                  className="rounded-xl shadow-sm whitespace-nowrap"
-                >
-                  <FileText size={18} className="mr-2" />
-                  İçeriklerim
-                </Button>
-                <Button onClick={handleOpenCreate} className="rounded-xl shadow-md shadow-primary-200 hover:-translate-y-0.5 transition-transform whitespace-nowrap">
-                  <Plus size={18} className="mr-2" />
-                  Yeni İçerik
-                </Button>
-              </div>
-            )}
+            <div className="flex gap-2">
+              <Button 
+                variant={showBookmarksOnly ? 'primary' : 'outline'} 
+                onClick={() => { setShowBookmarksOnly(!showBookmarksOnly); setShowMyArticles(false); setActiveCategory(''); setPage(0); }}
+                className="rounded-xl shadow-sm whitespace-nowrap"
+              >
+                <Bookmark size={18} className="mr-2" />
+                Kaydedilenler
+              </Button>
+              {isExpert && (
+                <>
+                  <Button 
+                    variant={showMyArticles ? 'primary' : 'outline'} 
+                    onClick={() => { setShowMyArticles(!showMyArticles); setShowBookmarksOnly(false); setActiveCategory(''); setPage(0); }}
+                    className="rounded-xl shadow-sm whitespace-nowrap"
+                  >
+                    <FileText size={18} className="mr-2" />
+                    İçeriklerim
+                  </Button>
+                  <Button onClick={handleOpenCreate} className="rounded-xl shadow-md shadow-primary-200 hover:-translate-y-0.5 transition-transform whitespace-nowrap">
+                    <Plus size={18} className="mr-2" />
+                    Yeni İçerik
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Category Tabs Container */}
-      <div className="bg-slate-50/50 border border-slate-100/80 rounded-3xl p-3 sm:p-4 my-3">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Kategoriye Göre Filtrele</span>
-          {activeCategory && (
-            <button
-              onClick={() => { setActiveCategory(''); setPage(0); setShowMyArticles(false); }}
-              className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
-            >
-              Filtreyi Temizle
-            </button>
-          )}
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
-          {CATEGORIES.map(cat => {
-            const IconComponent = CATEGORY_ICONS[cat.key] || LayoutGrid;
-            const isActive = activeCategory === cat.key && !showMyArticles;
-            return (
+      {/* Category and Content Type Filters */}
+      <div className="bg-slate-50/50 border border-slate-100/80 rounded-3xl p-3 sm:p-4 my-3 space-y-4">
+        {/* Category Tabs */}
+        <div>
+          <div className="flex items-center justify-between mb-2.5 px-1">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Kategoriye Göre Filtrele</span>
+            {activeCategory && (
               <button
-                key={cat.key}
-                onClick={() => { setActiveCategory(cat.key); setPage(0); setShowMyArticles(false); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border-2 hover:-translate-y-0.5 transform duration-200 ${
-                  isActive
-                    ? CATEGORY_ACTIVE_COLORS[cat.key] || 'bg-indigo-50 text-indigo-700 border-indigo-200/60 shadow-sm'
-                    : 'bg-white border-slate-100 hover:border-slate-200 text-slate-500 hover:text-slate-700 shadow-sm'
-                }`}
+                onClick={() => { setActiveCategory(''); setPage(0); setShowMyArticles(false); }}
+                className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
               >
-                <IconComponent size={14} className={isActive ? 'opacity-90' : 'text-slate-400'} />
-                <span>{cat.label}</span>
+                Filtreyi Temizle
               </button>
-            );
-          })}
+            )}
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+            {CATEGORIES.map(cat => {
+              const IconComponent = CATEGORY_ICONS[cat.key] || LayoutGrid;
+              const isActive = activeCategory === cat.key && !showMyArticles;
+              return (
+                <button
+                  key={cat.key}
+                  onClick={() => { setActiveCategory(cat.key); setPage(0); setShowMyArticles(false); }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border-2 hover:-translate-y-0.5 transform duration-200 shrink-0 ${
+                    isActive
+                      ? CATEGORY_ACTIVE_COLORS[cat.key] || 'bg-indigo-50 text-indigo-700 border-indigo-200/60 shadow-sm'
+                      : 'bg-white border-slate-100 hover:border-slate-200 text-slate-500 hover:text-slate-700 shadow-sm'
+                  }`}
+                >
+                  <IconComponent size={14} className={isActive ? 'opacity-90' : 'text-slate-400'} />
+                  <span>{cat.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Content Type Filter */}
+        <div className="border-t border-slate-200/40 pt-3">
+          <div className="flex items-center justify-between mb-2.5 px-1">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">İçerik Türüne Göre Filtrele</span>
+            {activeContentType && (
+              <button
+                onClick={() => { setActiveContentType(''); setPage(0); }}
+                className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
+              >
+                Filtreyi Temizle
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+            {CONTENT_TYPE_TABS.map(tab => {
+              const isActive = activeContentType === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => { setActiveContentType(tab.key); setPage(0); }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border-2 hover:-translate-y-0.5 transform duration-200 shrink-0 ${
+                    isActive
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60 shadow-sm'
+                      : 'bg-white border-slate-100 hover:border-slate-200 text-slate-500 hover:text-slate-700 shadow-sm'
+                  }`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
+
+      {/* Recommendations */}
+      {user?.role === 'PARENT' && recommendations.length > 0 && !showBookmarksOnly && !showMyArticles && (
+        <div className="bg-gradient-to-br from-indigo-50/80 via-white to-primary-50/50 border border-primary-100/50 rounded-3xl p-5 sm:p-6 my-4 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <Brain size={20} className="text-indigo-600 animate-pulse" />
+            <span className="text-sm font-extrabold text-slate-800">Çocuğunuzun Gelişim Alanlarına Özel Öneriler</span>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {recommendations.map(article => {
+              const view = getArticleView(article);
+              return (
+                <div
+                  key={article.id}
+                  onClick={() => handleViewArticle(article)}
+                  className="group relative flex flex-col bg-white rounded-2xl border border-slate-100 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                >
+                  <button
+                    onClick={(e) => handleToggleBookmark(article.id, e)}
+                    className="absolute right-3 top-3 p-1.5 rounded-xl bg-slate-50/80 hover:bg-slate-100 hover:text-indigo-600 border border-slate-100/50 transition-colors z-10 cursor-pointer"
+                  >
+                    <Bookmark size={14} className={article.bookmarked ? 'fill-indigo-600 text-indigo-600' : 'text-slate-400'} />
+                  </button>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${CATEGORY_COLORS[article.category || 'Genel'] || 'bg-gray-100 text-gray-700'}`}>
+                      {article.category}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2 pr-6 mb-1 group-hover:text-indigo-600 transition-colors">{article.title}</h4>
+                  <p className="text-xs text-slate-500 line-clamp-2 mt-1 flex-1">{view.text ? view.text.replace(/<[^>]+>/g, '').substring(0, 80) : ''}...</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Analytics Dashboard */}
       {showMyArticles && analytics && (
@@ -1058,9 +1270,15 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                 <div 
                   key={article.id} 
                   onClick={() => handleViewArticle(article)} 
-                  className="group flex flex-col bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer animate-in fade-in slide-in-from-bottom-4"
+                  className="group relative flex flex-col bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer animate-in fade-in slide-in-from-bottom-4"
                   style={{ animationFillMode: 'both', animationDelay: `${index * 40}ms` }}
                 >
+                  <button
+                    onClick={(e) => handleToggleBookmark(article.id, e)}
+                    className="absolute right-4 top-4 p-1.5 rounded-xl bg-white/80 backdrop-blur-sm hover:bg-white hover:text-indigo-600 border border-slate-100 transition-all z-10 cursor-pointer shadow-sm"
+                  >
+                    <Bookmark size={15} className={article.bookmarked ? 'fill-indigo-600 text-indigo-600' : 'text-slate-400'} />
+                  </button>
                   {/* Content type preview thumbnail for video */}
                   {parsed.type === 'video' && parsed.mediaUrl && (() => {
                     const ytId = getYouTubeId(parsed.mediaUrl);

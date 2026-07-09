@@ -27,49 +27,82 @@ public class KnowledgeArticleController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<KnowledgeArticleDto>>> getAll(
+            @CurrentUser UserPrincipal principal,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
+        UUID userId = principal != null ? principal.getId() : null;
         return ResponseEntity.ok(ApiResponse.success(
-                service.getPublishedArticles(PageRequest.of(page, size, Sort.by("createdAt").descending()))));
+                service.getPublishedArticles(PageRequest.of(page, size, Sort.by("createdAt").descending()), userId)));
+    }
+
+    @GetMapping("/recommendations")
+    public ResponseEntity<ApiResponse<java.util.List<KnowledgeArticleDto>>> getRecommendations(
+            @CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(service.getRecommendedArticles(principal.getId())));
+    }
+
+    @GetMapping("/bookmarks")
+    public ResponseEntity<ApiResponse<java.util.List<KnowledgeArticleDto>>> getBookmarks(
+            @CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(service.getBookmarkedArticles(principal.getId())));
     }
 
     @GetMapping("/category/{category}")
     public ResponseEntity<ApiResponse<Page<KnowledgeArticleDto>>> getByCategory(
+            @CurrentUser UserPrincipal principal,
             @PathVariable String category,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
+        UUID userId = principal != null ? principal.getId() : null;
         return ResponseEntity.ok(ApiResponse.success(
-                service.getByCategory(category, PageRequest.of(page, size))));
+                service.getByCategory(category, PageRequest.of(page, size), userId)));
     }
 
     @GetMapping("/format/{format}")
     public ResponseEntity<ApiResponse<Page<KnowledgeArticleDto>>> getByFormat(
+            @CurrentUser UserPrincipal principal,
             @PathVariable String format,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
+        UUID userId = principal != null ? principal.getId() : null;
         return ResponseEntity.ok(ApiResponse.success(
-                service.getByFormat(format, PageRequest.of(page, size))));
+                service.getByFormat(format, PageRequest.of(page, size), userId)));
     }
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<KnowledgeArticleDto>>> search(
+            @CurrentUser UserPrincipal principal,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String format,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
+        UUID userId = principal != null ? principal.getId() : null;
         return ResponseEntity.ok(ApiResponse.success(
-                service.filterArticles(q, category, format, PageRequest.of(page, size, Sort.by("createdAt").descending()))));
+                service.filterArticles(q, category, format, PageRequest.of(page, size, Sort.by("createdAt").descending()), userId)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<KnowledgeArticleDto>> getOne(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(service.getArticle(id)));
+    public ResponseEntity<ApiResponse<KnowledgeArticleDto>> getOne(
+            @CurrentUser UserPrincipal principal,
+            @PathVariable UUID id) {
+        UUID userId = principal != null ? principal.getId() : null;
+        return ResponseEntity.ok(ApiResponse.success(service.getArticle(id, userId)));
+    }
+
+    @PostMapping("/{id}/bookmark")
+    public ResponseEntity<ApiResponse<Boolean>> toggleBookmark(
+            @PathVariable UUID id,
+            @CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(service.toggleBookmark(id, principal.getId())));
     }
 
     @GetMapping("/{id}/related")
-    public ResponseEntity<ApiResponse<java.util.List<KnowledgeArticleDto>>> getRelated(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(service.getRelatedArticles(id)));
+    public ResponseEntity<ApiResponse<java.util.List<KnowledgeArticleDto>>> getRelated(
+            @CurrentUser UserPrincipal principal,
+            @PathVariable UUID id) {
+        UUID userId = principal != null ? principal.getId() : null;
+        return ResponseEntity.ok(ApiResponse.success(service.getRelatedArticles(id, userId)));
     }
 
     @GetMapping("/my")

@@ -43,6 +43,15 @@ import { userService } from '@/services/userService';
 import { cn } from '@/utils/cn';
 import { TURKISH_CITIES } from '@/constants/turkishCities';
 
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed';
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
+
 function readPreference(key: string, fallback = true) {
   return localStorage.getItem(key) !== String(!fallback);
 }
@@ -229,14 +238,14 @@ function SettingsCore() {
   const [a11yKeyboardFocus, setA11yKeyboardFocus] = useState(() => localStorage.getItem('access-keyboard-focus') === 'true');
 
   // PWA states
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [swDevEnabled, setSwDevEnabled] = useState(localStorage.getItem('enable-sw-dev') === 'true');
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);

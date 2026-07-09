@@ -164,15 +164,19 @@ export function NotificationBell() {
 
     subscribe(topic, (payload: unknown) => {
       const incoming = Array.isArray(payload) ? (payload as Notification[]) : [payload as Notification];
+      const unreadIncoming = incoming.filter(n => !n.read);
       // Show browser notification for each new unread item
       if ('Notification' in window && Notification.permission === 'granted') {
-        incoming.filter(n => !n.read).forEach(n => {
+        unreadIncoming.forEach(n => {
           new window.Notification(n.title, {
             body: n.body ?? undefined,
             icon: '/logo192.png',
             tag: n.id,
           });
         });
+      }
+      if (unreadIncoming.length > 0) {
+        playNotificationSound();
       }
       setNotifications(prev => {
         // Merge: put new notifications at the top, remove duplicates

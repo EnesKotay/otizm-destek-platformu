@@ -22,6 +22,7 @@ public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArtic
     List<KnowledgeArticle> findByPendingReviewTrueOrderByCreatedAtDesc();
     long countByPendingReviewTrue();
     List<KnowledgeArticle> findTop4ByCategoryAndPublishedTrueAndIdNotOrderByViewCountDesc(String category, UUID id);
+    List<KnowledgeArticle> findTop6ByCategoryInAndPublishedTrueOrderByCreatedAtDesc(List<String> categories);
 
     @Query("SELECT SUM(a.viewCount) FROM KnowledgeArticle a WHERE a.author.id = :authorId")
     Long sumViewCountByAuthorId(@Param("authorId") UUID authorId);

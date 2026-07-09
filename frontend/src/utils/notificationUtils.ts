@@ -1,4 +1,4 @@
-import { Calendar, Users, MessageSquare, ClipboardList, UserPlus, ShieldCheck, AlertTriangle, FileText, CalendarClock, AlertCircle, Info, MessageCircle, Bell, type LucideIcon } from 'lucide-react';
+import { Calendar, Users, MessageSquare, ClipboardList, UserPlus, ShieldCheck, AlertTriangle, FileText, CalendarClock, AlertCircle, Info, Bell, type LucideIcon } from 'lucide-react';
 
 // ── Bildirim Kategorileri ─────────────────────────────
 export type NotificationCategory = 'all' | 'appointments' | 'messages' | 'forum' | 'tasks' | 'social' | 'system';

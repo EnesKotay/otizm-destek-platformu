@@ -3,6 +3,11 @@ package com.autismsupport.platform.service;
 import com.autismsupport.platform.dto.ExpertAnalyticsDto;
 import com.autismsupport.platform.dto.KnowledgeArticleDto;
 import com.autismsupport.platform.dto.UserDto;
+import com.autismsupport.platform.model.Child;
+import com.autismsupport.platform.model.Tag;
+import com.autismsupport.platform.model.KnowledgeBookmark;
+import com.autismsupport.platform.repository.ChildRepository;
+import com.autismsupport.platform.repository.KnowledgeBookmarkRepository;
 import com.autismsupport.platform.model.KnowledgeArticle;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.model.UserRole;
@@ -15,6 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -24,48 +31,79 @@ public class KnowledgeArticleService {
     private final KnowledgeArticleRepository articleRepository;
     private final UserRepository userRepository;
     private final ArticleCommentRepository commentRepository;
+    private final KnowledgeBookmarkRepository bookmarkRepository;
+    private final ChildRepository childRepository;
 
     @Transactional(readOnly = true)
-    public Page<KnowledgeArticleDto> getPublishedArticles(Pageable pageable) {
-        return articleRepository.findByPublishedTrueOrderByCreatedAtDesc(pageable).map(this::toDto);
+    public Page<KnowledgeArticleDto> getPublishedArticles(Pageable pageable, UUID userId) {
+        Set<UUID> bookmarkedIds = getBookmarkedArticleIdsForUser(userId);
+        return articleRepository.findByPublishedTrueOrderByCreatedAtDesc(pageable).map(a -> {
+            KnowledgeArticleDto dto = toDto(a);
+            dto.setBookmarked(bookmarkedIds.contains(a.getId()));
+            return dto;
+        });
     }
 
     @Transactional(readOnly = true)
-    public Page<KnowledgeArticleDto> getByCategory(String category, Pageable pageable) {
-        return articleRepository.findByCategoryAndPublishedTrue(category, pageable).map(this::toDto);
+    public Page<KnowledgeArticleDto> getByCategory(String category, Pageable pageable, UUID userId) {
+        Set<UUID> bookmarkedIds = getBookmarkedArticleIdsForUser(userId);
+        return articleRepository.findByCategoryAndPublishedTrue(category, pageable).map(a -> {
+            KnowledgeArticleDto dto = toDto(a);
+            dto.setBookmarked(bookmarkedIds.contains(a.getId()));
+            return dto;
+        });
     }
 
     @Transactional(readOnly = true)
-    public Page<KnowledgeArticleDto> getByFormat(String format, Pageable pageable) {
-        return articleRepository.findByFormatAndPublishedTrue(format, pageable).map(this::toDto);
+    public Page<KnowledgeArticleDto> getByFormat(String format, Pageable pageable, UUID userId) {
+        Set<UUID> bookmarkedIds = getBookmarkedArticleIdsForUser(userId);
+        return articleRepository.findByFormatAndPublishedTrue(format, pageable).map(a -> {
+            KnowledgeArticleDto dto = toDto(a);
+            dto.setBookmarked(bookmarkedIds.contains(a.getId()));
+            return dto;
+        });
     }
 
     @Transactional(readOnly = true)
-    public Page<KnowledgeArticleDto> filterArticles(String q, String category, String format, Pageable pageable) {
+    public Page<KnowledgeArticleDto> filterArticles(String q, String category, String format, Pageable pageable, UUID userId) {
         String qParam = q == null ? "" : q.trim();
         String categoryParam = category == null ? "" : category;
         String formatParam = format == null ? "" : format;
-        return articleRepository.filterPublished(qParam, categoryParam, formatParam, pageable).map(this::toDto);
+        Set<UUID> bookmarkedIds = getBookmarkedArticleIdsForUser(userId);
+        return articleRepository.filterPublished(qParam, categoryParam, formatParam, pageable).map(a -> {
+            KnowledgeArticleDto dto = toDto(a);
+            dto.setBookmarked(bookmarkedIds.contains(a.getId()));
+            return dto;
+        });
     }
 
     @Transactional(readOnly = true)
-    public List<KnowledgeArticleDto> getRelatedArticles(UUID id) {
+    public List<KnowledgeArticleDto> getRelatedArticles(UUID id, UUID userId) {
         KnowledgeArticle article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
         if (article.getCategory() == null || article.getCategory().isBlank()) {
             return List.of();
         }
+        Set<UUID> bookmarkedIds = getBookmarkedArticleIdsForUser(userId);
         return articleRepository.findTop4ByCategoryAndPublishedTrueAndIdNotOrderByViewCountDesc(article.getCategory(), id)
-                .stream().map(this::toDto).collect(Collectors.toList());
+                .stream().map(a -> {
+                    KnowledgeArticleDto dto = toDto(a);
+                    dto.setBookmarked(bookmarkedIds.contains(a.getId()));
+                    return dto;
+                }).collect(Collectors.toList());
     }
 
     @Transactional
-    public KnowledgeArticleDto getArticle(UUID id) {
+    public KnowledgeArticleDto getArticle(UUID id, UUID userId) {
         KnowledgeArticle article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
         article.setViewCount(article.getViewCount() + 1);
         articleRepository.save(article);
-        return toDto(article);
+        KnowledgeArticleDto dto = toDto(article);
+        if (userId != null) {
+            dto.setBookmarked(bookmarkRepository.existsByUserIdAndArticleId(userId, id));
+        }
+        return dto;
     }
 
     @Transactional
@@ -207,5 +245,88 @@ public class KnowledgeArticleService {
                 .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
         article.setPendingReview(false);
         return toDto(articleRepository.save(article));
+    }
+
+    @Transactional(readOnly = true)
+    public List<KnowledgeArticleDto> getRecommendedArticles(UUID userId) {
+        List<Child> children = childRepository.findByParentIdWithTags(userId);
+        if (children.isEmpty()) {
+            return List.of();
+        }
+
+        Set<String> tagCategories = children.stream()
+                .flatMap(c -> c.getTags().stream())
+                .map(Tag::getCategory)
+                .collect(Collectors.toSet());
+
+        if (tagCategories.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> articleCategories = tagCategories.stream()
+                .map(this::mapTagCategoryToArticleCategory)
+                .filter(c -> c != null)
+                .collect(Collectors.toList());
+
+        if (articleCategories.isEmpty()) {
+            return List.of();
+        }
+
+        Set<UUID> bookmarkedIds = getBookmarkedArticleIdsForUser(userId);
+        return articleRepository.findTop6ByCategoryInAndPublishedTrueOrderByCreatedAtDesc(articleCategories)
+                .stream().map(a -> {
+                    KnowledgeArticleDto dto = toDto(a);
+                    dto.setBookmarked(bookmarkedIds.contains(a.getId()));
+                    return dto;
+                }).collect(Collectors.toList());
+    }
+
+    private String mapTagCategoryToArticleCategory(String tagCategory) {
+        if (tagCategory == null) return null;
+        switch (tagCategory.toUpperCase()) {
+            case "ILETISIM": return "İletişim";
+            case "SOSYAL": return "Sosyal Beceriler";
+            case "DUYUSAL": return "Duyusal Gelişim";
+            case "DAVRANIS": return "Davranış";
+            case "EGITIM": return "Eğitim";
+            case "MOTOR": return "Genel";
+            default: return null;
+        }
+    }
+
+    @Transactional
+    public boolean toggleBookmark(UUID articleId, UUID userId) {
+        Optional<KnowledgeBookmark> existing = bookmarkRepository.findByUserIdAndArticleId(userId, articleId);
+        if (existing.isPresent()) {
+            bookmarkRepository.delete(existing.get());
+            return false;
+        } else {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+            KnowledgeArticle article = articleRepository.findById(articleId)
+                    .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
+
+            KnowledgeBookmark bookmark = KnowledgeBookmark.builder()
+                    .user(user)
+                    .article(article)
+                    .build();
+            bookmarkRepository.save(bookmark);
+            return true;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<KnowledgeArticleDto> getBookmarkedArticles(UUID userId) {
+        List<KnowledgeArticle> articles = bookmarkRepository.findArticlesByUserId(userId);
+        return articles.stream().map(a -> {
+            KnowledgeArticleDto dto = toDto(a);
+            dto.setBookmarked(true);
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    private Set<UUID> getBookmarkedArticleIdsForUser(UUID userId) {
+        if (userId == null) return Set.of();
+        return bookmarkRepository.findArticleIdsByUserId(userId);
     }
 }

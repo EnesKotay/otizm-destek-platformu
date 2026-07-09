@@ -71,8 +71,9 @@ function removeGameFeedbackForDay(
   gameId: string,
 ) {
   const dailyKey = getGameFeedbackKey(todayKey, gameId);
-  const { [dailyKey]: _daily, [gameId]: _legacy, ...rest } = gameFeedback;
-  return rest;
+  return Object.fromEntries(
+    Object.entries(gameFeedback).filter(([key]) => key !== dailyKey && key !== gameId),
+  );
 }
 
 export function toggleGameSessionForDay(params: {

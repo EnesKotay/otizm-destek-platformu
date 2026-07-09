@@ -17,6 +17,7 @@ public class KnowledgeArticleDto {
     private String sourceName;
     private String sourceUrl;
     private boolean pendingReview;
+    private boolean bookmarked;
     private UserDto author;
     private boolean published;
     private int viewCount;

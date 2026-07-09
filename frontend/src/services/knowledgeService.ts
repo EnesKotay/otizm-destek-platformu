@@ -27,8 +27,18 @@ export const knowledgeService = {
     api.post<{ data: KnowledgeArticle }>(`/knowledge/${id}/publish`).then(r => r.data.data),
   getComments: (articleId: string, page = 0, size = 20) =>
     api.get<{ data: PageResponse<ArticleComment> }>(`/knowledge/${articleId}/comments`, { params: { page, size } }).then(r => r.data.data),
-  addComment: (articleId: string, content: string) =>
-    api.post<{ data: ArticleComment }>(`/knowledge/${articleId}/comments`, { content }).then(r => r.data.data),
+  addComment: (
+    articleId: string,
+    content: string,
+    experienceData?: { isExperience: boolean; durationTried?: string; effectivenessRating?: number }
+  ) =>
+    api.post<{ data: ArticleComment }>(`/knowledge/${articleId}/comments`, { content, ...experienceData }).then(r => r.data.data),
+  getRecommendations: () =>
+    api.get<{ data: KnowledgeArticle[] }>('/knowledge/recommendations').then(r => r.data.data),
+  getBookmarks: () =>
+    api.get<{ data: KnowledgeArticle[] }>('/knowledge/bookmarks').then(r => r.data.data),
+  toggleBookmark: (id: string) =>
+    api.post<{ data: boolean }>(`/knowledge/${id}/bookmark`).then(r => r.data.data),
   generateAiDraft: (prompt: string) =>
     api.post<{ data: { title: string; category: string; content: string } }>('/knowledge/ai-draft', { prompt }).then(r => r.data.data),
 };

@@ -36,6 +36,7 @@ export function NotificationsPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     fetchPage(0, true).finally(() => setLoading(false));
   }, [fetchPage]);

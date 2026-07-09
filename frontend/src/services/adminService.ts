@@ -1,5 +1,6 @@
 import api from './api';
 import type { AdminStats, ApiResponse, Report, User } from '@/types';
+import type { WeeklyQuestion } from './communityService';
 
 export interface AuditLogEntry {
   id: string;
@@ -182,5 +183,5 @@ export const adminService = {
     }>>('/admin/metrics').then(r => r.data.data),
 
   generateWeeklyQuestionWithAI: () =>
-    api.post<ApiResponse<any>>('/admin/weekly-questions/generate-ai').then(r => r.data.data),
+    api.post<ApiResponse<WeeklyQuestion>>('/admin/weekly-questions/generate-ai').then(r => r.data.data),
 };

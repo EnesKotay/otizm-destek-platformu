@@ -162,6 +162,7 @@ export function OnboardingPage() {
   }, [selectedTagIds, tagsByCategory]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTagsLoading(true);
     setTagsLoadError(false);
     tagService.getTagsByCategory()

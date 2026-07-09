@@ -572,6 +572,7 @@ export function SimilarFamiliesPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMatchingPreferences(readJsonMap(preferencesStorageKey, DEFAULT_MATCHING_PREFERENCES));
     setMatchFeedback(readJsonMap(feedbackStorageKey, {} as Record<string, MatchFeedback>));
     setCircleNotes(readJsonMap(circleNotesStorageKey, {} as Record<string, string>));
@@ -771,8 +772,7 @@ export function SimilarFamiliesPage() {
     setMatchFeedback(prev => {
       const current = prev[parentId];
       if (current === feedback) {
-        const { [parentId]: _removed, ...rest } = prev;
-        return rest;
+        return Object.fromEntries(Object.entries(prev).filter(([id]) => id !== parentId));
       }
       return { ...prev, [parentId]: feedback };
     });

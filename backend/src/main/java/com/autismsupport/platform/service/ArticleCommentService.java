@@ -36,6 +36,9 @@ public class ArticleCommentService {
                 .article(article)
                 .author(author)
                 .content(dto.getContent())
+                .isExperience(dto.isExperience())
+                .durationTried(dto.getDurationTried())
+                .effectivenessRating(dto.getEffectivenessRating())
                 .build();
 
         return toDto(commentRepository.save(comment));
@@ -55,6 +58,9 @@ public class ArticleCommentService {
                 .content(c.getContent())
                 .articleId(c.getArticle().getId())
                 .author(authorDto)
+                .isExperience(c.isExperience())
+                .durationTried(c.getDurationTried())
+                .effectivenessRating(c.getEffectivenessRating())
                 .createdAt(c.getCreatedAt())
                 .build();
     }

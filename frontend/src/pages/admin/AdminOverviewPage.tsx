@@ -18,7 +18,7 @@ import {
   Power
 } from 'lucide-react';
 import { adminService, type AuditLogEntry } from '@/services/adminService';
-import { communityService } from '@/services/communityService';
+import { communityService, type WeeklyQuestion } from '@/services/communityService';
 import type { AdminStats, User, Report } from '@/types';
 import { formatDate } from '@/utils/date';
 import { toast } from '@/store/toastStore';
@@ -29,7 +29,7 @@ export function AdminOverviewPage() {
   const [pendingReports, setPendingReports] = useState<Report[]>([]);
   const [recentLogs, setRecentLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentQuestion, setCurrentQuestion] = useState<any>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<WeeklyQuestion | null>(null);
   const [generatingAi, setGeneratingAi] = useState(false);
 
   // System Health — gerçek API metrikleri

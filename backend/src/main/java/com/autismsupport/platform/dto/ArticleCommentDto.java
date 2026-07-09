@@ -10,5 +10,8 @@ public class ArticleCommentDto {
     private String content;
     private UUID articleId;
     private UserDto author;
+    private boolean isExperience;
+    private String durationTried;
+    private Integer effectivenessRating;
     private LocalDateTime createdAt;
 }
