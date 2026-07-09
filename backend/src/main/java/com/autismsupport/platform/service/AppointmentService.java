@@ -294,7 +294,8 @@ public class AppointmentService {
                 "APPOINTMENT_REQUEST",
                 "Yeni randevu talebi",
                 parent.getFullName() + " sizden " + dto.getDate() + " icin randevu talep etti." + notifSuffix,
-                "/randevular"
+                "/randevular",
+                appointment.getId()
         );
         auditLogService.log(parent, "APPOINTMENT_CREATED", "APPOINTMENT", appointment.getId(), Map.of(
                 "expertId", expert.getId().toString(),
@@ -380,7 +381,8 @@ public class AppointmentService {
                 "APPOINTMENT_CANCELLED",
                 "Randevu iptal edildi",
                 message,
-                "/randevular"
+                "/randevular",
+                appointment.getId()
         );
         auditLogService.log(
                 userRepository.findById(userId).orElse(null),
@@ -416,7 +418,8 @@ public class AppointmentService {
                 "APPOINTMENT_CONFIRMED",
                 "Randevunuz onaylandi",
                 appointment.getExpert().getFullName() + " randevunuzu onayladi.",
-                "/randevular"
+                "/randevular",
+                appointment.getId()
         );
         auditLogService.log(
                 userRepository.findById(expertId).orElse(null),
@@ -501,7 +504,8 @@ public class AppointmentService {
                     "APPOINTMENT_RESCHEDULED",
                     "Randevu yeniden planlandi",
                     appointment.getAppointmentDate() + " tarihli randevu " + appointment.getAppointmentTime().format(TIME_FORMAT) + " saatine tasindi.",
-                    "/randevular"
+                    "/randevular",
+                    appointment.getId()
             );
         }
         auditLogService.log(userRepository.findById(userId).orElse(null), "APPOINTMENT_RESCHEDULED", "APPOINTMENT", appointment.getId(), Map.of(
@@ -547,7 +551,8 @@ public class AppointmentService {
                             "MEETING_LINK_ADDED",
                             "Görüşme linki eklendi",
                             appointment.getExpert().getFullName() + " online randevunuz için görüşme linki ekledi.",
-                            "/randevular"
+                            "/randevular",
+                            appointment.getId()
                     );
                 }
             }
@@ -599,7 +604,8 @@ public class AppointmentService {
                     "SESSION_NOTES_ADDED",
                     "Seans notu eklendi",
                     appointment.getExpert().getFullName() + " tamamlanan seans icin not ekledi.",
-                    "/randevular"
+                    "/randevular",
+                    appointment.getId()
             );
         }
         auditLogService.log(userRepository.findById(expertId).orElse(null), "SESSION_NOTES_UPDATED", "APPOINTMENT", appointment.getId(), Map.of());
@@ -631,7 +637,8 @@ public class AppointmentService {
                     "APPOINTMENT_COMPLETED",
                     "Seansiniz tamamlandi",
                     appointment.getExpert().getFullName() + " ile olan seansiniz tamamlandi olarak isaretlendi.",
-                    "/randevular"
+                    "/randevular",
+                    appointment.getId()
             );
         }
 
@@ -1028,7 +1035,8 @@ public class AppointmentService {
                 "APPOINTMENT_RATED",
                 "Randevu degerlendirildi",
                 appointment.getParent().getFullName() + " randevuyu " + rating + "/5 puan ile degerlendirdi.",
-                "/randevular"
+                "/randevular",
+                appointment.getId()
         );
         auditLogService.log(
                 userRepository.findById(parentId).orElse(null),

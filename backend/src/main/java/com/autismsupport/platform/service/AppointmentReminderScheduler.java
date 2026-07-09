@@ -59,7 +59,8 @@ public class AppointmentReminderScheduler {
                         "Randevu Hatirlatmasi",
                         String.format("Yarin %s saat %s — %s ile %s randevunuz var.",
                                 dateStr, timeStr, expertName, apptType),
-                        "/randevular"
+                        "/randevular",
+                        appt.getId()
                 );
                 emailService.sendAppointmentReminderEmail(
                         appt.getParent().getEmail(),
@@ -78,7 +79,8 @@ public class AppointmentReminderScheduler {
                         "Randevu Hatirlatmasi",
                         String.format("Yarin %s saat %s — %s ile %s randevunuz var.",
                                 dateStr, timeStr, parentName, apptType),
-                        "/randevular"
+                        "/randevular",
+                        appt.getId()
                 );
                 emailService.sendAppointmentReminderEmail(
                         appt.getExpert().getEmail(),
@@ -116,7 +118,8 @@ public class AppointmentReminderScheduler {
                                 "Randevunuz 2 saat sonra",
                                 String.format("Bugun saat %s'de %s ile randevunuz yaklasiyor.",
                                         timeStr, appt.getExpert().getFullName()),
-                                "/randevular"
+                                "/randevular",
+                                appt.getId()
                         );
                         emailService.sendAppointmentReminderEmail(
                                 appt.getParent().getEmail(),
@@ -135,7 +138,8 @@ public class AppointmentReminderScheduler {
                                 "Randevunuz 2 saat sonra",
                                 String.format("Bugun saat %s'de %s ile randevunuz yaklasiyor.",
                                         timeStr, parentName),
-                                "/randevular"
+                                "/randevular",
+                                appt.getId()
                         );
                         emailService.sendAppointmentReminderEmail(
                                 appt.getExpert().getEmail(),
@@ -172,7 +176,8 @@ public class AppointmentReminderScheduler {
                         "APPOINTMENT_CANCELLED",
                         "Randevu otomatik iptal edildi",
                         appt.getExpert().getFullName() + " randevunuzu 48 saat icinde onaylamadigi icin otomatik iptal edildi.",
-                        "/randevular"
+                        "/randevular",
+                        appt.getId()
                 );
             }
             notificationService.createNotification(
@@ -180,7 +185,8 @@ public class AppointmentReminderScheduler {
                     "APPOINTMENT_CANCELLED",
                     "Onaylanmayan randevu iptal edildi",
                     appt.getAppointmentDate() + " tarihli randevu 48 saat icerisinde onaylanmadigi icin otomatik iptal edildi.",
-                    "/randevular"
+                    "/randevular",
+                    appt.getId()
             );
         }
         log.info("48 saat icerisinde onaylanmayan {} randevu otomatik iptal edildi.", pending.size());
@@ -210,7 +216,8 @@ public class AppointmentReminderScheduler {
                         "APPOINTMENT_COMPLETED",
                         "Seansiniz tamamlandi",
                         appt.getExpert().getFullName() + " ile olan seansiniz tamamlandi olarak isaretlendi.",
-                        "/randevular"
+                        "/randevular",
+                        appt.getId()
                 );
             }
             completedCount++;

@@ -26,6 +26,11 @@ public class NotificationService {
 
     @Transactional
     public void createNotification(UUID userId, String type, String title, String body, String link) {
+        createNotification(userId, type, title, body, link, null);
+    }
+
+    @Transactional
+    public void createNotification(UUID userId, String type, String title, String body, String link, UUID appointmentId) {
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) return;
         Notification notification = Notification.builder()
@@ -38,7 +43,7 @@ public class NotificationService {
         Notification saved = notificationRepository.save(notification);
         webPushService.sendToUser(userId, title, body, link);
         if (isAppointmentNotification(type, link)) {
-            fcmPushService.sendAppointmentNotification(userId, title, body, null);
+            fcmPushService.sendAppointmentNotification(userId, title, body, appointmentId);
         }
         
         try {
