@@ -1,10 +1,15 @@
 import { useState } from 'react';
-import { CheckCircle2, Lightbulb, Plus, Trash2, TrendingUp, AlertTriangle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { CheckCircle2, Lightbulb, Plus, Trash2, TrendingUp, AlertTriangle, Send, Loader2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/utils/cn';
 import { getDateKey, getGameFeedbackMeta } from '@/features/treatment/treatmentPlan';
+import { messagingService } from '@/services/messagingService';
+import { toast } from '@/store/toastStore';
 import type { CustomStoryData, FocusKey, GameReflection, GameSession, StoryCard, TherapyGame } from '@/features/treatment/types';
+import type { Conversation } from '@/types';
 
 interface TreatmentGamesTabProps {
   activeGameFilter: 'all' | FocusKey;
@@ -96,6 +101,13 @@ export function TreatmentGamesTab({
   const [storyDraftIcon, setStoryDraftIcon] = useState('📖');
   const [storyDraftGoal, setStoryDraftGoal] = useState('');
   const [savingStory, setSavingStory] = useState(false);
+  const [notifyGame, setNotifyGame] = useState<TherapyGame | null>(null);
+  const [expertConversations, setExpertConversations] = useState<Conversation[]>([]);
+  const [loadingExperts, setLoadingExperts] = useState(false);
+  const [selectedConversationId, setSelectedConversationId] = useState('');
+  const [notifyNote, setNotifyNote] = useState('');
+  const [sendingNotify, setSendingNotify] = useState(false);
+  const navigate = useNavigate();
 
   const recentSessions = [...gameSessions]
     .sort((a, b) => b.completedAt.localeCompare(a.completedAt))
@@ -111,6 +123,45 @@ export function TreatmentGamesTab({
     setStoryDraftIcon('📖');
     setStoryDraftGoal('');
     setSavingStory(false);
+  };
+
+  const openNotifyModal = (game: TherapyGame, hint?: AdaptationHint) => {
+    setNotifyGame(game);
+    setSelectedConversationId('');
+    setNotifyNote(
+      `"${game.title}" aktivitesinde son zamanlarda zorlanıyor${hint ? ` (${hint.message})` : ''}. Önerisi olan var mı?`
+    );
+    setLoadingExperts(true);
+    messagingService.getConversations()
+      .then(conversations => {
+        const experts = conversations.filter(c =>
+          c.type === 'DIRECT' && c.participants.some(p => p.role === 'EXPERT')
+        );
+        setExpertConversations(experts);
+        if (experts.length > 0) setSelectedConversationId(experts[0].id);
+      })
+      .catch(() => toast.error('Uzman listesi yüklenemedi.'))
+      .finally(() => setLoadingExperts(false));
+  };
+
+  const closeNotifyModal = () => {
+    setNotifyGame(null);
+    setExpertConversations([]);
+    setSelectedConversationId('');
+    setNotifyNote('');
+  };
+
+  const handleSendNotify = async () => {
+    if (!selectedConversationId || !notifyNote.trim()) return;
+    setSendingNotify(true);
+    try {
+      await messagingService.sendMessage(selectedConversationId, notifyNote.trim());
+      toast.success('Uzmana bildirildi.');
+      closeNotifyModal();
+    } catch {
+      toast.error('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+    }
+    setSendingNotify(false);
   };
 
   return (
@@ -194,7 +245,7 @@ export function TreatmentGamesTab({
                     <button
                       type="button"
                       className="ml-auto rounded-lg bg-amber-600 px-2 py-0.5 text-[10px] font-black text-white hover:bg-amber-700"
-                      onClick={() => alert('Uzman bildirim formu yakında eklenecek')}
+                      onClick={() => openNotifyModal(game, hint)}
                     >
                       Uzmana Bildir
                     </button>
@@ -443,6 +494,63 @@ export function TreatmentGamesTab({
           </div>
         </div>
       </div>
+
+      <Modal isOpen={!!notifyGame} onClose={closeNotifyModal} title="Uzmana Bildir" size="sm">
+        {notifyGame && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              <strong>{notifyGame.title}</strong> aktivitesindeki zorlanma hakkında uzmanınıza kısa bir not gönderin.
+            </p>
+
+            {loadingExperts ? (
+              <div className="flex items-center justify-center gap-2 py-6 text-sm text-slate-500">
+                <Loader2 size={16} className="animate-spin" /> Uzmanlar yükleniyor...
+              </div>
+            ) : expertConversations.length === 0 ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                Henüz mesajlaştığınız bir uzman yok. Önce bir uzmanla bağlantı kurmanız gerekiyor.
+                <Button
+                  className="mt-3 w-full"
+                  variant="secondary"
+                  onClick={() => { closeNotifyModal(); navigate('/uzmanlar'); }}
+                >
+                  Uzmanları Görüntüle
+                </Button>
+              </div>
+            ) : (
+              <>
+                {expertConversations.length > 1 && (
+                  <select
+                    value={selectedConversationId}
+                    onChange={e => setSelectedConversationId(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-300"
+                  >
+                    {expertConversations.map(conv => (
+                      <option key={conv.id} value={conv.id}>
+                        {conv.participants.find(p => p.role === 'EXPERT')?.fullName || conv.title || 'Uzman'}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <textarea
+                  value={notifyNote}
+                  onChange={e => setNotifyNote(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-300"
+                />
+                <Button
+                  className="w-full"
+                  onClick={handleSendNotify}
+                  disabled={sendingNotify || !notifyNote.trim()}
+                >
+                  <Send size={15} className="mr-1.5" />
+                  {sendingNotify ? 'Gönderiliyor...' : 'Gönder'}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
