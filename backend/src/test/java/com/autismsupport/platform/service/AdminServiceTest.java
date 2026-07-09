@@ -2,7 +2,6 @@ package com.autismsupport.platform.service;
 
 import com.autismsupport.platform.dto.AdminStatsDto;
 import com.autismsupport.platform.dto.MonthlyGrowthDto;
-import com.autismsupport.platform.model.AuditLog;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.model.UserRole;
 import com.autismsupport.platform.repository.*;
@@ -135,30 +134,15 @@ class AdminServiceTest {
         assertThat(remaining).isEqualTo(budget - used);
     }
 
-    // ── triggerBackup ─────────────────────────────────────────────────────────
+    // ── generateDatabaseBackup ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("triggerBackup: SIMULATED status döner (gerçek backup değil)")
-    void triggerBackup_returnsSimulatedStatus() {
-        UUID adminId = UUID.randomUUID();
-        User admin = User.builder().id(adminId).email("admin@test.com")
-                .role(UserRole.ADMIN).fullName("Admin").build();
-        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
-        when(auditLogRepository.save(any(AuditLog.class))).thenAnswer(i -> i.getArgument(0));
-
-        Map<String, Object> result = adminService.triggerBackup(adminId);
-
-        assertThat(result.get("status")).isEqualTo("SIMULATED");
-        verify(auditLogRepository).save(any(AuditLog.class));
-    }
-
-    @Test
-    @DisplayName("triggerBackup: admin bulunamazsa exception fırlatır")
-    void triggerBackup_adminNotFound_throws() {
+    @DisplayName("generateDatabaseBackup: admin bulunamazsa exception fırlatır")
+    void generateDatabaseBackup_adminNotFound_throws() {
         UUID adminId = UUID.randomUUID();
         when(userRepository.findById(adminId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> adminService.triggerBackup(adminId))
+        assertThatThrownBy(() -> adminService.generateDatabaseBackup(adminId))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("bulunamadi");
     }
