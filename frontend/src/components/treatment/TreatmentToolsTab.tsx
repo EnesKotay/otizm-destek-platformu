@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import type { SensoryMetric, SensoryProfileState, ToolCard } from '@/features/treatment/types';
+import { toast } from '@/store/toastStore';
 
 interface TreatmentToolsTabProps {
   savingTreatment: boolean;
@@ -33,9 +34,14 @@ export function TreatmentToolsTab({
   // ── 1. AI SOCIAL STORY GENERATOR STATES ──
   const [childName, setChildName] = useState('Ahmet');
   const [customScenario, setCustomScenario] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState('');
-  const [generatedStory, setGeneratedStory] = useState<{ title: string; steps: string[] } | null>(null);
+  const [storyTitle, setStoryTitle] = useState('Benim Sosyal Hikayem');
+  const [storyPages, setStoryPages] = useState<Array<{ text: string; icon: string }>>([
+    { text: 'Ahmet okula gidiyor. Okulda yeni arkadaşlar görecek.', icon: '🏫' },
+    { text: 'Salıncakta sallanmak için arkadaşlarının sırasını bekleyecek.', icon: '🛝' },
+    { text: 'Sırası gelince salıncakta keyifle sallanacak.', icon: '🎉' }
+  ]);
   const [storyLoading, setStoryLoading] = useState(false);
+  const [currentReadingPage, setCurrentReadingPage] = useState<number | null>(null);
 
   const storyTemplates = [
     { id: 'haircut', title: 'Berbere Gitmek', scenario: 'Ahmet berbere gidecek, saçları kesilirken makas sesleri duyacak ama canı hiç acımayacak. Saçları bitince çok yakışıklı ve rahat hissedecek.' },
@@ -43,32 +49,128 @@ export function TreatmentToolsTab({
     { id: 'playground', title: 'Parkta Sıra Beklemek', scenario: 'Ahmet parka gidecek. Salıncakta sallanmak için önce sıraya girecek, içinden 10a kadar sayacak ve sıra ona gelecek.' }
   ];
 
-  const handleGenerateStory = (title: string, scenarioText: string) => {
+  const handleUseTemplate = (id: string) => {
+    if (id === 'haircut') {
+      setStoryTitle('Berber Maceram 💈');
+      setStoryPages([
+        { text: `${childName} berbere gidiyor. Koltuğa oturup berberin ona yardım etmesini izleyecek.`, icon: '💈' },
+        { text: 'Makas sesleri duyacak. Bu sesler saçlarının kısaldığını gösteriyor, canı hiç acımayacak.', icon: '✂️' },
+        { text: 'İşlem bittiğinde saçları harika görünecek ve kendini çok rahat hissedecek.', icon: '💇‍♂️' }
+      ]);
+    } else if (id === 'dentist') {
+      setStoryTitle('Diş Hekimi Ziyareti 🦷');
+      setStoryPages([
+        { text: `${childName} diş hekimine gidiyor. Diş hekimi onun dişlerini kontrol edecek.`, icon: '🦷' },
+        { text: 'Dişçi koltuğuna oturup ağzını kocaman açacak. Diş aletlerinin ışığı dişlerini parlatacak.', icon: '💡' },
+        { text: 'Diş hekimi ona kontrol sonrasında parlak bir yıldız çıkartması verecek.', icon: '⭐' }
+      ]);
+    } else if (id === 'playground') {
+      setStoryTitle('Parkta Sıra Beklemek 🛝');
+      setStoryPages([
+        { text: `${childName} oyun parkına gidiyor. Parkta salıncaklar ve kaydıraklar var.`, icon: '🛝' },
+        { text: 'Salıncakta sallanmak için sırasını bekleyecek. Beklerken içinden 10\'a kadar sayacak.', icon: '⏱️' },
+        { text: 'Sıra ona geldiğinde salıncağa binip neşeyle sallanacak.', icon: '🎉' }
+      ]);
+    }
+  };
+
+  const handleGenerateStory = async (title: string, scenarioText: string) => {
     if (!scenarioText.trim()) return;
     setStoryLoading(true);
-    setGeneratedStory(null);
-    setTimeout(() => {
-      setGeneratedStory({
-        title,
-        steps: [
-          `1. Hazırlık: ${childName} yeni bir maceraya başlıyor: "${title}". Bu adımda sakin kalmak harika bir fikir!`,
-          `2. Deneyim: ${scenarioText.replace(/Ahmet/g, childName)}`,
-          `3. Başarı: İşte bu kadar! ${childName} bu durumu mükemmel yönetti ve harika bir iş çıkardı. Tebrikler! 🎉`
-        ]
+    try {
+      const { chatbotService } = await import('@/services/chatbotService');
+      const prompt = `Sen otizm alanında çalışan kıdemli bir özel eğitim uzmanı ve terapistsin.
+Çocuğun Adı: ${childName}
+Senaryo / Tema: ${scenarioText}
+
+Lütfen bu bilgiler ışığında çocuk için 3 sayfadan oluşan, özel eğitim pedagojisine uygun görselleştirilebilir bir Sosyal Hikaye taslağı hazırla.
+Her sayfa için kısa, anlaşılır bir metin ve bu sayfanın temasını en iyi temsil eden tek bir emoji seç.
+
+Yanıtını tam olarak aşağıdaki etiketleri kullanarak ver. Giriş, açıklama veya çıkış metni ekleme. Her etiket yeni satırda başlasın:
+
+[BASLIK]
+(Buraya hikayenin başlığını yaz)
+
+[SAYFA_1]
+Emoji: (Buraya tek bir emoji yaz)
+Metin: (Buraya sayfa metnini yaz)
+
+[SAYFA_2]
+Emoji: ...
+Metin: ...
+
+[SAYFA_3]
+Emoji: ...
+Metin: ...
+`;
+
+      const response = await chatbotService.sendMessage(prompt);
+      
+      const titleMatch = response.match(/\[BASLIK\]\s*(.+)/i);
+      if (titleMatch) setStoryTitle(titleMatch[1].trim());
+
+      const newPages: Array<{ text: string; icon: string }> = [];
+      const pageRegexes = [
+        /\[SAYFA_1\]\s*([\s\S]+?)(?=\[SAYFA_2\]|$)/i,
+        /\[SAYFA_2\]\s*([\s\S]+?)(?=\[SAYFA_3\]|$)/i,
+        /\[SAYFA_3\]\s*([\s\S]+?)$/i
+      ];
+
+      pageRegexes.forEach((regex) => {
+        const pageMatch = response.match(regex);
+        if (pageMatch) {
+          const content = pageMatch[1];
+          const emojiMatch = content.match(/Emoji:\s*(.+)/i);
+          const textMatch = content.match(/Metin:\s*(.+)/i);
+          if (textMatch) {
+            newPages.push({
+              text: textMatch[1].trim(),
+              icon: emojiMatch ? emojiMatch[1].trim().substring(0, 4) : '📖'
+            });
+          }
+        }
       });
+
+      if (newPages.length > 0) {
+        setStoryPages(newPages);
+        toast.success('Sosyal hikaye yapay zeka ile başarıyla oluşturuldu!');
+      } else {
+        toast.error('AI yanıtı ayrıştırılamadı. Lütfen tekrar deneyin.');
+      }
+    } catch {
+      toast.error('AI sosyal hikaye üretemedi, lütfen tekrar deneyin.');
+    } finally {
       setStoryLoading(false);
-    }, 900);
+    }
   };
 
   const speakStory = () => {
-    if (!generatedStory) return;
+    if (storyPages.length === 0) return;
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const textToSpeak = `${generatedStory.title}. ${generatedStory.steps.join(' ')}`;
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.lang = 'tr-TR';
-      utterance.rate = 0.85;
-      window.speechSynthesis.speak(utterance);
+      
+      let pageIndex = 0;
+      const readNextPage = () => {
+        if (pageIndex >= storyPages.length) {
+          setCurrentReadingPage(null);
+          return;
+        }
+        setCurrentReadingPage(pageIndex);
+        const page = storyPages[pageIndex];
+        const utterance = new SpeechSynthesisUtterance(page.text);
+        utterance.lang = 'tr-TR';
+        utterance.rate = 0.8;
+        utterance.onend = () => {
+          pageIndex++;
+          readNextPage();
+        };
+        utterance.onerror = () => {
+          setCurrentReadingPage(null);
+        };
+        window.speechSynthesis.speak(utterance);
+      };
+      
+      readNextPage();
     }
   };
 
@@ -222,108 +324,188 @@ export function TreatmentToolsTab({
             
             {/* TOOL 1: AI SOCIAL STORY CREATOR */}
             {activeTool === 'story' && (
-              <div className="space-y-4">
+              <div className="space-y-5 animate-in fade-in duration-200">
                 <div className="rounded-2xl border border-indigo-100 bg-indigo-50/20 p-4">
                   <div className="flex items-start gap-3">
-                    <Lightbulb className="mt-0.5 text-indigo-500 shrink-0" size={18} />
+                    <Sparkles className="mt-0.5 text-indigo-500 shrink-0" size={18} />
                     <div>
-                      <h4 className="text-xs font-bold text-indigo-800">Hikaye Oluşturucu</h4>
-                      <p className="mt-1 text-[11px] leading-relaxed text-indigo-600/90 font-medium">
-                        Çocuğunuz için kaygı yaratan durumlara (berbere gitme, doktora gitme vb.) hazırlık hikayesi oluşturun. Etkinlikten önce birlikte okuyun.
+                      <h4 className="text-xs font-bold text-indigo-800 font-mono">Çok Sayfalı Sosyal Hikaye Düzenleyici</h4>
+                      <p className="mt-1 text-[11px] leading-relaxed text-slate-600/90 font-medium">
+                        Çocuğunuzun yeni durumları, rutinleri veya zorlu etkinlikleri öğrenmesi için görsel hikayeler oluşturun. Adımları düzenleyebilir, yapay zekayı kullanabilir veya sesli okuma modunu açabilirsiniz.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-[0.8fr_1.2fr]">
-                  {/* Left inputs */}
-                  <div className="space-y-3.5 border-r border-slate-100 pr-0 sm:pr-4">
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Çocuğun Adı</label>
-                      <input 
-                        type="text" 
-                        value={childName}
-                        onChange={(e) => setChildName(e.target.value)}
-                        className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs font-bold text-slate-700 focus:border-indigo-400 focus:outline-none"
+                <div className="grid md:grid-cols-[1fr_280px] gap-5">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={storyTitle}
+                        onChange={(e) => setStoryTitle(e.target.value)}
+                        className="text-sm font-black text-slate-800 bg-transparent border-b border-dashed border-slate-300 focus:border-indigo-500 focus:outline-none py-1 w-full"
+                        placeholder="Hikaye Başlığı"
                       />
+                      <button
+                        onClick={speakStory}
+                        disabled={storyPages.length === 0}
+                        className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 px-3.5 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-all cursor-pointer shadow-sm"
+                      >
+                        <Volume2 size={14} className={currentReadingPage !== null ? 'animate-pulse text-indigo-600' : ''} />
+                        {currentReadingPage !== null ? 'Okunuyor...' : 'Sesli Oku'}
+                      </button>
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Örnek Şablonlar</label>
-                      <div className="mt-2 space-y-1.5">
-                        {storyTemplates.map(t => (
-                          <button
-                            key={t.id}
-                            onClick={() => {
-                              setSelectedTemplate(t.id);
-                              setCustomScenario(t.scenario);
-                              handleGenerateStory(t.title, t.scenario);
-                            }}
+
+                    <div className="space-y-3">
+                      {storyPages.map((page, idx) => {
+                        const isReading = currentReadingPage === idx;
+                        return (
+                          <div 
+                            key={idx} 
                             className={cn(
-                              'w-full rounded-xl border p-2 text-left text-xs font-bold transition-all duration-200 cursor-pointer block',
-                              selectedTemplate === t.id 
-                                ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
-                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                              "rounded-2xl border p-4 flex gap-4 transition-all duration-300 bg-white relative group",
+                              isReading 
+                                ? "border-indigo-400 shadow-md ring-2 ring-indigo-100 scale-[1.01]" 
+                                : "border-slate-100 hover:border-slate-200 shadow-sm"
                             )}
                           >
-                            {t.title}
+                            <div className="flex flex-col items-center justify-center shrink-0 w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 relative">
+                              <span className="text-2xl">{page.icon}</span>
+                              <select
+                                value={page.icon}
+                                onChange={(e) => {
+                                  const updated = [...storyPages];
+                                  updated[idx].icon = e.target.value;
+                                  setStoryPages(updated);
+                                }}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                title="Görsel Değiştir"
+                              >
+                                {['🏫', '🛝', '💈', '🦷', '🛌', '🧼', '🍽️', '🎉', '🪥', '✂️', '⏱️', '⭐', '🦖', '🚗', '🧸', '🌳', '🏡'].map(emoji => (
+                                  <option key={emoji} value={emoji}>{emoji}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="flex-1 space-y-1">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sayfa {idx + 1}</p>
+                              <textarea
+                                value={page.text}
+                                onChange={(e) => {
+                                  const updated = [...storyPages];
+                                  updated[idx].text = e.target.value;
+                                  setStoryPages(updated);
+                                }}
+                                className="w-full text-xs font-semibold text-slate-700 bg-transparent border-0 focus:ring-0 focus:outline-none p-0 resize-none leading-relaxed"
+                                rows={2}
+                                placeholder="Sayfa açıklamasını buraya yazın..."
+                              />
+                            </div>
+
+                            <div className="flex flex-col gap-1 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => {
+                                  if (idx === 0) return;
+                                  const updated = [...storyPages];
+                                  const temp = updated[idx];
+                                  updated[idx] = updated[idx - 1];
+                                  updated[idx - 1] = temp;
+                                  setStoryPages(updated);
+                                }}
+                                className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                disabled={idx === 0}
+                              >
+                                ▲
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setStoryPages(storyPages.filter((_, pIdx) => pIdx !== idx));
+                                }}
+                                className="p-1 rounded hover:bg-rose-50 text-slate-400 hover:text-rose-600 cursor-pointer"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (idx === storyPages.length - 1) return;
+                                  const updated = [...storyPages];
+                                  const temp = updated[idx];
+                                  updated[idx] = updated[idx + 1];
+                                  updated[idx + 1] = temp;
+                                  setStoryPages(updated);
+                                }}
+                                className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                disabled={idx === storyPages.length - 1}
+                              >
+                                ▼
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => setStoryPages([...storyPages, { text: '', icon: '📖' }])}
+                      className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-2xl py-3 text-xs font-bold text-slate-500 hover:border-indigo-300 hover:text-indigo-600 transition-all cursor-pointer bg-slate-50/20"
+                    >
+                      Yeni Sayfa Ekle +
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-black text-slate-800 uppercase tracking-wider">Çocuğun Adı</label>
+                        <input
+                          type="text"
+                          value={childName}
+                          onChange={(e) => setChildName(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50/30 focus:border-indigo-400 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-black text-slate-800 uppercase tracking-wider">Hızlı AI Senaryosu</label>
+                        <textarea
+                          value={customScenario}
+                          onChange={(e) => setCustomScenario(e.target.value)}
+                          placeholder="Örn: Ahmet yarın okula gidecek ve yeni arkadaşlarıyla tanışacak..."
+                          rows={3}
+                          className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50/30 focus:border-indigo-400 focus:outline-none resize-none"
+                        />
+                      </div>
+                      <button
+                        onClick={() => handleGenerateStory('Kişiselleştirilmiş Hikaye', customScenario)}
+                        disabled={storyLoading || !customScenario.trim()}
+                        className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        {storyLoading ? (
+                          <>
+                            <RefreshCw size={13} className="animate-spin" /> Oluşturuluyor...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={13} className="text-yellow-300 animate-pulse" /> AI ile Taslakla ⚡
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                      <label className="block text-[11px] font-black text-slate-800 uppercase tracking-wider mb-2">Hazır Şablonlar</label>
+                      <div className="space-y-1.5">
+                        {storyTemplates.map(template => (
+                          <button
+                            key={template.id}
+                            onClick={() => handleUseTemplate(template.id)}
+                            className="w-full text-left rounded-xl border border-slate-50 bg-slate-50/40 p-2.5 hover:border-indigo-200 hover:bg-indigo-50/20 text-xs font-semibold text-slate-600 hover:text-indigo-700 transition-all duration-150 cursor-pointer"
+                          >
+                            📖 {template.title}
                           </button>
                         ))}
                       </div>
                     </div>
-                  </div>
-
-                  {/* Right result block */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Özel Senaryo / Durum Açıklaması</label>
-                      <textarea
-                        value={customScenario}
-                        onChange={(e) => {
-                          setCustomScenario(e.target.value);
-                          setSelectedTemplate('');
-                        }}
-                        placeholder="Örn: Ahmet yarın okula gidecek ve yeni arkadaşlarıyla tanışacak..."
-                        rows={3}
-                        className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs font-medium text-slate-600 focus:border-indigo-400 focus:outline-none"
-                      />
-                      <button
-                        onClick={() => handleGenerateStory('Kişiselleştirilmiş Hikaye', customScenario)}
-                        disabled={!customScenario.trim()}
-                        className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                      >
-                        Hikaye Üret <ArrowRight size={13} />
-                      </button>
-                    </div>
-
-                    {/* Result Story Box */}
-                    {storyLoading && (
-                      <div className="rounded-2xl border border-slate-100 p-5 space-y-3 animate-pulse">
-                        <div className="h-4 bg-slate-100 rounded w-1/3" />
-                        <div className="h-3 bg-slate-100 rounded w-full" />
-                        <div className="h-3 bg-slate-100 rounded w-5/6" />
-                      </div>
-                    )}
-
-                    {generatedStory && !storyLoading && (
-                      <div className="rounded-2xl border border-slate-100 bg-slate-50/40 p-4 shadow-sm relative overflow-hidden">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                          <h4 className="text-xs font-black text-slate-800">📖 {generatedStory.title}</h4>
-                          <button
-                            onClick={speakStory}
-                            className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[10px] font-bold text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
-                          >
-                            <Volume2 size={12} /> Seslendir
-                          </button>
-                        </div>
-                        <div className="mt-3 space-y-3">
-                          {generatedStory.steps.map((step, idx) => (
-                            <p key={idx} className="text-[11px] leading-relaxed text-slate-600 font-medium">
-                              {step}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

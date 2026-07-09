@@ -277,6 +277,7 @@ export interface KnowledgeArticle {
   sourceUrl?: string;
   pendingReview?: boolean;
   bookmarked?: boolean;
+  tags?: Tag[];
   author?: User;
   published: boolean;
   viewCount: number;

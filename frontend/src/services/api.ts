@@ -56,6 +56,30 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Çevrimdışı modda POST/PUT/DELETE isteklerini yakala ve LocalStorage'da kuyruğa at
+  const method = config.method?.toLowerCase();
+  if (typeof window !== 'undefined' && !navigator.onLine && method && ['post', 'put', 'delete', 'patch'].includes(method)) {
+    const queue = getOfflineQueue();
+    const offlineReq: OfflineRequest = {
+      id: Math.random().toString(36).substring(2, 9),
+      url: config.url || '',
+      method: config.method || 'post',
+      data: config.data,
+      headers: { ...config.headers },
+    };
+    queue.push(offlineReq);
+    saveOfflineQueue(queue);
+
+    import('@/store/toastStore').then(({ toast }) => {
+      toast.warning('Çevrimdışısınız. Değişiklikleriniz cihazınıza kaydedildi, internet geldiğinde yüklenecektir.');
+    });
+
+    const source = axios.CancelToken.source();
+    config.cancelToken = source.token;
+    source.cancel('OFFLINE_MOCK_SUCCESS');
+  }
+
   return config;
 });
 
@@ -73,6 +97,10 @@ function processQueue(error: unknown, token: string | null) {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (axios.isCancel(error) && error.message === 'OFFLINE_MOCK_SUCCESS') {
+      return Promise.resolve({ data: { success: true, message: 'Offline saved' } } as any);
+    }
+
     const originalRequest = error.config;
     const status = error.response?.status;
 
@@ -122,5 +150,75 @@ api.interceptors.response.use(
     return Promise.reject(new Error(normalizeApiError(error)));
   }
 );
+
+export interface OfflineRequest {
+  id: string;
+  url: string;
+  method: string;
+  data: any;
+  headers: any;
+}
+
+export function getOfflineQueue(): OfflineRequest[] {
+  try {
+    const queue = localStorage.getItem('offline_request_queue');
+    return queue ? JSON.parse(queue) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveOfflineQueue(queue: OfflineRequest[]) {
+  try {
+    localStorage.setItem('offline_request_queue', JSON.stringify(queue));
+  } catch { /* ignore */ }
+}
+
+export async function syncOfflineRequests() {
+  if (typeof window === 'undefined') return;
+  const queue = getOfflineQueue();
+  if (queue.length === 0) return;
+
+  const { toast } = await import('@/store/toastStore');
+  toast.info('İnternet bağlantısı algılandı. Çevrimdışı verileriniz senkronize ediliyor...');
+
+  const remainingQueue: OfflineRequest[] = [];
+
+  for (const req of queue) {
+    try {
+      await api.request({
+        url: req.url,
+        method: req.method,
+        data: req.data,
+        headers: {
+          ...req.headers,
+          Authorization: useAuthStore.getState().accessToken
+            ? `Bearer ${useAuthStore.getState().accessToken}`
+            : req.headers.Authorization
+        }
+      });
+    } catch (err) {
+      console.error('Failed to sync offline request:', req, err);
+      if (axios.isAxiosError(err) && !err.response) {
+        remainingQueue.push(req);
+      }
+    }
+  }
+
+  saveOfflineQueue(remainingQueue);
+
+  if (remainingQueue.length === 0) {
+    toast.success('Tüm çevrimdışı veriler başarıyla senkronize edildi!');
+    window.dispatchEvent(new Event('offline-sync-completed'));
+  } else {
+    toast.warning('Bazı veriler senkronize edilemedi, daha sonra tekrar denenecek.');
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    syncOfflineRequests();
+  });
+}
 
 export default api;

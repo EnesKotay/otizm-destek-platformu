@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -75,11 +76,12 @@ public class KnowledgeArticleController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String format,
+            @RequestParam(required = false) List<UUID> tagIds,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         UUID userId = principal != null ? principal.getId() : null;
         return ResponseEntity.ok(ApiResponse.success(
-                service.filterArticles(q, category, format, PageRequest.of(page, size, Sort.by("createdAt").descending()), userId)));
+                service.filterArticles(q, category, format, tagIds, PageRequest.of(page, size, Sort.by("createdAt").descending()), userId)));
     }
 
     @GetMapping("/{id}")

@@ -158,6 +158,12 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(adminService.getAllUsers(page, size, query, role)));
     }
 
+    @GetMapping("/users/{userId}/activity-summary")
+    public ResponseEntity<ApiResponse<com.autismsupport.platform.dto.UserActivitySummaryDto>> getUserActivitySummary(
+            @PathVariable UUID userId) {
+        return ResponseEntity.ok(ApiResponse.success(adminService.getUserActivitySummary(userId)));
+    }
+
     @PostMapping("/users/{userId}/toggle-status")
     public ResponseEntity<ApiResponse<UserDto>> toggleUserStatus(
             @PathVariable UUID userId,
@@ -200,11 +206,15 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Ayarlar kaydedildi", adminService.updatePlatformSettings(dto)));
     }
 
-    /** Yedekleme talebini isler. Pg_dump entegre degilse yalnizca audit kaydi olusturur. */
+    /** pg_dump ile veritabaninin gercek SQL yedegini alir ve indirilebilir dosya olarak doner. */
     @PostMapping("/backup")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> triggerBackup(@CurrentUser UserPrincipal principal) {
-        Map<String, Object> result = adminService.triggerBackup(principal.getId());
-        return ResponseEntity.ok(ApiResponse.success("Yedekleme talebi islendi.", result));
+    public ResponseEntity<byte[]> triggerBackup(@CurrentUser UserPrincipal principal) {
+        byte[] dump = adminService.generateDatabaseBackup(principal.getId());
+        String filename = "otizm-destek-yedek-" + java.time.LocalDate.now() + ".sql";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(dump);
     }
 
     /** Platform token kullanim istatistiklerini doner. */

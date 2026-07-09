@@ -17,27 +17,47 @@ const content: Record<InfoPageKind, {
   kvkk: {
     eyebrow: 'KVKK ve açık rıza',
     title: 'KVKK Aydınlatma Metni',
-    summary: 'Bu metin, platformda işlenen kişisel veriler hakkında kullanıcıları bilgilendirmek için hazırlanmıştır.',
+    summary: 'Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) uyarınca platformda işlenen kişisel veriler hakkında kullanıcıları bilgilendirmek için hazırlanmıştır.',
     icon: ShieldCheck,
     sections: [
       {
-        title: 'Hangi veriler işlenir?',
+        title: 'Veri sorumlusu',
         body: [
-          'Hesap bilgileri, iletişim bilgileri, çocuk profili, gelişim notları, randevu kayıtları, mesajlaşma içerikleri, bildirim tercihleri ve platform kullanım kayıtları işlenebilir.',
-          'Sağlık ve gelişimle ilgili bilgiler özel nitelikli veri sayılabileceği için yalnızca kullanıcı onayı ve hizmetin gerektirdiği ölçüde işlenmelidir.',
+          '[Şirket/kurum unvanı ve iletişim bilgileri buraya eklenecektir.] Veri sorumlusu, işbu platform üzerinden sunulan hizmetin işleteni olan tüzel kişidir.',
         ],
       },
       {
-        title: 'İşleme amacı',
+        title: 'Hangi veriler işlenir?',
         body: [
-          'Veriler; hesap oluşturma, gelişim takibi, uzman iletişim akışı, randevu yönetimi, güvenlik, bildirim, destek ve yasal yükümlülüklerin yerine getirilmesi için kullanılır.',
+          'Kimlik ve iletişim bilgileri (ad soyad, e-posta, telefon), hesap ve giriş bilgileri, çocuk profili (doğum tarihi, cinsiyet, tanı/gelişim bilgileri), gelişim ve davranış notları, ilaç ve uyku takip kayıtları, randevu ve uzman iletişim kayıtları, mesajlaşma içerikleri, bildirim tercihleri, cihaz/push token bilgileri ve platform kullanım (log) kayıtları işlenebilir.',
+          'Çocuğa ait sağlık, gelişim ve davranış verileri KVKK md. 6 kapsamında özel nitelikli kişisel veri sayılır; bu veriler yalnızca açık rıza alınarak ve hizmetin gerektirdiği ölçüde işlenir.',
+        ],
+      },
+      {
+        title: 'İşleme amacı ve hukuki sebep',
+        body: [
+          'Veriler; hesap oluşturma ve kimlik doğrulama, çocuğun gelişim takibi, uzman-aile iletişim akışının kurulması, randevu ve tedavi planı yönetimi, platform güvenliğinin sağlanması, bildirim gönderimi, destek taleplerinin yanıtlanması ve yasal yükümlülüklerin yerine getirilmesi amacıyla işlenir.',
+          'İşleme faaliyeti; KVKK md. 5/2 kapsamında sözleşmenin kurulması/ifası, hukuki yükümlülük ve meşru menfaat hukuki sebeplerine, özel nitelikli veriler için ise md. 6 kapsamında açık rızaya dayanır.',
+        ],
+      },
+      {
+        title: 'Aktarım',
+        body: [
+          'Kişisel veriler; kullanıcının yetki verdiği uzmanlar, barındırma/altyapı sağlayıcıları ve yapay zeka destekli özellikler için kullanılan servis sağlayıcılar ile (yalnızca hizmetin gerektirdiği ölçüde) ve kanunen yetkili kamu kurum ve kuruluşlarıyla paylaşılabilir.',
+          '[Kullanılan altyapı/servis sağlayıcılarının (barındırma, e-posta, push bildirim, yapay zeka vb.) yurt içi/yurt dışı konumu ve varsa aktarım garanti mekanizmaları hukuk danışmanınca netleştirilip buraya eklenmelidir.]',
+        ],
+      },
+      {
+        title: 'Saklama süresi',
+        body: [
+          'Kişisel veriler, ilgili mevzuatta öngörülen süreler ile hesabın aktif olduğu süre boyunca saklanır; hesap silindiğinde veya yasal saklama süresi dolduğunda silinir, yok edilir ya da anonim hale getirilir.',
         ],
       },
       {
         title: 'Haklarınız',
         body: [
-          'Verilerinize erişim, düzeltme, silme, işlenmesini kısıtlama, rızanızı geri alma ve veri silme talebi haklarınızı kullanabilirsiniz.',
-          'Veri silme talebi için Ayarlar sayfasından veya destek kanalı üzerinden başvuru yapılabilmelidir.',
+          'KVKK md. 11 uyarınca; verilerinizin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme, işlenme amacına uygun kullanılıp kullanılmadığını öğrenme, yurt içi/yurt dışı aktarıldığı üçüncü kişileri bilme, eksik/yanlış işlenmişse düzeltilmesini isteme, silinmesini/yok edilmesini isteme, düzeltme-silme işlemlerinin aktarılan üçüncü kişilere bildirilmesini isteme, otomatik sistemlerle analiz sonucu aleyhinize bir sonucun ortaya çıkmasına itiraz etme ve zarara uğramanız halinde zararın giderilmesini talep etme haklarına sahipsiniz.',
+          'Başvurularınızı Ayarlar sayfası üzerinden veya destek kanalı aracılığıyla iletebilirsiniz.',
         ],
       },
     ],
@@ -45,26 +65,51 @@ const content: Record<InfoPageKind, {
   privacy: {
     eyebrow: 'Gizlilik',
     title: 'Gizlilik Politikası',
-    summary: 'Bu politika, platformun kullanıcı mahremiyetini korumak için benimsediği temel yaklaşımı açıklar.',
+    summary: 'Bu politika, platformun kullanıcı ve çocuk mahremiyetini korumak için benimsediği temel yaklaşımı açıklar.',
     icon: ShieldCheck,
     sections: [
       {
         title: 'Veri minimizasyonu',
         body: [
-          'Platform yalnızca hizmeti sunmak, güvenliği sağlamak ve kullanıcı deneyimini iyileştirmek için gerekli verileri toplamayı hedefler.',
+          'Platform yalnızca hizmeti sunmak, güvenliği sağlamak ve kullanıcı deneyimini iyileştirmek için gerekli verileri toplamayı hedefler; amacı aşan veri toplanmaz.',
         ],
       },
       {
         title: 'Paylaşım ve erişim',
         body: [
-          'Çocuk ve aile verileri, kullanıcının yetki verdiği uzmanlar veya kanunen yetkili kurumlar dışında paylaşılmamalıdır.',
-          'Uzman, admin ve aile rolleri farklı erişim sınırlarına sahip olmalıdır.',
+          'Çocuk ve aile verileri, kullanıcının yetki verdiği uzmanlar veya kanunen yetkili kurumlar dışında üçüncü kişilerle paylaşılmaz.',
+          'Uzman, admin ve aile rolleri birbirinden ayrı, en az yetki ilkesine dayanan erişim sınırlarına sahiptir; adminler yalnızca platformun işletilmesi için gerekli ölçüde veriye erişebilir.',
+        ],
+      },
+      {
+        title: 'Üçüncü taraf servisler',
+        body: [
+          'Platform; barındırma, e-posta/bildirim gönderimi, push bildirim ve yapay zeka destekli içerik/öneri özellikleri için üçüncü taraf servis sağlayıcılardan yararlanabilir. Bu servislere yalnızca ilgili özelliğin çalışması için gerekli veri aktarılır.',
+          '[Kullanılan üçüncü taraf servislerin (örn. yapay zeka sağlayıcısı, e-posta/push altyapısı) güncel listesi ve bu servislerin kendi gizlilik politikaları hukuk danışmanınca gözden geçirilip buraya eklenmelidir.]',
+        ],
+      },
+      {
+        title: 'Çerezler ve benzer teknolojiler',
+        body: [
+          'Platform; oturum yönetimi, güvenlik ve tercihlerin hatırlanması amacıyla zorunlu çerezler/yerel depolama kullanabilir. Zorunlu olmayan izleme/analitik çerezleri kullanılıyorsa ayrı bir çerez politikasıyla ayrıntılandırılmalıdır.',
+        ],
+      },
+      {
+        title: 'Güvenlik önlemleri',
+        body: [
+          'Hesap erişimi kimlik doğrulama ile korunur, veriler yetkilendirme kontrolleriyle sınırlandırılır ve iletişim şifreli bağlantılar üzerinden yapılır. Buna rağmen internet üzerinden hiçbir sistemin mutlak güvenliği garanti edilemez.',
         ],
       },
       {
         title: 'Saklama ve silme',
         body: [
           'Veriler, hizmetin gerektirdiği süre boyunca saklanır. Kullanıcı talebi veya yasal gereklilik durumunda silme ya da anonimleştirme süreci işletilir.',
+        ],
+      },
+      {
+        title: 'Politika güncellemeleri',
+        body: [
+          'Bu politika, platformdaki değişikliklere veya mevzuat güncellemelerine bağlı olarak revize edilebilir; önemli değişiklikler kullanıcılara bildirilir.',
         ],
       },
     ],
@@ -79,20 +124,40 @@ const content: Record<InfoPageKind, {
         title: 'Hizmetin kapsamı',
         body: [
           'Otizm Destek; takip, planlama, iletişim, bilgi bankası ve topluluk özellikleri sunan yardımcı bir dijital platformdur.',
-          'Platform, tanı koymaz ve tek başına tedavi kararı vermez.',
+          'Platform, tanı koymaz, tedavi sağlamaz ve tek başına tedavi kararı vermez; sağlık profesyonellerinin yerini almaz.',
         ],
       },
       {
-        title: 'Kullanıcı sorumlulukları',
+        title: 'Hesap ve kullanıcı sorumlulukları',
         body: [
-          'Kullanıcılar paylaştıkları bilgilerin doğruluğundan, hesap güvenliğinden ve topluluk kurallarına uygun davranmaktan sorumludur.',
-          'Uzman hesapları mesleki bilgilerini doğru sunmalı ve gerekli durumlarda platform doğrulama süreçlerine tabi olmalıdır.',
+          'Kullanıcılar paylaştıkları bilgilerin doğruluğundan, hesap güvenliğinden (şifre gizliliği dahil) ve topluluk kurallarına uygun davranmaktan sorumludur.',
+          'Uzman hesapları mesleki bilgilerini doğru sunmalı ve gerekli durumlarda platformun doğrulama süreçlerine tabi olmalıdır. Yanlış/yanıltıcı bilgi verilmesi hesabın askıya alınmasına veya kapatılmasına yol açabilir.',
         ],
       },
       {
-        title: 'Topluluk ve içerik',
+        title: 'Topluluk ve içerik kuralları',
         body: [
-          'Hakaret, ayrımcılık, kişileri hedef gösteren paylaşımlar, yanıltıcı tıbbi iddialar ve gizlilik ihlali oluşturan içerikler kaldırılabilir.',
+          'Hakaret, ayrımcılık, kişileri hedef gösteren paylaşımlar, yanıltıcı tıbbi iddialar ve gizlilik ihlali oluşturan içerikler bildirim üzerine veya doğrudan kaldırılabilir; tekrarlanan ihlallerde hesap kısıtlanabilir.',
+          'Kullanıcılar, paylaştıkları içerikler üzerindeki fikri mülkiyet haklarını korurken, platforma bu içerikleri hizmetin sunulması amacıyla barındırma ve gösterme hakkı tanır.',
+        ],
+      },
+      {
+        title: 'Hesap askıya alma ve fesih',
+        body: [
+          'Platform; kullanım şartlarının ihlali, güvenlik riski veya yasal zorunluluk hâllerinde bir hesabı askıya alabilir veya kapatabilir. Kullanıcılar da hesaplarını dilediği zaman Ayarlar üzerinden kapatma talebinde bulunabilir.',
+        ],
+      },
+      {
+        title: 'Sorumluluğun sınırlandırılması',
+        body: [
+          'Platform üzerinden sunulan bilgi, hatırlatıcı ve takip araçları destekleyici niteliktedir; bunlara dayanarak alınan tıbbi kararlardan platform sorumlu tutulamaz.',
+          '[Uygulanacak hukuk, yetkili mahkeme/uyuşmazlık çözüm yöntemi ve sorumluluk sınırlarına ilişkin nihai madde metinleri hukuk danışmanınca belirlenip buraya eklenmelidir.]',
+        ],
+      },
+      {
+        title: 'Değişiklik hakkı',
+        body: [
+          'Bu kullanım şartları, hizmet kapsamındaki değişikliklere bağlı olarak güncellenebilir; önemli değişiklikler kullanıcılara bildirilir.',
         ],
       },
     ],
@@ -106,8 +171,14 @@ const content: Record<InfoPageKind, {
       {
         title: 'Doktor veya uzman yerine geçmez',
         body: [
-          'Platformdaki bilgiler, taramalar, aktiviteler, kriz adımları ve takip kayıtları bilgilendirme ve düzenleme amaçlıdır.',
+          'Platformdaki bilgiler, taramalar, aktiviteler, kriz adımları ve takip kayıtları bilgilendirme ve düzenleme amaçlıdır; tıbbi tavsiye, tanı veya tedavi niteliği taşımaz.',
           'Tanı, tedavi, ilaç başlama, ilaç bırakma veya doz değişikliği kararları yalnızca yetkili sağlık profesyonelleri tarafından verilmelidir.',
+        ],
+      },
+      {
+        title: 'Tarama ve yapay zeka destekli içerikler',
+        body: [
+          'Platformdaki tarama araçları ve yapay zeka destekli öneriler/özetler klinik tanı aracı değildir; yalnızca farkındalık ve ön bilgilendirme amaçlıdır. Sonuçlar mutlaka bir uzmanla değerlendirilmelidir.',
         ],
       },
       {
@@ -120,8 +191,14 @@ const content: Record<InfoPageKind, {
       {
         title: 'İlaç ve kriz kayıtları',
         body: [
-          'İlaç hatırlatıcıları destek amaçlıdır; tek güvenlik mekanizması olarak kullanılmamalıdır.',
-          'Kriz rehberi genel sakinleştirme ve hazırlık adımları sunar; çocuğun bireysel risk planının yerini alamaz.',
+          'İlaç hatırlatıcıları destek amaçlıdır; tek güvenlik mekanizması olarak kullanılmamalıdır. Doz ve program bilgileri kullanıcı tarafından girilir; platform bu bilgilerin tıbbi doğruluğunu denetlemez.',
+          'Kriz rehberi genel sakinleştirme ve hazırlık adımları sunar; çocuğun bireysel risk planının veya hekim talimatlarının yerini alamaz.',
+        ],
+      },
+      {
+        title: 'Veri doğruluğu',
+        body: [
+          'Takip, günlük ve tarama verilerinin doğruluğundan veriyi giren kullanıcı sorumludur; platform bu verileri klinik olarak doğrulamaz.',
         ],
       },
     ],

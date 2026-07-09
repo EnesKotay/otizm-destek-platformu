@@ -182,6 +182,10 @@ export function BepGeneratorPage() {
   const [showAiAssistantModal, setShowAiAssistantModal] = useState(false);
   const [aiAssistantInput, setAiAssistantInput] = useState('');
   const [aiAssistantLoading, setAiAssistantLoading] = useState(false);
+  const [showAiBepModal, setShowAiBepModal] = useState(false);
+  const [aiBepStrengths, setAiBepStrengths] = useState('');
+  const [aiBepWeaknesses, setAiBepWeaknesses] = useState('');
+  const [aiBepLoading, setAiBepLoading] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -478,6 +482,116 @@ Yanıtını tam olarak aşağıdaki etiketleri kullanarak ver. Başka hiçbir a�
     }
   };
 
+  const handleGenerateAiBep = async () => {
+    if (!aiBepStrengths.trim() || !aiBepWeaknesses.trim()) {
+      toast.error('Lütfen güçlü yanları ve zorlanılan alanları doldurun.');
+      return;
+    }
+    setAiBepLoading(true);
+    try {
+      const prompt = `Sen otizm alanında uzmanlaşmış kıdemli bir özel eğitim uzmanısın.
+Aşağıdaki bilgilere sahip bir öğrenci için BEP raporu hazırlamama yardımcı ol:
+Öğrenci Adı: ${studentName || 'Öğrenci'}
+Yaş: ${studentAge || 'belirtilmedi'}
+Tanı: ${diagnosis || 'belirtilmedi'}
+Güçlü Yanlar: ${aiBepStrengths}
+Zorlanılan Alanlar / İhtiyaçlar: ${aiBepWeaknesses}
+
+Yanıtını tam olarak aşağıdaki formatta ve etiketleri kullanarak ver. Başka hiçbir açıklama, giriş veya çıkış metni ekleme. Her etiket yeni satırda başlasın:
+
+[PERFORMANS]
+(Buraya detaylı, klinik düzeyde, özel eğitim terminolojisine uygun mevcut performans özeti metnini yaz)
+
+[HEDEF_1]
+Alan: (Bilişsel Beceriler, Dil ve İletişim, İnce Motor Becerileri, Kaba Motor Becerileri, Özbakım Becerileri, Sosyal Beceriler, Duyusal Düzenleme, Davranış ve Uyum alanlarından en uygun olan biri)
+Uzun Dönem: (Uzun dönem hedefi)
+Kısa Dönem: (Kısa dönem hedefi)
+Ölçüt: (Kriter, örn: 5 denemenin 4'ünde)
+Yöntem: (Kullanılacak özel eğitim yöntemi)
+Materyal: (Gerekli materyaller)
+Aile Görevi: (Evde genelleme için ailenin yapması gereken pratik çalışma)
+
+[HEDEF_2]
+Alan: ...
+Uzun Dönem: ...
+Kısa Dönem: ...
+Ölçüt: ...
+Yöntem: ...
+Materyal: ...
+Aile Görevi: ...
+
+[HEDEF_3]
+Alan: ...
+Uzun Dönem: ...
+Kısa Dönem: ...
+Ölçüt: ...
+Yöntem: ...
+Materyal: ...
+Aile Görevi: ...
+`;
+
+      const response = await chatbotService.sendMessage(prompt);
+      
+      const performanceMatch = response.match(/\[PERFORMANS\]\s*([\s\S]+?)(?=\[HEDEF_1\]|$)/i);
+      if (performanceMatch) {
+        setPerformance(performanceMatch[1].trim());
+      }
+
+      const newGoalsList: Goal[] = [];
+      const goalRegexes = [
+        /\[HEDEF_1\]\s*([\s\S]+?)(?=\[HEDEF_2\]|$)/i,
+        /\[HEDEF_2\]\s*([\s\S]+?)(?=\[HEDEF_3\]|$)/i,
+        /\[HEDEF_3\]\s*([\s\S]+?)$/i
+      ];
+
+      goalRegexes.forEach((regex, idx) => {
+        const goalMatch = response.match(regex);
+        if (goalMatch) {
+          const content = goalMatch[1];
+          const areaMatch = content.match(/Alan:\s*(.+)/i);
+          const longMatch = content.match(/Uzun Dönem:\s*(.+)/i);
+          const shortMatch = content.match(/Kısa Dönem:\s*(.+)/i);
+          const criteriaMatch = content.match(/Ölçüt:\s*(.+)/i);
+          const methodMatch = content.match(/Yöntem:\s*(.+)/i);
+          const materialMatch = content.match(/Materyal:\s*(.+)/i);
+          const familyMatch = content.match(/Aile Görevi:\s*(.+)/i);
+
+          if (shortMatch && longMatch) {
+            const parsedDomain = areaMatch ? areaMatch[1].trim() : DOMAINS[0];
+            const cleanDomain = DOMAINS.find(d => parsedDomain.toLowerCase().includes(d.toLowerCase())) || DOMAINS[0];
+            newGoalsList.push({
+              id: `ai-${Date.now()}-${idx}`,
+              domain: cleanDomain,
+              longTerm: longMatch[1].trim(),
+              shortTerm: shortMatch[1].trim(),
+              criteria: criteriaMatch ? criteriaMatch[1].trim() : '5 denemenin 4\'ünde',
+              method: methodMatch ? methodMatch[1].trim() : 'Model olma, ipucu sunma',
+              material: materialMatch ? materialMatch[1].trim() : 'Görsel kartlar',
+              familyTask: familyMatch ? familyMatch[1].trim() : 'Evde pratik tekrarlar',
+              progress: 0,
+              status: 'Başlamadı',
+              lastObservation: '',
+            });
+          }
+        }
+      });
+
+      if (newGoalsList.length > 0) {
+        setGoals(prev => [...prev, ...newGoalsList]);
+        toast.success(`BEP performansı dolduruldu ve ${newGoalsList.length} yeni hedef eklendi!`);
+      } else {
+        toast.success('BEP performansı başarıyla dolduruldu.');
+      }
+      setShowAiBepModal(false);
+      setAiBepStrengths('');
+      setAiBepWeaknesses('');
+    } catch {
+      toast.error('AI BEP asistanı hedefleri üretemedi, lütfen tekrar deneyin.');
+    } finally {
+      setAiBepLoading(false);
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -576,9 +690,12 @@ Yanıtını tam olarak aşağıdaki etiketleri kullanarak ver. Başka hiçbir a�
                     value={performance}
                     onChange={e => setPerformance(e.target.value)}
                   />
-                  <div className="flex gap-2 mt-3">
-                    <Button size="sm" variant="outline" onClick={buildPerformanceDraft} className="rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 shadow-sm transition-all hover:-translate-y-0.5">
-                      <Sparkles size={15} className="mr-1.5" /> Verilerden Taslak Oluştur
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <Button size="sm" variant="outline" onClick={buildPerformanceDraft} className="rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50/50 shadow-sm transition-all hover:-translate-y-0.5">
+                      <Sparkles size={15} className="mr-1.5 text-indigo-600" /> Verilerden Taslak Oluştur
+                    </Button>
+                    <Button size="sm" onClick={() => setShowAiBepModal(true)} className="rounded-xl border border-indigo-600/30 text-indigo-700 bg-indigo-50 hover:bg-indigo-100/60 shadow-sm transition-all hover:-translate-y-0.5">
+                      <Sparkles size={15} className="mr-1.5 text-indigo-600" /> AI BEP Asistanı
                     </Button>
                     <Button size="sm" onClick={handleAiSuggest} loading={aiLoading} className="relative overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 group">
                       <span className="relative z-10 flex items-center"><Sparkles size={15} className="mr-1.5 text-yellow-300 animate-pulse" /> AI'den Hedef Öner</span>
@@ -1038,6 +1155,46 @@ Yanıtını tam olarak aşağıdaki etiketleri kullanarak ver. Başka hiçbir a�
               loading={aiAssistantLoading}
             >
               Hedef Oluştur ⚡
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showAiBepModal} onClose={() => setShowAiBepModal(false)} title="AI BEP Raporu Asistanı 🪄">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Öğrencinin Güçlü Yanları *
+            </label>
+            <textarea
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 min-h-[80px] bg-white text-gray-900"
+              placeholder="Örn: Görsel hafızası çok iyi, nesneleri eşleştirebiliyor, yönergeleri takip ediyor."
+              value={aiBepStrengths}
+              onChange={e => setAiBepStrengths(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Zorlanılan Alanlar / İhtiyaçlar *
+            </label>
+            <textarea
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 min-h-[80px] bg-white text-gray-900"
+              placeholder="Örn: Akran etkileşiminde zorlanıyor, sözel istek bildiremiyor, ses hassasiyeti var."
+              value={aiBepWeaknesses}
+              onChange={e => setAiBepWeaknesses(e.target.value)}
+            />
+          </div>
+          <div className="rounded-xl bg-indigo-50 border border-indigo-100/50 p-4 text-xs text-indigo-700 leading-relaxed">
+            💡 Asistanımız, girdiğiniz güçlü ve zorlanılan alanları analiz ederek profesyonel bir mevcut performans özeti yazacak ve bu alanlara yönelik ölçülebilir 3 farklı eğitim hedefini doğrudan rapora ekleyecektir.
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" className="flex-1" onClick={() => { setShowAiBepModal(false); setAiBepStrengths(''); setAiBepWeaknesses(''); }}>İptal</Button>
+            <Button 
+              className="flex-1 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold" 
+              onClick={handleGenerateAiBep}
+              loading={aiBepLoading}
+            >
+              BEP Raporu Hazırla ✨
             </Button>
           </div>
         </div>

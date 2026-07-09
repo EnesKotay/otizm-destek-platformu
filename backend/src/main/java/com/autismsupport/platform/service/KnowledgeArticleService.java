@@ -65,12 +65,13 @@ public class KnowledgeArticleService {
     }
 
     @Transactional(readOnly = true)
-    public Page<KnowledgeArticleDto> filterArticles(String q, String category, String format, Pageable pageable, UUID userId) {
+    public Page<KnowledgeArticleDto> filterArticles(String q, String category, String format, List<UUID> tagIds, Pageable pageable, UUID userId) {
         String qParam = q == null ? "" : q.trim();
         String categoryParam = category == null ? "" : category;
         String formatParam = format == null ? "" : format;
+        boolean hasTags = tagIds != null && !tagIds.isEmpty();
         Set<UUID> bookmarkedIds = getBookmarkedArticleIdsForUser(userId);
-        return articleRepository.filterPublished(qParam, categoryParam, formatParam, pageable).map(a -> {
+        return articleRepository.filterPublished(qParam, categoryParam, formatParam, hasTags, tagIds, pageable).map(a -> {
             KnowledgeArticleDto dto = toDto(a);
             dto.setBookmarked(bookmarkedIds.contains(a.getId()));
             return dto;
@@ -197,6 +198,14 @@ public class KnowledgeArticleService {
                 .verified(a.getAuthor().isVerified())
                 .profileImageUrl(a.getAuthor().getProfileImageUrl())
                 .build();
+        java.util.Set<com.autismsupport.platform.dto.TagDto> tagDtos = a.getTags() == null ? java.util.Collections.emptySet() :
+            a.getTags().stream().map(t -> com.autismsupport.platform.dto.TagDto.builder()
+                .id(t.getId())
+                .name(t.getName())
+                .category(t.getCategory())
+                .description(t.getDescription())
+                .build()).collect(java.util.stream.Collectors.toSet());
+
         return KnowledgeArticleDto.builder()
                 .id(a.getId())
                 .title(a.getTitle())
@@ -207,6 +216,7 @@ public class KnowledgeArticleService {
                 .sourceName(a.getSourceName())
                 .sourceUrl(a.getSourceUrl())
                 .pendingReview(a.isPendingReview())
+                .tags(tagDtos)
                 .author(authorDto)
                 .published(a.isPublished())
                 .viewCount(a.getViewCount())

@@ -49,10 +49,16 @@ export interface ReportTargetPreview {
 }
 
 export interface BackupResult {
-  status: 'COMPLETED' | 'SIMULATED' | string;
-  timestamp?: string;
-  type?: string;
-  message?: string;
+  filename: string;
+  sizeBytes: number;
+}
+
+export interface UserActivitySummary {
+  childrenCount: number | null;
+  appointmentsCount: number | null;
+  forumPostsCount: number;
+  trackedActionsCount: number;
+  recentActions: AuditLogEntry[];
 }
 
 export type GrowthPeriod = '7d' | '30d' | '90d' | '1y';
@@ -133,6 +139,11 @@ export const adminService = {
   toggleUserStatus: (userId: string) =>
     api.post<ApiResponse<User>>(`/admin/users/${userId}/toggle-status`).then(r => r.data.data),
 
+  getUserActivitySummary: (userId: string) =>
+    api
+      .get<ApiResponse<UserActivitySummary>>(`/admin/users/${userId}/activity-summary`)
+      .then(r => r.data.data),
+
   bulkToggleUserStatus: (userIds: string[]) =>
     api
       .post<ApiResponse<{ updated: number }>>('/admin/users/bulk-toggle-status', { userIds })
@@ -159,8 +170,20 @@ export const adminService = {
   updateSettings: (settings: Partial<PlatformSettings>) =>
     api.put<ApiResponse<PlatformSettings>>('/admin/settings', settings).then(r => r.data.data),
 
-  triggerBackup: () =>
-    api.post<ApiResponse<BackupResult>>('/admin/backup').then(r => r.data.data),
+  triggerBackup: (): Promise<BackupResult> =>
+    api.post('/admin/backup', null, { responseType: 'blob' }).then(r => {
+      const disposition: string = r.headers['content-disposition'] || '';
+      const match = disposition.match(/filename="([^"]+)"/);
+      const filename = match ? match[1] : `otizm-destek-yedek-${new Date().toISOString().slice(0, 10)}.sql`;
+      const blob = new Blob([r.data], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      return { filename, sizeBytes: blob.size };
+    }),
 
   getTokenStats: () =>
     api.get<ApiResponse<{ used: number; budget: number; remaining: number; cost: number; estimated?: boolean; updatedAt: string }>>('/admin/token-stats').then(r => r.data.data),

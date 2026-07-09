@@ -8,6 +8,7 @@ import java.util.UUID;
 
 @Repository
 public interface MedicationRepository extends JpaRepository<Medication, UUID> {
+    List<Medication> findByIsActiveTrue();
     List<Medication> findByChildIdAndIsActiveTrueOrderByNameAsc(UUID childId);
     List<Medication> findByChildIdOrderByCreatedAtDesc(UUID childId);
 }

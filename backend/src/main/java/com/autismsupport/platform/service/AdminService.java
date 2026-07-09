@@ -6,6 +6,7 @@ import com.autismsupport.platform.dto.MonthlyGrowthDto;
 import com.autismsupport.platform.dto.PlatformSettingsDto;
 import com.autismsupport.platform.dto.ReportDto;
 import com.autismsupport.platform.dto.ReportTargetPreviewDto;
+import com.autismsupport.platform.dto.UserActivitySummaryDto;
 import com.autismsupport.platform.dto.UserDto;
 import com.autismsupport.platform.model.AuditLog;
 import com.autismsupport.platform.model.ForumComment;
@@ -15,7 +16,9 @@ import com.autismsupport.platform.model.PlatformSettings;
 import com.autismsupport.platform.model.Report;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.model.UserRole;
+import com.autismsupport.platform.repository.AppointmentRepository;
 import com.autismsupport.platform.repository.AuditLogRepository;
+import com.autismsupport.platform.repository.ChildRepository;
 import com.autismsupport.platform.repository.ForumCommentRepository;
 import com.autismsupport.platform.repository.MessageRepository;
 import com.autismsupport.platform.repository.PlatformSettingsRepository;
@@ -24,12 +27,16 @@ import com.autismsupport.platform.repository.UserRepository;
 import com.autismsupport.platform.repository.ForumPostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -41,6 +48,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,6 +68,17 @@ public class AdminService {
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
     private final EmailService emailService;
+    private final ChildRepository childRepository;
+    private final AppointmentRepository appointmentRepository;
+
+    @Value("${spring.datasource.url}")
+    private String datasourceUrl;
+
+    @Value("${spring.datasource.username}")
+    private String datasourceUsername;
+
+    @Value("${spring.datasource.password}")
+    private String datasourcePassword;
 
     public AdminStatsDto getStats() {
         return AdminStatsDto.builder()
@@ -428,6 +449,26 @@ public class AdminService {
                 .map(this::toAuditLogDto);
     }
 
+    /** Kullanıcı detay panelinde gösterilecek gerçek aktivite özetini döner (sahte/örnek veri içermez). */
+    public UserActivitySummaryDto getUserActivitySummary(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Kullanici bulunamadi"));
+
+        Long childrenCount = user.getRole() == UserRole.PARENT ? childRepository.countByParentId(userId) : null;
+        Long appointmentsCount = user.getRole() == UserRole.EXPERT ? appointmentRepository.countByExpertId(userId) : null;
+
+        List<AuditLogDto> recentActions = auditLogRepository.findTop3ByUserIdOrderByCreatedAtDesc(userId)
+                .stream().map(this::toAuditLogDto).collect(Collectors.toList());
+
+        return UserActivitySummaryDto.builder()
+                .childrenCount(childrenCount)
+                .appointmentsCount(appointmentsCount)
+                .forumPostsCount(forumPostRepository.countByAuthorId(userId))
+                .trackedActionsCount(auditLogRepository.countByUserId(userId))
+                .recentActions(recentActions)
+                .build();
+    }
+
     private AuditLogDto toAuditLogDto(AuditLog log) {
         return AuditLogDto.builder()
                 .id(log.getId())
@@ -557,26 +598,73 @@ public class AdminService {
                 .build();
     }
 
-    public Map<String, Object> triggerBackup(UUID adminId) {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    private static final Pattern JDBC_POSTGRES_URL = Pattern.compile("jdbc:postgresql://([^:/]+):(\\d+)/([^?]+)");
+
+    /** Gercek pg_dump cagirarak veritabaninin SQL yedegini uretir ve indirilebilir byte dizisi olarak doner. */
+    public byte[] generateDatabaseBackup(UUID adminId) {
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Yonetici bulunamadi"));
-        AuditLog auditEntry = AuditLog.builder()
+
+        Matcher matcher = JDBC_POSTGRES_URL.matcher(datasourceUrl);
+        if (!matcher.find()) {
+            throw new IllegalStateException("Veritabani baglanti adresi cozumlenemedi.");
+        }
+        String host = matcher.group(1);
+        String port = matcher.group(2);
+        String dbName = matcher.group(3);
+
+        byte[] dump;
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                    "pg_dump",
+                    "-h", host,
+                    "-p", port,
+                    "-U", datasourceUsername,
+                    "--no-owner",
+                    "--no-privileges",
+                    "-F", "p",
+                    dbName
+            );
+            pb.environment().put("PGPASSWORD", datasourcePassword);
+            Process process = pb.start();
+
+            ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
+            Thread errReader = new Thread(() -> {
+                try {
+                    process.getErrorStream().transferTo(errBuffer);
+                } catch (IOException ignored) {
+                    // process ended, stream closed
+                }
+            });
+            errReader.start();
+
+            dump = process.getInputStream().readAllBytes();
+            boolean finished = process.waitFor(120, TimeUnit.SECONDS);
+            errReader.join(5000);
+            if (!finished) {
+                process.destroyForcibly();
+                throw new IllegalStateException("Yedekleme zaman asimina ugradi.");
+            }
+            if (process.exitValue() != 0 || dump.length == 0) {
+                String stderr = errBuffer.toString(StandardCharsets.UTF_8);
+                log.error("pg_dump basarisiz oldu (exit={}): {}", process.exitValue(), stderr);
+                throw new IllegalStateException("Yedekleme calistirilamadi. Sunucu loglarini kontrol edin.");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Yedekleme calistirilamadi: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new IllegalStateException("Yedekleme calistirilamadi: " + e.getMessage(), e);
+        }
+
+        auditLogRepository.save(AuditLog.builder()
                 .user(admin)
-                .action("BACKUP_TRIGGERED")
+                .action("BACKUP_DOWNLOADED")
                 .resourceType("SYSTEM")
-                .details(Map.of("triggeredAt", timestamp, "type", "AUDIT_LOG", "adminEmail", admin.getEmail()))
-                .build();
-        auditLogRepository.save(auditEntry);
-        // Gerçek pg_dump entegrasyonu yapılmadığından bu işlem yalnızca
-        // audit kaydı oluşturur. Otomatik yedek için bir cron job veya
-        // pg_dump çağrısı eklenmesi gerekir.
-        return Map.of(
-                "status", "SIMULATED",
-                "timestamp", timestamp,
-                "type", "AUDIT_LOG",
-                "message", "Yedek talebi kaydedildi. Otomatik pg_dump entegrasyonu henuz yapilandirilmadi."
-        );
+                .details(Map.of("sizeBytes", dump.length, "database", dbName))
+                .build());
+
+        return dump;
     }
 
     public Map<String, Object> getTokenStats() {

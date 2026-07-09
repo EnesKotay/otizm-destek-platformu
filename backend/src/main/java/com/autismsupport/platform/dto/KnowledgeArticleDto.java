@@ -18,6 +18,7 @@ public class KnowledgeArticleDto {
     private String sourceUrl;
     private boolean pendingReview;
     private boolean bookmarked;
+    private java.util.Set<TagDto> tags;
     private UserDto author;
     private boolean published;
     private int viewCount;

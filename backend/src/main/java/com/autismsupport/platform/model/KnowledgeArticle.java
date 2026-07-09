@@ -58,6 +58,15 @@ public class KnowledgeArticle {
     @Builder.Default
     private boolean pendingReview = false;
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "article_tags",
+        joinColumns = @JoinColumn(name = "article_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    @Builder.Default
+    private java.util.Set<Tag> tags = new java.util.HashSet<>();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

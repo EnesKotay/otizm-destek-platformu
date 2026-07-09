@@ -225,13 +225,10 @@ export function AdminSettingsPage() {
       const ts = `${today} ${now}`;
       setLastBackupTime(ts);
       localStorage.setItem('admin_last_backup', ts);
-      if (result.status === 'COMPLETED') {
-        toast.success('Veritabanı yedeği başarıyla alındı!');
-      } else {
-        toast.info(result.message || 'Yedek talebi kaydedildi. Gerçek SQL dump entegrasyonu henüz yapılandırılmamış.');
-      }
+      const sizeKb = Math.max(1, Math.round(result.sizeBytes / 1024));
+      toast.success(`Veritabanı yedeği (${sizeKb} KB) indirildi: ${result.filename}`);
     } catch {
-      toast.error('Yedekleme başarısız oldu. Lütfen tekrar deneyin.');
+      toast.error('Yedekleme başarısız oldu. Sunucu loglarını kontrol edin.');
     } finally {
       setBackupLoading(false);
     }
@@ -536,14 +533,14 @@ export function AdminSettingsPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <Database size={14} className="text-slate-500" />
-                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Yedekleme Talebi</p>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Veritabanı Yedeği (SQL dump)</p>
                   </div>
                   <p className="text-[10px] text-slate-400 font-medium mt-0.5 ml-5 leading-normal">
-                    {lastBackupTime ? `Son talep: ${lastBackupTime}` : 'Henüz yedek talebi yok'}
+                    {lastBackupTime ? `Son indirme: ${lastBackupTime}` : 'Henüz yedek indirilmedi'}
                   </p>
                 </div>
                 <Badge className={`text-[10px] font-extrabold border ${lastBackupTime ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30' : 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30'}`}>
-                  {lastBackupTime ? 'Talep edildi' : 'Bekliyor'}
+                  {lastBackupTime ? 'İndirildi' : 'Bekliyor'}
                 </Badge>
               </div>
 

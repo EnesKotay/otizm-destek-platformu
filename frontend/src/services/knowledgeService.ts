@@ -8,8 +8,13 @@ export const knowledgeService = {
     api.get<{ data: PageResponse<KnowledgeArticle> }>('/knowledge', { params: { page, size } }).then(r => r.data.data),
   getByCategory: (category: string, page = 0) =>
     api.get<{ data: PageResponse<KnowledgeArticle> }>(`/knowledge/category/${category}`, { params: { page } }).then(r => r.data.data),
-  search: (params: { q?: string; category?: string; format?: string; page?: number; size?: number }) =>
-    api.get<{ data: PageResponse<KnowledgeArticle> }>('/knowledge/search', { params }).then(r => r.data.data),
+  search: (params: { q?: string; category?: string; format?: string; tagIds?: string[]; page?: number; size?: number }) => {
+    const formattedParams = {
+      ...params,
+      tagIds: params.tagIds && params.tagIds.length > 0 ? params.tagIds.join(',') : undefined
+    };
+    return api.get<{ data: PageResponse<KnowledgeArticle> }>('/knowledge/search', { params: formattedParams }).then(r => r.data.data);
+  },
   getOne: (id: string) =>
     api.get<{ data: KnowledgeArticle }>(`/knowledge/${id}`).then(r => r.data.data),
   getRelated: (id: string) =>
@@ -40,5 +45,5 @@ export const knowledgeService = {
   toggleBookmark: (id: string) =>
     api.post<{ data: boolean }>(`/knowledge/${id}/bookmark`).then(r => r.data.data),
   generateAiDraft: (prompt: string) =>
-    api.post<{ data: { title: string; category: string; content: string } }>('/knowledge/ai-draft', { prompt }).then(r => r.data.data),
+    api.post<{ data: { title: string; category: string; content: string; aiGenerated: boolean } }>('/knowledge/ai-draft', { prompt }).then(r => r.data.data),
 };

@@ -334,6 +334,7 @@ public class GeminiService {
                     .title(prompt + " Hakkında Rehber (Taslak)")
                     .category("Genel")
                     .content("<h3>" + prompt + " Giriş</h3><p>Bu makale taslağı <b>" + prompt + "</b> konusu hakkında bilgilendirme amacıyla yapay zeka tarafından taslak olarak hazırlanmıştır. Yapay zeka servis anahtarı yapılandırılmadığı için bu varsayılan şablon gösterilmektedir.</p><h3>Öneriler ve Detaylar</h3><ul><li>Çocuğunuzun bireysel gelişim planına sadık kalın.</li><li>Uzman tavsiyelerini ve seans takvimini düzenli takip edin.</li><li>Benzer durumdaki diğer ailelerle forum üzerinden bilgi alışverişinde bulunun.</li></ul>")
+                    .aiGenerated(false)
                     .build();
         }
 
@@ -341,7 +342,7 @@ public class GeminiService {
             return objectMapper.readValue(responseJson, com.autismsupport.platform.dto.AiDraftResponse.class);
         } catch (Exception e) {
             log.error("Failed to parse Gemini draft response JSON: {}, error: {}", responseJson, e.getMessage());
-            // Safe fallback if JSON parsing failed but we got some text
+            // Not a fallback template — this is real AI output that just failed to parse as the expected JSON shape.
             return com.autismsupport.platform.dto.AiDraftResponse.builder()
                     .title(prompt)
                     .category("Genel")

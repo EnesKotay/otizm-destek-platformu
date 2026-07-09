@@ -25,6 +25,8 @@ public interface ForumPostRepository extends JpaRepository<ForumPost, UUID> {
 
     Page<ForumPost> findByAuthorId(UUID authorId, Pageable pageable);
 
+    long countByAuthorId(UUID authorId);
+
     @EntityGraph(attributePaths = {"author"})
     @Query("SELECT DISTINCT p FROM ForumPost p WHERE p.postType = :postType ORDER BY p.pinned DESC, p.createdAt DESC")
     Page<ForumPost> findByPostTypeOrderByPinnedDescCreatedAtDesc(@Param("postType") String postType, Pageable pageable);

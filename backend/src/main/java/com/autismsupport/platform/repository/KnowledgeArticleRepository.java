@@ -27,12 +27,17 @@ public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArtic
     @Query("SELECT SUM(a.viewCount) FROM KnowledgeArticle a WHERE a.author.id = :authorId")
     Long sumViewCountByAuthorId(@Param("authorId") UUID authorId);
 
-    @Query("SELECT a FROM KnowledgeArticle a WHERE a.published = true "
+    @Query("SELECT DISTINCT a FROM KnowledgeArticle a LEFT JOIN a.tags t WHERE a.published = true "
             + "AND (:q = '' OR LOWER(a.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(a.content) LIKE LOWER(CONCAT('%', :q, '%'))) "
             + "AND (:category = '' OR a.category = :category) "
-            + "AND (:format = '' OR a.format = :format)")
-    Page<KnowledgeArticle> filterPublished(@Param("q") String q, @Param("category") String category,
-                                            @Param("format") String format, Pageable pageable);
+            + "AND (:format = '' OR a.format = :format) "
+            + "AND (:hasTags = false OR t.id IN :tagIds)")
+    Page<KnowledgeArticle> filterPublished(@Param("q") String q, 
+                                           @Param("category") String category,
+                                           @Param("format") String format, 
+                                           @Param("hasTags") boolean hasTags,
+                                           @Param("tagIds") List<UUID> tagIds, 
+                                           Pageable pageable);
 
     @Query("SELECT a.author.id AS authorId, COUNT(a) AS articleCount FROM KnowledgeArticle a WHERE a.author.id IN :authorIds GROUP BY a.author.id")
     List<ArticleCountProjection> findArticleCountsByAuthorIds(@Param("authorIds") List<UUID> authorIds);

@@ -13,4 +13,7 @@ public class AiDraftResponse {
     private String title;
     private String category;
     private String content;
+    /** false when the AI provider was unavailable/unconfigured and a canned template was returned instead. */
+    @Builder.Default
+    private boolean aiGenerated = true;
 }

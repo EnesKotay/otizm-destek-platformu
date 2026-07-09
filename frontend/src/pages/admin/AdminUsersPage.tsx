@@ -19,10 +19,10 @@ import {
   CheckSquare,
   Square
 } from 'lucide-react';
-import { adminService } from '@/services/adminService';
+import { adminService, type UserActivitySummary } from '@/services/adminService';
 import { toast } from '@/store/toastStore';
 import type { User } from '@/types';
-import { formatDate } from '@/utils/date';
+import { formatDate, formatRelative } from '@/utils/date';
 
 export function AdminUsersPage() {
   const [usersList, setUsersList] = useState<User[]>([]);
@@ -41,6 +41,24 @@ export function AdminUsersPage() {
   
   // Drawer state
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [activitySummary, setActivitySummary] = useState<UserActivitySummary | null>(null);
+  const [activityLoading, setActivityLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActivitySummary(null);
+      return;
+    }
+    let cancelled = false;
+    setActivityLoading(true);
+    adminService.getUserActivitySummary(selectedUser.id)
+      .then(summary => { if (!cancelled) setActivitySummary(summary); })
+      .catch(() => { if (!cancelled) setActivitySummary(null); })
+      .finally(() => { if (!cancelled) setActivityLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUser?.id]);
 
   const handleSearchChange = (value: string) => {
     setUsersSearch(value);
@@ -433,41 +451,53 @@ export function AdminUsersPage() {
                 </CardContent>
               </Card>
 
-              {/* Rich CRM Stats Log (Mock Activities) */}
+              {/* Gerçek Aktivite Özeti (backend'den) */}
               <Card className="rounded-2xl border-none shadow-sm bg-slate-50/50">
                 <CardContent className="p-5 space-y-4">
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Activity size={14} /> CRM & Sistem Aktivite Analizi
+                    <Activity size={14} /> Sistem Aktivite Özeti
                   </h4>
-                  
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="bg-white p-3 rounded-xl border border-slate-100">
-                      <p className="text-lg font-black text-indigo-600">14</p>
-                      <p className="text-[10px] text-slate-400 font-bold">Oturum</p>
-                    </div>
-                    <div className="bg-white p-3 rounded-xl border border-slate-100">
-                      <p className="text-lg font-black text-emerald-600">{selectedUser.role === 'PARENT' ? '3' : '18'}</p>
-                      <p className="text-[10px] text-slate-400 font-bold">{selectedUser.role === 'PARENT' ? 'Çocuk' : 'Terapi'}</p>
-                    </div>
-                    <div className="bg-white p-3 rounded-xl border border-slate-100">
-                      <p className="text-lg font-black text-amber-600">{selectedUser.role === 'PARENT' ? '9' : '24'}</p>
-                      <p className="text-[10px] text-slate-400 font-bold">Forum</p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-bold text-slate-400 uppercase">Son İşlem Günlüğü</p>
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between items-center text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100">
-                        <span className="font-semibold">Sisteme Giriş Yapıldı</span>
-                        <span className="text-[10px] text-slate-400">Bugün 14:22</span>
+                  {activityLoading ? (
+                    <p className="text-xs text-slate-400 font-medium">Yükleniyor...</p>
+                  ) : activitySummary ? (
+                    <>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-white p-3 rounded-xl border border-slate-100">
+                          <p className="text-lg font-black text-indigo-600">{activitySummary.trackedActionsCount}</p>
+                          <p className="text-[10px] text-slate-400 font-bold">Kayıtlı İşlem</p>
+                        </div>
+                        <div className="bg-white p-3 rounded-xl border border-slate-100">
+                          <p className="text-lg font-black text-emerald-600">
+                            {selectedUser.role === 'PARENT' ? (activitySummary.childrenCount ?? 0) : (activitySummary.appointmentsCount ?? 0)}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-bold">{selectedUser.role === 'PARENT' ? 'Çocuk' : 'Randevu'}</p>
+                        </div>
+                        <div className="bg-white p-3 rounded-xl border border-slate-100">
+                          <p className="text-lg font-black text-amber-600">{activitySummary.forumPostsCount}</p>
+                          <p className="text-[10px] text-slate-400 font-bold">Forum</p>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100">
-                        <span className="font-semibold">{selectedUser.role === 'PARENT' ? 'ABC Davranış Günlüğü Eklendi' : 'Yeni Randevu Oluşturuldu'}</span>
-                        <span className="text-[10px] text-slate-400">Dün 10:15</span>
+
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-bold text-slate-400 uppercase">Son İşlem Günlüğü</p>
+                        {activitySummary.recentActions.length === 0 ? (
+                          <p className="text-xs text-slate-400 bg-white p-2.5 rounded-lg border border-slate-100">Henüz kayıtlı işlem yok.</p>
+                        ) : (
+                          <div className="space-y-2 text-xs">
+                            {activitySummary.recentActions.map(entry => (
+                              <div key={entry.id} className="flex justify-between items-center text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100">
+                                <span className="font-semibold">{entry.action}</span>
+                                <span className="text-[10px] text-slate-400">{formatRelative(entry.createdAt)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-slate-400 font-medium">Aktivite özeti yüklenemedi.</p>
+                  )}
                 </CardContent>
               </Card>
             </div>

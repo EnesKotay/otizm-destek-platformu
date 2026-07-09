@@ -16,5 +16,8 @@ public interface RoutineRepository extends JpaRepository<Routine, UUID> {
 
     @Query("SELECT DISTINCT r FROM Routine r LEFT JOIN FETCH r.items WHERE r.child.id = :childId AND r.isActive = true")
     List<Routine> findByChildIdAndIsActiveTrueWithItems(@Param("childId") UUID childId);
+
+    @Query("SELECT DISTINCT r FROM Routine r JOIN FETCH r.items WHERE r.isActive = true")
+    List<Routine> findByIsActiveTrueWithItems();
 }
 

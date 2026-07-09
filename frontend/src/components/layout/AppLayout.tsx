@@ -51,6 +51,18 @@ export function AppLayout() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const routeHelp = useMemo(() => getRouteHelp(location.pathname), [location.pathname]);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -227,6 +239,19 @@ export function AppLayout() {
                 </div>
               </div>
             </section>
+          )}
+          {!isOnline && (
+            <div className="mb-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white px-5 py-4 rounded-3xl flex items-center justify-between shadow-md shadow-orange-500/10 animate-in fade-in slide-in-from-top-4 duration-300 print:hidden border border-orange-400/20">
+              <div className="flex items-center gap-3">
+                <AlertTriangle size={20} className="text-white shrink-0 animate-bounce" />
+                <div className="text-xs sm:text-sm font-bold leading-snug">
+                  Çevrimdışı Mod: İnternet bağlantınız koptu. Yaptığınız veri girişleri cihazınıza kaydedilecek ve bağlantı geldiğinde otomatik gönderilecektir.
+                </div>
+              </div>
+              <div className="shrink-0 text-[9px] font-black tracking-widest bg-white/20 px-2.5 py-1 rounded-full uppercase ml-4 hidden xs:block">
+                ÇEVRİMDIŞI
+              </div>
+            </div>
           )}
           <Suspense fallback={
             <div className="flex items-center justify-center min-h-[60vh]">

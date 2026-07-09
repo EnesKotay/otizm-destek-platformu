@@ -12,9 +12,10 @@ import { Modal } from '@/components/ui/Modal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { knowledgeService } from '@/services/knowledgeService';
+import { tagService } from '@/services/tagService';
 import { useAuthStore } from '@/store/authStore';
 import { formatRelative, formatDate } from '@/utils/date';
-import type { KnowledgeArticle, ExpertAnalytics, ArticleComment } from '@/types';
+import type { KnowledgeArticle, ExpertAnalytics, ArticleComment, Tag } from '@/types';
 import { toast } from '@/store/toastStore';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
 
@@ -258,6 +259,8 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   const [isExperience, setIsExperience] = useState(false);
   const [durationTried, setDurationTried] = useState('1 hafta');
   const [effectivenessRating, setEffectivenessRating] = useState(5);
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [analytics, setAnalytics] = useState<ExpertAnalytics | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -301,7 +304,11 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
         sourceUrl: '',
       });
       setAiPrompt('');
-      toast.success('Yapay zeka taslağı başarıyla oluşturuldu ve forma yüklendi!');
+      if (draft.aiGenerated) {
+        toast.success('Yapay zeka taslağı başarıyla oluşturuldu ve forma yüklendi!');
+      } else {
+        toast.warning('Yapay zeka servisi şu anda yapılandırılmamış — forma örnek bir şablon yüklendi, yayınlamadan önce içeriği mutlaka kendiniz yazın.');
+      }
     } catch {
       toast.error('Taslak oluşturulurken bir hata oluştu.');
     } finally {
@@ -329,6 +336,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
           q: debouncedSearch || undefined,
           category: activeCategory || undefined,
           format: activeContentType ? TYPE_TO_FORMAT[activeContentType] : undefined,
+          tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
           page,
         });
       }
@@ -409,10 +417,16 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   }, [user]);
 
   useEffect(() => {
+    tagService.getAllTags()
+      .then(setAvailableTags)
+      .catch(() => setAvailableTags([]));
+  }, []);
+
+  useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadArticles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory, activeContentType, debouncedSearch, page, showMyArticles, showBookmarksOnly]);
+  }, [activeCategory, activeContentType, debouncedSearch, page, showMyArticles, showBookmarksOnly, selectedTagIds]);
 
   useEffect(() => {
     if (selectedArticleId) {
@@ -1162,6 +1176,47 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
             })}
           </div>
         </div>
+
+        {/* Tag Filter */}
+        {availableTags.length > 0 && (
+          <div className="border-t border-slate-200/40 pt-3 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between mb-2.5 px-1">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">Etiketlere Göre Daralt</span>
+              {selectedTagIds.length > 0 && (
+                <button
+                  onClick={() => { setSelectedTagIds([]); setPage(0); }}
+                  className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
+                >
+                  Filtreleri Temizle
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+              {availableTags.map(tag => {
+                const isActive = selectedTagIds.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => {
+                      setSelectedTagIds(prev =>
+                        prev.includes(tag.id) ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                      );
+                      setPage(0);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer border hover:-translate-y-0.5 transform duration-150 shrink-0 ${
+                      isActive
+                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60 shadow-sm'
+                        : 'bg-white border-slate-100 hover:border-slate-200 text-slate-500 hover:text-slate-700 shadow-sm'
+                    }`}
+                  >
+                    <span>{tag.name}</span>
+                    {isActive && <span className="text-[8px] bg-indigo-600 text-white w-3 h-3 rounded-full flex items-center justify-center">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Recommendations */}
@@ -1339,6 +1394,11 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                           {article.category}
                         </span>
                       )}
+                      {article.tags && article.tags.map(t => (
+                        <span key={t.id} className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-50 text-slate-400 border border-slate-100">
+                          #{t.name}
+                        </span>
+                      ))}
                       {article.author?.expertTitle && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                           <CheckCircle size={10} className="fill-emerald-100" /> Uzman Onaylı

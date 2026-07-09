@@ -10,7 +10,7 @@ RUN mvn clean package -DskipTests
 
 # Run stage
 FROM eclipse-temurin:21-jre-alpine
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl postgresql16-client
 WORKDIR /app
 
 COPY --from=builder /app/target/*.jar app.jar

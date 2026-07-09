@@ -8,11 +8,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
 
     Page<AuditLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    List<AuditLog> findTop3ByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    long countByUserId(UUID userId);
 
     @Query("""
             SELECT a FROM AuditLog a
