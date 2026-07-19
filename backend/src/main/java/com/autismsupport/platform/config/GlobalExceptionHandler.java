@@ -22,11 +22,18 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.MDC;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private final MeterRegistry meterRegistry;
+
+    public GlobalExceptionHandler(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
 
     @ExceptionHandler(AuthenticationRequiredException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthenticationRequired(AuthenticationRequiredException ex) {
@@ -82,21 +89,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        log.warn("Veri bütünlüğü ihlali yakalandı: {}", ex.getMessage());
+        recordError(ex);
+        log.warn("Veri bütünlüğü ihlali yakalandı; requestId={}", MDC.get(CorrelationIdFilter.MDC_KEY));
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error("Bu işlem zaten gerçekleştirilmiş olabilir. Lütfen sayfayı yenileyin."));
     }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
-        log.error("Beklenmeyen RuntimeException yakalandı: ", ex);
-        // Uygulama iş kuralı hataları mesaj içerir; beklenmedik RT hatalar 500 döner
-        String message = ex.getMessage();
-        if (message != null && !message.isBlank()) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(message));
-        }
+        recordError(ex);
+        log.error("Beklenmeyen çalışma zamanı hatası; requestId={}, type={}",
+                MDC.get(CorrelationIdFilter.MDC_KEY), ex.getClass().getSimpleName());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin."));
+                .body(ApiResponse.error("Beklenmeyen bir hata oluştu. Destek kodu: " + MDC.get(CorrelationIdFilter.MDC_KEY)));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -122,12 +127,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
-        log.error("Beklenmeyen sunucu hatası", ex);
+        recordError(ex);
+        log.error("Beklenmeyen sunucu hatası; requestId={}, type={}",
+                MDC.get(CorrelationIdFilter.MDC_KEY), ex.getClass().getSimpleName());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Beklenmeyen bir sunucu hatası oluştu. Lütfen daha sonra tekrar deneyin."));
     }
 
     private String messageOrDefault(Exception ex, String fallback) {
         return ex.getMessage() == null || ex.getMessage().isBlank() ? fallback : ex.getMessage();
+    }
+
+    private void recordError(Exception ex) {
+        meterRegistry.counter("application.errors", "type", ex.getClass().getSimpleName()).increment();
     }
 }

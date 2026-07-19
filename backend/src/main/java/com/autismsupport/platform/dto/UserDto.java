@@ -25,8 +25,13 @@ public class UserDto {
     private String licenseNumber;
     private String bio;
     private boolean verified;
+    private boolean emailVerified;
     private boolean licenseVerified;
     private boolean kvkkConsent;
+    private boolean consentAiAnalysis;
+    private LocalDateTime consentAiAnalysisDate;
+    private boolean consentEmergencyCard;
+    private LocalDateTime consentEmergencyCardDate;
     private boolean isActive;
     private List<String> specializations;
     private String profileImageUrl;

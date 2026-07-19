@@ -297,7 +297,7 @@ export function ChatBot() {
   });
 
   const activeSession = useMemo(() => sessions.find(s => s.id === activeId) ?? null, [sessions, activeId]);
-  const messages = activeSession?.messages ?? [];
+  const messages = useMemo(() => activeSession?.messages ?? [], [activeSession]);
 
   const [input,       setInput]       = useState('');
   const [isLoading,   setIsLoading]   = useState(false);
@@ -322,7 +322,7 @@ export function ChatBot() {
        
       else { const f = makeSession(); setSessions([f]); setActiveId(f.id); }
     }
-  }, []);
+  }, [activeId, sessions]);
 
   /* ── localStorage sync ─────────────────────────────── */
   useEffect(() => { saveSessions(sessions); }, [sessions]);
@@ -850,6 +850,10 @@ export function ChatBot() {
                   ))}
                 </div>
               )}
+
+              <p className="px-4 pb-1 text-[10px] leading-4 text-slate-500">
+                AutiBot yalnızca bilgilendirme amaçlıdır; tanı veya tedavi yerine geçmez. Tıbbi kararlar için yetkili bir uzmana başvurun.
+              </p>
 
               {/* Input Alanı */}
               <div className="cb-input-area">

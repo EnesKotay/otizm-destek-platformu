@@ -31,4 +31,5 @@ public class RegisterRequest {
     private String licenseNumber;
     private String bio;
     private List<String> specializations;
+    private String captchaToken;
 }

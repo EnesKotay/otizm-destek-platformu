@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.autismsupport.platform.security.EncryptedStringConverter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,10 +27,12 @@ public class DevelopmentNote {
     @JoinColumn(name = "child_id", nullable = false)
     private Child child;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String title;
 
     @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String content;
 
     private String category;

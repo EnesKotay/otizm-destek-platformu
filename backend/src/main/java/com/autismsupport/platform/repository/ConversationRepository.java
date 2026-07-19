@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public interface ConversationRepository extends JpaRepository<Conversation, UUID> {
 
+    boolean existsByIdAndParticipantsId(UUID id, UUID participantId);
+
     // Eski — hâlâ kullanılabilir ama participant lazy-load içerir
     @Query("SELECT c FROM Conversation c JOIN c.participants p WHERE p.id = :userId ORDER BY c.lastMessageAt DESC NULLS LAST")
     List<Conversation> findByParticipantId(@Param("userId") UUID userId);

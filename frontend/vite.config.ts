@@ -34,8 +34,13 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              if (id.includes('react')) return 'react-vendor';
-              if (id.includes('lucide-react') || id.includes('recharts')) return 'ui-vendor';
+              if (id.includes('lucide-react')) return 'icons-vendor';
+              if (
+                id.includes('/react/')
+                || id.includes('/react-dom/')
+                || id.includes('/react-router')
+                || id.includes('/react-hook-form/')
+              ) return 'react-vendor';
               if (id.includes('zustand') || id.includes('@tanstack')) return 'state-vendor';
             }
           }

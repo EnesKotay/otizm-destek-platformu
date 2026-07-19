@@ -159,9 +159,10 @@ export function NotesPage() {
   };
 
   const handlePhotoUpload = async (file: File, target: 'form' | 'edit') => {
+    if (!selectedChild) return;
     setUploadingPhoto(true);
     try {
-      const url = await uploadService.upload(file);
+      const url = await uploadService.upload(file, 'PRIVATE', { type: 'CHILD_NOTES', id: selectedChild.id });
       if (target === 'form') setForm(f => ({ ...f, imageUrl: url }));
       else setEditForm(f => ({ ...f, imageUrl: url }));
       toast.success('Fotoğraf yüklendi.');

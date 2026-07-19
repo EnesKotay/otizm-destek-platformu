@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
+import com.autismsupport.platform.security.UserPrincipal;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Component
@@ -30,6 +32,11 @@ public class RateLimitInterceptor implements HandlerInterceptor {
 
     @Value("${app.rate-limit.redis-enabled:true}")
     private boolean redisEnabled;
+
+    @Value("${app.rate-limit.trust-proxy-headers:false}")
+    private boolean trustProxyHeaders;
+
+    private static final Pattern SAFE_IP = Pattern.compile("^[0-9a-fA-F:.]{1,64}$");
 
     // Local fallback in-memory rate limiter if Redis is unavailable
     private final Map<String, List<Instant>> localFallbackMap = new ConcurrentHashMap<>();
@@ -107,12 +114,19 @@ public class RateLimitInterceptor implements HandlerInterceptor {
                 && authentication.isAuthenticated()
                 && authentication.getName() != null
                 && !"anonymousUser".equals(authentication.getName())) {
-            return "user:" + authentication.getName() + ":" + request.getRequestURI();
+            String subject = authentication.getPrincipal() instanceof UserPrincipal principal
+                    ? principal.getId().toString()
+                    : Integer.toUnsignedString(authentication.getName().hashCode(), 16);
+            return "user:" + subject + ":" + request.getRequestURI();
         }
         return "ip:" + getClientIp(request) + ":" + request.getRequestURI();
     }
 
     private String getClientIp(HttpServletRequest request) {
+        if (!trustProxyHeaders) {
+            return request.getRemoteAddr();
+        }
+
         String cfConnectingIp = firstHeaderValue(request.getHeader("CF-Connecting-IP"));
         if (cfConnectingIp != null) {
             return cfConnectingIp;
@@ -123,7 +137,7 @@ public class RateLimitInterceptor implements HandlerInterceptor {
             return realIp;
         }
 
-        String forwardedFor = firstHeaderValue(request.getHeader("X-Forwarded-For"));
+        String forwardedFor = lastHeaderValue(request.getHeader("X-Forwarded-For"));
         if (forwardedFor != null) {
             return forwardedFor;
         }
@@ -137,11 +151,25 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         }
         for (String part : headerValue.split(",")) {
             String value = part.trim();
-            if (!value.isBlank() && !"unknown".equalsIgnoreCase(value)) {
+            if (isSafeIp(value)) {
                 return value;
             }
         }
         return null;
+    }
+
+    private String lastHeaderValue(String headerValue) {
+        if (headerValue == null || headerValue.isBlank()) return null;
+        String[] parts = headerValue.split(",");
+        for (int i = parts.length - 1; i >= 0; i--) {
+            String value = parts[i].trim();
+            if (isSafeIp(value)) return value;
+        }
+        return null;
+    }
+
+    private boolean isSafeIp(String value) {
+        return value != null && !"unknown".equalsIgnoreCase(value) && SAFE_IP.matcher(value).matches();
     }
 
     // Her 5 dakikada bir eski in-memory kayıtları temizle (bellek sızıntısı önlemi)

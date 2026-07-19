@@ -616,7 +616,7 @@ export function MessagesPage() {
       let fileAttachment;
       let messageType: string | undefined;
       if (selectedFile) {
-        const url = await uploadService.upload(selectedFile);
+        const url = await uploadService.upload(selectedFile, 'PRIVATE', { type: 'CONVERSATION', id: selectedConv.id });
         // fileType MIME öneki ile saklanır (mesaj listesinde "image/..." kontrolü için);
         // messageType ise backend'in kabul ettiği TEXT/FILE/IMAGE/PECS setine ait olmalı.
         fileAttachment = { fileUrl: url, fileName: selectedFile.name, fileType: selectedFile.type };

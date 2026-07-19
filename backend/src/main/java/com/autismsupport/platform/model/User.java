@@ -45,6 +45,10 @@ public class User {
     @Builder.Default
     private boolean verified = false;
 
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
     @Column(name = "expert_title")
     private String expertTitle;
 
@@ -66,6 +70,20 @@ public class User {
 
     @Column(name = "kvkk_consent_date")
     private LocalDateTime kvkkConsentDate;
+
+    @Column(name = "consent_ai_analysis")
+    @Builder.Default
+    private boolean consentAiAnalysis = false;
+
+    @Column(name = "consent_ai_analysis_date")
+    private LocalDateTime consentAiAnalysisDate;
+
+    @Column(name = "consent_emergency_card")
+    @Builder.Default
+    private boolean consentEmergencyCard = false;
+
+    @Column(name = "consent_emergency_card_date")
+    private LocalDateTime consentEmergencyCardDate;
 
     @Column(name = "matching_enabled")
     @Builder.Default
@@ -113,6 +131,13 @@ public class User {
     @OneToMany(mappedBy = "expert", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Appointment> expertAppointments = new ArrayList<>();
+
+    @Column(name = "mfa_secret")
+    private String mfaSecret;
+
+    @Column(name = "mfa_enabled")
+    @Builder.Default
+    private boolean mfaEnabled = false;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

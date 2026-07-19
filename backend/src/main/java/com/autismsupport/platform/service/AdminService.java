@@ -8,6 +8,7 @@ import com.autismsupport.platform.dto.ReportDto;
 import com.autismsupport.platform.dto.ReportTargetPreviewDto;
 import com.autismsupport.platform.dto.UserActivitySummaryDto;
 import com.autismsupport.platform.dto.UserDto;
+import com.autismsupport.platform.exception.ValidationException;
 import com.autismsupport.platform.model.AuditLog;
 import com.autismsupport.platform.model.ForumComment;
 import com.autismsupport.platform.model.ForumPost;
@@ -65,6 +66,7 @@ public class AdminService {
     private final ReportRepository reportRepository;
     private final AuditLogRepository auditLogRepository;
     private final PlatformSettingsRepository platformSettingsRepository;
+    private final PlatformSettingsService platformSettingsService;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
     private final EmailService emailService;
@@ -202,7 +204,7 @@ public class AdminService {
                 "REPORT_TARGET_WARNED",
                 report.getTargetType(),
                 report.getTargetId(),
-                Map.of("reportId", report.getId(), "targetUserEmail", targetUser.getEmail())
+                Map.of("reportId", report.getId(), "targetUserId", targetUser.getId())
         );
         return toReportDto(saved);
     }
@@ -241,6 +243,9 @@ public class AdminService {
     public UserDto approveExpert(UUID expertId, UUID adminId) {
         User expert = userRepository.findById(expertId)
                 .orElseThrow(() -> new RuntimeException("Uzman bulunamadi"));
+        if (expert.getRole() != UserRole.EXPERT) {
+            throw new ValidationException("Yalnızca uzman başvuruları onaylanabilir");
+        }
         expert.setVerified(true);
         userRepository.save(expert);
 
@@ -257,7 +262,7 @@ public class AdminService {
                 "EXPERT_APPROVED",
                 "USER",
                 expert.getId(),
-                Map.of("expertEmail", expert.getEmail())
+                Map.of("expertId", expert.getId())
         );
         return toUserDto(expert);
     }
@@ -267,6 +272,9 @@ public class AdminService {
     public UserDto rejectExpert(UUID expertId, UUID adminId) {
         User expert = userRepository.findById(expertId)
                 .orElseThrow(() -> new RuntimeException("Uzman bulunamadi"));
+        if (expert.getRole() != UserRole.EXPERT) {
+            throw new ValidationException("Yalnızca uzman başvuruları reddedilebilir");
+        }
         expert.setRole(UserRole.PARENT);
         expert.setVerified(false);
         userRepository.save(expert);
@@ -284,7 +292,7 @@ public class AdminService {
                 "EXPERT_REJECTED",
                 "USER",
                 expert.getId(),
-                Map.of("expertEmail", expert.getEmail())
+                Map.of("expertId", expert.getId())
         );
         return toUserDto(expert);
     }
@@ -520,7 +528,7 @@ public class AdminService {
                 action,
                 "USER",
                 user.getId(),
-                Map.of("userEmail", user.getEmail(), "role", user.getRole().name())
+                Map.of("userId", user.getId(), "role", user.getRole().name())
         );
         return toUserDto(user);
     }
@@ -591,6 +599,7 @@ public class AdminService {
         if (dto.getRegistrationsOpen() != null) s.setRegistrationsOpen(dto.getRegistrationsOpen());
         if (dto.getAiEnabled() != null) s.setAiEnabled(dto.getAiEnabled());
         PlatformSettings saved = platformSettingsRepository.save(s);
+        platformSettingsService.invalidate();
         return PlatformSettingsDto.builder()
                 .maintenanceMode(saved.isMaintenanceMode())
                 .registrationsOpen(saved.isRegistrationsOpen())
@@ -713,6 +722,9 @@ public class AdminService {
     public UserDto verifyExpertLicense(UUID expertId, UUID adminId) {
         User expert = userRepository.findById(expertId)
                 .orElseThrow(() -> new RuntimeException("Uzman bulunamadi"));
+        if (expert.getRole() != UserRole.EXPERT || !expert.isVerified()) {
+            throw new ValidationException("Onaylanmamış bir uzman için lisans doğrulanamaz");
+        }
         expert.setLicenseVerified(true);
         expert.setLicenseVerifiedAt(java.time.LocalDateTime.now());
         userRepository.save(expert);
@@ -729,7 +741,7 @@ public class AdminService {
                 "LICENSE_VERIFIED",
                 "USER",
                 expert.getId(),
-                Map.of("licenseNumber", expert.getLicenseNumber() != null ? expert.getLicenseNumber() : "")
+                Map.of("expertId", expert.getId())
         );
         return toUserDto(expert);
     }
@@ -739,6 +751,9 @@ public class AdminService {
     public UserDto revokeExpertLicense(UUID expertId, UUID adminId) {
         User expert = userRepository.findById(expertId)
                 .orElseThrow(() -> new RuntimeException("Uzman bulunamadi"));
+        if (expert.getRole() != UserRole.EXPERT) {
+            throw new ValidationException("Yalnızca uzman hesaplarının lisans doğrulaması kaldırılabilir");
+        }
         expert.setLicenseVerified(false);
         expert.setLicenseVerifiedAt(null);
         userRepository.save(expert);
@@ -748,7 +763,7 @@ public class AdminService {
                 "LICENSE_VERIFICATION_REVOKED",
                 "USER",
                 expert.getId(),
-                Map.of("expertEmail", expert.getEmail())
+                Map.of("expertId", expert.getId())
         );
         return toUserDto(expert);
     }

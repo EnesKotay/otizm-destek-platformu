@@ -30,9 +30,9 @@ public class EmailService {
             message.setSubject(subject);
             message.setText(content);
             mailSender.send(message);
-            log.info("Email successfully sent to {}", to);
+            log.info("Transactional email sent");
         } catch (Exception e) {
-            log.error("Failed to send email to {}: {}", to, e.getMessage());
+            log.error("Transactional email could not be sent; type={}", e.getClass().getSimpleName());
         }
     }
 
@@ -47,6 +47,15 @@ public class EmailService {
                 + "Saygilarimizla,\n"
                 + "Otizm Destek Platformu Ekibi";
         sendEmail(toEmail, subject, content);
+    }
+
+    @Async
+    public void sendEmailVerification(String toEmail, String token) {
+        String verificationUrl = frontendUrl + "/eposta-dogrula?token=" + token;
+        sendEmail(toEmail, "E-posta Adresinizi Doğrulayın",
+                "Merhaba,\n\nHesabınızı etkinleştirmek için aşağıdaki bağlantıyı 24 saat içinde açın:\n\n"
+                        + verificationUrl + "\n\nBu kaydı siz yapmadıysanız bu e-postayı yok sayabilirsiniz.\n\n"
+                        + "Otizm Destek Platformu Ekibi");
     }
 
     @Async

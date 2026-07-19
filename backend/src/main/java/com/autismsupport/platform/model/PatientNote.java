@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.autismsupport.platform.security.EncryptedStringConverter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,6 +35,7 @@ public class PatientNote {
     private Child child;
 
     @Column(columnDefinition = "TEXT", nullable = false)
+    @Convert(converter = EncryptedStringConverter.class)
     private String content;
 
     @Column(length = 50)

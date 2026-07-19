@@ -2,6 +2,8 @@ package com.autismsupport.platform.service;
 
 import com.autismsupport.platform.dto.AuthResponse;
 import com.autismsupport.platform.dto.RegisterRequest;
+import com.autismsupport.platform.dto.MfaSetupResponse;
+import com.autismsupport.platform.dto.MfaVerifyRequest;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.model.UserRole;
 import com.autismsupport.platform.repository.RefreshTokenRepository;
@@ -21,7 +23,7 @@ import java.util.UUID;
 import java.time.LocalDateTime;
 import com.autismsupport.platform.model.RefreshToken;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -35,6 +37,9 @@ class AuthServiceTest {
     @Mock JwtTokenProvider tokenProvider;
     @Mock AuthenticationManager authenticationManager;
     @Mock NotificationService notificationService;
+    @Mock PlatformSettingsService platformSettingsService;
+    @Mock EmailVerificationService emailVerificationService;
+    @Mock MfaService mfaService;
 
     @InjectMocks AuthService authService;
 
@@ -101,12 +106,14 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("Kayıt: uzman rolü EXPERT olarak atanır")
-    void register_expertRole_setsExpertRole() {
+    @DisplayName("Kayıt: uzman başvurusu token üretmeden beklemeye alınır")
+    void register_expertRole_isPendingWithoutTokens() {
         when(userRepository.existsByEmail(any())).thenReturn(false);
         when(passwordEncoder.encode(any())).thenReturn("hashed");
 
         validRequest.setRole("EXPERT");
+        validRequest.setExpertTitle("Dil Terapisti");
+        validRequest.setLicenseNumber("LIC-123");
 
         User saved = User.builder()
                 .id(UUID.randomUUID())
@@ -117,12 +124,31 @@ class AuthServiceTest {
                 .verified(false)
                 .build();
         when(userRepository.save(any())).thenReturn(saved);
-        when(tokenProvider.generateAccessToken(any(), any(), any())).thenReturn("t");
-        when(tokenProvider.generateRefreshToken(any())).thenReturn("r");
-
-        authService.register(validRequest);
+        AuthResponse response = authService.register(validRequest);
 
         verify(userRepository).save(argThat(u -> u.getRole() == UserRole.EXPERT));
+        assert response.isPendingApproval();
+        assert response.getAccessToken() == null;
+        verify(tokenProvider, never()).generateAccessToken(any(), any(), any());
+        verify(refreshTokenRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Kayıt: yönetici ve öğretmen rolleri public endpoint üzerinden alınamaz")
+    void register_privilegedRoles_areRejected() {
+        when(userRepository.existsByEmail(any())).thenReturn(false);
+
+        validRequest.setRole("ADMIN");
+        assertThatThrownBy(() -> authService.register(validRequest))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("doğrudan kayıt");
+
+        validRequest.setRole("TEACHER");
+        assertThatThrownBy(() -> authService.register(validRequest))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("doğrudan kayıt");
+
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -180,5 +206,53 @@ class AuthServiceTest {
 
         verify(refreshTokenRepository).deleteByUserId(userId);
         verify(refreshTokenRepository, never()).save(any(RefreshToken.class));
+    }
+
+    @Test
+    @DisplayName("MFA Setup: Kullanıcı için secret oluşturur ve QR URL döner")
+    void setupMfa_generatesSecretAndReturnsQrCode() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder().id(userId).email("admin@example.com").build();
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
+        when(mfaService.generateSecret()).thenReturn("SECRET123");
+        when(mfaService.getQrCodeUrl(eq("admin@example.com"), eq("SECRET123"))).thenReturn("otpauth://test");
+
+        MfaSetupResponse response = authService.setupMfa(userId);
+
+        assertThat(response.getSecret()).isEqualTo("SECRET123");
+        assertThat(response.getQrCodeUrl()).isEqualTo("otpauth://test");
+        assertThat(user.getMfaSecret()).isEqualTo("SECRET123");
+        assertThat(user.isMfaEnabled()).isFalse();
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("MFA Enable: Doğru kod girildiğinde MFA'yı aktif eder")
+    void enableMfa_withValidCode_enablesMfaAndReturnsTrue() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder().id(userId).mfaSecret("SECRET123").mfaEnabled(false).build();
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
+        when(mfaService.verifyCode("SECRET123", "123456")).thenReturn(true);
+
+        boolean result = authService.enableMfa(userId, "123456");
+
+        assertThat(result).isTrue();
+        assertThat(user.isMfaEnabled()).isTrue();
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("MFA Enable: Yanlış kod girildiğinde MFA'yı aktif etmez ve false döner")
+    void enableMfa_withInvalidCode_returnsFalse() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder().id(userId).mfaSecret("SECRET123").mfaEnabled(false).build();
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
+        when(mfaService.verifyCode("SECRET123", "111111")).thenReturn(false);
+
+        boolean result = authService.enableMfa(userId, "111111");
+
+        assertThat(result).isFalse();
+        assertThat(user.isMfaEnabled()).isFalse();
+        verify(userRepository, never()).save(any(User.class));
     }
 }

@@ -32,12 +32,18 @@ export const userService = {
   downloadData: () =>
     api.get('/users/data', { responseType: 'blob' }),
 
-  deleteAccount: () =>
-    api.delete('/users/me'),
+  deleteAccount: (currentPassword: string) =>
+    api.delete('/users/me', { data: { currentPassword } }),
 
   searchUsers: (q: string) =>
     api.get<ApiResponse<User[]>>(`/users/search?q=${encodeURIComponent(q)}`).then(r => r.data.data),
 
   getOnlineStatusBatch: (userIds: string[]) =>
     api.post<ApiResponse<Record<string, boolean>>>('/users/online-status/batch', userIds).then(r => r.data.data),
+
+  updateAiConsent: (consent: boolean) =>
+    api.post<ApiResponse<User>>(`/users/me/consent/ai?consent=${consent}`).then(r => r.data.data),
+
+  updateEmergencyConsent: (consent: boolean) =>
+    api.post<ApiResponse<User>>(`/users/me/consent/emergency?consent=${consent}`).then(r => r.data.data),
 };

@@ -3,7 +3,7 @@ export interface User {
   email: string;
   fullName: string;
   phone?: string;
-  role: 'PARENT' | 'EXPERT' | 'ADMIN';
+  role: 'PARENT' | 'EXPERT' | 'TEACHER' | 'ADMIN';
   expertTitle?: string;
   city?: string;
   institution?: string;
@@ -14,7 +14,12 @@ export interface User {
   specializations?: string[];
   bio?: string;
   verified: boolean;
+  emailVerified?: boolean;
   kvkkConsent: boolean;
+  consentAiAnalysis?: boolean;
+  consentAiAnalysisDate?: string;
+  consentEmergencyCard?: boolean;
+  consentEmergencyCardDate?: string;
   profileImageUrl?: string;
   isActive?: boolean;
   createdAt: string;
@@ -307,9 +312,10 @@ export interface Report {
 }
 
 export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
+  accessToken?: string;
   user: User;
+  pendingApproval?: boolean;
+  pendingEmailVerification?: boolean;
 }
 
 export interface AdminStats {

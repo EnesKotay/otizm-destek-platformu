@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /anasayfa
+Disallow: /ayarlar
+Disallow: /cocuklarim
+Disallow: /mesajlar
+
+Sitemap: https://otizmdestek.com/sitemap.xml

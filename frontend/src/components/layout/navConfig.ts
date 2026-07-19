@@ -21,7 +21,7 @@ import {
   Users,
 } from 'lucide-react';
 
-export type NavRole = 'PARENT' | 'EXPERT' | 'ADMIN';
+export type NavRole = 'PARENT' | 'EXPERT' | 'TEACHER' | 'ADMIN';
 
 export interface NavItemConfig {
   to: string;
@@ -119,6 +119,21 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       ],
     },
   ],
+  TEACHER: [
+    {
+      label: 'Çalışma Alanı',
+      defaultOpen: true,
+      items: [
+        { to: '/anasayfa', icon: Home, label: 'Ana Sayfa', mobile: true },
+        { to: '/mesajlar', icon: MessageCircle, label: 'Mesajlar', badgeKey: 'messages', mobile: true },
+        { to: '/bilgi-bankasi', icon: Library, label: 'Bilgi Bankası', mobile: true },
+        { to: '/gruplar', icon: Users, label: 'Gruplar', mobile: true },
+        { to: '/forum', icon: BookOpen, label: 'Forum' },
+        { to: '/ayarlar', icon: Settings, label: 'Ayarlar' },
+        { to: '/yardim', icon: HelpCircle, label: 'Yardım Merkezi' },
+      ],
+    },
+  ],
   ADMIN: [
     {
       label: 'Yönetim Paneli',
@@ -162,7 +177,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
 };
 
 export function getNavGroups(role?: string) {
-  if (role === 'ADMIN' || role === 'EXPERT') return NAV_GROUPS[role];
+  if (role === 'ADMIN' || role === 'EXPERT' || role === 'TEACHER') return NAV_GROUPS[role];
   return NAV_GROUPS.PARENT;
 }
 

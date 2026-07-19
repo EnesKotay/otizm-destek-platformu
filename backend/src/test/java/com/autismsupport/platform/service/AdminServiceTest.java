@@ -27,6 +27,8 @@ import static org.mockito.Mockito.*;
 @DisplayName("AdminService unit testleri")
 class AdminServiceTest {
 
+    @Mock PlatformSettingsService platformSettingsService;
+
     @Mock UserRepository userRepository;
     @Mock ForumPostRepository forumPostRepository;
     @Mock MessageRepository messageRepository;

@@ -83,7 +83,7 @@ public class DataInitializer implements CommandLineRunner {
                 user.setLongitude(lon);
                 user.setCity(city);
                 userRepository.save(user);
-                log.info("Veli koordinatları veritabanına işlendi: {} ({}) -> {}", user.getFullName(), email, city);
+                log.info("Veli koordinatları veritabanına işlendi; userId={}", user.getId());
             }
         });
     }
@@ -106,6 +106,7 @@ public class DataInitializer implements CommandLineRunner {
                 .passwordHash(passwordEncoder.encode(bootstrapAdminPassword))
                 .role(UserRole.ADMIN)
                 .verified(true)
+                .emailVerified(true)
                 .kvkkConsent(true)
                 .build();
 

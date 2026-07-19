@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,6 +25,8 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.autismsupport.platform.service.AccountDataService accountDataService;
+    private final com.autismsupport.platform.service.AccountDeletionService accountDeletionService;
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<UserDto>>> searchUsers(@RequestParam String q) {
@@ -92,20 +95,48 @@ public class UserController {
     }
 
     @GetMapping("/data")
-    public ResponseEntity<UserDto> downloadData(@CurrentUser UserPrincipal principal) {
-        User user = userRepository.findById(principal.getId())
-                .orElseThrow(() -> new RuntimeException("Kullanici bulunamadi"));
+    public ResponseEntity<Map<String, Object>> downloadData(@CurrentUser UserPrincipal principal) {
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=verilerim.json")
                 .header("Content-Type", "application/json; charset=UTF-8")
-                .body(toUserDto(user));
+                .body(accountDataService.exportFor(principal.getId()));
     }
 
-    @Transactional
     @DeleteMapping("/me")
-    public ResponseEntity<ApiResponse<Void>> deleteAccount(@CurrentUser UserPrincipal principal) {
-        userRepository.deleteById(principal.getId());
+    public ResponseEntity<ApiResponse<Void>> deleteAccount(
+            @CurrentUser UserPrincipal principal,
+            @Valid @RequestBody com.autismsupport.platform.dto.DeleteAccountRequest request) {
+        User user = userRepository.findById(principal.getId())
+                .orElseThrow(() -> new RuntimeException("Kullanici bulunamadi"));
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new com.autismsupport.platform.exception.ValidationException("Mevcut şifre yanlış");
+        }
+        accountDeletionService.delete(user);
         return ResponseEntity.ok(ApiResponse.success("Hesap silindi", null));
+    }
+
+    @PostMapping("/me/consent/ai")
+    public ResponseEntity<ApiResponse<UserDto>> updateAiConsent(
+            @CurrentUser UserPrincipal principal,
+            @RequestParam boolean consent) {
+        User user = userRepository.findById(principal.getId())
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+        user.setConsentAiAnalysis(consent);
+        user.setConsentAiAnalysisDate(consent ? LocalDateTime.now() : null);
+        user = userRepository.save(user);
+        return ResponseEntity.ok(ApiResponse.success("Yapay zekâ rıza durumu güncellendi", toUserDto(user)));
+    }
+
+    @PostMapping("/me/consent/emergency")
+    public ResponseEntity<ApiResponse<UserDto>> updateEmergencyConsent(
+            @CurrentUser UserPrincipal principal,
+            @RequestParam boolean consent) {
+        User user = userRepository.findById(principal.getId())
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+        user.setConsentEmergencyCard(consent);
+        user.setConsentEmergencyCardDate(consent ? LocalDateTime.now() : null);
+        user = userRepository.save(user);
+        return ResponseEntity.ok(ApiResponse.success("Acil kart rıza durumu güncellendi", toUserDto(user)));
     }
 
     private UserDto toUserDto(User user) {
@@ -123,7 +154,12 @@ public class UserController {
                 .licenseVerified(user.isLicenseVerified())
                 .specializations(user.getSpecializations())
                 .verified(user.isVerified())
+                .emailVerified(user.isEmailVerified())
                 .kvkkConsent(user.isKvkkConsent())
+                .consentAiAnalysis(user.isConsentAiAnalysis())
+                .consentAiAnalysisDate(user.getConsentAiAnalysisDate())
+                .consentEmergencyCard(user.isConsentEmergencyCard())
+                .consentEmergencyCardDate(user.getConsentEmergencyCardDate())
                 .isActive(user.isActive())
                 .profileImageUrl(user.getProfileImageUrl())
                 .createdAt(user.getCreatedAt())

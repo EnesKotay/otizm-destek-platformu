@@ -3,6 +3,7 @@ package com.autismsupport.platform.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.autismsupport.platform.security.EncryptedStringConverter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -23,6 +24,7 @@ public class SensoryProfile {
     private UUID userId;
 
     @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String domains;
 
     @UpdateTimestamp

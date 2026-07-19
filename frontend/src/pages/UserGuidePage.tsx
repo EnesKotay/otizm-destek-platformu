@@ -539,6 +539,7 @@ const ADMIN_GUIDE: GuideGroup[] = [
 const GUIDE_BY_ROLE: Record<UserRole, GuideGroup[]> = {
   PARENT: PARENT_GUIDE,
   EXPERT: EXPERT_GUIDE,
+  TEACHER: EXPERT_GUIDE,
   ADMIN: ADMIN_GUIDE,
 };
 
@@ -601,6 +602,22 @@ const ROLE_START_STEPS: Record<UserRole, RoleStartStep[]> = {
       description: 'Doğrulanmış uzman hesabıyla yapılandırılmış rapor üretimini kullanın.',
       to: '/bep-raporu',
       badge: 'Belge',
+    },
+  ],
+  TEACHER: [
+    {
+      icon: MessageCircle,
+      title: 'Aile ve ekip ile iletişim kur',
+      description: 'Yalnızca yetkilendirildiğiniz kişilerle güvenli mesajlaşma alanını kullanın.',
+      to: '/mesajlar',
+      badge: 'İletişim',
+    },
+    {
+      icon: BookOpen,
+      title: 'Bilgi bankasını incele',
+      description: 'Eğitim ve destek içeriklerine bilgi bankasından ulaşın.',
+      to: '/bilgi-bankasi',
+      badge: 'Kaynaklar',
     },
   ],
   ADMIN: [

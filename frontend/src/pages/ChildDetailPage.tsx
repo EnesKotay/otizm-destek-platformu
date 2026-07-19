@@ -397,7 +397,7 @@ function ChildDetailContent() {
     if (!file || !id || !child) return;
     setUploadingPhoto(true);
     try {
-      const url = await uploadService.upload(file);
+      const url = await uploadService.upload(file, 'PRIVATE', { type: 'CHILD_PROFILE', id });
       const updated = await childService.update(id, { ...child, profileImageUrl: url });
       setChild(updated);
       useChildStore.getState().updateChild(updated);
@@ -845,6 +845,12 @@ function ChildDetailContent() {
             );
           })}
         </div>
+
+        {latestScreening && (
+          <p className="border-t border-amber-100 bg-amber-50 px-5 py-3 text-xs leading-5 text-amber-900">
+            Tarama skoru tanı değildir; sonuçları çocuk ve ergen psikiyatristi veya ilgili yetkili uzmanla değerlendirin.
+          </p>
+        )}
 
         {latestBepReport && (
           <div className="border-t border-slate-100 p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

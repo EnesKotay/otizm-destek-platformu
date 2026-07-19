@@ -7,17 +7,12 @@ import {
   BookOpen,
   CalendarCheck,
   CheckCircle2,
-  ClipboardCheck,
   HeartHandshake,
-  Layers,
-  LineChart,
   LockKeyhole,
   Menu,
   MessageCircle,
   NotebookTabs,
-  Share2,
   ShieldCheck,
-  Sparkles,
   Stethoscope,
   TrendingUp,
   UserCheck,
@@ -96,27 +91,6 @@ const modules: { icon: React.ElementType; title: string; text: string; color: Mo
   { icon: TrendingUp,   title: 'Gelişim paneli', text: 'Özetler ve ilerleme görünümü',           color: 'teal' },
 ];
 
-const platformFeatures = [
-  {
-    icon: Layers,
-    title: 'Dağınıklık azalır',
-    description: 'Farklı defterler, mesajlar ve hatırlama yükü yerine temel bilgiler tek profilde toplanır.',
-    color: 'blue' as ModuleColor,
-  },
-  {
-    icon: LineChart,
-    title: 'Takip netleşir',
-    description: 'Günlük küçük kayıtlar zamanla örüntülere dönüşür; uzman görüşmesine hazır gidersiniz.',
-    color: 'emerald' as ModuleColor,
-  },
-  {
-    icon: Share2,
-    title: 'Paylaşım kontrollü olur',
-    description: 'Aile ve uzman aynı güncel bağlamı görür; hangi bilginin paylaşılacağı sizde kalır.',
-    color: 'violet' as ModuleColor,
-  },
-];
-
 const heroStats = [
   { value: '3 dk', label: 'ilk kayıt' },
   { value: '6 adım', label: 'başlangıç planı' },
@@ -163,7 +137,13 @@ export function PublicLandingPage() {
   const goNext = () => setActiveStepIndex((i) => Math.min(guideSteps.length - 1, i + 1));
 
   return (
-    <main className="min-h-screen bg-white text-slate-950">
+    <main id="ana-icerik" className="min-h-screen bg-white text-slate-950">
+      <a
+        href="#ana-icerik"
+        className="sr-only fixed left-4 top-4 z-50 rounded-lg bg-white px-4 py-2 font-bold text-primary-700 shadow-lg focus:not-sr-only"
+      >
+        Ana içeriğe geç
+      </a>
       {/* ── Header ── */}
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-5">
@@ -222,7 +202,7 @@ export function PublicLandingPage() {
         />
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(255,255,255,0.98)_0%,rgba(255,255,255,0.93)_38%,rgba(255,255,255,0.48)_68%,rgba(255,255,255,0.12)_100%)]" />
 
-        <div className="mx-auto flex min-h-[calc(100vh-220px)] max-w-6xl items-center px-5 py-16 sm:py-20 lg:min-h-[640px]">
+        <div className="mx-auto flex max-w-6xl items-center px-5 py-10 sm:min-h-[620px] sm:py-20 lg:min-h-[640px]">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white/90 px-4 py-1.5 text-xs font-bold text-primary-700 shadow-sm backdrop-blur">
               <CheckCircle2 size={14} />
@@ -254,11 +234,11 @@ export function PublicLandingPage() {
               </Link>
             </div>
 
-            <div className="mt-8 grid max-w-xl gap-3 sm:grid-cols-3">
+            <div className="mt-8 grid max-w-xl grid-cols-3 gap-2 sm:gap-3">
               {heroStats.map((item) => (
-                <div key={item.label} className="rounded-xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
-                  <p className="text-xl font-black leading-none text-slate-950">{item.value}</p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">{item.label}</p>
+                <div key={item.label} className="rounded-xl border border-white/70 bg-white/80 px-3 py-3 shadow-sm backdrop-blur sm:px-4">
+                  <p className="text-base font-black leading-none text-slate-950 sm:text-xl">{item.value}</p>
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs">{item.label}</p>
                 </div>
               ))}
             </div>
@@ -277,7 +257,7 @@ export function PublicLandingPage() {
 
       {/* ── Başlangıç rehberi ── */}
       <section id="rehber" className="border-b border-slate-200 bg-slate-50">
-        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-14 lg:grid-cols-[0.44fr_0.56fr] lg:items-start">
+        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 sm:py-14 lg:grid-cols-[0.44fr_0.56fr] lg:items-start">
           <div className="lg:sticky lg:top-24">
             <p className="text-xs font-black uppercase tracking-widest text-primary-700">Başlangıç planı</p>
             <h2 className="mt-3 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
@@ -286,7 +266,7 @@ export function PublicLandingPage() {
             <p className="mt-4 text-sm font-medium leading-7 text-slate-600">
               Kayıt olduktan sonra hangi ekrana gideceğinizi düşünmeniz gerekmez. Platform önce temel bilgiyi toplar, sonra günlük akışı sadeleştirir.
             </p>
-            <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="mt-6 hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:block">
               {guideSteps.map((step, index) => (
                 <button
                   key={step.title}
@@ -305,7 +285,7 @@ export function PublicLandingPage() {
                   </span>
                   <span className="min-w-0">
                     <span className="block text-sm font-extrabold leading-tight">{step.title}</span>
-                    <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{step.screen}</span>
+                    <span className="mt-1 block text-xs font-semibold leading-5 text-slate-600">{step.screen}</span>
                   </span>
                 </button>
               ))}
@@ -391,60 +371,9 @@ export function PublicLandingPage() {
         </div>
       </section>
 
-      {/* ── Neden bu platform? ── */}
-      <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div>
-            <p className="text-xs font-black uppercase tracking-widest text-primary-700">Platform avantajları</p>
-            <h2 className="mt-3 max-w-lg text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
-              Günlük yükü daha düzenli bir akışa çevirir.
-            </h2>
-            <p className="mt-4 max-w-xl text-sm font-medium leading-7 text-slate-600">
-              Otizm destek sürecinde bilgi farklı yerlere dağılır: defterler, mesajlar, randevu notları, hatırlatmalar. Bu sayfa aileye önce temel yolu gösterir, sonra detayları açar.
-            </p>
-
-            <div className="mt-7 grid max-w-xl gap-3 sm:grid-cols-2">
-              {[
-                { icon: ClipboardCheck, label: 'Bugün yapılacaklar', value: 'öncelikli' },
-                { icon: Sparkles, label: 'Öneriler', value: 'profile göre' },
-              ].map(({ icon: Icon, label, value }) => (
-                <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                  <Icon size={20} className="text-primary-700" />
-                  <p className="mt-3 text-lg font-black text-slate-950">{value}</p>
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4">
-            {platformFeatures.map(({ icon: Icon, title, description, color }, index) => {
-              const c = colorMap[color];
-              return (
-                <div
-                  key={title}
-                  className={`group grid gap-4 rounded-2xl border bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg sm:grid-cols-[auto_1fr_auto] ${c.border}`}
-                >
-                  <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${c.iconBg}`}>
-                    <Icon size={24} className={c.iconText} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-slate-950">{title}</h3>
-                    <p className="mt-1.5 text-sm font-medium leading-6 text-slate-600">{description}</p>
-                  </div>
-                  <span className="hidden h-9 w-9 items-center justify-center rounded-full bg-slate-50 text-xs font-black text-slate-500 ring-1 ring-slate-100 sm:flex">
-                    {index + 1}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
       {/* ── Modüller ── */}
       <section id="moduller" className="bg-slate-50">
-        <div className="mx-auto max-w-6xl px-5 py-16">
+        <div className="mx-auto max-w-6xl px-5 py-12 sm:py-16">
           <div className="mx-auto max-w-3xl text-center">
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-primary-700">Araçlar</p>
@@ -455,19 +384,19 @@ export function PublicLandingPage() {
             </p>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
             {modules.map(({ icon: Icon, title, text, color }) => {
               const c = colorMap[color];
               return (
                 <div
                   key={title}
-                  className={`rounded-2xl border bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${c.border}`}
+                  className={`rounded-2xl border bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-5 ${c.border}`}
                 >
                   <div className={`inline-flex h-11 w-11 items-center justify-center rounded-xl ${c.iconBg}`}>
                     <Icon size={22} className={c.iconText} />
                   </div>
-                  <h3 className="mt-4 text-base font-black text-slate-950">{title}</h3>
-                  <p className="mt-1.5 text-sm font-medium leading-6 text-slate-600">{text}</p>
+                  <h3 className="mt-3 text-sm font-black text-slate-950 sm:mt-4 sm:text-base">{title}</h3>
+                  <p className="mt-1.5 text-xs font-medium leading-5 text-slate-600 sm:text-sm sm:leading-6">{text}</p>
                 </div>
               );
             })}
@@ -558,7 +487,7 @@ export function PublicLandingPage() {
               <Link to="/tibbi-uyari"        className="transition-colors hover:text-primary-700">Tıbbi Uyarı</Link>
             </div>
           </div>
-          <div className="mt-8 border-t border-slate-100 pt-6 text-center text-xs text-slate-400">
+          <div className="mt-8 border-t border-slate-100 pt-6 text-center text-xs text-slate-600">
             © {new Date().getFullYear()} Otizm Destek Platformu. Tüm hakları saklıdır.
           </div>
         </div>

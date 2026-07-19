@@ -88,20 +88,39 @@ external:
     keywords: ${EXTERNAL_IMPORT_KEYWORDS:autism spectrum disorder,ABA therapy,autism parent support}
 
 app:
+  auth:
+    require-email-verification: ${REQUIRE_EMAIL_VERIFICATION:false}
+    refresh-cookie-secure: ${REFRESH_COOKIE_SECURE:false}
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   upload:
     dir: ${APP_UPLOAD_DIR:${UPLOAD_DIR:uploads}}
+  storage:
+    type: ${STORAGE_TYPE:local}
+    s3:
+      endpoint: ${S3_ENDPOINT:}
+      region: ${S3_REGION:auto}
+      bucket: ${S3_BUCKET:}
+      access-key: ${S3_ACCESS_KEY:}
+      secret-key: ${S3_SECRET_KEY:}
   jwt:
     secret: ${JWT_SECRET:YXV0aXNtc3VwcG9ydHBsYXRmb3Jtc2VjcmV0a2V5Zm9ybG9jYWxkZXZlbG9wbWVudDEyMzQ1Njc4}
     access-token-expiration: ${JWT_ACCESS_EXP:900000}      # 15 minutes
     refresh-token-expiration: ${JWT_REFRESH_EXP:604800000} # 7 days
   encryption:
     secret-key: ${ENCRYPTION_KEY:autism-support-local-dev-encryption-key-32b}
+    previous-keys: ${ENCRYPTION_PREVIOUS_KEYS:}
+    backfill-enabled: ${ENCRYPTION_BACKFILL_ENABLED:true}
   bootstrap:
     admin-email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@autism.com}
     admin-password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:Admin123!}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
+  rate-limit:
+    redis-enabled: ${RATE_LIMIT_REDIS_ENABLED:true}
+    trust-proxy-headers: ${TRUST_PROXY_HEADERS:false}
+  turnstile:
+    required: ${TURNSTILE_REQUIRED:false}
+    secret-key: ${TURNSTILE_SECRET_KEY:}
   push:
     vapid-public-key: ${VAPID_PUBLIC_KEY:}
     vapid-private-key: ${VAPID_PRIVATE_KEY:}

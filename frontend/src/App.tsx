@@ -1,8 +1,7 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { ToastContainer } from '@/components/ui/Toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
@@ -17,10 +16,12 @@ import {
 } from '@/config/roleAccess';
 import type { UserRole } from '@/config/roleAccess';
 import type { ComponentType, ReactNode } from 'react';
+import { authService } from '@/services/authService';
+import { RouteMetadata } from '@/components/RouteMetadata';
 
-// Eagerly loaded — critical auth path
+// Eagerly loaded — first visit and sign-in paths
 import { LoginPage } from '@/pages/LoginPage';
-import { RegisterPage } from '@/pages/RegisterPage';
+import { PublicLandingPage } from '@/pages/PublicLandingPage';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function lazyNamed<T extends Record<K, ComponentType<any>>, K extends string>(
@@ -60,6 +61,8 @@ function lazyNamed<T extends Record<K, ComponentType<any>>, K extends string>(
 }
 
 const AdminLayout = lazyNamed(() => import('./pages/admin/AdminLayout'), 'AdminLayout');
+const AppLayout = lazyNamed(() => import('@/components/layout/AppLayout'), 'AppLayout');
+const RegisterPage = lazyNamed(() => import('@/pages/RegisterPage'), 'RegisterPage');
 const AdminOverviewPage = lazyNamed(() => import('./pages/admin/AdminOverviewPage'), 'AdminOverviewPage');
 const AdminAnalyticsPage = lazyNamed(() => import('./pages/admin/AdminAnalyticsPage'), 'AdminAnalyticsPage');
 const AdminExpertsPage = lazyNamed(() => import('./pages/admin/AdminExpertsPage'), 'AdminExpertsPage');
@@ -70,6 +73,7 @@ const AdminAuditLogPage = lazyNamed(() => import('./pages/admin/AdminAuditLogPag
 const AdminSettingsPage = lazyNamed(() => import('./pages/admin/AdminSettingsPage'), 'AdminSettingsPage');
 const ForgotPasswordPage = lazyNamed(() => import('@/pages/ForgotPasswordPage'), 'ForgotPasswordPage');
 const ResetPasswordPage = lazyNamed(() => import('@/pages/ResetPasswordPage'), 'ResetPasswordPage');
+const VerifyEmailPage = lazyNamed(() => import('@/pages/VerifyEmailPage'), 'VerifyEmailPage');
 const NotFoundPage = lazyNamed(() => import('@/pages/NotFoundPage'), 'NotFoundPage');
 const DashboardPage = lazyNamed(() => import('@/pages/DashboardPage'), 'DashboardPage');
 const ChildrenPage = lazyNamed(() => import('@/pages/ChildrenPage'), 'ChildrenPage');
@@ -87,7 +91,6 @@ const KnowledgePage = lazyNamed(() => import('@/pages/KnowledgePage'), 'Knowledg
 const ExpertsPage = lazyNamed(() => import('@/pages/ExpertsPage'), 'ExpertsPage');
 const OnboardingPage = lazyNamed(() => import('@/pages/OnboardingPage'), 'OnboardingPage');
 const ExpertRegisterPage = lazyNamed(() => import('@/pages/ExpertRegisterPage'), 'ExpertRegisterPage');
-const PublicLandingPage = lazyNamed(() => import('@/pages/PublicLandingPage'), 'PublicLandingPage');
 const PublicInfoPage = lazyNamed(() => import('@/pages/PublicInfoPage'), 'PublicInfoPage');
 const AppointmentPage = lazyNamed(() => import('@/pages/AppointmentPage'), 'AppointmentPage');
 const PatientsPage = lazyNamed(() => import('@/pages/PatientsPage'), 'PatientsPage');
@@ -112,6 +115,35 @@ function PageLoader() {
       <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
+}
+
+function AuthBootstrap({ children }: { children: ReactNode }) {
+  const { isAuthenticated, accessToken, setAuth, clearSession } = useAuthStore();
+  const [checkingSession, setCheckingSession] = useState(isAuthenticated && !accessToken);
+
+  useEffect(() => {
+    if (!checkingSession) return;
+
+    let active = true;
+    authService.refresh()
+      .then((response) => {
+        if (!response.accessToken) throw new Error('Oturum yenilenemedi');
+        if (active) setAuth(response.user, response.accessToken);
+      })
+      .catch(() => {
+        if (active) clearSession();
+      })
+      .finally(() => {
+        if (active) setCheckingSession(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [checkingSession, clearSession, setAuth]);
+
+  if (checkingSession) return <PageLoader />;
+  return <>{children}</>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -173,14 +205,17 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ToastContainer />
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
+        <AuthBootstrap>
+          <BrowserRouter>
+            <RouteMetadata />
+            <Suspense fallback={<PageLoader />}>
             <Routes>
             <Route path="/" element={<RootRoute />} />
             <Route path="/giris" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/kayit" element={<PublicRoute><RegisterPage /></PublicRoute>} />
             <Route path="/sifremi-unuttum" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
             <Route path="/sifre-sifirla" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+            <Route path="/eposta-dogrula" element={<PublicRoute><VerifyEmailPage /></PublicRoute>} />
             <Route path="/tanitim" element={<PublicLandingPage />} />
             <Route path="/kvkk" element={<PublicInfoPage kind="kvkk" />} />
             <Route path="/gizlilik" element={<PublicInfoPage kind="privacy" />} />
@@ -191,7 +226,6 @@ export default function App() {
             <Route path="/baslangic" element={<OnboardingRoute><Suspense fallback={<PageLoader />}><OnboardingPage /></Suspense></OnboardingRoute>} />
 
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                <Route index element={<Navigate to="/anasayfa" replace />} />
                 <Route path="/anasayfa" element={<DashboardPage />} />
                 <Route path="/cocuklarim" element={<RoleRoute allowedRoles={PARENT_ONLY}><ChildrenPage /></RoleRoute>} />
                 <Route path="/cocuklarim/:id" element={<RoleRoute allowedRoles={PARENT_EXPERT}><ChildDetailPage /></RoleRoute>} />
@@ -256,8 +290,9 @@ export default function App() {
 
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
-          </Suspense>
-        </BrowserRouter>
+            </Suspense>
+          </BrowserRouter>
+        </AuthBootstrap>
       </QueryClientProvider>
     </ErrorBoundary>
   );

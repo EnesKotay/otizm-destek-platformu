@@ -35,6 +35,7 @@ public class ExpertController {
             @RequestParam(required = false) String specialization) {
 
         var allExperts = userRepository.findByRole(UserRole.EXPERT).stream()
+                .filter(u -> u.isVerified())
                 .filter(u -> city == null || city.isBlank() ||
                         (u.getCity() != null && u.getCity().equalsIgnoreCase(city)))
                 .filter(u -> specialization == null || specialization.isBlank() ||
@@ -94,6 +95,9 @@ public class ExpertController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getExpert(@PathVariable UUID id) {
         var user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("Uzman bulunamadi"));
+        if (user.getRole() != UserRole.EXPERT || !user.isVerified()) {
+            throw new RuntimeException("Uzman bulunamadi");
+        }
         var articles = articleRepository.findByAuthorIdOrderByCreatedAtDesc(id, PageRequest.of(0, 10));
 
         UserDto dto = UserDto.builder()
@@ -110,6 +114,7 @@ public class ExpertController {
     }
 
     @PutMapping("/profile")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('EXPERT')")
     public ResponseEntity<ApiResponse<UserDto>> updateProfile(
             @RequestBody ExpertProfileUpdateRequest body,
             @CurrentUser UserPrincipal principal) {

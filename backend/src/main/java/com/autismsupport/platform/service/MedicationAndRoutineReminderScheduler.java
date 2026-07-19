@@ -49,8 +49,7 @@ public class MedicationAndRoutineReminderScheduler {
                             body,
                             "/gunluk-takip"
                     );
-                    log.info("Medication reminder sent to parent {} for child {} (med: {})", 
-                            med.getChild().getParent().getId(), med.getChild().getName(), med.getName());
+                    log.info("Medication reminder sent to userId={}", med.getChild().getParent().getId());
                 }
             }
         }
@@ -79,8 +78,7 @@ public class MedicationAndRoutineReminderScheduler {
                             body,
                             "/rutinler"
                     );
-                    log.info("Routine reminder sent to parent {} for child {} (item: {})", 
-                            routine.getChild().getParent().getId(), routine.getChild().getName(), item.getTitle());
+                    log.info("Routine reminder sent to userId={}", routine.getChild().getParent().getId());
                 }
             }
         }

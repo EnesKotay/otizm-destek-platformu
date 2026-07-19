@@ -1,6 +1,5 @@
 const CACHE_VERSION = 'v3';
 const STATIC_CACHE = `autism-static-${CACHE_VERSION}`;
-const API_CACHE = `autism-api-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
 const SHELL_ASSETS = [
@@ -26,7 +25,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k !== STATIC_CACHE && k !== API_CACHE)
+          .filter((k) => k !== STATIC_CACHE)
           .map((k) => caches.delete(k))
       )
     ).then(() => self.clients.claim())
@@ -40,9 +39,9 @@ self.addEventListener('fetch', (event) => {
 
   if (!url.protocol.startsWith('http')) return;
 
-  // API istekleri → Network First (offline'da önbellekten veya hata JSON'u)
+  // Hassas API cevapları hiçbir zaman Cache Storage'a yazılmaz.
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirstApi(request));
+    event.respondWith(networkOnlyApi(request));
     return;
   }
 
@@ -79,14 +78,9 @@ async function cacheFirst(request) {
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    if (response.ok && request.method === 'GET') {
-      const cache = await caches.open(API_CACHE);
-      cache.put(request, response.clone());
-    }
     return response;
   } catch {
-    const cached = await caches.match(request);
-    return cached || new Response('', { status: 503 });
+    return new Response('', { status: 503 });
   }
 }
 
@@ -103,17 +97,10 @@ async function networkFirstNavigation(request) {
   }
 }
 
-async function networkFirstApi(request) {
+async function networkOnlyApi(request) {
   try {
-    const response = await fetch(request);
-    if (response.ok && request.method === 'GET') {
-      const cache = await caches.open(API_CACHE);
-      cache.put(request, response.clone());
-    }
-    return response;
+    return await fetch(request);
   } catch {
-    const cached = await caches.match(request);
-    if (cached) return cached;
     return new Response(
       JSON.stringify({ success: false, message: 'Çevrimdışısınız. İnternet bağlantınızı kontrol edin.' }),
       { status: 503, headers: { 'Content-Type': 'application/json' } }
@@ -161,25 +148,3 @@ self.addEventListener('notificationclick', (event) => {
       })
   );
 });
-
-// ── Background Sync (randevu/mesaj draft'larını offline'da sıraya al) ─
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-pending') {
-    event.waitUntil(syncPendingRequests());
-  }
-});
-
-async function syncPendingRequests() {
-  const cache = await caches.open('autism-pending-sync');
-  const requests = await cache.keys();
-  await Promise.allSettled(
-    requests.map(async (req) => {
-      try {
-        const res = await fetch(req);
-        if (res.ok) await cache.delete(req);
-      } catch {
-        // network still unavailable, keep in queue
-      }
-    })
-  );
-}

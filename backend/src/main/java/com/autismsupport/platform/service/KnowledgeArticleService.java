@@ -189,7 +189,7 @@ public class KnowledgeArticleService {
                 .build();
     }
 
-    private KnowledgeArticleDto toDto(KnowledgeArticle a) {
+    public KnowledgeArticleDto toDto(KnowledgeArticle a) {
         UserDto authorDto = a.getAuthor() == null ? null : UserDto.builder()
                 .id(a.getAuthor().getId())
                 .fullName(a.getAuthor().getFullName())

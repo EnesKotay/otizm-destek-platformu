@@ -145,6 +145,22 @@ body {
   @apply bg-gray-50 text-gray-900 antialiased;
 }
 
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid #2563eb !important;
+  outline-offset: 3px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @media print {
   /* Navigasyon ve aksiyonları gizle */
   nav, aside, .print\:hidden, header, #chatbot-open-button { display: none !important; }
@@ -323,3 +339,11 @@ body {
   color: #111827; /* text-gray-900 */
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

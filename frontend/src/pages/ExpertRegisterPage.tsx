@@ -28,6 +28,7 @@ import {
   MapPin,
   X,
 } from 'lucide-react';
+import { TurnstileWidget } from '@/components/TurnstileWidget';
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
 
@@ -132,7 +133,7 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 
 export function ExpertRegisterPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout, setAuth } = useAuthStore();
+  const { isAuthenticated, user, logout } = useAuthStore();
   const [step, setStep] = useState(1);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -142,6 +143,7 @@ export function ExpertRegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordValue, setPasswordValue] = useState('');
   const [kvkk, setKvkk] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string>();
 
   const [emailCheckedStatus, setEmailCheckedStatus] = useState<{ checked: boolean; exists: boolean; email: string }>({
     checked: false,
@@ -202,7 +204,7 @@ export function ExpertRegisterPage() {
     setLoading(true);
     setError('');
     try {
-      const authResponse = await authService.register({
+      await authService.register({
         fullName: data.fullName,
         email: data.email,
         phone: data.phone,
@@ -215,8 +217,8 @@ export function ExpertRegisterPage() {
         licenseNumber: data.licenseNumber,
         bio: data.bio,
         specializations: selectedSpecs,
+        captchaToken,
       });
-      setAuth(authResponse.user, authResponse.accessToken, authResponse.refreshToken);
       setSubmitted(true);
     } catch (err: unknown) {
       const message =
@@ -271,7 +273,7 @@ export function ExpertRegisterPage() {
             <div className="space-y-3">
               <Button
                 className="w-full bg-gradient-to-r from-amber-500 to-orange-500 border-0 h-11 text-white font-semibold"
-                onClick={() => { logout(); }}
+                onClick={() => { void logout(); }}
               >
                 Çıkış Yap ve Başvur
               </Button>
@@ -481,7 +483,7 @@ export function ExpertRegisterPage() {
                 </div>
               </div>
             ) : error ? (
-              <div className="mb-5 flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-700 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div role="alert" aria-live="assertive" className="mb-5 flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-700 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 text-red-600 font-bold">!</div>
                 <p className="text-sm font-medium">{error}</p>
               </div>
@@ -493,33 +495,41 @@ export function ExpertRegisterPage() {
                 <>
                   {/* Ad Soyad */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Ad Soyad</label>
+                    <label htmlFor="expert-full-name" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Ad Soyad</label>
                     <div className="relative">
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                         <User size={18} />
                       </div>
                       <input
+                        id="expert-full-name"
                         type="text"
+                        autoComplete="name"
                         placeholder="Dr. Ayşe Kaya"
+                        aria-invalid={Boolean(errors.fullName)}
+                        aria-describedby={errors.fullName ? 'expert-full-name-error' : undefined}
                         className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
                           errors.fullName ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
                         }`}
                         {...register('fullName')}
                       />
                     </div>
-                    {errors.fullName && <p className="text-xs text-red-600 mt-1">{errors.fullName.message}</p>}
+                    {errors.fullName && <p id="expert-full-name-error" role="alert" className="text-xs text-red-600 mt-1">{errors.fullName.message}</p>}
                   </div>
 
                   {/* E-posta */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">E-posta</label>
+                    <label htmlFor="expert-email" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">E-posta</label>
                     <div className="relative">
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                         <Mail size={18} />
                       </div>
                       <input
+                        id="expert-email"
                         type="email"
+                        autoComplete="email"
                         placeholder="ornek@hastane.com"
+                        aria-invalid={Boolean(errors.email || emailCheckedStatus.exists)}
+                        aria-describedby={errors.email ? 'expert-email-error' : undefined}
                         className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
                           errors.email || emailCheckedStatus.exists ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
                         }`}
@@ -532,18 +542,20 @@ export function ExpertRegisterPage() {
                         })}
                       />
                     </div>
-                    {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
+                    {errors.email && <p id="expert-email-error" role="alert" className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
                   </div>
 
                   {/* Telefon */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Telefon (opsiyonel)</label>
+                    <label htmlFor="expert-phone" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Telefon (opsiyonel)</label>
                     <div className="relative">
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                         <Phone size={18} />
                       </div>
                       <input
+                        id="expert-phone"
                         type="tel"
+                        autoComplete="tel"
                         placeholder="05XX XXX XX XX"
                         className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                         {...register('phone')}
@@ -553,13 +565,15 @@ export function ExpertRegisterPage() {
 
                   {/* Şehir */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şehir (opsiyonel)</label>
+                    <label htmlFor="expert-city" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şehir (opsiyonel)</label>
                     <div className="relative">
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                         <MapPin size={18} />
                       </div>
                       <input
+                        id="expert-city"
                         type="text"
+                        autoComplete="address-level2"
                         placeholder="Örn: İstanbul, Ankara, İzmir"
                         className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                         {...register('city')}
@@ -574,12 +588,13 @@ export function ExpertRegisterPage() {
                 <>
                   {/* Uzmanlık Alanı – Quick Select */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Uzmanlık Alanı</label>
+                    <label htmlFor="expert-title" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Uzmanlık Alanı</label>
                     <div className="flex flex-wrap gap-2 mb-3.5">
                       {EXPERT_TITLES.map((title) => (
                         <button
                           key={title}
                           type="button"
+                          aria-pressed={selectedTitle === title}
                           onClick={() => {
                             setSelectedTitle(title);
                             setValue('expertTitle', title, { shouldValidate: true });
@@ -599,8 +614,11 @@ export function ExpertRegisterPage() {
                         <GraduationCap size={18} />
                       </div>
                       <input
+                        id="expert-title"
                         type="text"
                         placeholder="veya buraya yazın..."
+                        aria-invalid={Boolean(errors.expertTitle)}
+                        aria-describedby={errors.expertTitle ? 'expert-title-error' : undefined}
                         className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
                           errors.expertTitle ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
                         }`}
@@ -612,19 +630,21 @@ export function ExpertRegisterPage() {
                       />
                     </div>
                     {errors.expertTitle && (
-                      <p className="text-xs text-red-600 mt-1">{errors.expertTitle.message}</p>
+                      <p id="expert-title-error" role="alert" className="text-xs text-red-600 mt-1">{errors.expertTitle.message}</p>
                     )}
                   </div>
 
                   {/* Kurum */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Kurum / Klinik (opsiyonel)</label>
+                    <label htmlFor="expert-institution" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Kurum / Klinik (opsiyonel)</label>
                     <div className="relative">
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                         <Building2 size={18} />
                       </div>
                       <input
+                        id="expert-institution"
                         type="text"
+                        autoComplete="organization"
                         placeholder="Örn: Ankara Çocuk Hastanesi"
                         className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                         {...register('institution')}
@@ -634,21 +654,24 @@ export function ExpertRegisterPage() {
 
                   {/* Lisans No */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Lisans / Diploma No *</label>
+                    <label htmlFor="expert-license" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Lisans / Diploma No *</label>
                     <div className="relative">
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                         <FileText size={18} />
                       </div>
                       <input
+                        id="expert-license"
                         type="text"
                         placeholder="Mesleki lisans numaranız (Örn: Tescil No)"
+                        aria-invalid={Boolean(errors.licenseNumber)}
+                        aria-describedby={errors.licenseNumber ? 'expert-license-error' : undefined}
                         className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
                           errors.licenseNumber ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
                         }`}
                         {...register('licenseNumber')}
                       />
                     </div>
-                    {errors.licenseNumber && <p className="text-xs text-red-600 mt-1">{errors.licenseNumber.message}</p>}
+                    {errors.licenseNumber && <p id="expert-license-error" role="alert" className="text-xs text-red-600 mt-1">{errors.licenseNumber.message}</p>}
                   </div>
 
                   {/* Uzmanlık Alt Alanları */}
@@ -664,6 +687,7 @@ export function ExpertRegisterPage() {
                         <button
                           key={spec}
                           type="button"
+                          aria-pressed={selectedSpecs.includes(spec)}
                           onClick={() => toggleSpec(spec)}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 ${
                             selectedSpecs.includes(spec)
@@ -689,8 +713,9 @@ export function ExpertRegisterPage() {
 
                   {/* Bio */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Kendinizi Tanıtın (opsiyonel)</label>
+                    <label htmlFor="expert-bio" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Kendinizi Tanıtın (opsiyonel)</label>
                     <textarea
+                      id="expert-bio"
                       className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 bg-white/70 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none placeholder:text-gray-400 shadow-sm transition-all duration-200"
                       rows={3}
                       placeholder="Deneyimleriniz ve ailelere nasıl yardımcı olabileceğinizi anlatın..."
@@ -705,14 +730,18 @@ export function ExpertRegisterPage() {
                 <>
                   {/* Şifre */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre</label>
+                    <label htmlFor="expert-password" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre</label>
                     <div className="relative">
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                         <Lock size={18} />
                       </div>
                       <input
+                        id="expert-password"
                         type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
                         placeholder="En az 8 karakter"
+                        aria-invalid={Boolean(errors.password)}
+                        aria-describedby={errors.password ? 'expert-password-error' : 'expert-password-strength'}
                         className={`w-full pl-11 pr-10 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
                           errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
                         }`}
@@ -722,17 +751,18 @@ export function ExpertRegisterPage() {
                       />
                       <button
                         type="button"
+                        aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
                       >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
-                    {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password.message}</p>}
+                    {errors.password && <p id="expert-password-error" role="alert" className="text-xs text-red-600 mt-1">{errors.password.message}</p>}
 
                     {/* Password strength bar */}
                     {(watchedPassword || passwordValue) && (
-                      <div className="mt-2.5 space-y-1.5 p-2 bg-slate-50 border border-slate-100 rounded-lg">
+                      <div id="expert-password-strength" aria-live="polite" className="mt-2.5 space-y-1.5 p-2 bg-slate-50 border border-slate-100 rounded-lg">
                         <div className="flex gap-1">
                           {[1, 2, 3, 4, 5].map((i) => (
                             <div
@@ -759,14 +789,18 @@ export function ExpertRegisterPage() {
 
                   {/* Şifre Tekrar */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre Tekrar</label>
+                    <label htmlFor="expert-confirm-password" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre Tekrar</label>
                     <div className="relative">
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                         <Lock size={18} />
                       </div>
                       <input
+                        id="expert-confirm-password"
                         type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
                         placeholder="Şifrenizi tekrar girin"
+                        aria-invalid={Boolean(errors.confirmPassword)}
+                        aria-describedby={errors.confirmPassword ? 'expert-confirm-password-error' : undefined}
                         className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
                           errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
                         }`}
@@ -774,7 +808,7 @@ export function ExpertRegisterPage() {
                       />
                     </div>
                     {errors.confirmPassword && (
-                      <p className="text-xs text-red-600 mt-1">{errors.confirmPassword.message}</p>
+                      <p id="expert-confirm-password-error" role="alert" className="text-xs text-red-600 mt-1">{errors.confirmPassword.message}</p>
                     )}
                   </div>
 
@@ -796,6 +830,8 @@ export function ExpertRegisterPage() {
                         <input
                           type="checkbox"
                           className="peer sr-only"
+                          aria-invalid={Boolean(errors.kvkkConsent)}
+                          aria-describedby={errors.kvkkConsent ? 'expert-kvkk-error' : undefined}
                           {...register('kvkkConsent')}
                           onChange={(e) => setKvkk(e.target.checked)}
                         />
@@ -820,7 +856,7 @@ export function ExpertRegisterPage() {
                       </span>
                     </label>
                     {errors.kvkkConsent && (
-                      <p className="text-xs text-red-600 mt-2 ml-8 font-medium">{errors.kvkkConsent.message}</p>
+                      <p id="expert-kvkk-error" role="alert" className="text-xs text-red-600 mt-2 ml-8 font-medium">{errors.kvkkConsent.message}</p>
                     )}
                   </div>
                 </>
@@ -853,14 +889,18 @@ export function ExpertRegisterPage() {
                     <ChevronRight size={16} />
                   </button>
                 ) : (
-                  <Button
-                    type="submit"
-                    className="flex-1 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 border-0 h-12 rounded-xl text-sm font-bold shadow-lg shadow-primary-200/50"
-                    size="lg"
-                    loading={loading}
-                  >
-                    Başvuruyu Tamamla
-                  </Button>
+                  <div className="flex-1 space-y-3">
+                    <TurnstileWidget onToken={setCaptchaToken} />
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 border-0 h-12 rounded-xl text-sm font-bold shadow-lg shadow-primary-200/50"
+                      size="lg"
+                      loading={loading}
+                      disabled={Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY) && !captchaToken}
+                    >
+                      Başvuruyu Tamamla
+                    </Button>
+                  </div>
                 )}
               </div>
             </form>

@@ -3,8 +3,7 @@ package com.autismsupport.platform.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
+import com.autismsupport.platform.security.EncryptedBooleanMapConverter;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -36,8 +35,8 @@ public class ScreeningResult {
     @Column(name = "risk_level", nullable = false, length = 20)
     private String riskLevel;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "answers", columnDefinition = "jsonb")
+    @Convert(converter = EncryptedBooleanMapConverter.class)
+    @Column(name = "answers", columnDefinition = "TEXT")
     private Map<String, Boolean> answers;
 
     @CreationTimestamp

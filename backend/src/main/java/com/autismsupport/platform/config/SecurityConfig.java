@@ -1,6 +1,7 @@
 package com.autismsupport.platform.config;
 
 import com.autismsupport.platform.security.JwtAuthenticationFilter;
+import com.autismsupport.platform.security.MaintenanceModeFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,7 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final MaintenanceModeFilter maintenanceModeFilter;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
@@ -52,7 +54,7 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/auth/me").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/upload/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/upload/**").authenticated()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forum").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forum/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
@@ -60,7 +62,8 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(maintenanceModeFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

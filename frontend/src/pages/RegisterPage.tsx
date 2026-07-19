@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   Circle,
 } from 'lucide-react';
+import { TurnstileWidget } from '@/components/TurnstileWidget';
 
 const schema = z.object({
   fullName: z.string().min(2, 'Ad soyad en az 2 karakter olmalıdır'),
@@ -60,12 +61,12 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 }
 
 export function RegisterPage() {
-  const [selectedRole, setSelectedRole] = useState<'PARENT' | 'TEACHER'>('PARENT');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [passwordValue, setPasswordValue] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [kvkk, setKvkk] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string>();
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
 
@@ -102,10 +103,16 @@ export function RegisterPage() {
         email: data.email,
         password: data.password,
         kvkkConsent: data.kvkkConsent,
-        role: selectedRole,
+        role: 'PARENT',
+        captchaToken,
       });
-      setAuth(response.user, response.accessToken, response.refreshToken);
-      navigate(selectedRole === 'TEACHER' ? '/' : '/baslangic');
+      if (response.pendingEmailVerification) {
+        navigate(`/eposta-dogrula?email=${encodeURIComponent(data.email)}`);
+        return;
+      }
+      if (!response.accessToken) throw new Error('Oturum başlatılamadı');
+      setAuth(response.user, response.accessToken);
+      navigate('/baslangic');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Kayıt olurken bir hata oluştu';
       setError(message);
@@ -246,71 +253,54 @@ export function RegisterPage() {
               </div>
             </div>
           ) : error ? (
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-700 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div role="alert" aria-live="assertive" className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-700 animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 text-red-600 font-bold">!</div>
               <p className="text-sm font-medium">{error}</p>
             </div>
           ) : null}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Hesap Türü */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Hesap Türü</label>
-              <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole('PARENT')}
-                  className={`py-2 rounded-lg text-xs font-bold transition-all ${
-                    selectedRole === 'PARENT'
-                      ? 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-800'
-                  }`}
-                >
-                  Veli (Ebeveyn)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole('TEACHER')}
-                  className={`py-2 rounded-lg text-xs font-bold transition-all ${
-                    selectedRole === 'TEACHER'
-                      ? 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-800'
-                  }`}
-                >
-                  Eğitimci (Öğretmen)
-                </button>
-              </div>
-            </div>
+            <p className="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+              Bu form veli hesabı içindir. Uzman başvuruları doğrulama süreci olan ayrı formdan alınır.
+            </p>
 
             {/* Ad Soyad */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Ad Soyad</label>
+              <label htmlFor="register-full-name" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Ad Soyad</label>
               <div className="relative">
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                   <User size={18} />
                 </div>
                 <input
+                  id="register-full-name"
                   type="text"
+                  autoComplete="name"
                   placeholder="Adınız Soyadınız"
+                  aria-invalid={Boolean(errors.fullName)}
+                  aria-describedby={errors.fullName ? 'register-full-name-error' : undefined}
                   className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
                     errors.fullName ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
                   }`}
                   {...register('fullName')}
                 />
               </div>
-              {errors.fullName && <p className="text-xs text-red-600 mt-1">{errors.fullName.message}</p>}
+              {errors.fullName && <p id="register-full-name-error" role="alert" className="text-xs text-red-600 mt-1">{errors.fullName.message}</p>}
             </div>
 
             {/* E-posta */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">E-posta</label>
+              <label htmlFor="register-email" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">E-posta</label>
               <div className="relative">
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                   <Mail size={18} />
                 </div>
                 <input
+                  id="register-email"
                   type="email"
+                  autoComplete="email"
                   placeholder="ornek@email.com"
+                  aria-invalid={Boolean(errors.email || emailCheckedStatus.exists)}
+                  aria-describedby={errors.email ? 'register-email-error' : undefined}
                   className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
                     errors.email || emailCheckedStatus.exists ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
                   }`}
@@ -323,19 +313,23 @@ export function RegisterPage() {
                   })}
                 />
               </div>
-              {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
+              {errors.email && <p id="register-email-error" role="alert" className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
             </div>
 
             {/* Şifre */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre</label>
+              <label htmlFor="register-password" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre</label>
               <div className="relative">
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                   <Lock size={18} />
                 </div>
                 <input
+                  id="register-password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   placeholder="En az 8 karakter"
+                  aria-invalid={Boolean(errors.password)}
+                  aria-describedby={errors.password ? 'register-password-error' : 'register-password-help'}
                   className={`w-full pl-11 pr-10 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
                     errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
                   }`}
@@ -345,17 +339,18 @@ export function RegisterPage() {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password.message}</p>}
+              {errors.password && <p id="register-password-error" role="alert" className="text-xs text-red-600 mt-1">{errors.password.message}</p>}
 
               {/* Password requirements checklist */}
               {(watchedPassword || passwordValue) && (
-                <div className="mt-2.5 space-y-2 p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                <div id="register-password-help" aria-live="polite" className="mt-2.5 space-y-2 p-3 bg-slate-50 border border-slate-100 rounded-lg">
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
                     {PASSWORD_RULES.map((rule) => {
                       const met = rule.test(watchedPassword || passwordValue);
@@ -389,14 +384,18 @@ export function RegisterPage() {
 
             {/* Şifre Tekrar */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre Tekrar</label>
+              <label htmlFor="register-confirm-password" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre Tekrar</label>
               <div className="relative">
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                   <Lock size={18} />
                 </div>
                 <input
+                  id="register-confirm-password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   placeholder="Şifrenizi tekrar girin"
+                  aria-invalid={Boolean(errors.confirmPassword)}
+                  aria-describedby={errors.confirmPassword ? 'register-confirm-password-error' : undefined}
                   className={`w-full pl-11 pr-10 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
                     errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
                   }`}
@@ -404,6 +403,7 @@ export function RegisterPage() {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? 'Şifreleri gizle' : 'Şifreleri göster'}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
                 >
@@ -411,7 +411,7 @@ export function RegisterPage() {
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="text-xs text-red-600 mt-1">{errors.confirmPassword.message}</p>
+                <p id="register-confirm-password-error" role="alert" className="text-xs text-red-600 mt-1">{errors.confirmPassword.message}</p>
               )}
             </div>
 
@@ -422,6 +422,8 @@ export function RegisterPage() {
                   <input
                     type="checkbox"
                     className="peer sr-only"
+                    aria-invalid={Boolean(errors.kvkkConsent)}
+                    aria-describedby={errors.kvkkConsent ? 'register-kvkk-error' : undefined}
                     {...register('kvkkConsent')}
                     onChange={(e) => setKvkk(e.target.checked)}
                   />
@@ -454,16 +456,18 @@ export function RegisterPage() {
                 </span>
               </label>
               {errors.kvkkConsent && (
-                <p className="text-xs text-red-600 mt-2 ml-8 font-medium">{errors.kvkkConsent.message}</p>
+                <p id="register-kvkk-error" role="alert" className="text-xs text-red-600 mt-2 ml-8 font-medium">{errors.kvkkConsent.message}</p>
               )}
             </div>
 
             {/* Submit Button */}
+            <TurnstileWidget onToken={setCaptchaToken} />
             <Button
               type="submit"
               className="w-full h-12 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 shadow-lg shadow-primary-200/50 border-0 rounded-xl font-bold flex items-center justify-center gap-2 group mt-2"
               size="lg"
               loading={loading}
+              disabled={Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY) && !captchaToken}
             >
               <span>Hesap Oluştur</span>
               <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />

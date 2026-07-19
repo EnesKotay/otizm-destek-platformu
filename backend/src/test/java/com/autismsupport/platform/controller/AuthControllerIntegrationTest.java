@@ -15,6 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Map;
 import java.util.UUID;
+import java.net.HttpCookie;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,7 +32,7 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    void registerAndLoginReturnsTokensAndCurrentUser() {
+    void registerAndLoginReturnAccessTokenAndHttpOnlyRefreshCookie() {
         String email = "parent-" + UUID.randomUUID() + "@example.com";
         Map<String, Object> registerPayload = Map.of(
                 "email", email,
@@ -53,7 +54,8 @@ class AuthControllerIntegrationTest {
         assertThat(registerBody.get("success")).isEqualTo(true);
         Map<String, Object> registerData = data(registerBody);
         assertThat(registerData.get("accessToken")).isInstanceOf(String.class);
-        assertThat(registerData.get("refreshToken")).isInstanceOf(String.class);
+        assertThat(registerData).doesNotContainKey("refreshToken");
+        assertRefreshCookie(registerResponse);
 
         ResponseEntity<Map<String, Object>> loginResponse = exchange(
                 "/api/auth/login",
@@ -64,7 +66,8 @@ class AuthControllerIntegrationTest {
         assertThat(loginResponse.getStatusCode().is2xxSuccessful()).isTrue();
         Map<String, Object> loginData = data(loginResponse.getBody());
         assertThat(loginData.get("accessToken")).isInstanceOf(String.class);
-        assertThat(loginData.get("refreshToken")).isInstanceOf(String.class);
+        assertThat(loginData).doesNotContainKey("refreshToken");
+        assertRefreshCookie(loginResponse);
         assertThat(data(loginData, "user").get("email")).isEqualTo(email);
     }
 
@@ -105,7 +108,7 @@ class AuthControllerIntegrationTest {
 
         Map<String, Object> tokens = data(registerResponse.getBody());
         String accessToken = (String) tokens.get("accessToken");
-        String refreshToken = (String) tokens.get("refreshToken");
+        String refreshToken = refreshTokenFrom(registerResponse);
 
         ResponseEntity<Map<String, Object>> accessResponse = exchange(
                 "/api/auth/me",
@@ -120,6 +123,35 @@ class AuthControllerIntegrationTest {
                 authenticated(refreshToken)
         );
         assertThat(refreshResponse.getStatusCode().value()).isEqualTo(401);
+    }
+
+    @Test
+    void refreshUsesCookieAndRotatesIt() {
+        String email = "refresh-" + UUID.randomUUID() + "@example.com";
+        ResponseEntity<Map<String, Object>> registerResponse = exchange(
+                "/api/auth/register",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of(
+                        "email", email,
+                        "password", "StrongPass123!",
+                        "fullName", "Refresh Parent",
+                        "kvkkConsent", true,
+                        "role", "PARENT"
+                ))
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.COOKIE, "refresh_token=" + refreshTokenFrom(registerResponse));
+        ResponseEntity<Map<String, Object>> refreshResponse = exchange(
+                "/api/auth/refresh",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of(), headers)
+        );
+
+        assertThat(refreshResponse.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(data(refreshResponse.getBody()).get("accessToken")).isInstanceOf(String.class);
+        assertRefreshCookie(refreshResponse);
+        assertThat(refreshTokenFrom(refreshResponse)).isNotEqualTo(refreshTokenFrom(registerResponse));
     }
 
     @Test
@@ -158,6 +190,47 @@ class AuthControllerIntegrationTest {
         assertThat(data(bodyAfterRegister).get("available")).isEqualTo(false);
     }
 
+    @Test
+    void publicRegistrationRejectsAdminRole() {
+        ResponseEntity<Map<String, Object>> response = exchange(
+                "/api/auth/register",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of(
+                        "email", "admin-attempt-" + UUID.randomUUID() + "@example.com",
+                        "password", "StrongPass123!",
+                        "fullName", "Admin Attempt",
+                        "kvkkConsent", true,
+                        "role", "ADMIN"
+                ))
+        );
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getHeaders().getFirst(HttpHeaders.SET_COOKIE)).isNull();
+    }
+
+    @Test
+    void expertRegistrationIsPendingAndDoesNotIssueTokens() {
+        ResponseEntity<Map<String, Object>> response = exchange(
+                "/api/auth/register",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of(
+                        "email", "expert-pending-" + UUID.randomUUID() + "@example.com",
+                        "password", "StrongPass123!",
+                        "fullName", "Pending Expert",
+                        "kvkkConsent", true,
+                        "role", "EXPERT",
+                        "expertTitle", "Dil Terapisti",
+                        "licenseNumber", "LIC-123"
+                ))
+        );
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        Map<String, Object> responseData = data(response.getBody());
+        assertThat(responseData.get("pendingApproval")).isEqualTo(true);
+        assertThat(responseData).doesNotContainKey("accessToken");
+        assertThat(response.getHeaders().getFirst(HttpHeaders.SET_COOKIE)).isNull();
+    }
+
     private ResponseEntity<Map<String, Object>> exchange(String path, HttpMethod method, HttpEntity<?> entity) {
         return rest.exchange(path, method, entity, new ParameterizedTypeReference<>() {});
     }
@@ -166,6 +239,22 @@ class AuthControllerIntegrationTest {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         return new HttpEntity<>(headers);
+    }
+
+    private void assertRefreshCookie(ResponseEntity<?> response) {
+        String setCookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
+        assertThat(setCookie)
+                .isNotBlank()
+                .contains("refresh_token=")
+                .contains("HttpOnly")
+                .contains("SameSite=Strict")
+                .contains("Path=/api/auth");
+    }
+
+    private String refreshTokenFrom(ResponseEntity<?> response) {
+        String setCookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
+        assertThat(setCookie).isNotBlank();
+        return HttpCookie.parse(setCookie).getFirst().getValue();
     }
 
     @SuppressWarnings("unchecked")

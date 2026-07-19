@@ -1,5 +1,6 @@
 package com.autismsupport.platform.controller;
 
+import com.autismsupport.platform.dto.AiSearchResponseDto;
 import com.autismsupport.platform.dto.ApiResponse;
 import com.autismsupport.platform.dto.SearchResultDto;
 import com.autismsupport.platform.service.SearchService;
@@ -23,7 +24,13 @@ public class SearchController {
             @RequestParam(required = false) String dateFrom,
             @RequestParam(required = false) String dateTo,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) List<String> tags) {
-        return ResponseEntity.ok(ApiResponse.success(searchService.search(q, type, dateFrom, dateTo, category, tags)));
+            @RequestParam(required = false) List<String> tags,
+            @RequestParam(required = false) String sort) {
+        return ResponseEntity.ok(ApiResponse.success(searchService.search(q, type, dateFrom, dateTo, category, tags, sort)));
+    }
+
+    @GetMapping("/ai")
+    public ResponseEntity<ApiResponse<AiSearchResponseDto>> searchAi(@RequestParam String q) {
+        return ResponseEntity.ok(ApiResponse.success(searchService.searchAi(q)));
     }
 }

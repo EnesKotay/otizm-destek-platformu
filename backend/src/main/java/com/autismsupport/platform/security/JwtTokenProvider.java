@@ -93,6 +93,10 @@ public class JwtTokenProvider {
         return refreshTokenExpirationMs;
     }
 
+    public long getAccessTokenExpirationMs() {
+        return accessTokenExpirationMs;
+    }
+
     private Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(key)

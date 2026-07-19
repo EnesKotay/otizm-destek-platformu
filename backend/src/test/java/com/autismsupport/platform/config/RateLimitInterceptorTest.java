@@ -21,6 +21,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.util.List;
+import java.util.UUID;
+import com.autismsupport.platform.security.UserPrincipal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -65,7 +67,6 @@ class RateLimitInterceptorTest {
         ReflectionTestUtils.setField(rateLimitInterceptor, "redisEnabled", true);
 
         when(handlerMethod.getMethodAnnotation(RateLimit.class)).thenReturn(rateLimit);
-        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
         when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         when(request.getRequestURI()).thenReturn("/api/test");
 
@@ -86,7 +87,6 @@ class RateLimitInterceptorTest {
         ReflectionTestUtils.setField(rateLimitInterceptor, "redisEnabled", true);
 
         when(handlerMethod.getMethodAnnotation(RateLimit.class)).thenReturn(rateLimit);
-        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
         when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         when(request.getRequestURI()).thenReturn("/api/test");
 
@@ -110,20 +110,22 @@ class RateLimitInterceptorTest {
     void preHandle_authenticatedUser_usesUserScopedKey() throws Exception {
         ReflectionTestUtils.setField(rateLimitInterceptor, "redisTemplate", redisTemplate);
         ReflectionTestUtils.setField(rateLimitInterceptor, "redisEnabled", true);
+        UUID userId = UUID.randomUUID();
+        UserPrincipal principal = new UserPrincipal(userId, "user@example.com", "", "User", "PARENT", true);
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("user@example.com", null, List.of())
+                new UsernamePasswordAuthenticationToken(principal, null, List.of())
         );
 
         when(handlerMethod.getMethodAnnotation(RateLimit.class)).thenReturn(rateLimit);
         when(request.getRequestURI()).thenReturn("/api/test");
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.increment(eq("rate_limit:user:user@example.com:/api/test"), eq(1L))).thenReturn(1L);
+        when(valueOperations.increment(eq("rate_limit:user:" + userId + ":/api/test"), eq(1L))).thenReturn(1L);
 
         boolean result = rateLimitInterceptor.preHandle(request, response, handlerMethod);
 
         assertThat(result).isTrue();
-        verify(redisTemplate).expire(eq("rate_limit:user:user@example.com:/api/test"), any(Duration.class));
+        verify(redisTemplate).expire(eq("rate_limit:user:" + userId + ":/api/test"), any(Duration.class));
         verify(request, never()).getRemoteAddr();
     }
 
@@ -135,7 +137,7 @@ class RateLimitInterceptorTest {
         ReflectionTestUtils.setField(rateLimitInterceptor, "redisEnabled", false);
 
         when(handlerMethod.getMethodAnnotation(RateLimit.class)).thenReturn(rateLimit);
-        when(request.getHeader("X-Forwarded-For")).thenReturn("192.168.1.100, 10.0.0.1");
+        when(request.getRemoteAddr()).thenReturn("192.168.1.100");
         when(request.getRequestURI()).thenReturn("/api/test");
 
         StringWriter sw = new StringWriter();

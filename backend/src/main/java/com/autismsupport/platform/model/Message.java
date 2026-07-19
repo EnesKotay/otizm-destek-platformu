@@ -2,6 +2,7 @@ package com.autismsupport.platform.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.autismsupport.platform.security.EncryptedStringConverter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -28,6 +29,7 @@ public class Message {
     private User sender;
 
     @Column(nullable = false, columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String content;
 
     @Column(name = "message_type", nullable = false, length = 30)

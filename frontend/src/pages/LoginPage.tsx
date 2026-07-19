@@ -90,7 +90,8 @@ export function LoginPage() {
     setErrorMsg('');
     try {
       const res = await authService.login(data);
-      setAuth(res.user, res.accessToken, res.refreshToken);
+      if (!res.accessToken) throw new Error('Oturum başlatılamadı');
+      setAuth(res.user, res.accessToken);
       navigate('/');
     } catch (err: unknown) {
       const msg =
@@ -158,6 +159,8 @@ export function LoginPage() {
                 <button
                   key={i}
                   onClick={() => { setQuoteIdx(i); setQuoteFade(true); }}
+                  aria-label={`${i + 1}. sözü göster`}
+                  aria-pressed={i === quoteIdx}
                   className={cn(
                     'rounded-full transition-all duration-300 cursor-pointer',
                     i === quoteIdx ? 'w-6 h-1.5 bg-primary-400' : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40',
@@ -229,7 +232,7 @@ export function LoginPage() {
 
           {/* Hata */}
           {errorMsg && (
-            <div className="flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-red-700 mb-5 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div role="alert" aria-live="assertive" className="flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-red-700 mb-5 animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 text-red-600 font-bold">!</div>
               <p className="text-sm font-medium">{errorMsg}</p>
             </div>
@@ -251,15 +254,18 @@ export function LoginPage() {
 
               {/* E-posta */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">E-posta</label>
+                <label htmlFor="login-email" className="block text-xs font-black uppercase tracking-wider text-slate-500">E-posta</label>
                 <div className="group relative">
                   <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary-600">
                     <Mail size={18} />
                   </div>
                   <input
+                    id="login-email"
                     type="email"
                     autoComplete="email"
                     placeholder="ornek@email.com"
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={errors.email ? 'login-email-error' : undefined}
                     className={`h-12 w-full rounded-2xl border pl-11 pr-4 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
                       errors.email
                         ? 'border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100'
@@ -268,13 +274,13 @@ export function LoginPage() {
                     {...register('email')}
                   />
                 </div>
-                {errors.email?.message && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
+                {errors.email?.message && <p id="login-email-error" role="alert" className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
               </div>
 
               {/* Şifre */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Şifre</label>
+                  <label htmlFor="login-password" className="block text-xs font-black uppercase tracking-wider text-slate-500">Şifre</label>
                   <Link to="/sifremi-unuttum" className="text-xs font-bold text-primary-600 transition-colors hover:text-primary-700">
                     Şifremi Unuttum
                   </Link>
@@ -284,9 +290,12 @@ export function LoginPage() {
                     <Lock size={18} />
                   </div>
                   <input
+                    id="login-password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     placeholder="En az 8 karakter"
+                    aria-invalid={Boolean(errors.password)}
+                    aria-describedby={errors.password ? 'login-password-error' : undefined}
                     className={`h-12 w-full rounded-2xl border pl-11 pr-12 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
                       errors.password
                         ? 'border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100'
@@ -303,7 +312,7 @@ export function LoginPage() {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                {errors.password?.message && <p className="text-xs text-red-600 mt-1">{errors.password.message}</p>}
+                {errors.password?.message && <p id="login-password-error" role="alert" className="text-xs text-red-600 mt-1">{errors.password.message}</p>}
               </div>
 
               {/* Beni hatırla */}
@@ -409,8 +418,8 @@ export function LoginPage() {
 
           {/* SSL */}
           <div className="mt-5 flex items-center justify-center gap-2">
-            <Shield size={13} className="text-slate-400" />
-            <p className="text-center text-xs font-semibold text-slate-400">Verileriniz SSL ile korunur.</p>
+            <Shield size={13} className="text-slate-600" />
+            <p className="text-center text-xs font-semibold text-slate-600">Verileriniz SSL ile korunur.</p>
           </div>
         </div>
       </div>

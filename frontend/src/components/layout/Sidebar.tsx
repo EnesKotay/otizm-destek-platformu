@@ -584,8 +584,8 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
     };
   }, [accessToken, subscribe, unsubscribe]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/giris');
   };
 

@@ -2,6 +2,7 @@ package com.autismsupport.platform.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.autismsupport.platform.security.EncryptedStringConverter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -39,6 +40,7 @@ public class MedicationLog {
     private LocalDateTime takenAt;
 
     @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String notes;
 
     @JdbcTypeCode(SqlTypes.JSON)

@@ -28,6 +28,8 @@ import {
   ZapOff,
   Contrast,
   KeyRound,
+  Brain,
+  QrCode,
   type LucideIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -203,6 +205,7 @@ function SettingsCore() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
   const [deleting, setDeleting] = useState(false);
 
   const [notifMessages, setNotifMessages] = useState(() => readPreference('notif_messages'));
@@ -392,7 +395,7 @@ function SettingsCore() {
 
     setPhotoUploading(true);
     try {
-      const url = await uploadService.upload(file);
+      const url = await uploadService.upload(file, 'AUTHENTICATED');
       const updated = await userService.updateProfile({ fullName, phone, city, profileImageUrl: url });
       setUser(updated);
       toast.success('Profil fotoğrafı güncellendi.');
@@ -419,13 +422,33 @@ function SettingsCore() {
     }
   };
 
+  const handleToggleAiConsent = async (consent: boolean) => {
+    try {
+      const updated = await userService.updateAiConsent(consent);
+      setUser(updated);
+      toast.success(consent ? 'Yapay zekâ veri işleme rızası verildi.' : 'Yapay zekâ veri işleme rızası kaldırıldı.');
+    } catch {
+      toast.error('Rıza durumu güncellenemedi.');
+    }
+  };
+
+  const handleToggleEmergencyConsent = async (consent: boolean) => {
+    try {
+      const updated = await userService.updateEmergencyConsent(consent);
+      setUser(updated);
+      toast.success(consent ? 'Acil durum kartı rızası verildi.' : 'Acil durum kartı rızası kaldırıldı.');
+    } catch {
+      toast.error('Rıza durumu güncellenemedi.');
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (deleteConfirm !== 'SİL') return;
 
     setDeleting(true);
     try {
-      await userService.deleteAccount();
-      logout();
+      await userService.deleteAccount(deletePassword);
+      await logout();
       navigate('/giris');
     } catch {
       toast.error('Hesap silinemedi. Lütfen tekrar deneyin.');
@@ -1100,8 +1123,25 @@ function SettingsCore() {
             </CardHeader>
             <div className="space-y-4">
               <div className="rounded-2xl bg-blue-50 p-4 text-sm text-blue-800">
-                Kişisel verileriniz korumalı biçimde saklanır. Hesabınıza ait dışa aktarma ve silme işlemlerini buradan yönetebilirsiniz.
+                Kişisel verileriniz korumalı biçimde saklanır. Hesabınıza ait rıza ayarlarını, dışa aktarma ve silme işlemlerini buradan yönetebilirsiniz.
               </div>
+
+              <SettingRow
+                icon={Brain}
+                label="Yapay zekâ veri işleme rızası"
+                description="Yapay zekâ destekli analiz ve öneriler için rıza verirsiniz"
+                checked={Boolean(user?.consentAiAnalysis)}
+                onChange={handleToggleAiConsent}
+              />
+
+              <SettingRow
+                icon={QrCode}
+                label="Kamuya açık acil durum kartı rızası"
+                description="Acil durum kartınızın QR kod ile taranıp kamuya gösterilebilmesi için rıza verirsiniz"
+                checked={Boolean(user?.consentEmergencyCard)}
+                onChange={handleToggleEmergencyConsent}
+              />
+
               <div className="grid gap-3">
                 <Button variant="outline" onClick={handleDownloadData} className="w-full">
                   <Download size={16} className="mr-2" aria-hidden="true" /> Verilerimi İndir
@@ -1115,7 +1155,7 @@ function SettingsCore() {
         </aside>
       </div>
 
-      <Modal isOpen={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeleteConfirm(''); }} title="Hesabı Sil">
+      <Modal isOpen={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeleteConfirm(''); setDeletePassword(''); }} title="Hesabı Sil">
         <div className="space-y-4">
           <div className="rounded-xl border border-red-100 bg-red-50 p-4">
             <p className="text-sm font-semibold text-red-800">Bu işlem geri alınamaz.</p>
@@ -1134,6 +1174,17 @@ function SettingsCore() {
               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
             />
           </div>
+          <div>
+            <label htmlFor="delete-account-password" className="mb-1 block text-sm text-gray-700">Mevcut şifreniz:</label>
+            <input
+              id="delete-account-password"
+              type="password"
+              autoComplete="current-password"
+              value={deletePassword}
+              onChange={(event) => setDeletePassword(event.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+            />
+          </div>
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => { setShowDeleteModal(false); setDeleteConfirm(''); }} className="flex-1">
               İptal
@@ -1142,7 +1193,7 @@ function SettingsCore() {
               variant="danger"
               onClick={handleDeleteAccount}
               loading={deleting}
-              disabled={deleteConfirm !== 'SİL'}
+              disabled={deleteConfirm !== 'SİL' || !deletePassword}
               className="flex-1"
             >
               Hesabı Kalıcı Sil

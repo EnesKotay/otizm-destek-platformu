@@ -23,6 +23,12 @@ import java.util.regex.Pattern;
 @Slf4j
 public class ChatbotService {
 
+    private final PlatformSettingsService platformSettingsService;
+
+    public ChatbotService(PlatformSettingsService platformSettingsService) {
+        this.platformSettingsService = platformSettingsService;
+    }
+
     @Value("${gemini.api.key:}")
     private String apiKey;
 
@@ -218,6 +224,7 @@ public class ChatbotService {
     public ChatbotResponse chat(String userMessage,
                                  List<ChatbotRequest.ConversationTurn> history,
                                  String userId, String childContext) {
+        platformSettingsService.requireAiEnabled();
         if (!isApiKeyConfigured()) {
             log.warn("Gemini API anahtari yapilandirilmamis — GEMINI_API_KEY ortam degiskeni eksik.");
             return ChatbotResponse.success(buildFallbackResponse(userMessage));
@@ -248,6 +255,7 @@ public class ChatbotService {
     public SseEmitter streamChat(String userMessage,
                                   List<ChatbotRequest.ConversationTurn> history,
                                   String userId, String childContext) {
+        platformSettingsService.requireAiEnabled();
         SseEmitter emitter = new SseEmitter(60_000L); // 60 sn timeout
 
         if (!isApiKeyConfigured()) {

@@ -23,13 +23,17 @@ public class UserPrincipal implements UserDetails {
     private final boolean active;
 
     public static UserPrincipal create(User user) {
+        boolean professionalApproved = switch (user.getRole()) {
+            case EXPERT, TEACHER -> user.isVerified();
+            default -> true;
+        };
         return new UserPrincipal(
                 user.getId(),
                 user.getEmail(),
                 user.getPasswordHash(),
                 user.getFullName(),
                 user.getRole().name(),
-                user.isActive()
+                user.isActive() && professionalApproved
         );
     }
 

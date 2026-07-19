@@ -6,19 +6,34 @@ import { useChildStore } from './childStore';
 import { childService } from '@/services/childService';
 
 import { queryClient } from '@/App';
+import { API_BASE_URL } from '@/services/endpoints';
 
 interface AuthState {
   user: User | null;
   accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   completedOnboardingIds: string[];
-  setAuth: (user: User, accessToken: string, refreshToken: string) => void;
-  setTokens: (accessToken: string, refreshToken: string) => void;
+  setAuth: (user: User, accessToken: string) => void;
+  setAccessToken: (accessToken: string) => void;
   setUser: (user: User) => void;
   setOnboardingCompleted: () => void;
   isOnboardingCompleted: () => boolean;
-  logout: () => void;
+  clearSession: () => void;
+  logout: () => Promise<void>;
+}
+
+async function clearPrivateBrowserData() {
+  localStorage.removeItem('auth-storage');
+  localStorage.removeItem('offline_request_queue');
+
+  if ('caches' in window) {
+    const keys = await window.caches.keys();
+    await Promise.all(
+      keys
+        .filter((key) => key.startsWith('autism-api-') || key === 'autism-pending-sync')
+        .map((key) => window.caches.delete(key)),
+    );
+  }
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -26,10 +41,9 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       accessToken: null,
-      refreshToken: null,
       isAuthenticated: false,
       completedOnboardingIds: [],
-      setAuth: (user, accessToken, refreshToken) => {
+      setAuth: (user, accessToken) => {
         const previousUserId = get().user?.id;
         if (previousUserId !== user.id) {
           useChildStore.getState().clearChildren();
@@ -37,10 +51,9 @@ export const useAuthStore = create<AuthState>()(
           queryClient.clear();
         }
 
-        set({ user, accessToken, refreshToken, isAuthenticated: true });
+        set({ user, accessToken, isAuthenticated: true });
       },
-      setTokens: (accessToken, refreshToken) =>
-        set({ accessToken, refreshToken }),
+      setAccessToken: (accessToken) => set({ accessToken }),
       setUser: (user) => set({ user }),
       setOnboardingCompleted: () => {
         const userId = get().user?.id;
@@ -52,17 +65,33 @@ export const useAuthStore = create<AuthState>()(
         if (!userId) return true;
         return get().completedOnboardingIds.includes(userId);
       },
-      logout: () => {
+      clearSession: () => {
         useChildStore.getState().clearChildren();
         childService.clearCache();
         queryClient.clear();
-
-        // Sadece oturum verisini kaldır; görünüm/bildirim tercihleri korunsun
-        localStorage.removeItem('auth-storage');
-
-        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+        void clearPrivateBrowserData();
+        set({ user: null, accessToken: null, isAuthenticated: false });
+      },
+      logout: async () => {
+        try {
+          await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}',
+          });
+        } finally {
+          get().clearSession();
+        }
       },
     }),
-    { name: 'auth-storage' }
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        completedOnboardingIds: state.completedOnboardingIds,
+      }),
+    }
   )
 );

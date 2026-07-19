@@ -2,6 +2,7 @@ package com.autismsupport.platform.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.autismsupport.platform.security.EncryptedStringConverter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -36,12 +37,15 @@ public class Child {
     private LocalDate birthDate;
 
     @Column(name = "diagnosis_info", columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String diagnosisInfo;
 
     @Column(name = "education_program", columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String educationProgram;
 
     @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String therapies;
 
     @Column(length = 10)

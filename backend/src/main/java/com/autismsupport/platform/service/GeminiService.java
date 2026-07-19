@@ -30,6 +30,7 @@ public class GeminiService {
     private String apiUrl;
 
     private final ObjectMapper objectMapper;
+    private final PlatformSettingsService platformSettingsService;
 
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
@@ -125,6 +126,7 @@ public class GeminiService {
     /* ── Non-streaming mesaj gonder ──────────────────────────────────────────── */
 
     public String sendMessage(String userMessage, List<Map<String, String>> history, String contextNote) {
+        platformSettingsService.requireAiEnabled();
         if (apiKey == null || apiKey.isBlank()) {
             return buildFallbackResponse(userMessage);
         }
@@ -149,6 +151,7 @@ public class GeminiService {
 
     public void streamMessage(String userMessage, List<Map<String, String>> history,
                               String contextNote, SseEmitter emitter) {
+        platformSettingsService.requireAiEnabled();
         if (apiKey == null || apiKey.isBlank()) {
             sendFallbackStream(userMessage, emitter);
             return;
@@ -311,6 +314,7 @@ public class GeminiService {
     /* ── Yapay Zeka Makale Taslağı Oluşturma ──────────────────────────────────── */
 
     public com.autismsupport.platform.dto.AiDraftResponse generateArticleDraft(String prompt) {
+        platformSettingsService.requireAiEnabled();
         String systemInstruction = """
             Sen otizm destek platformunda görevli uzman bir editörsün.
             Kullanıcının verdiği konu başlığı veya açıklamaya göre Türkçe, bilgilendirici, bilimsel ve ebeveyn dostu bir eğitim makalesi taslağı hazırlamalısın.
@@ -355,6 +359,7 @@ public class GeminiService {
 
     /** Verilen bilimsel özete sadık kalarak Türkçe'ye çevirir. API anahtarı yoksa veya ayrıştırma başarısızsa null döner (fallback üretmez). */
     public com.autismsupport.platform.dto.AiDraftResponse summarizeExternalAbstract(String sourceTitle, String abstractText) {
+        platformSettingsService.requireAiEnabled();
         if (apiKey == null || apiKey.isBlank()) {
             return null;
         }
@@ -385,6 +390,7 @@ public class GeminiService {
     }
 
     public String sendCustomMessage(String systemInstruction, String userMessage) {
+        platformSettingsService.requireAiEnabled();
         if (apiKey == null || apiKey.isBlank()) {
             return null;
         }

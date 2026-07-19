@@ -3,6 +3,7 @@ package com.autismsupport.platform.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import com.autismsupport.platform.security.EncryptedStringConverter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,12 +29,15 @@ public class ABCEntry {
     private LocalTime entryTime;
 
     @Column(nullable = false, columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String antecedent;
 
     @Column(nullable = false, columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String behavior;
 
     @Column(nullable = false, columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String consequence;
 
     @Column(nullable = false)
@@ -46,6 +50,7 @@ public class ABCEntry {
     private String location;
 
     @Column(columnDefinition = "TEXT")
+    @Convert(converter = EncryptedStringConverter.class)
     private String notes;
 
     @CreationTimestamp

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-  Thermometer, TriangleAlert, Sparkles, Lightbulb,
+  Thermometer, TriangleAlert, Sparkles,
   Volume2, Trash2, Heart, Award, CheckCircle2, UserCheck,
-  ArrowRight, RefreshCw, FileText, ExternalLink
+  RefreshCw, FileText, ExternalLink
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import type { SensoryMetric, SensoryProfileState, ToolCard } from '@/features/treatment/types';

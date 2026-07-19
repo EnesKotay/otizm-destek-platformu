@@ -45,6 +45,8 @@ jobs:
           push: true
           build-args: |
             VITE_VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
+            VITE_TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}
+            VITE_PUBLIC_SITE_URL=${{ vars.PUBLIC_SITE_URL }}
           tags: |
             ${{ env.IMAGE_BASE }}/frontend:latest
             ${{ env.IMAGE_BASE }}/frontend:${{ github.sha }}

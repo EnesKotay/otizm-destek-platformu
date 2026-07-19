@@ -22,7 +22,6 @@ describe('authService', () => {
         success: true,
         data: {
           accessToken: 'access_123',
-          refreshToken: 'refresh_456',
           user: { id: 'u1', email: 'test@example.com', role: 'PARENT' },
         },
       },
@@ -45,7 +44,6 @@ describe('authService', () => {
         success: true,
         data: {
           accessToken: 'at',
-          refreshToken: 'rt',
           user: { id: 'u2', email: 'new@example.com', role: 'PARENT' },
         },
       },
@@ -62,5 +60,30 @@ describe('authService', () => {
     await authService.register(payload as Parameters<typeof authService.register>[0]);
 
     expect(mockApi.post).toHaveBeenCalledWith('/auth/register', payload);
+  });
+
+  it('refresh: token gövdesi göndermeden HttpOnly cookie akışını kullanır', async () => {
+    mockApi.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          accessToken: 'renewed-access',
+          user: { id: 'u1', email: 'test@example.com', role: 'PARENT' },
+        },
+      },
+    });
+
+    const result = await authService.refresh();
+
+    expect(result.accessToken).toBe('renewed-access');
+    expect(mockApi.post).toHaveBeenCalledWith('/auth/refresh', {});
+  });
+
+  it('logout: refresh tokenı JavaScript tarafında taşımaz', async () => {
+    mockApi.post.mockResolvedValueOnce({ data: { success: true } });
+
+    await authService.logout();
+
+    expect(mockApi.post).toHaveBeenCalledWith('/auth/logout', {});
   });
 });
