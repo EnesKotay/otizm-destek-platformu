@@ -43,11 +43,11 @@ public class User {
 
     @Column(name = "is_verified")
     @Builder.Default
-    private boolean verified = false;
+    private Boolean verified = false;
 
-    @Column(name = "email_verified", nullable = false)
+    @Column(name = "email_verified")
     @Builder.Default
-    private boolean emailVerified = false;
+    private Boolean emailVerified = false;
 
     @Column(name = "expert_title")
     private String expertTitle;
@@ -69,32 +69,32 @@ public class User {
 
     @Column(name = "kvkk_consent")
     @Builder.Default
-    private boolean kvkkConsent = false;
+    private Boolean kvkkConsent = false;
 
     @Column(name = "kvkk_consent_date")
     private LocalDateTime kvkkConsentDate;
 
     @Column(name = "consent_ai_analysis")
     @Builder.Default
-    private boolean consentAiAnalysis = false;
+    private Boolean consentAiAnalysis = false;
 
     @Column(name = "consent_ai_analysis_date")
     private LocalDateTime consentAiAnalysisDate;
 
     @Column(name = "consent_emergency_card")
     @Builder.Default
-    private boolean consentEmergencyCard = false;
+    private Boolean consentEmergencyCard = false;
 
     @Column(name = "consent_emergency_card_date")
     private LocalDateTime consentEmergencyCardDate;
 
     @Column(name = "matching_enabled")
     @Builder.Default
-    private boolean matchingEnabled = true;
+    private Boolean matchingEnabled = true;
 
     @Column(name = "is_active")
     @Builder.Default
-    private boolean isActive = true;
+    private Boolean isActive = true;
 
     private Double latitude;
 
@@ -107,11 +107,11 @@ public class User {
 
     @Column(name = "license_verified")
     @Builder.Default
-    private boolean licenseVerified = false;
+    private Boolean licenseVerified = false;
 
     @Column(name = "accepting_patients")
     @Builder.Default
-    private boolean acceptingPatients = true;
+    private Boolean acceptingPatients = true;
 
     @Column(name = "license_verified_at")
     private LocalDateTime licenseVerifiedAt;
@@ -140,7 +140,7 @@ public class User {
 
     @Column(name = "mfa_enabled")
     @Builder.Default
-    private boolean mfaEnabled = false;
+    private Boolean mfaEnabled = false;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -150,11 +150,18 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public boolean isActive() {
-        return isActive;
-    }
+    public boolean isVerified() { return Boolean.TRUE.equals(verified); }
+    public boolean isEmailVerified() { return Boolean.TRUE.equals(emailVerified); }
+    public boolean isKvkkConsent() { return Boolean.TRUE.equals(kvkkConsent); }
+    public boolean isConsentAiAnalysis() { return Boolean.TRUE.equals(consentAiAnalysis); }
+    public boolean isConsentEmergencyCard() { return Boolean.TRUE.equals(consentEmergencyCard); }
+    public boolean isMatchingEnabled() { return !Boolean.FALSE.equals(matchingEnabled); }
+    public boolean isActive() { return !Boolean.FALSE.equals(isActive); }
+    public boolean isLicenseVerified() { return Boolean.TRUE.equals(licenseVerified); }
+    public boolean isAcceptingPatients() { return !Boolean.FALSE.equals(acceptingPatients); }
+    public boolean isMfaEnabled() { return Boolean.TRUE.equals(mfaEnabled); }
 
     public void setIsActive(boolean active) {
-        isActive = active;
+        this.isActive = active;
     }
 }

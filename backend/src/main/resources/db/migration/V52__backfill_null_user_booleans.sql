@@ -1,0 +1,10 @@
+UPDATE users SET consent_ai_analysis = FALSE WHERE consent_ai_analysis IS NULL;
+UPDATE users SET consent_emergency_card = FALSE WHERE consent_emergency_card IS NULL;
+UPDATE users SET mfa_enabled = FALSE WHERE mfa_enabled IS NULL;
+UPDATE users SET email_verified = TRUE WHERE email_verified IS NULL;
+UPDATE users SET license_verified = FALSE WHERE license_verified IS NULL;
+UPDATE users SET accepting_patients = TRUE WHERE accepting_patients IS NULL;
+UPDATE users SET matching_enabled = TRUE WHERE matching_enabled IS NULL;
+UPDATE users SET is_active = TRUE WHERE is_active IS NULL;
+UPDATE users SET kvkk_consent = FALSE WHERE kvkk_consent IS NULL;
+UPDATE users SET is_verified = FALSE WHERE is_verified IS NULL;
