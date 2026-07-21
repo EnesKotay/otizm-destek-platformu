@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS weekly_questions (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE weekly_questions ADD COLUMN IF NOT EXISTS week_label VARCHAR(80);
+
 CREATE TABLE IF NOT EXISTS weekly_answers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     question_id UUID NOT NULL REFERENCES weekly_questions(id) ON DELETE CASCADE,
