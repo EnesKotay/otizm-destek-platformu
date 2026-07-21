@@ -4,7 +4,7 @@ import { API_BASE_URL } from '@/services/endpoints';
 
 function normalizeApiError(error: unknown): string {
   if (!axios.isAxiosError(error)) {
-    return error instanceof Error ? error.message : 'Beklenmeyen bir hata oluştu.';
+    return error instanceof Error ? error.message : 'Bir hata oluştu. Lütfen tekrar deneyin.';
   }
 
   const status = error.response?.status;
@@ -14,36 +14,38 @@ function normalizeApiError(error: unknown): string {
     : '';
 
   if (!error.response) {
-    return 'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edin veya birkaç dakika sonra tekrar deneyin.';
+    return 'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip lütfen tekrar deneyin.';
   }
 
-  if (status === 502 || status === 503 || status === 504) {
-    return 'Sunucu şu anda yanıt vermiyor. Lütfen birkaç dakika sonra tekrar deneyin.';
-  }
-
-  if (status === 401) {
-    return responseData?.message || 'Oturum süreniz doldu. Lütfen tekrar giriş yapın.';
-  }
-
-  if (status === 403) {
-    return 'Bu işlem için yetkiniz bulunmuyor.';
-  }
-
-  if (status === 404) {
-    return responseData?.message || 'Aradığınız kayıt bulunamadı.';
-  }
-
-  if (status && status >= 500) {
-    return 'Beklenmeyen bir sunucu hatası oluştu. Ekibimiz bu durumu inceleyebilir.';
-  }
-
-  if (responseData?.message) {
+  // 1. Prioritize specific user-facing error messages from the backend!
+  if (responseData?.message && typeof responseData.message === 'string' && responseData.message.trim() !== '') {
     return validationDetails
       ? `${responseData.message}: ${validationDetails}`
       : responseData.message;
   }
 
-  return error.message || 'İşlem tamamlanamadı.';
+  // 2. Friendly fallbacks if no specific message is provided by the backend
+  if (status === 502 || status === 503 || status === 504) {
+    return 'Sunucu şu anda yanıt vermiyor veya bakımda olabilir. Lütfen birkaç dakika sonra tekrar deneyin.';
+  }
+
+  if (status === 401) {
+    return 'Oturum süreniz doldu. Lütfen tekrar giriş yapın.';
+  }
+
+  if (status === 403) {
+    return 'Bu işlem için gerekli yetkiniz bulunmuyor.';
+  }
+
+  if (status === 404) {
+    return 'Aradığınız içerik veya sayfa bulunamadı.';
+  }
+
+  if (status && status >= 500) {
+    return 'Sistemde geçici bir aksaklık oluştu. Lütfen sayfayı yenileyip tekrar deneyin.';
+  }
+
+  return error.message || 'İşlem gerçekleştirilemedi. Lütfen tekrar deneyin.';
 }
 
 const api = axios.create({
