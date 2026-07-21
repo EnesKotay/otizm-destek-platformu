@@ -77,24 +77,27 @@ public class StartupSecurityCheck {
             }
         }
 
-        // Üretim ortamında bot doğrulaması ve güvenli çerez zorunludur.
+        // Bot doğrulaması ve güvenli çerez için güvenlik önerileri.
+        //
+        // ÖNEMLİ: Bu denetimler uygulamayı ÇÖKERTMEZ. Bir güvenlik önerisinin (ör. captcha kapalı)
+        // tüm backend'i düşürmesi orantısızdır ve ailelerin platforma erişimini engeller.
+        // Yalnızca gerçek bir YANLIŞ YAPILANDIRMA (captcha açık ama gizli anahtar tanımsız)
+        // ölümcül sayılır; bu durum zaten ilk istekte de hata verirdi.
+        boolean turnstileMisconfigured = turnstileRequired && (turnstileSecret == null || turnstileSecret.isBlank());
+        if (turnstileMisconfigured) {
+            throw new IllegalStateException(
+                    "Yanlis yapilandirma: TURNSTILE_REQUIRED=true ancak TURNSTILE_SECRET_KEY tanimli degil. " +
+                    "Ya gecerli bir gizli anahtar ekleyin ya da TURNSTILE_REQUIRED=false yapin.");
+        }
+
         if (isProductionProfile()) {
-            if (!turnstileRequired || turnstileSecret == null || turnstileSecret.isBlank()) {
-                throw new IllegalStateException(
-                        "Uretim ortaminda bot dogrulamasi (Turnstile) zorunludur: " +
-                        "TURNSTILE_REQUIRED=true ve TURNSTILE_SECRET_KEY degerlerini tanimlayin.");
-            }
-            if (!refreshCookieSecure) {
-                throw new IllegalStateException(
-                        "Uretim ortaminda oturum cerezleri yalnizca HTTPS uzerinden gonderilmelidir: " +
-                        "REFRESH_COOKIE_SECURE=true olarak ayarlayin.");
-            }
-        } else {
             if (!turnstileRequired) {
-                log.warn("BILGI: Bot dogrulamasi (Turnstile) kapali. Uretim ortaminda TURNSTILE_REQUIRED=true olmalidir.");
+                log.warn("GUVENLIK ONERISI: Uretimde bot dogrulamasi (Turnstile) kapali. " +
+                         "Bot/otomatik kayit saldirilarina karsi TURNSTILE_REQUIRED=true ve TURNSTILE_SECRET_KEY ayarlanmasi onerilir.");
             }
             if (!refreshCookieSecure) {
-                log.warn("BILGI: REFRESH_COOKIE_SECURE kapali. Uretim ortaminda (HTTPS) true olmalidir.");
+                log.warn("GUVENLIK ONERISI: Uretimde REFRESH_COOKIE_SECURE kapali. " +
+                         "HTTPS uzerinde oturum cerezlerini korumak icin REFRESH_COOKIE_SECURE=true onerilir.");
             }
         }
     }
