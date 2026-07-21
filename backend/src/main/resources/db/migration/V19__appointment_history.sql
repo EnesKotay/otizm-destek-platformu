@@ -1,4 +1,4 @@
-CREATE TABLE appointment_status_history (
+CREATE TABLE IF NOT EXISTS appointment_status_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     appointment_id UUID NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
     old_status VARCHAR(20),
@@ -8,5 +8,5 @@ CREATE TABLE appointment_status_history (
     changed_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_appt_history_appointment ON appointment_status_history(appointment_id);
-CREATE INDEX idx_appt_history_changed_at ON appointment_status_history(changed_at);
+CREATE INDEX IF NOT EXISTS idx_appt_history_appointment ON appointment_status_history(appointment_id);
+CREATE INDEX IF NOT EXISTS idx_appt_history_changed_at ON appointment_status_history(changed_at);
