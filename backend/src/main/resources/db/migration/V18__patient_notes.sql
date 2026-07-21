@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS patient_notes (
+CREATE TABLE patient_notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     expert_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     parent_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS patient_notes (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_patient_notes_expert ON patient_notes(expert_id);
-CREATE INDEX IF NOT EXISTS idx_patient_notes_parent ON patient_notes(parent_id);
+CREATE INDEX idx_patient_notes_expert ON patient_notes(expert_id);
+CREATE INDEX idx_patient_notes_parent ON patient_notes(parent_id);

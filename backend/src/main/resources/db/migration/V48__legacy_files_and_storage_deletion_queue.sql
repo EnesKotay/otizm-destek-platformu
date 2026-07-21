@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS storage_deletion_queue (
+CREATE TABLE storage_deletion_queue (
     filename VARCHAR(255) PRIMARY KEY,
     attempts INTEGER NOT NULL DEFAULT 0,
     last_error VARCHAR(500),
