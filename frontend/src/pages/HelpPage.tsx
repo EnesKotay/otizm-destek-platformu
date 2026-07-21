@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   HelpCircle, ChevronDown, ChevronUp, Mail, MessageCircle,
   BookOpen, Users, Calendar, Baby, ShieldCheck, Star,
-  Compass, Search, Flag, X, Zap,
+  Compass, Search, Flag, X, Zap, Volume2, VolumeX,
   Video,
   ChevronRight, Bot,
 } from 'lucide-react';
@@ -171,12 +171,31 @@ function Highlight({ text, query }: { text: string; query: string }) {
 
 function AccordionItem({ item, search }: { item: FaqItem; search: string }) {
   const [open, setOpen] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
 
   useEffect(() => {
     if (contentRef.current) setHeight(open ? contentRef.current.scrollHeight : 0);
   }, [open]);
+
+  const toggleSpeech = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+    } else {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(`${item.q}. ${item.a}`);
+      utterance.lang = 'tr-TR';
+      utterance.rate = 0.95;
+      utterance.onend = () => setSpeaking(false);
+      utterance.onerror = () => setSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+      setSpeaking(true);
+    }
+  };
 
   return (
     <Card className={`overflow-hidden transition-all duration-200 ${open ? 'border-primary-200 shadow-sm' : 'border-gray-100 shadow-none'}`}>
@@ -188,8 +207,18 @@ function AccordionItem({ item, search }: { item: FaqItem; search: string }) {
         <span className="text-sm font-semibold text-gray-800 pr-4">
           <Highlight text={item.q} query={search} />
         </span>
-        <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 ${open ? 'bg-primary-100 text-primary-600 rotate-0' : 'bg-gray-100 text-gray-400'}`}>
-          {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleSpeech}
+            className={`p-1.5 rounded-full text-xs transition-colors ${speaking ? 'bg-amber-500 text-white animate-pulse' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+            title="Sesli Dinle"
+          >
+            {speaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
+          </button>
+          <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 ${open ? 'bg-primary-100 text-primary-600 rotate-0' : 'bg-gray-100 text-gray-400'}`}>
+            {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </div>
         </div>
       </button>
       <div

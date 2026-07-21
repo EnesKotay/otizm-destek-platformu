@@ -30,6 +30,15 @@ public class StartupSecurityCheck {
     @Value("${app.encryption.secret-key:}")
     private String encryptionKey;
 
+    @Value("${app.turnstile.required:false}")
+    private boolean turnstileRequired;
+
+    @Value("${app.turnstile.secret-key:}")
+    private String turnstileSecret;
+
+    @Value("${app.auth.refresh-cookie-secure:false}")
+    private boolean refreshCookieSecure;
+
     private final Environment environment;
 
     public StartupSecurityCheck(Environment environment) {
@@ -65,6 +74,27 @@ public class StartupSecurityCheck {
             log.warn("Yukaridaki guvensiz varsayilan degerler .env dosyaniza veya ortam degiskenleri araciligiyla degistirilmeli.");
             if (isProductionProfile()) {
                 throw new IllegalStateException("Uretim ortaminda varsayilan guvenlik degerleriyle uygulama baslatilamaz.");
+            }
+        }
+
+        // Üretim ortamında bot doğrulaması ve güvenli çerez zorunludur.
+        if (isProductionProfile()) {
+            if (!turnstileRequired || turnstileSecret == null || turnstileSecret.isBlank()) {
+                throw new IllegalStateException(
+                        "Uretim ortaminda bot dogrulamasi (Turnstile) zorunludur: " +
+                        "TURNSTILE_REQUIRED=true ve TURNSTILE_SECRET_KEY degerlerini tanimlayin.");
+            }
+            if (!refreshCookieSecure) {
+                throw new IllegalStateException(
+                        "Uretim ortaminda oturum cerezleri yalnizca HTTPS uzerinden gonderilmelidir: " +
+                        "REFRESH_COOKIE_SECURE=true olarak ayarlayin.");
+            }
+        } else {
+            if (!turnstileRequired) {
+                log.warn("BILGI: Bot dogrulamasi (Turnstile) kapali. Uretim ortaminda TURNSTILE_REQUIRED=true olmalidir.");
+            }
+            if (!refreshCookieSecure) {
+                log.warn("BILGI: REFRESH_COOKIE_SECURE kapali. Uretim ortaminda (HTTPS) true olmalidir.");
             }
         }
     }

@@ -126,7 +126,27 @@ const EMERGENCY_CONTACTS = [
 
 function CrisisCardItem({ card }: { card: CrisisCard }) {
   const [open, setOpen] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const Icon = card.icon;
+
+  const toggleSpeech = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+    } else {
+      window.speechSynthesis.cancel();
+      const textToRead = `${card.title}. Neler yapılmalı: ${card.steps.join('. ')}`;
+      const utterance = new SpeechSynthesisUtterance(textToRead);
+      utterance.lang = 'tr-TR';
+      utterance.rate = 0.9;
+      utterance.onend = () => setSpeaking(false);
+      utterance.onerror = () => setSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+      setSpeaking(true);
+    }
+  };
 
   return (
     <Card className={`rounded-3xl border overflow-hidden transition-all duration-300 ${open ? 'shadow-lg scale-[1.01]' : 'shadow-sm'} ${card.borderColor}`}>
@@ -142,6 +162,17 @@ function CrisisCardItem({ card }: { card: CrisisCard }) {
           <h3 className="text-base font-black text-gray-900 tracking-tight">{card.title}</h3>
           <p className="text-[11px] font-bold text-gray-500 mt-0.5 uppercase tracking-wider">{card.subtitle}</p>
         </div>
+        <button
+          type="button"
+          onClick={toggleSpeech}
+          className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-extrabold transition-all ${
+            speaking ? 'bg-amber-500 text-white animate-pulse' : 'bg-white/80 text-gray-700 hover:bg-white'
+          }`}
+          title="Sesli Okut"
+        >
+          <Volume2 size={14} />
+          <span className="hidden sm:inline">{speaking ? 'Durdur' : 'Sesli Dinle'}</span>
+        </button>
         <div className={`shrink-0 w-8 h-8 rounded-full bg-white/50 flex items-center justify-center transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>
           <ChevronDown size={18} className="text-gray-600" />
         </div>

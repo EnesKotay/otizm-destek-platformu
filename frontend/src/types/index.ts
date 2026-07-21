@@ -28,6 +28,7 @@ export interface User {
   articleCount?: number;
   reviewCount?: number;
   acceptingPatients?: boolean;
+  privacySettings?: Record<string, any>;
 }
 
 export interface ConsultationReply {

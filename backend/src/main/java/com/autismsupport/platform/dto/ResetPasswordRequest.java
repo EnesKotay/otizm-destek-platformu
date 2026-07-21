@@ -1,7 +1,7 @@
 package com.autismsupport.platform.dto;
 
+import com.autismsupport.platform.validation.StrongPassword;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
@@ -10,6 +10,6 @@ public class ResetPasswordRequest {
     private String token;
 
     @NotBlank(message = "Yeni sifre zorunludur")
-    @Size(min = 8, message = "Sifre en az 8 karakter olmalidir")
+    @StrongPassword
     private String password;
 }

@@ -43,6 +43,7 @@ import { toast } from '@/store/toastStore';
 import { uploadService } from '@/services/uploadService';
 import { userService } from '@/services/userService';
 import { cn } from '@/utils/cn';
+import { validatePassword } from '@/utils/password';
 import { TURKISH_CITIES } from '@/constants/turkishCities';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -364,8 +365,9 @@ function SettingsCore() {
       toast.error('Şifreler eşleşmiyor.');
       return;
     }
-    if (passwordScore < 3) {
-      toast.error('Daha güçlü bir şifre seçin.');
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      toast.error(passwordError);
       return;
     }
 

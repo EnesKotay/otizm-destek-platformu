@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Printer, ShieldAlert, Phone, Heart, AlertTriangle, CheckCircle, User, Share2 } from 'lucide-react';
+import { Save, Printer, ShieldAlert, Phone, Heart, AlertTriangle, CheckCircle, User, Share2, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 import { useChildStore } from '@/store/childStore';
@@ -247,7 +247,29 @@ export function EmergencyCardPage() {
           <h1 className="text-3xl font-black bg-gradient-to-r from-red-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Acil Durum Kartım</h1>
           <p className="text-slate-500 mt-2 font-medium">Okul, bakıcı veya acil servis için yazdırıp taşıyabileceğiniz kart</p>
         </div>
-        <div className="flex gap-3 relative z-10">
+        <div className="flex gap-3 relative z-10 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+              if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                toast.info('Sesli okuma durduruldu.');
+              } else {
+                window.speechSynthesis.cancel();
+                const text = `Acil Durum Kartı. Çocuğun Adı: ${profile.childName}. Tanı: ${profile.diagnosisInfo}. Acil Durum Kişisi: ${profile.contactName1}, Telefon: ${profile.contactPhone1}. Sakinleştirme Yöntemleri: ${profile.calmingStrategies || 'Belirtilmedi'}.`;
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'tr-TR';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+                toast.success('Acil durum kartı sesli okunuyor 🔊');
+              }
+            }}
+            className="rounded-xl font-bold bg-white hover:bg-slate-50 border-slate-200 shadow-sm transition-all"
+          >
+            <Volume2 size={16} className="mr-2 text-emerald-600" />
+            Kartı Sesli Dinle
+          </Button>
           <Button variant="outline" onClick={handlePrint} className="rounded-xl font-bold bg-white hover:bg-slate-50 border-slate-200 shadow-sm hover:shadow transition-all"><Printer size={16} className="mr-2 text-indigo-500" />Kartı Yazdır</Button>
           <Button onClick={handleSave} className="rounded-xl font-bold bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all active:scale-95"><Save size={16} className="mr-2" />Kaydet</Button>
         </div>

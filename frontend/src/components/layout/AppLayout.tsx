@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { NotificationToast } from '@/components/notifications/NotificationToast';
+import { AccessibilityWidget } from '@/components/ui/AccessibilityWidget';
 import { ChatBot } from '@/components/ChatBot';
 import { AlertTriangle, HelpCircle, Search, Menu, X, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -222,6 +223,7 @@ export function AppLayout() {
                   <span className="hidden sm:inline">Yardım</span>
                 </button>
               )}
+              {isAuthenticated && <AccessibilityWidget />}
               {isAuthenticated && <NotificationBell />}
             </div>
           </div>

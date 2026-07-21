@@ -1,8 +1,8 @@
 package com.autismsupport.platform.dto;
 
+import com.autismsupport.platform.validation.StrongPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 import java.util.List;
 
@@ -13,7 +13,7 @@ public class RegisterRequest {
     private String email;
 
     @NotBlank(message = "Sifre zorunludur")
-    @Size(min = 8, message = "Sifre en az 8 karakter olmalidir")
+    @StrongPassword
     private String password;
 
     @NotBlank(message = "Ad soyad zorunludur")

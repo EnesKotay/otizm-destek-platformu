@@ -23,11 +23,15 @@ import {
   Circle,
 } from 'lucide-react';
 import { TurnstileWidget } from '@/components/TurnstileWidget';
+import { validatePassword } from '@/utils/password';
 
 const schema = z.object({
   fullName: z.string().min(2, 'Ad soyad en az 2 karakter olmalıdır'),
   email: z.string().email('Geçerli bir e-posta adresi giriniz'),
-  password: z.string().min(8, 'Şifre en az 8 karakter olmalıdır'),
+  password: z.string().superRefine((val, ctx) => {
+    const error = validatePassword(val);
+    if (error) ctx.addIssue({ code: z.ZodIssueCode.custom, message: error });
+  }),
   confirmPassword: z.string().min(1, 'Şifre tekrarını giriniz'),
   kvkkConsent: z.boolean().refine(val => val, 'KVKK onayı zorunludur'),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -350,7 +354,11 @@ export function RegisterPage() {
 
               {/* Password requirements checklist */}
               {(watchedPassword || passwordValue) && (
-                <div id="register-password-help" aria-live="polite" className="mt-2.5 space-y-2 p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                <div id="register-password-help" aria-live="polite" className="mt-2.5 space-y-2 p-3 bg-indigo-50/40 border border-indigo-100/60 rounded-xl">
+                  <p className="text-[11px] font-bold text-indigo-900 flex items-center gap-1">
+                    <span>💡 Güçlü Şifre İpuçları</span>
+                    <span className="text-[10px] font-normal text-indigo-500">(İsteğe Bağlı)</span>
+                  </p>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
                     {PASSWORD_RULES.map((rule) => {
                       const met = rule.test(watchedPassword || passwordValue);
@@ -359,21 +367,21 @@ export function RegisterPage() {
                           {met ? (
                             <CheckCircle2 size={13} className="shrink-0 text-emerald-500" />
                           ) : (
-                            <Circle size={13} className="shrink-0 text-gray-300" />
+                            <Circle size={13} className="shrink-0 text-slate-300" />
                           )}
-                          <span className={`text-[11px] font-medium ${met ? 'text-emerald-700' : 'text-gray-400'}`}>
+                          <span className={`text-[11px] font-medium ${met ? 'text-emerald-700 font-bold' : 'text-slate-500'}`}>
                             {rule.label}
                           </span>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between border-t border-slate-200 pt-1.5">
-                    <span className="text-[10px] text-gray-400">Şifre Gücü:</span>
-                    <span className={`text-[10px] font-bold ${
+                  <div className="flex items-center justify-between border-t border-indigo-100/60 pt-1.5">
+                    <span className="text-[10px] font-semibold text-slate-500">Güvenlik Seviyesi:</span>
+                    <span className={`text-[10px] font-extrabold ${
                       strength.score <= 1 ? 'text-red-500' :
                       strength.score === 2 ? 'text-orange-500' :
-                      strength.score === 3 ? 'text-yellow-600' : 'text-emerald-600'
+                      strength.score === 3 ? 'text-amber-600' : 'text-emerald-600'
                     }`}>
                       {strength.label}
                     </span>

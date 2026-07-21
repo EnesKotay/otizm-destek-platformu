@@ -1,7 +1,7 @@
 package com.autismsupport.platform.dto;
 
+import com.autismsupport.platform.validation.StrongPassword;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +17,6 @@ public class ChangePasswordRequest {
     private String currentPassword;
     
     @NotBlank(message = "Yeni sifre bos olamaz")
-    @Size(min = 8, message = "Yeni sifre en az 8 karakter olmalidir")
+    @StrongPassword
     private String newPassword;
 }

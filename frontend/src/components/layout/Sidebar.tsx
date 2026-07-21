@@ -402,6 +402,16 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   const [badges, setBadges] = useState<BadgeMap>({});
   const [hasChild, setHasChild] = useState(true);
   const [childrenLoaded, setChildrenLoaded] = useState(user?.role !== 'PARENT');
+  const [isSimpleMode, setIsSimpleMode] = useState(() => localStorage.getItem('access-simple-mode') === 'true');
+
+  useEffect(() => {
+    const handleSimpleModeChange = (e: Event) => {
+      setIsSimpleMode(Boolean((e as CustomEvent<boolean>).detail));
+    };
+    window.addEventListener('a11y-simple-mode-change', handleSimpleModeChange);
+    return () => window.removeEventListener('a11y-simple-mode-change', handleSimpleModeChange);
+  }, []);
+
   const [compact, setCompact] = useState(() => localStorage.getItem('sidebar-compact') === 'true');
   const [showBadges, setShowBadges] = useState(() => localStorage.getItem('sidebar-show-badges') !== 'false');
   const [showDescriptions, setShowDescriptions] = useState(() => localStorage.getItem('sidebar-show-descriptions') === 'true');
@@ -411,10 +421,44 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
     () => navGroups,
     [navGroups]
   );
-  const displayNavGroups = useMemo(
+  const rawNavGroups = useMemo(
     () => filterNavGroupsByChildState(baseDisplayNavGroups, context.hasChild),
     [baseDisplayNavGroups, context.hasChild]
   );
+
+  const displayNavGroups = useMemo(() => {
+    if (!isSimpleMode || role !== 'PARENT') return rawNavGroups;
+
+    const primaryPaths = new Set(['/anasayfa', '/gunluk-takip', '/kriz-rehberi', '/uzmanlar', '/randevular', '/mesajlar', '/bilgi-bankasi']);
+    const primaryItems: NavItemConfig[] = [];
+    const secondaryItems: NavItemConfig[] = [];
+
+    rawNavGroups.forEach((g) => {
+      g.items.forEach((item) => {
+        if (primaryPaths.has(item.to)) {
+          if (!primaryItems.some((p) => p.to === item.to)) {
+            primaryItems.push(item);
+          }
+        } else {
+          secondaryItems.push(item);
+        }
+      });
+    });
+
+    return [
+      {
+        label: 'Öncelikli Eylemler (Basit Mod)',
+        items: primaryItems,
+        defaultOpen: true,
+      },
+      {
+        label: 'Diğer Tüm Araçlar',
+        items: secondaryItems,
+        defaultOpen: false,
+      },
+    ];
+  }, [isSimpleMode, rawNavGroups, role]);
+
   const commandNavGroups = useMemo(
     () => filterNavGroupsByChildState(navGroups, context.hasChild),
     [navGroups, context.hasChild]

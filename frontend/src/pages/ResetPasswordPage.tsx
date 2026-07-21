@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { HeartHandshake, CheckCircle, ArrowLeft } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { toast } from '@/store/toastStore';
+import { validatePassword } from '@/utils/password';
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -18,7 +19,8 @@ export function ResetPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 8) { toast.error('Şifre en az 8 karakter olmalı.'); return; }
+    const passwordError = validatePassword(password);
+    if (passwordError) { toast.error(passwordError); return; }
     if (password !== confirm) { toast.error('Şifreler eşleşmiyor.'); return; }
     if (!token) { toast.error('Geçersiz sıfırlama bağlantısı.'); return; }
 
@@ -62,9 +64,12 @@ export function ResetPasswordPage() {
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="En az 8 karakter"
+                placeholder="Güçlü bir şifre girin"
                 required
               />
+              <p className="text-sm text-gray-500 -mt-2">
+                En az 8 karakter; bir büyük harf, bir rakam ve bir özel karakter (! ? * . -) içermelidir.
+              </p>
               <Input
                 label="Şifre Tekrar"
                 type="password"
