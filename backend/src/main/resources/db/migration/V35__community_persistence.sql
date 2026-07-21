@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS weekly_questions (
 );
 
 ALTER TABLE weekly_questions ADD COLUMN IF NOT EXISTS week_label VARCHAR(80);
+ALTER TABLE weekly_questions ALTER COLUMN id SET DEFAULT uuid_generate_v4();
 
 CREATE TABLE IF NOT EXISTS weekly_answers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
