@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { ToastContainer } from '@/components/ui/Toast';
+import { UpdateBanner } from '@/components/ui/UpdateBanner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
   ADMIN_ONLY,
@@ -205,6 +206,7 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ToastContainer />
+        <UpdateBanner />
         <AuthBootstrap>
           <BrowserRouter>
             <RouteMetadata />

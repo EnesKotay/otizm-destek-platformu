@@ -1,10 +1,28 @@
 /// <reference types="node" />
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import { readFileSync, writeFileSync, existsSync } from 'fs'
 import type { ServerResponse } from 'node:http'
 import type { Socket } from 'node:net'
+
+// public/sw.js önbellek stratejisi her deploy'da farklı build parçalarının
+// aynı Cache Storage içinde karışmasını önlemek için her build'e özgü bir
+// isim gerektirir (bkz. sw.js içindeki CACHE_VERSION açıklaması).
+function swBuildIdPlugin(): Plugin {
+  return {
+    name: 'sw-build-id',
+    apply: 'build',
+    closeBundle() {
+      const swPath = path.resolve(__dirname, 'dist/sw.js')
+      if (!existsSync(swPath)) return
+      const buildId = String(Date.now())
+      const content = readFileSync(swPath, 'utf-8').replace('__BUILD_ID__', buildId)
+      writeFileSync(swPath, content)
+    },
+  }
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
@@ -23,7 +41,7 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: {
       include: ['sockjs-client', '@stomp/stompjs'],
     },
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), swBuildIdPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

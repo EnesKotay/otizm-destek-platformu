@@ -54,7 +54,7 @@ function StatCard({ icon: Icon, label, value, color, tone }: {
   return (
     <div className={`bg-white rounded-2xl p-4 border border-gray-100 shadow-sm min-h-[116px] flex items-center gap-3 ${tone}`}>
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-        <Icon size={20} className="text-white" />
+        {Icon && typeof Icon === 'function' ? <Icon size={20} className="text-white" /> : null}
       </div>
       <div className="min-w-0">
         <p className="text-2xl font-bold leading-tight text-gray-950 break-words">{value}</p>
@@ -70,7 +70,7 @@ function ChartCard({ icon: Icon, title, iconClass, children, className = '' }: {
   return (
     <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-5 min-h-[292px] ${className}`}>
       <h3 className="text-sm font-semibold text-gray-800 mb-5 flex items-center gap-2">
-        <Icon size={16} className={iconClass} />
+        {Icon && typeof Icon === 'function' ? <Icon size={16} className={iconClass} /> : null}
         {title}
       </h3>
       {children}
@@ -336,8 +336,9 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
     }));
 
   const notesByMonth = effectiveNotes.reduce<Record<string, number>>((acc, n) => {
-    const month = n.noteDate?.slice(0, 7) || n.createdAt.slice(0, 7);
-    acc[month] = (acc[month] || 0) + 1;
+    const dateStr = n.noteDate || n.createdAt;
+    const month = typeof dateStr === 'string' ? dateStr.slice(0, 7) : '';
+    if (month) acc[month] = (acc[month] || 0) + 1;
     return acc;
   }, {});
 
@@ -397,7 +398,7 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
   ].filter(Boolean).slice(0, 3) as Array<{ to: string; icon: ElementType; label: string; detail: string }>;
   const latestMoodDate = latestDateLabel(effectiveMoodData.map(e => e.entryDate));
   const latestSleepDate = latestDateLabel(effectiveSleepData.map(e => e.sleepDate));
-  const latestNoteDate = latestDateLabel(effectiveNotes.map(n => n.noteDate || n.createdAt));
+  const latestNoteDate = latestDateLabel(effectiveNotes.map(n => n.noteDate || n?.createdAt));
 
   // CSV veri
   const csvRows = [
@@ -540,7 +541,7 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
                       className="group flex items-center gap-3 rounded-xl bg-gray-50/50 border border-gray-100/50 px-3 py-2 hover:bg-primary-50/50 hover:border-primary-100 transition-all duration-150"
                     >
                       <div className="w-8 h-8 rounded-lg bg-white text-gray-500 flex items-center justify-center group-hover:text-primary-600 shrink-0 border border-gray-100/60 shadow-sm">
-                        <ActionIcon size={15} />
+                        {ActionIcon && typeof ActionIcon === 'function' ? <ActionIcon size={15} /> : null}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-bold text-gray-800">{item.label}</p>
@@ -601,7 +602,7 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
                             : 'bg-white border-gray-100 text-gray-600 hover:border-indigo-200 hover:bg-indigo-50/30'
                         }`}
                       >
-                        <Icon size={14} className={active ? 'text-white' : 'text-indigo-500'} />
+                        {Icon && typeof Icon === 'function' ? <Icon size={14} className={active ? 'text-white' : 'text-indigo-500'} /> : null}
                         <span className={`text-xs font-bold ${active ? 'text-white' : 'text-gray-800'}`}>{opt.label}</span>
                         <span className={`text-[9px] leading-tight ${active ? 'text-indigo-200' : 'text-gray-400'}`}>{opt.desc}</span>
                       </button>
@@ -721,7 +722,7 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                   active ? 'bg-white/20 text-white' : 'bg-slate-100/70 dark:bg-gray-800 text-slate-500'
                 }`}>
-                  <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
+                  {Icon && typeof Icon === 'function' ? <Icon size={18} strokeWidth={active ? 2.2 : 1.8} /> : null}
                 </div>
                 <div className="min-w-0">
                   <div className={`text-xs font-bold leading-tight ${active ? 'text-white' : 'text-slate-800 dark:text-slate-200'}`}>

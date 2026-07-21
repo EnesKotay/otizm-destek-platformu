@@ -87,8 +87,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      // Gizlilik: kullanıcının adı/e-postası/rolü gibi kişisel veriler artık tarayıcıda saklanmaz.
+      // Oturum, açılışta httpOnly çerezle /auth/refresh üzerinden yeniden kurulur (bkz. AuthBootstrap).
       partialize: (state) => ({
-        user: state.user,
         isAuthenticated: state.isAuthenticated,
         completedOnboardingIds: state.completedOnboardingIds,
       }),

@@ -12,6 +12,25 @@ interface State {
   error: Error | null;
 }
 
+// Rolldown/Vite üretim paketleri, eski (stale) bir build parçası çalışırken
+// tarayıcıya göre farklı hata metinleri verebilir ("chunk failed" yerine
+// "x is not a function" gibi). Bu yüzden dar bir mesaj listesine güvenmek yerine
+// geniş bir örüntü kullanıyoruz.
+export const AUTO_RELOAD_FLAG = 'eb-auto-reload-attempted';
+
+function isLikelyStaleBuildError(message: string): boolean {
+  return (
+    message.includes('Failed to fetch dynamically imported module')
+    || message.includes('Importing a module script failed')
+    || message.includes('MIME type of "text/html"')
+    || message.includes('Loading chunk')
+    || message.includes('Unable to preload CSS')
+    || /is not a function/.test(message)
+    || /is not defined/.test(message)
+    || /Unexpected token/.test(message)
+  );
+}
+
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, error: null };
 
@@ -21,17 +40,21 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, info.componentStack);
+
+    // Bu oturumda daha önce denenmediyse ve hata eski build/chunk uyuşmazlığına
+    // benziyorsa kullanıcı hiçbir şey yapmadan otomatik olarak bir kez yenile.
+    const alreadyAttempted = sessionStorage.getItem(AUTO_RELOAD_FLAG) === 'true';
+    if (!alreadyAttempted && isLikelyStaleBuildError(error.message || '')) {
+      sessionStorage.setItem(AUTO_RELOAD_FLAG, 'true');
+      window.location.reload();
+    }
   }
 
   handleReset = () => {
     const message = this.state.error?.message || '';
-    const isStaleChunkError =
-      message.includes('Failed to fetch dynamically imported module')
-      || message.includes('Importing a module script failed')
-      || message.includes('MIME type of "text/html"')
-      || message.includes('Loading chunk');
 
-    if (isStaleChunkError) {
+    if (isLikelyStaleBuildError(message)) {
+      sessionStorage.setItem(AUTO_RELOAD_FLAG, 'true');
       window.location.reload();
       return;
     }

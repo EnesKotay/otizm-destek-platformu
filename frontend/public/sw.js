@@ -1,4 +1,8 @@
-const CACHE_VERSION = 'v3';
+// Bu değer her `vite build` çalıştığında vite.config.ts'teki swBuildIdPlugin
+// tarafından benzersiz bir build kimliğiyle değiştirilir. Böylece her deploy
+// kendi cache namespace'ini alır ve eski/yeni build parçaları asla aynı
+// önbellekte karışmaz (bkz. activate handler'daki eski cache temizliği).
+const CACHE_VERSION = '__BUILD_ID__';
 const STATIC_CACHE = `autism-static-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 

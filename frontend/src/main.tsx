@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
+import { AUTO_RELOAD_FLAG } from '@/components/ErrorBoundary'
+import { useSwUpdateStore } from '@/store/swUpdateStore'
 
 document.documentElement.classList.remove('dark');
 localStorage.removeItem('theme-storage');
@@ -25,7 +27,23 @@ localStorage.removeItem('theme-storage');
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD || localStorage.getItem('enable-sw-dev') === 'true') {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => {})
+      navigator.serviceWorker.register('/sw.js').then((registration) => {
+        // Bu sekme zaten bir service worker tarafından yönetiliyorken yeni bir
+        // sürüm devreye girerse kullanıcıyı zorla değil, nazikçe bilgilendir.
+        const notifyIfControlled = (worker: ServiceWorker | null) => {
+          if (!worker || !navigator.serviceWorker.controller) return;
+          worker.addEventListener('statechange', () => {
+            if (worker.state === 'activated') {
+              useSwUpdateStore.getState().setUpdateAvailable(true);
+            }
+          });
+        };
+
+        notifyIfControlled(registration.installing);
+        registration.addEventListener('updatefound', () => {
+          notifyIfControlled(registration.installing);
+        });
+      }).catch(() => {})
     })
   } else {
     navigator.serviceWorker.getRegistrations().then((registrations) => {
@@ -49,3 +67,10 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
+// Uygulama bir süre sorunsuz açık kaldıysa otomatik-yenileme bayrağını temizle;
+// böylece ileride yeni bir deploy'dan kaynaklanan gerçek bir sürüm uyuşmazlığı
+// olursa ErrorBoundary yine tek seferlik otomatik kurtarmayı deneyebilir.
+window.setTimeout(() => {
+  try { sessionStorage.removeItem(AUTO_RELOAD_FLAG) } catch { /* noop */ }
+}, 15000)

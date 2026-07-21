@@ -15,19 +15,21 @@ export function AccessibilityWidget() {
   const [highContrast, setHighContrast] = useState(() => localStorage.getItem('access-high-contrast') === 'true');
   const [simpleMode, setSimpleMode] = useState(() => localStorage.getItem('access-simple-mode') === 'true');
 
-  // Apply classes on mount / state change
+  // Apply classes on mount / state change.
+  // NOT: Sınıf adları index.css ve SettingsPage ile birebir aynı olmalı (a11y- ön eki),
+  // aksi halde stiller uygulanmaz.
   useEffect(() => {
-    document.documentElement.classList.toggle('large-text', largeText);
+    document.documentElement.classList.toggle('a11y-large-text', largeText);
     localStorage.setItem('access-large-text', String(largeText));
   }, [largeText]);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('calm-mode', calmMode);
+    document.documentElement.classList.toggle('a11y-calm', calmMode);
     localStorage.setItem('access-calm-mode', String(calmMode));
   }, [calmMode]);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('high-contrast', highContrast);
+    document.documentElement.classList.toggle('a11y-high-contrast', highContrast);
     localStorage.setItem('access-high-contrast', String(highContrast));
   }, [highContrast]);
 
