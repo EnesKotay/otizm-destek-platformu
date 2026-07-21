@@ -22,11 +22,13 @@ spring:
       max-lifetime: 1800000
       keepalive-time: 60000
       connection-test-query: SELECT 1
+      data-source-properties:
+        prepareThreshold: 0
 
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:validate}
+      ddl-auto: ${JPA_DDL_AUTO:none}
     show-sql: false
     properties:
       hibernate:
