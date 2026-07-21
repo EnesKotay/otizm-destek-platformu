@@ -1,4 +1,4 @@
-CREATE TABLE stored_files (
+CREATE TABLE IF NOT EXISTS stored_files (
     filename VARCHAR(255) PRIMARY KEY,
     owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     original_filename VARCHAR(512),
@@ -8,4 +8,4 @@ CREATE TABLE stored_files (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_stored_files_owner ON stored_files(owner_id);
+CREATE INDEX IF NOT EXISTS idx_stored_files_owner ON stored_files(owner_id);
