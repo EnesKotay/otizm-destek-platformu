@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { authService } from '@/services/authService';
 import { useAuthStore } from '@/store/authStore';
+import { uploadService } from '@/services/uploadService';
 import {
   HeartHandshake,
   CheckCircle,
@@ -27,6 +28,9 @@ import {
   Phone,
   MapPin,
   X,
+  Upload,
+  Loader2,
+  Paperclip,
 } from 'lucide-react';
 import { TurnstileWidget } from '@/components/TurnstileWidget';
 
@@ -144,6 +148,8 @@ export function ExpertRegisterPage() {
   const [passwordValue, setPasswordValue] = useState('');
   const [kvkk, setKvkk] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>();
+  const [licenseDocUrl, setLicenseDocUrl] = useState<string>('');
+  const [uploadingDoc, setUploadingDoc] = useState<boolean>(false);
 
   const [emailCheckedStatus, setEmailCheckedStatus] = useState<{ checked: boolean; exists: boolean; email: string }>({
     checked: false,
@@ -215,6 +221,7 @@ export function ExpertRegisterPage() {
         expertTitle: data.expertTitle,
         institution: data.institution,
         licenseNumber: data.licenseNumber,
+        licenseDocumentUrl: licenseDocUrl,
         bio: data.bio,
         specializations: selectedSpecs,
         captchaToken,
@@ -672,6 +679,54 @@ export function ExpertRegisterPage() {
                       />
                     </div>
                     {errors.licenseNumber && <p id="expert-license-error" role="alert" className="text-xs text-red-600 mt-1">{errors.licenseNumber.message}</p>}
+                  </div>
+
+                  {/* Diploma / Yeterlilik Belgesi Yükleme */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider flex items-center justify-between">
+                      <span>Diploma / Mesleki Belge (PDF / Görsel)</span>
+                      <span className="text-[10px] text-gray-400 font-normal">Tavsiye edilen</span>
+                    </label>
+                    <div className="relative border-2 border-dashed border-gray-200 hover:border-primary-400 bg-slate-50/60 rounded-2xl p-4 transition-all text-center">
+                      <input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploadingDoc(true);
+                          try {
+                            const url = await uploadService.upload(file, 'AUTHENTICATED');
+                            setLicenseDocUrl(url);
+                          } catch {
+                            setError('Belge yüklenirken bir hata oluştu');
+                          } finally {
+                            setUploadingDoc(false);
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      {uploadingDoc ? (
+                        <div className="flex items-center justify-center gap-2 text-primary-600 text-sm font-medium py-2">
+                          <Loader2 size={18} className="animate-spin" />
+                          Belge yükleniyor...
+                        </div>
+                      ) : licenseDocUrl ? (
+                        <div className="flex items-center justify-between bg-emerald-50 text-emerald-700 p-2.5 rounded-xl border border-emerald-200 text-xs font-semibold">
+                          <div className="flex items-center gap-2">
+                            <Paperclip size={16} />
+                            <span>Belge başarıyla yüklendi</span>
+                          </div>
+                          <span className="text-[10px] bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full font-bold">YÜKLENDİ</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-1.5 py-2 text-gray-500">
+                          <Upload size={22} className="text-primary-500 mb-1" />
+                          <p className="text-xs font-semibold text-gray-700">Diplomanızı veya Lisans Belgenizi Yükleyin</p>
+                          <p className="text-[11px] text-gray-400">PDF, PNG veya JPG (Maks. 10MB)</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Uzmanlık Alt Alanları */}

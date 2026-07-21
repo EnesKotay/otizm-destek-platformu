@@ -110,6 +110,33 @@ export function AdminUsersPage() {
       setActionLoading(null);
     }
   };
+  const handleChangeRole = async (userId: string, newRole: string) => {
+    setActionLoading(`${userId}-role`);
+    try {
+      const updated = await adminService.changeUserRole(userId, newRole);
+      setUsersList(prev => prev.map(u => u.id === userId ? { ...u, role: updated.role } : u));
+      if (selectedUser?.id === userId) {
+        setSelectedUser(prev => prev ? { ...prev, role: updated.role } : null);
+      }
+      toast.success(`Kullanıcı rolü ${newRole} olarak güncellendi.`);
+    } catch {
+      toast.error('Rol değiştirilemedi.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSendPasswordReset = async (userId: string) => {
+    setActionLoading(`${userId}-reset`);
+    try {
+      await adminService.sendPasswordResetEmail(userId);
+      toast.success('Şifre sıfırlama e-postası başarıyla gönderildi.');
+    } catch {
+      toast.error('E-posta gönderilemedi.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const handleBulkToggleStatus = async () => {
     if (selectedUserIds.length === 0) return;
@@ -499,6 +526,38 @@ export function AdminUsersPage() {
                     <p className="text-xs text-slate-400 font-medium">Aktivite özeti yüklenemedi.</p>
                   )}
                 </CardContent>
+              </Card>
+
+              {/* Yönetici Hızlı İşlemleri (Rol & Şifre Sıfırlama) */}
+              <Card className="rounded-2xl border-indigo-100 bg-indigo-50/40 p-4 space-y-3">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-indigo-700">Yönetici Aksiyonları</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Kullanıcı Rolü</label>
+                    <select
+                      value={selectedUser.role}
+                      onChange={(e) => handleChangeRole(selectedUser.id, e.target.value)}
+                      disabled={actionLoading !== null}
+                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs font-bold rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="PARENT">Ebeveyn (PARENT)</option>
+                      <option value="EXPERT">Uzman (EXPERT)</option>
+                      <option value="TEACHER">Eğitmen (TEACHER)</option>
+                      <option value="ADMIN">Yönetici (ADMIN)</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSendPasswordReset(selectedUser.id)}
+                      disabled={actionLoading !== null}
+                      className="w-full text-xs font-bold border-indigo-200 text-indigo-700 bg-white hover:bg-indigo-50"
+                    >
+                      <Mail size={14} className="mr-1.5" /> Şifre Sıfırla E-postası
+                    </Button>
+                  </div>
+                </div>
               </Card>
             </div>
           </div>

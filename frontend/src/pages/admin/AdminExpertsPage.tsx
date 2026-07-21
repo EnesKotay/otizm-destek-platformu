@@ -162,6 +162,17 @@ export function AdminExpertsPage() {
                               Lisans: {expert.licenseNumber}
                             </span>
                           )}
+                          {expert.licenseDocumentUrl && (
+                            <a
+                              href={expert.licenseDocumentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-700 text-xs border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                            >
+                              <FileText size={13} className="text-emerald-600" />
+                              Yüklü Belgeyi Görüntüle ↗
+                            </a>
+                          )}
                         </div>
                         {expert.bio && (
                           <div className="mt-2 max-w-2xl rounded-xl bg-white p-4 text-sm text-slate-600 ring-1 ring-slate-100">

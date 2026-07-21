@@ -23,6 +23,7 @@ public class UserDto {
     private String city;
     private String institution;
     private String licenseNumber;
+    private String licenseDocumentUrl;
     private String bio;
     private boolean verified;
     private boolean emailVerified;

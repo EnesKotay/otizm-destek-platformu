@@ -13,6 +13,7 @@ export const authService = {
     expertTitle?: string;
     institution?: string;
     licenseNumber?: string;
+    licenseDocumentUrl?: string;
     bio?: string;
     specializations?: string[];
     captchaToken?: string;

@@ -242,7 +242,9 @@ public class AppointmentService {
         appointment.setSessionNotes(null);
         appointment.setCancellationReason(null);
         appointment.setCalendarEventId(null);
-        appointment.setMeetingLink(null);
+        if ("ONLINE".equals(type) && appointment.getMeetingLink() == null) {
+            appointment.setMeetingLink("https://meet.jit.si/otizm-destek-" + UUID.randomUUID().toString().substring(0, 8));
+        }
 
         appointment = appointmentRepository.save(appointment);
         recordHistory(appointment, null, "PENDING", parent, "Randevu olusturuldu");
@@ -410,6 +412,9 @@ public class AppointmentService {
         validateStatusTransition(appointment.getStatus(), "CONFIRMED");
 
         appointment.setStatus("CONFIRMED");
+        if ("ONLINE".equals(appointment.getType()) && (appointment.getMeetingLink() == null || appointment.getMeetingLink().isBlank())) {
+            appointment.setMeetingLink("https://meet.jit.si/otizm-destek-" + UUID.randomUUID().toString().substring(0, 8));
+        }
         upsertCalendarEvent(appointment);
         Appointment saved = appointmentRepository.save(appointment);
         recordHistory(saved, "PENDING", "CONFIRMED", userRepository.findById(expertId).orElse(null), null);

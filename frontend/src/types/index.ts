@@ -8,6 +8,7 @@ export interface User {
   city?: string;
   institution?: string;
   licenseNumber?: string;
+  licenseDocumentUrl?: string;
   licenseVerified?: boolean;
   latitude?: number;
   longitude?: number;

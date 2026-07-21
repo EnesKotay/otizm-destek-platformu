@@ -234,15 +234,57 @@ export function AdminArticlesPage() {
             </div>
             
             <div>
-              <div className="flex justify-between items-end mb-1.5">
+              <div className="flex justify-between items-center mb-1.5">
                 <label className="block text-sm font-semibold text-slate-700">Makale İçeriği</label>
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    title="Kalın"
+                    onClick={() => setFormContent(prev => prev + '**Kalın Metin**')}
+                    className="p-1.5 hover:bg-white text-slate-700 rounded-lg text-xs font-bold transition-all"
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    title="Eğik"
+                    onClick={() => setFormContent(prev => prev + '*Eğik Metin*')}
+                    className="p-1.5 hover:bg-white text-slate-700 rounded-lg text-xs italic font-bold transition-all"
+                  >
+                    I
+                  </button>
+                  <button
+                    type="button"
+                    title="Başlık"
+                    onClick={() => setFormContent(prev => prev + '\n## Alt Başlık\n')}
+                    className="p-1.5 hover:bg-white text-slate-700 rounded-lg text-xs font-bold transition-all"
+                  >
+                    H2
+                  </button>
+                  <button
+                    type="button"
+                    title="Liste"
+                    onClick={() => setFormContent(prev => prev + '\n- Madde 1\n- Madde 2\n')}
+                    className="p-1.5 hover:bg-white text-slate-700 rounded-lg text-xs font-bold transition-all"
+                  >
+                    • Liste
+                  </button>
+                  <button
+                    type="button"
+                    title="Alıntı"
+                    onClick={() => setFormContent(prev => prev + '\n> Önemli Not veya Alıntı\n')}
+                    className="p-1.5 hover:bg-white text-slate-700 rounded-lg text-xs font-bold transition-all"
+                  >
+                    " Alıntı
+                  </button>
+                </div>
               </div>
               <textarea
                 value={formContent}
                 onChange={(e) => setFormContent(e.target.value)}
                 placeholder="Makale içeriğini buraya yazın..."
                 rows={12}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all resize-y"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all resize-y font-mono"
               />
             </div>
           </div>

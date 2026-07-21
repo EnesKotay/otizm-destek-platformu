@@ -29,6 +29,7 @@ public class RegisterRequest {
     private String expertTitle;
     private String institution;
     private String licenseNumber;
+    private String licenseDocumentUrl;
     private String bio;
     private List<String> specializations;
     private String captchaToken;

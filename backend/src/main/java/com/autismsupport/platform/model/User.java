@@ -61,6 +61,9 @@ public class User {
     @Column(name = "license_number")
     private String licenseNumber;
 
+    @Column(name = "license_document_url")
+    private String licenseDocumentUrl;
+
     @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
 

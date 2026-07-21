@@ -173,6 +173,24 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(msg, updatedUser));
     }
 
+    @PutMapping("/users/{userId}/role")
+    public ResponseEntity<ApiResponse<UserDto>> changeUserRole(
+            @PathVariable UUID userId,
+            @RequestBody Map<String, String> body,
+            @CurrentUser UserPrincipal principal) {
+        String newRole = body.get("role");
+        UserDto updated = adminService.changeUserRole(userId, newRole, principal.getId());
+        return ResponseEntity.ok(ApiResponse.success("Kullanici rolu güncellendi", updated));
+    }
+
+    @PostMapping("/users/{userId}/send-password-reset")
+    public ResponseEntity<ApiResponse<Void>> sendPasswordResetEmail(
+            @PathVariable UUID userId,
+            @CurrentUser UserPrincipal principal) {
+        adminService.sendPasswordResetEmail(userId, principal.getId());
+        return ResponseEntity.ok(ApiResponse.success("Sifre sifirlama e-postasi gonderildi", null));
+    }
+
     @PostMapping("/users/bulk-toggle-status")
     public ResponseEntity<ApiResponse<Map<String, Integer>>> bulkToggleUserStatus(
             @Valid @RequestBody com.autismsupport.platform.dto.BulkUserStatusRequest body,

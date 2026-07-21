@@ -139,6 +139,12 @@ export const adminService = {
   toggleUserStatus: (userId: string) =>
     api.post<ApiResponse<User>>(`/admin/users/${userId}/toggle-status`).then(r => r.data.data),
 
+  changeUserRole: (userId: string, role: string) =>
+    api.put<ApiResponse<User>>(`/admin/users/${userId}/role`, { role }).then(r => r.data.data),
+
+  sendPasswordResetEmail: (userId: string) =>
+    api.post<ApiResponse<void>>(`/admin/users/${userId}/send-password-reset`).then(r => r.data.data),
+
   getUserActivitySummary: (userId: string) =>
     api
       .get<ApiResponse<UserActivitySummary>>(`/admin/users/${userId}/activity-summary`)

@@ -72,6 +72,7 @@ public class AdminService {
     private final EmailService emailService;
     private final ChildRepository childRepository;
     private final AppointmentRepository appointmentRepository;
+    private final PasswordResetService passwordResetService;
 
     @Value("${spring.datasource.url}")
     private String datasourceUrl;
@@ -534,6 +535,50 @@ public class AdminService {
     }
 
     @Transactional
+    public UserDto changeUserRole(UUID userId, String newRoleStr, UUID adminId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ValidationException("Kullanici bulunamadi"));
+        if (user.getId().equals(adminId)) {
+            throw new ValidationException("Kendi rolunuzu degistiremezsiniz");
+        }
+        UserRole newRole;
+        try {
+            newRole = UserRole.valueOf(newRoleStr);
+        } catch (IllegalArgumentException e) {
+            throw new ValidationException("Gecersiz rol: " + newRoleStr);
+        }
+        UserRole oldRole = user.getRole();
+        user.setRole(newRole);
+        if (newRole == UserRole.EXPERT && !user.isVerified()) {
+            user.setVerified(true);
+        }
+        userRepository.save(user);
+
+        auditLogService.log(
+                userRepository.findById(adminId).orElse(null),
+                "USER_ROLE_CHANGED",
+                "USER",
+                user.getId(),
+                Map.of("userId", user.getId(), "oldRole", oldRole.name(), "newRole", newRole.name())
+        );
+        return toUserDto(user);
+    }
+
+    @Transactional
+    public void sendPasswordResetEmail(UUID userId, UUID adminId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ValidationException("Kullanici bulunamadi"));
+        passwordResetService.requestReset(user.getEmail());
+        auditLogService.log(
+                userRepository.findById(adminId).orElse(null),
+                "ADMIN_TRIGGERED_PASSWORD_RESET",
+                "USER",
+                user.getId(),
+                Map.of("userId", user.getId(), "email", user.getEmail())
+        );
+    }
+
+    @Transactional
     public Map<String, Integer> bulkToggleUserStatus(List<UUID> userIds, UUID adminId) {
         int updated = 0;
         for (UUID id : userIds) {
@@ -711,6 +756,7 @@ public class AdminService {
                 .profileImageUrl(user.getProfileImageUrl())
                 .institution(user.getInstitution())
                 .licenseNumber(user.getLicenseNumber())
+                .licenseDocumentUrl(user.getLicenseDocumentUrl())
                 .bio(user.getBio())
                 .isActive(user.isActive())
                 .createdAt(user.getCreatedAt())

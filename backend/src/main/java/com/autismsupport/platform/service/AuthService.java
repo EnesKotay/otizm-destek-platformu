@@ -62,6 +62,7 @@ public class AuthService {
                 .expertTitle(request.getExpertTitle())
                 .institution(request.getInstitution())
                 .licenseNumber(request.getLicenseNumber())
+                .licenseDocumentUrl(request.getLicenseDocumentUrl())
                 .bio(request.getBio())
                 .specializations(request.getSpecializations())
                 .kvkkConsent(true)
