@@ -389,17 +389,20 @@ export function ExpertRegisterPage() {
 
           {/* Value Propositions */}
           <div className="space-y-4">
-            {WHY_JOIN.map((item, idx) => (
-              <div key={idx} className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300 group">
-                <div className="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center shrink-0 border border-primary-500/30 group-hover:scale-110 transition-transform">
-                  <item.icon className="text-primary-400" size={20} />
+            {WHY_JOIN.map((item, idx) => {
+              const ItemIcon = item.icon;
+              return (
+                <div key={idx} className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300 group">
+                  <div className="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center shrink-0 border border-primary-500/30 group-hover:scale-110 transition-transform">
+                    <ItemIcon className="text-primary-400" size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-white">{item.title}</h4>
+                    <p className="text-xs text-slate-400 mt-1">{item.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-white">{item.title}</h4>
-                  <p className="text-xs text-slate-400 mt-1">{item.desc}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -437,8 +440,9 @@ export function ExpertRegisterPage() {
             
             {/* Step Header */}
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
-              {STEPS.map((s) =>
-                s.id === step ? (
+              {STEPS.map((s) => {
+                const StepIcon = s.icon;
+                return s.id === step ? (
                   <div
                     key={s.id}
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md shadow-primary-100"
@@ -446,10 +450,10 @@ export function ExpertRegisterPage() {
                       background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
                     }}
                   >
-                    <s.icon size={20} />
+                    <StepIcon size={20} />
                   </div>
-                ) : null
-              )}
+                ) : null;
+              })}
               <div>
                 <h2 className="font-bold text-gray-900 text-base">
                   {STEPS.find((s) => s.id === step)?.label}

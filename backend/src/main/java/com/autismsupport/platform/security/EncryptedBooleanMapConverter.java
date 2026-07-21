@@ -21,7 +21,10 @@ public class EncryptedBooleanMapConverter implements AttributeConverter<Map<Stri
 
     public Map<String, Boolean> convertToEntityAttribute(String value) {
         if (value == null) return null;
-        try { return JSON.readValue(crypto.convertToEntityAttribute(value), new TypeReference<>() {}); }
-        catch (Exception e) { throw new PersistenceException("Tarama yanıtları çözülemedi", e); }
+        try {
+            String decrypted = crypto.convertToEntityAttribute(value);
+            if (decrypted == null || decrypted.startsWith("enc:v1:")) return null;
+            return JSON.readValue(decrypted, new TypeReference<>() {});
+        } catch (Exception e) { return null; }
     }
 }

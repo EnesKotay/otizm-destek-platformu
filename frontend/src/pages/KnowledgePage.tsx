@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   BookOpen, Plus, Search, Eye, CheckCircle, XCircle, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight,
-  FileText, Video, Mic, MessageCircle, Send, ShieldCheck, Sparkles, Clock, Printer,
+  FileText, Video, Mic, MessageCircle, Send, ShieldCheck, Sparkles, Clock, Printer, Volume2, VolumeX,
   ExternalLink, LayoutGrid, Brain, GraduationCap, HeartPulse, Apple, Users, Home, Scale, Info, Bookmark, Star,
   type LucideIcon,
 } from 'lucide-react';
@@ -250,6 +250,38 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   const [articles, setArticles] = useState<KnowledgeArticle[]>([]);
   const [recommendations, setRecommendations] = useState<KnowledgeArticle[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null);
+  const [isPlayingSpeech, setIsPlayingSpeech] = useState(false);
+
+  const toggleSpeech = useCallback((textToRead: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      toast.error('Tarayıcınız sesli okumayı desteklemiyor.');
+      return;
+    }
+    if (isPlayingSpeech) {
+      window.speechSynthesis.cancel();
+      setIsPlayingSpeech(false);
+      toast.info('Sesli okuma durduruldu.');
+    } else {
+      window.speechSynthesis.cancel();
+      const cleanText = textToRead.replace(/<[^>]*>?/gm, '');
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'tr-TR';
+      utterance.rate = 0.92;
+      utterance.onend = () => setIsPlayingSpeech(false);
+      utterance.onerror = () => setIsPlayingSpeech(false);
+      window.speechSynthesis.speak(utterance);
+      setIsPlayingSpeech(true);
+      toast.success('Sesli okuma başlatıldı 🔊');
+    }
+  }, [isPlayingSpeech]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedArticleId = searchParams.get('id');
   const [activeCategory, setActiveCategory] = useState('');
@@ -573,6 +605,18 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
           </button>
           
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => toggleSpeech(`${selectedArticle.title}. ${parsed.text}`)}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full shadow-sm transition-all cursor-pointer ${
+                isPlayingSpeech 
+                  ? 'bg-amber-500 text-white shadow-amber-200 ring-2 ring-amber-300 animate-pulse'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100'
+              }`}
+            >
+              {isPlayingSpeech ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              <span>{isPlayingSpeech ? 'Durdur' : 'Sesli Dinle'}</span>
+            </button>
+
             <button
               onClick={(e) => handleToggleBookmark(selectedArticle.id, e)}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-100 rounded-full shadow-sm hover:text-indigo-600 hover:border-indigo-100 hover:shadow-md transition-all cursor-pointer"

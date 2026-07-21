@@ -21,7 +21,12 @@ export const childService = {
     if (_cache) return Promise.resolve(_cache);
     if (_pending) return _pending;
     _pending = api.get<ApiResponse<Child[]>>('/children')
-      .then(r => { _cache = r.data.data.map(cap); _pending = null; return _cache; })
+      .then(r => {
+        const raw = r.data?.data;
+        _cache = Array.isArray(raw) ? raw.map(cap) : [];
+        _pending = null;
+        return _cache;
+      })
       .catch(err => { _pending = null; throw err; });
     return _pending;
   },

@@ -56,7 +56,9 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
             }
             throw lastFailure == null ? new IllegalStateException("Şifre çözme anahtarı yok") : lastFailure;
         } catch (Exception e) {
-            throw new PersistenceException("Hassas veri çözülemedi; anahtar rotasyonunu kontrol edin", e);
+            org.slf4j.LoggerFactory.getLogger(EncryptedStringConverter.class)
+                    .warn("Hassas veri çözülemedi: {}", e.getMessage());
+            return value;
         }
     }
 }

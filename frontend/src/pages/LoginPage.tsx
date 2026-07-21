@@ -176,17 +176,20 @@ export function LoginPage() {
 
           {/* Özellik kartları — RegisterPage ile aynı yapı */}
           <div className="space-y-4">
-            {FEATURES.map(f => (
-              <div key={f.title} className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300 group">
-                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border group-hover:scale-110 transition-transform', f.color)}>
-                  <f.icon className={f.iconColor} size={20} />
+            {FEATURES.map(f => {
+              const FeatureIcon = f.icon;
+              return (
+                <div key={f.title} className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300 group">
+                  <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border group-hover:scale-110 transition-transform', f.color)}>
+                    <FeatureIcon className={f.iconColor} size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-white">{f.title}</h4>
+                    <p className="text-xs text-slate-400 mt-1">{f.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-white">{f.title}</h4>
-                  <p className="text-xs text-slate-400 mt-1">{f.desc}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -347,12 +350,15 @@ export function LoginPage() {
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {TRUST_ITEMS.map((item) => (
-              <div key={item.label} className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-slate-700 shadow-sm">
-                <item.icon size={15} className="shrink-0 text-primary-600" />
-                <span className="text-xs font-bold leading-snug">{item.label}</span>
-              </div>
-            ))}
+            {TRUST_ITEMS.map((item) => {
+              const ItemIcon = item.icon;
+              return (
+                <div key={item.label} className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-slate-700 shadow-sm">
+                  <ItemIcon size={15} className="shrink-0 text-primary-600" />
+                  <span className="text-xs font-bold leading-snug">{item.label}</span>
+                </div>
+              );
+            })}
           </div>
 
           {/* ── Kaydol bölümü ── */}

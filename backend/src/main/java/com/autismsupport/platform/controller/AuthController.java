@@ -39,6 +39,16 @@ public class AuthController {
     @Value("${app.auth.refresh-cookie-secure:false}")
     private boolean refreshCookieSecure;
 
+    @Value("${app.auth.cookie-same-site:#{null}}")
+    private String cookieSameSiteProp;
+
+    private String getSameSite() {
+        if (cookieSameSiteProp != null && !cookieSameSiteProp.isBlank()) {
+            return cookieSameSiteProp;
+        }
+        return refreshCookieSecure ? "None" : "Strict";
+    }
+
     @RateLimit(limit = 30, duration = 60)
     @GetMapping("/check-email")
     public ResponseEntity<ApiResponse<EmailAvailabilityResponse>> checkEmail(@RequestParam String email) {
@@ -203,7 +213,7 @@ public class AuthController {
         return ResponseCookie.from(REFRESH_COOKIE, token)
                 .httpOnly(true)
                 .secure(refreshCookieSecure)
-                .sameSite("Strict")
+                .sameSite(getSameSite())
                 .path("/api/auth")
                 .maxAge(tokenProvider.getRefreshTokenExpirationMs() / 1000)
                 .build();
@@ -213,7 +223,7 @@ public class AuthController {
         return ResponseCookie.from(REFRESH_COOKIE, "")
                 .httpOnly(true)
                 .secure(refreshCookieSecure)
-                .sameSite("Strict")
+                .sameSite(getSameSite())
                 .path("/api/auth")
                 .maxAge(0)
                 .build();
@@ -223,7 +233,7 @@ public class AuthController {
         return ResponseCookie.from(MEDIA_COOKIE, token)
                 .httpOnly(true)
                 .secure(refreshCookieSecure)
-                .sameSite("Strict")
+                .sameSite(getSameSite())
                 .path("/api/upload")
                 .maxAge(tokenProvider.getAccessTokenExpirationMs() / 1000)
                 .build();
@@ -233,7 +243,7 @@ public class AuthController {
         return ResponseCookie.from(MEDIA_COOKIE, "")
                 .httpOnly(true)
                 .secure(refreshCookieSecure)
-                .sameSite("Strict")
+                .sameSite(getSameSite())
                 .path("/api/upload")
                 .maxAge(0)
                 .build();

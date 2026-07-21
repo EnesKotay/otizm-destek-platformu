@@ -382,110 +382,100 @@ export function OnboardingPage() {
             <div className="overflow-hidden rounded-[32px] bg-white border border-white/60 shadow-2xl shadow-indigo-100/30 flex flex-col sm:flex-row">
 
               {/* ── SOL — Gradient hero ── */}
-              <div className="relative bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 flex flex-col px-8 pt-9 pb-9 overflow-hidden sm:w-[42%] shrink-0">
-                {/* Dot grid */}
+              <div className="relative bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 flex flex-col px-8 pt-9 pb-9 overflow-hidden sm:w-[45%] shrink-0 justify-between">
+                {/* Background decorative glows */}
                 <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, white 1.5px, transparent 1.5px)', backgroundSize: '22px 22px' }} />
-                {/* Orbs */}
                 <div className="absolute -right-14 -top-14 h-64 w-64 rounded-full bg-white/8 blur-3xl pointer-events-none" />
                 <div className="absolute -left-10 -bottom-10 h-56 w-56 rounded-full bg-purple-300/20 blur-3xl pointer-events-none" />
-                <div className="absolute right-8 bottom-12 h-24 w-24 rounded-full bg-violet-300/25 blur-2xl pointer-events-none" />
 
                 {/* Badge */}
-                <div className="relative z-10 inline-flex items-center gap-2 self-start rounded-full bg-white/15 border border-white/25 px-3.5 py-1.5 mb-6">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[11px] font-black uppercase tracking-widest text-white/90">Otizm Destek Platformu</span>
+                <div className="relative z-10 inline-flex items-center gap-2 self-start rounded-full bg-white/15 border border-white/25 px-4 py-1.5 mb-6">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-white">Otizm Destek Platformu</span>
                 </div>
 
-                {/* Başlık */}
-                <div className="relative z-10 flex-1">
-                  <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight">
+                {/* Başlık & Açıklama */}
+                <div className="relative z-10 my-auto">
+                  <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight">
                     Hoş geldiniz
                     {user?.fullName ? (
-                      <span className="block text-indigo-200 mt-0.5">{user.fullName.split(' ')[0]}! 👋</span>
-                    ) : '!'}
+                      <span className="block text-indigo-200 mt-1">{user.fullName.split(' ')[0]}! 👋</span>
+                    ) : '! 👋'}
                   </h1>
-                  <p className="mt-3 text-sm font-medium text-indigo-100/75 leading-relaxed">
-                    Sadece temel bilgileri alacağız. Tüm seçimleri daha sonra değiştirebilir veya tamamlayabilirsiniz.
+                  <p className="mt-4 text-sm font-medium text-indigo-100 leading-relaxed">
+                    Çocuğunuza en uygun destek ve gelişimi sunabilmemiz için birkaç kısa soru soracağız.
                   </p>
-                  <div className="flex flex-wrap gap-2 mt-5">
-                    {[
-                      { label: 'Günlük destek planı', emoji: '🎯' },
-                      { label: 'Uzman desteği',        emoji: '👨‍⚕️' },
-                      { label: 'Aile toplulukları',    emoji: '👨‍👩‍👧' },
-                      { label: 'İlerleme takibi',      emoji: '📊' },
-                    ].map(p => (
-                      <span key={p.label} className="inline-flex items-center gap-1.5 rounded-full bg-white/12 border border-white/20 px-3 py-1.5 text-[11px] font-bold text-white/90">
-                        <span>{p.emoji}</span>{p.label}
-                      </span>
-                    ))}
+
+                  <div className="mt-6 space-y-2.5">
+                    <div className="flex items-center gap-2.5 text-xs font-semibold text-white/90">
+                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-emerald-300 text-xs font-bold">✓</div>
+                      <span>Sadece 1 dakikanızı alır</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-xs font-semibold text-white/90">
+                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-emerald-300 text-xs font-bold">✓</div>
+                      <span>Her zaman bilgileri değiştirebilirsiniz</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-xs font-semibold text-white/90">
+                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-emerald-300 text-xs font-bold">✓</div>
+                      <span>Yanlış bir şey yapmaktan korkmayın</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Güven şeridi */}
-                <div className="relative z-10 mt-7 flex items-center gap-3 rounded-2xl bg-white/10 border border-white/15 px-4 py-3">
-                  <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-                    <HeartHandshake size={16} className="text-white/80" />
+                <div className="relative z-10 mt-8 flex items-center gap-3 rounded-2xl bg-white/10 border border-white/15 px-4 py-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                    <HeartHandshake size={18} className="text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-extrabold text-white/90">Güvenli &amp; Gizli</p>
-                    <p className="text-[10px] font-medium text-white/50">Verileriniz yalnızca size aittir.</p>
+                    <p className="text-xs font-bold text-white">Güvenli ve Gizli</p>
+                    <p className="text-xs text-white/70">Tüm verileriniz yalnızca size aittir.</p>
                   </div>
                 </div>
               </div>
 
-              {/* ── SAĞ — Adımlar + özellikler + CTA ── */}
-              <div className="bg-white flex flex-col px-8 py-8 flex-1 min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Kurulum — 3 Adım</p>
+              {/* ── SAĞ — Adımlar + CTA ── */}
+              <div className="bg-white flex flex-col px-8 py-8 flex-1 min-w-0 justify-between">
+                <div>
+                  <div className="mb-5">
+                    <span className="text-xs font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                      3 Kolay Adımda Başlayın
+                    </span>
+                  </div>
 
-                <div className="space-y-2.5">
-                  {[
-                    { n: 1, title: 'Çocuk Profili',      desc: 'Ad, yaş ve varsa kısa notlarla başlayın.',         icon: Baby,      g: 'from-indigo-500 to-indigo-600', glow: 'shadow-indigo-200' },
-                    { n: 2, title: 'Destek Alanları',    desc: 'Gözlemlediğiniz alanları seçin; öneriler sadeleşsin.', icon: TagIcon,   g: 'from-violet-500 to-purple-600', glow: 'shadow-violet-200' },
-                    { n: 3, title: 'Başlangıç Planı',    desc: 'İlk günlük kayıt, uzman ve kaynak yolunu seçin.', icon: Sparkles,  g: 'from-emerald-500 to-teal-600', glow: 'shadow-emerald-200' },
-                  ].map(item => (
-                    <div key={item.n} className="group flex items-start gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 px-4 py-3.5 hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all duration-200 cursor-default">
-                      <div className={`relative shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br ${item.g} flex items-center justify-center shadow-sm ${item.glow} group-hover:scale-105 transition-transform duration-200`}>
-                        <item.icon size={18} className="text-white" />
-                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-white border border-slate-100 shadow-sm flex items-center justify-center text-[8px] font-black text-slate-500">{item.n}</span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-extrabold text-slate-800">{item.title}</p>
-                        <p className="mt-0.5 text-[11px] font-medium leading-relaxed text-slate-500">{item.desc}</p>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="space-y-3.5">
+                    {[
+                      { n: 1, title: '1. Çocuğunuzun Adı ve Yaşı', desc: 'Sadece temel bilgilerle profilinizi başlatın.', icon: Baby, g: 'from-indigo-500 to-indigo-600' },
+                      { n: 2, title: '2. Destek İhtiyaçları', desc: 'Gözlemlediğiniz gelişim alanlarını kolayca seçin.', icon: TagIcon, g: 'from-violet-500 to-purple-600' },
+                      { n: 3, title: '3. Kişisel Destek Planı', desc: 'Çocuğunuza özel günlük öneri ve rehberinizi görün.', icon: Sparkles, g: 'from-emerald-500 to-teal-600' },
+                    ].map(item => {
+                      const ItemIcon = item.icon;
+                      return (
+                        <div key={item.n} className="flex items-start gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 transition-all hover:bg-white hover:border-indigo-100 hover:shadow-sm">
+                          <div className={`shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br ${item.g} flex items-center justify-center shadow-md shadow-indigo-100`}>
+                            <ItemIcon size={20} className="text-white" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-base font-extrabold text-slate-800">{item.title}</p>
+                            <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">{item.desc}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="h-px bg-slate-100 my-5" />
-
-                <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-6">
-                  {[
-                    { icon: Sparkles,      text: 'Size özel ana sayfa' },
-                    { icon: TrendingUp,    text: 'Gelişim grafikleri' },
-                    { icon: MessageCircle, text: 'Güvenli mesajlaşma' },
-                    { icon: BookOpen,      text: 'Güncel rehberler' },
-                  ].map(f => (
-                    <div key={f.text} className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-                        <f.icon size={12} className="text-indigo-500" />
-                      </div>
-                      <span className="text-[11px] font-semibold text-slate-500">{f.text}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-auto">
+                <div className="mt-8 pt-4 border-t border-slate-100">
                   <button
                     onClick={() => setStep(1)}
-                    className="relative w-full overflow-hidden inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer group"
+                    className="relative w-full overflow-hidden inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-4 text-base font-extrabold text-white shadow-xl shadow-indigo-500/25 hover:shadow-indigo-500/35 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer group"
                   >
-                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-                    <Sparkles size={15} className="relative z-10" />
-                    <span className="relative z-10">Kuruluma Başlayalım</span>
-                    <ChevronRight size={16} className="relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
+                    <Sparkles size={18} className="relative z-10" />
+                    <span className="relative z-10">Hemen Başlayalım</span>
+                    <ChevronRight size={20} className="relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
                   </button>
-                  <p className="text-center text-[10px] font-medium text-slate-400 mt-2.5">
-                    Ortalama kurulum süresi: <span className="text-indigo-500 font-bold">3 dakika</span>
+                  <p className="text-center text-xs font-medium text-slate-500 mt-3">
+                    Ortalama süre: <span className="text-indigo-600 font-bold">1 dakika</span> • İstediğiniz zaman değiştirebilirsiniz
                   </p>
                 </div>
               </div>

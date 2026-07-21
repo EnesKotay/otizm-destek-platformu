@@ -185,50 +185,57 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
 
   const { data: moodData = [] } = useQuery({
     queryKey: ['mood-range', child.id, from, to],
-    queryFn: () => moodService.getRange(child.id, from, to),
+    queryFn: () => moodService.getRange(child.id, from, to).then(res => Array.isArray(res) ? res : []).catch(() => []),
   });
 
   const { data: sleepData = [] } = useQuery({
     queryKey: ['sleep-range', child.id, from, to],
-    queryFn: () => sleepService.getRange(child.id, from, to),
+    queryFn: () => sleepService.getRange(child.id, from, to).then(res => Array.isArray(res) ? res : []).catch(() => []),
   });
 
   const { data: notesPage } = useQuery({
     queryKey: ['notes', child.id],
-    queryFn: () => noteService.getByChild(child.id, 0, 200),
+    queryFn: () => noteService.getByChild(child.id, 0, 200).catch(() => null),
   });
-  const notes = notesPage?.content ?? [];
+  const notes = Array.isArray(notesPage?.content) ? notesPage.content : [];
 
   const { data: milestones = [] } = useQuery({
     queryKey: ['milestones', child.id],
-    queryFn: () => milestoneService.getByChild(child.id),
+    queryFn: () => milestoneService.getByChild(child.id).then(res => Array.isArray(res) ? res : []).catch(() => []),
   });
 
   useEffect(() => {
-    if (moodData.length > 0 || sleepData.length > 0) {
+    if (Array.isArray(moodData) && moodData.length > 0 || Array.isArray(sleepData) && sleepData.length > 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setDemoMode(false);
     }
   }, [moodData, sleepData]);
 
-  const effectiveMoodData = demoMode ? MOCK_MOOD_DATA : moodData;
-  const effectiveSleepData = demoMode ? MOCK_SLEEP_DATA : sleepData;
-  const effectiveMilestones = demoMode ? MOCK_MILESTONES : milestones;
-  const effectiveNotes = demoMode ? MOCK_NOTES_FOR_ANALYTICS : notes;
+  const safeMoodData = Array.isArray(moodData) ? moodData : [];
+  const safeSleepData = Array.isArray(sleepData) ? sleepData : [];
+  const safeMilestones = Array.isArray(milestones) ? milestones : [];
+  const safeNotes = Array.isArray(notes) ? notes : [];
+
+  const effectiveMoodData = demoMode ? MOCK_MOOD_DATA : safeMoodData;
+  const effectiveSleepData = demoMode ? MOCK_SLEEP_DATA : safeSleepData;
+  const effectiveMilestones = demoMode ? MOCK_MILESTONES : safeMilestones;
+  const effectiveNotes = demoMode ? MOCK_NOTES_FOR_ANALYTICS : safeNotes;
 
   const { data: appointments = [] } = useQuery({
     queryKey: ['appointments-analytics', child.id],
-    queryFn: () => appointmentService.getAll().then(data => data.filter(a => a.childId === child.id)),
+    queryFn: () => appointmentService.getAll()
+      .then(data => Array.isArray(data) ? data.filter(a => a?.childId === child.id) : [])
+      .catch(() => []),
   });
 
   const { data: screeningResults = [] } = useQuery({
     queryKey: ['screenings-analytics', child.id],
-    queryFn: () => screeningService.getByChild(child.id).catch(() => []),
+    queryFn: () => screeningService.getByChild(child.id).then(res => Array.isArray(res) ? res : []).catch(() => []),
   });
 
   const { data: abcEntries = [] } = useQuery({
     queryKey: ['abc-analytics', child.id],
-    queryFn: () => behaviorJournalService.getByChild(child.id).catch(() => []),
+    queryFn: () => behaviorJournalService.getByChild(child.id).then(res => Array.isArray(res) ? res : []).catch(() => []),
   });
 
   const handleAiAnalysis = useCallback(() => {
@@ -524,22 +531,25 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
             </div>
             {actionItems.length > 0 ? (
               <div className="space-y-2 flex-1 flex flex-col justify-center">
-                {actionItems.map(item => (
-                  <Link
-                    key={item.label}
-                    to={item.to}
-                    className="group flex items-center gap-3 rounded-xl bg-gray-50/50 border border-gray-100/50 px-3 py-2 hover:bg-primary-50/50 hover:border-primary-100 transition-all duration-150"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-white text-gray-500 flex items-center justify-center group-hover:text-primary-600 shrink-0 border border-gray-100/60 shadow-sm">
-                      <item.icon size={15} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-gray-800">{item.label}</p>
-                      <p className="text-[10px] text-gray-400 truncate mt-0.5">{item.detail}</p>
-                    </div>
-                    <ArrowRight size={14} className="ml-auto text-gray-350 group-hover:text-primary-500 shrink-0 transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                ))}
+                {actionItems.map(item => {
+                  const ActionIcon = item.icon;
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.to}
+                      className="group flex items-center gap-3 rounded-xl bg-gray-50/50 border border-gray-100/50 px-3 py-2 hover:bg-primary-50/50 hover:border-primary-100 transition-all duration-150"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-white text-gray-500 flex items-center justify-center group-hover:text-primary-600 shrink-0 border border-gray-100/60 shadow-sm">
+                        <ActionIcon size={15} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-gray-800">{item.label}</p>
+                        <p className="text-[10px] text-gray-400 truncate mt-0.5">{item.detail}</p>
+                      </div>
+                      <ArrowRight size={14} className="ml-auto text-gray-350 group-hover:text-primary-500 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  );
+                })}
               </div>
             ) : (
               <div className="rounded-xl bg-emerald-50/50 border border-emerald-100/50 px-4 py-4 my-auto">
@@ -988,11 +998,13 @@ export function AnalyticsPage() {
   const [compareMode, setCompareMode] = useState(false);
   const [rangeDays, setRangeDays] = useState(30);
 
-  const { data: children = [], isLoading } = useQuery({
+  const { data: rawChildren = [], isLoading } = useQuery({
     queryKey: ['children', user?.id],
-    queryFn: () => childService.getAll(),
+    queryFn: () => childService.getAll().then(res => Array.isArray(res) ? res : []).catch(() => []),
     enabled: !!user,
   });
+
+  const children = Array.isArray(rawChildren) ? rawChildren : [];
 
   useEffect(() => {
     if (!globalChild && children.length) setGlobalChild(children[0]);

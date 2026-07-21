@@ -860,15 +860,18 @@ export function AppointmentPage() {
                 { label: 'Bekleyen Onay', value: stats.pending, icon: Clock },
                 { label: 'Tamamlanan', value: stats.completed, icon: CheckCircle2 },
                 { label: 'İptal Edilen', value: stats.cancelled, icon: XCircle },
-              ].map(s => (
-                <div key={s.label} className="bg-white/10 backdrop-blur-sm rounded-2xl px-3 py-3 flex items-center gap-3">
-                  <s.icon size={18} className="text-indigo-200 shrink-0" />
-                  <div>
-                    <p className="text-2xl font-black">{s.value}</p>
-                    <p className="text-indigo-200 text-[11px] font-medium leading-tight">{s.label}</p>
+              ].map(s => {
+                const StatIcon = s.icon;
+                return (
+                  <div key={s.label} className="bg-white/10 backdrop-blur-sm rounded-2xl px-3 py-3 flex items-center gap-3">
+                    <StatIcon size={18} className="text-indigo-200 shrink-0" />
+                    <div>
+                      <p className="text-2xl font-black">{s.value}</p>
+                      <p className="text-indigo-200 text-[11px] font-medium leading-tight">{s.label}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -2000,17 +2003,20 @@ export function AppointmentPage() {
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Görüşme Türü</label>
               <div className="grid grid-cols-2 gap-3">
-                {APPOINTMENT_TYPE_OPTIONS.map(type => (
-                  <button
-                    key={type.value}
-                    type="button"
-                    onClick={() => { setEditType(type.value); if (type.value === 'FACE_TO_FACE') setEditMeetingLink(''); }}
-                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${editType === type.value ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700' : 'border-gray-100 bg-white hover:border-indigo-200'}`}
-                  >
-                    <type.icon size={24} className={editType === type.value ? 'text-indigo-600' : 'text-gray-400'} />
-                    <span className="font-bold mt-2 text-sm">{type.label}</span>
-                  </button>
-                ))}
+                {APPOINTMENT_TYPE_OPTIONS.map(type => {
+                  const TypeIcon = type.icon;
+                  return (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => { setEditType(type.value); if (type.value === 'FACE_TO_FACE') setEditMeetingLink(''); }}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${editType === type.value ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700' : 'border-gray-100 bg-white hover:border-indigo-200'}`}
+                    >
+                      <TypeIcon size={24} className={editType === type.value ? 'text-indigo-600' : 'text-gray-400'} />
+                      <span className="font-bold mt-2 text-sm">{type.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

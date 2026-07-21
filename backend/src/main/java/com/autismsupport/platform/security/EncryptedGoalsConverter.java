@@ -21,8 +21,11 @@ public class EncryptedGoalsConverter implements AttributeConverter<List<Map<Stri
     }
 
     public List<Map<String, Object>> convertToEntityAttribute(String value) {
-        if (value == null) return null;
-        try { return JSON.readValue(crypto.convertToEntityAttribute(value), new TypeReference<>() {}); }
-        catch (Exception e) { throw new PersistenceException("BEP hedefleri çözülemedi", e); }
+        if (value == null) return List.of();
+        try {
+            String decrypted = crypto.convertToEntityAttribute(value);
+            if (decrypted == null || decrypted.startsWith("enc:v1:")) return List.of();
+            return JSON.readValue(decrypted, new TypeReference<>() {});
+        } catch (Exception e) { return List.of(); }
     }
 }

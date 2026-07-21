@@ -671,10 +671,11 @@ function DailyTrackerCore() {
           <div className="flex gap-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-xl">
             {TABS.map(t => {
               const done = dailySteps.find(s => s.key === t.key)?.done ?? false;
+              const TabIcon = t.icon;
               return (
                 <button key={t.key} onClick={() => setTab(t.key)}
                   className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${tab === t.key ? 'bg-white shadow-sm text-slate-800 border border-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}>
-                  <t.icon size={16} /> {t.label}
+                  <TabIcon size={16} /> {t.label}
                   {done && <Check size={13} className="text-emerald-500" />}
                 </button>
               );
