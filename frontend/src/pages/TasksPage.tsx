@@ -12,6 +12,7 @@ import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { DailyExerciseWizard } from '@/components/treatment/DailyExerciseWizard';
 import type { ExpertTask, TaskSubmission } from '@/types';
 
 const CATEGORY_COLOR: Record<string, string> = {
@@ -307,6 +308,7 @@ function TasksCore() {
   const { user } = useAuthStore();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [viewMode, setViewMode] = useState<'wizard' | 'list'>('wizard');
   
   // Modal State
   const [activeTaskForSubmit, setActiveTaskForSubmit] = useState<ExpertTask | null>(null);
@@ -424,60 +426,107 @@ function TasksCore() {
         )}
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/80 backdrop-blur-md rounded-[1.5rem] shadow-inner">
-        {([
-          ['all',       `Tüm Görevler (${tasks.length})`],
-          ['pending',   `Yapılacaklar (${pending})`],
-          ['completed', `Onay & Teslim Edilenler (${completed})`],
-        ] as const).map(([key, label]) => (
+      {/* View Mode Switcher (Sihirbaz vs Liste) */}
+      <div className="flex items-center justify-between gap-3 bg-indigo-50/60 p-2 rounded-2xl border border-indigo-100/80">
+        <div className="flex gap-2 w-full sm:w-auto">
           <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className={`flex-1 min-w-[120px] py-3 rounded-xl text-sm font-bold transition-all duration-300 ${
-              filter === key 
-                ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
+            onClick={() => setViewMode('wizard')}
+            className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              viewMode === 'wizard'
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200'
+                : 'text-indigo-700 hover:bg-white/60'
             }`}
           >
-            {label}
+            <span>🎯 Günlük Egzersiz Sihirbazı</span>
           </button>
-        ))}
+          <button
+            onClick={() => setViewMode('list')}
+            className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              viewMode === 'list'
+                ? 'bg-white text-slate-800 shadow-sm border border-slate-200'
+                : 'text-slate-600 hover:bg-white/60'
+            }`}
+          >
+            <span>📋 Tüm Görevler Listesi</span>
+          </button>
+        </div>
       </div>
 
-      {/* Task List */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-          <p className="text-sm font-bold text-slate-400 animate-pulse">Görevler yükleniyor...</p>
-        </div>
-      ) : displayed.length === 0 ? (
-        <div className="text-center py-20 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200 px-6">
-          <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
-            <BookOpen size={32} className="text-slate-300" />
+      {viewMode === 'wizard' && (
+        <DailyExerciseWizard
+          tasks={tasks}
+          onCompleteTask={async (taskId, outcome, note, evidenceUrl) => {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task || !user?.id) return;
+            const outcomeNote = outcome === 'EASY'
+              ? `[🎉 Kolayca Yaptık] ${note || ''}`
+              : outcome === 'SUPPORTED'
+              ? `[🙂 Destekle Yaptık] ${note || ''}`
+              : `[💬 Bugün Zorlandık] ${note || ''}`;
+            await patientService.submitTask(taskId, user.id, outcomeNote.trim(), evidenceUrl || '');
+            qc.invalidateQueries({ queryKey: ['my-tasks', user.id] });
+          }}
+        />
+      )}
+
+      {viewMode === 'list' && (
+        <>
+          {/* Filter Tabs */}
+          <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/80 backdrop-blur-md rounded-[1.5rem] shadow-inner">
+            {([
+              ['all',       `Tüm Görevler (${tasks.length})`],
+              ['pending',   `Yapılacaklar (${pending})`],
+              ['completed', `Onay & Teslim Edilenler (${completed})`],
+            ] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
+                className={`flex-1 min-w-[120px] py-3 rounded-xl text-sm font-bold transition-all duration-300 ${
+                  filter === key 
+                    ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' 
+                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          <h3 className="text-lg font-extrabold text-slate-700 mb-2">
-            {filter === 'all'
-              ? 'Henüz uzman tarafından görev atanmamış'
-              : filter === 'pending'
-              ? 'Bekleyen harika bir görev bulunmuyor'
-              : 'Tamamlanan görev bulunmuyor'}
-          </h3>
-          <p className="text-sm text-slate-500 font-medium max-w-md mx-auto leading-relaxed">
-            Uzmanınız yeni ödev ve rutinler belirlediğinde burada görebilecek ve teslim edebileceksiniz.
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:gap-5">
-          {displayed.map(task => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onCompleteRequest={setActiveTaskForSubmit}
-              completing={isSubmittingTask && activeTaskForSubmit?.id === task.id}
-            />
-          ))}
-        </div>
+
+          {/* Task List */}
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+              <p className="text-sm font-bold text-slate-400 animate-pulse">Görevler yükleniyor...</p>
+            </div>
+          ) : displayed.length === 0 ? (
+            <div className="text-center py-20 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200 px-6">
+              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+                <BookOpen size={32} className="text-slate-300" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-700 mb-2">
+                {filter === 'all'
+                  ? 'Henüz uzman tarafından görev atanmamış'
+                  : filter === 'pending'
+                  ? 'Bekleyen harika bir görev bulunmuyor'
+                  : 'Tamamlanan görev bulunmuyor'}
+              </h3>
+              <p className="text-sm text-slate-500 font-medium max-w-md mx-auto leading-relaxed">
+                Uzmanınız yeni ödev ve rutinler belirlediğinde burada görebilecek ve teslim edebileceksiniz.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:gap-5">
+              {displayed.map(task => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onCompleteRequest={setActiveTaskForSubmit}
+                  completing={isSubmittingTask && activeTaskForSubmit?.id === task.id}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Submission Modal */}

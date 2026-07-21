@@ -124,7 +124,30 @@ export function TreatmentGoalsTab({
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h3 className="text-xl font-bold text-slate-800">Günlük Hedef Ekle</h3>
-              <p className="mt-1.5 text-sm text-slate-500">Bugün çocuğunuza özel takip etmek istediğiniz küçük bir şey yazın.</p>
+              <p className="mt-1.5 text-sm text-slate-500">Bugün çocuğunuza özel takip etmek istediğiniz küçük bir şey yazın veya hazır önerilerden seçin.</p>
+              
+              {/* Hazır Hedef Öneri Çipleri */}
+              <div className="flex flex-wrap gap-2 mt-3">
+                {[
+                  { text: '👀 2 kez göz teması kurdu', focus: 'communication' as FocusKey },
+                  { text: '💬 "Lütfen" kelimesini kullandı', focus: 'communication' as FocusKey },
+                  { text: '🧹 Oyuncaklarını sepete koydu', focus: 'behavior' as FocusKey },
+                  { text: '🤲 Oyun oynarken sıra bekledi', focus: 'social' as FocusKey },
+                  { text: '🤹 Nesneleri renklerine göre ayırdı', focus: 'education' as FocusKey },
+                ].map(chip => (
+                  <button
+                    key={chip.text}
+                    type="button"
+                    onClick={() => {
+                      onGoalDraftFocusChange(chip.focus);
+                      onGoalDraftChange(chip.text);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 text-slate-700 text-xs font-semibold transition-all shadow-sm cursor-pointer"
+                  >
+                    + {chip.text}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
