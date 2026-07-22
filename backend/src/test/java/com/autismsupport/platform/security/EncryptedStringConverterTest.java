@@ -34,4 +34,11 @@ class EncryptedStringConverterTest {
                 "unit-test-current-key-with-more-than-32-characters").initialize();
         assertThat(converter.convertToEntityAttribute(encrypted)).isEqualTo("rotasyon testi");
     }
+
+    @Test
+    void returnsNullWhenDecryptionFailsDueToKeyMismatch() {
+        String encrypted = converter.convertToDatabaseColumn("gizli veri");
+        new EncryptionKeyProvider("completely-different-key-32-characters-long", "").initialize();
+        assertThat(converter.convertToEntityAttribute(encrypted)).isNull();
+    }
 }

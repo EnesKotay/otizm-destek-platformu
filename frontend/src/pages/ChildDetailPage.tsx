@@ -301,9 +301,9 @@ function ChildDetailContent() {
       setProfileForm({
         name: child.name || '',
         birthDate: child.birthDate || '',
-        diagnosisInfo: child.diagnosisInfo || '',
-        educationProgram: child.educationProgram || '',
-        therapies: child.therapies || '',
+        diagnosisInfo: child.diagnosisInfo?.startsWith('enc:v1:') ? '' : (child.diagnosisInfo || ''),
+        educationProgram: child.educationProgram?.startsWith('enc:v1:') ? '' : (child.educationProgram || ''),
+        therapies: child.therapies?.startsWith('enc:v1:') ? '' : (child.therapies || ''),
         gender: (child.gender as '' | 'ERKEK' | 'KIZ') || '',
       });
     }
@@ -767,7 +767,7 @@ function ChildDetailContent() {
                     {genderLabel}
                   </span>
                 )}
-                {child.diagnosisInfo && (
+                {child.diagnosisInfo && !child.diagnosisInfo.startsWith('enc:v1:') && (
                     <span className="px-2.5 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-medium truncate max-w-[260px]">
                     {child.diagnosisInfo}
                   </span>
@@ -896,8 +896,10 @@ function ChildDetailContent() {
                     setEditingProfile(false);
                     setProfileForm({
                       name: child.name || '', birthDate: child.birthDate || '',
-                      diagnosisInfo: child.diagnosisInfo || '', educationProgram: child.educationProgram || '',
-                      therapies: child.therapies || '', gender: (child.gender as '' | 'ERKEK' | 'KIZ') || '',
+                      diagnosisInfo: child.diagnosisInfo?.startsWith('enc:v1:') ? '' : (child.diagnosisInfo || ''),
+                      educationProgram: child.educationProgram?.startsWith('enc:v1:') ? '' : (child.educationProgram || ''),
+                      therapies: child.therapies?.startsWith('enc:v1:') ? '' : (child.therapies || ''),
+                      gender: (child.gender as '' | 'ERKEK' | 'KIZ') || '',
                     });
                   }}>
                     <X size={16} />
@@ -943,9 +945,9 @@ function ChildDetailContent() {
             ) : (
               <div className="space-y-3">
                 {[
-                  { icon: Brain, label: 'Tanı', value: child.diagnosisInfo, color: 'text-purple-500', bg: 'bg-purple-50/70' },
-                  { icon: GraduationCap, label: 'Eğitim Programı', value: child.educationProgram, color: 'text-teal-500', bg: 'bg-teal-50/70' },
-                  { icon: HeartPulse, label: 'Terapiler', value: child.therapies, color: 'text-rose-500', bg: 'bg-rose-50/70' },
+                  { icon: Brain, label: 'Tanı', value: child.diagnosisInfo?.startsWith('enc:v1:') ? undefined : child.diagnosisInfo, color: 'text-purple-500', bg: 'bg-purple-50/70' },
+                  { icon: GraduationCap, label: 'Eğitim Programı', value: child.educationProgram?.startsWith('enc:v1:') ? undefined : child.educationProgram, color: 'text-teal-500', bg: 'bg-teal-50/70' },
+                  { icon: HeartPulse, label: 'Terapiler', value: child.therapies?.startsWith('enc:v1:') ? undefined : child.therapies, color: 'text-rose-500', bg: 'bg-rose-50/70' },
                 ].map(field => {
                   const Icon = field.icon;
                   return field.value ? (
@@ -958,7 +960,9 @@ function ChildDetailContent() {
                     </div>
                   ) : null;
                 })}
-                {!child.diagnosisInfo && !child.educationProgram && !child.therapies && (
+                {(!child.diagnosisInfo || child.diagnosisInfo.startsWith('enc:v1:')) &&
+                 (!child.educationProgram || child.educationProgram.startsWith('enc:v1:')) &&
+                 (!child.therapies || child.therapies.startsWith('enc:v1:')) && (
                   <div className="text-center py-6">
                     <p className="text-sm text-gray-400 font-medium">Henüz bilgi eklenmedi.</p>
                     <button onClick={() => setEditingProfile(true)} className="text-sm text-indigo-600 hover:text-indigo-800 font-semibold mt-1.5 cursor-pointer transition-colors">

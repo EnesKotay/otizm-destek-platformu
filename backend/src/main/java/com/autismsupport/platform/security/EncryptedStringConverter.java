@@ -18,7 +18,13 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
 
     @Override
     public String convertToDatabaseColumn(String value) {
-        if (value == null || value.startsWith(PREFIX)) return value;
+        if (value == null) return null;
+        if (value.startsWith(PREFIX)) {
+            String decrypted = convertToEntityAttribute(value);
+            if (decrypted != null && !decrypted.startsWith(PREFIX)) {
+                return value;
+            }
+        }
         try {
             byte[] iv = new byte[12];
             RANDOM.nextBytes(iv);
@@ -58,7 +64,7 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
         } catch (Exception e) {
             org.slf4j.LoggerFactory.getLogger(EncryptedStringConverter.class)
                     .warn("Hassas veri çözülemedi: {}", e.getMessage());
-            return value;
+            return null;
         }
     }
 }

@@ -35,17 +35,44 @@ function dateRangeOf(days: number) {
   };
 }
 
+function safeParseDate(val: unknown): Date | null {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (typeof val === 'number') {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof val === 'string') {
+    const cleaned = val.trim().replace(' ', 'T');
+    const d = new Date(cleaned);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
 function formatDate(dateStr: string) {
-  const d = new Date(dateStr);
-  return `${d.getDate()}/${d.getMonth() + 1}`;
+  const d = safeParseDate(dateStr);
+  return d ? `${d.getDate()}/${d.getMonth() + 1}` : '';
+}
+
+function safeLocaleDateString(dateVal: unknown, options?: Intl.DateTimeFormatOptions): string {
+  const d = safeParseDate(dateVal);
+  if (!d) return 'Henüz yok';
+  try {
+    return d.toLocaleDateString('tr-TR', options);
+  } catch {
+    return 'Henüz yok';
+  }
 }
 
 function latestDateLabel(values: Array<string | undefined>) {
-  const latest = values
-    .filter(Boolean)
-    .sort((a, b) => new Date(b as string).getTime() - new Date(a as string).getTime())[0];
+  const valid = values
+    .filter((v): v is string => Boolean(v))
+    .map(v => ({ raw: v, d: safeParseDate(v) }))
+    .filter((item): item is { raw: string; d: Date } => item.d !== null)
+    .sort((a, b) => b.d.getTime() - a.d.getTime());
 
-  return latest ? new Date(latest).toLocaleDateString('tr-TR') : 'Henüz yok';
+  return valid.length > 0 ? safeLocaleDateString(valid[0].raw) : 'Henüz yok';
 }
 
 function StatCard({ icon: Icon, label, value, color, tone }: {
@@ -274,10 +301,10 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
     .map(([month, count]) => ({ ay: month.slice(5) + '/' + month.slice(2, 4), randevu: count }));
 
   const screeningChartData = [...screeningResults]
-    .sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime())
+    .sort((a, b) => (safeParseDate(a.createdAt)?.getTime() ?? 0) - (safeParseDate(b.createdAt)?.getTime() ?? 0))
     .slice(-6)
     .map(s => ({
-      tarih: new Date(s.createdAt || 0).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric' }),
+      tarih: safeLocaleDateString(s.createdAt, { month: 'short', day: 'numeric' }),
       skor: s.score,
     }));
 
@@ -331,7 +358,7 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
   const milestoneTimelineData = Object.entries(milestonesByMonth)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([month, count]) => ({
-      ay: new Date(month + '-01').toLocaleDateString('tr-TR', { month: 'short', year: '2-digit' }),
+      ay: safeLocaleDateString(month ? month + '-01' : '', { month: 'short', year: '2-digit' }),
       taş: count,
     }));
 
@@ -908,7 +935,7 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
                         {m.category && <span className="text-xs text-gray-400">{m.category}</span>}
                       </div>
                       <span className="text-xs text-gray-400">
-                        {new Date(m.achievedDate).toLocaleDateString('tr-TR')}
+                        {safeLocaleDateString(m.achievedDate)}
                       </span>
                     </div>
                   ))}
@@ -1044,7 +1071,7 @@ export function AnalyticsPage() {
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-400 text-xs font-bold ring-1 ring-primary-100/50 dark:ring-primary-900/30">
                   <Baby size={12} className="text-primary-500" />
                   <span>{activeChild.name}</span>
-                  {activeChild.diagnosisInfo && (
+                  {activeChild.diagnosisInfo && !activeChild.diagnosisInfo.startsWith('enc:v1:') && (
                     <span className="text-[10px] opacity-75 font-semibold leading-none border-l border-primary-200 dark:border-primary-800 pl-1.5 ml-0.5">
                       {activeChild.diagnosisInfo}
                     </span>
@@ -1116,11 +1143,11 @@ export function AnalyticsPage() {
               <div key={child.id} className="space-y-4">
                 <div className="flex items-center gap-3 p-4 bg-primary-50 rounded-2xl border border-primary-100">
                   <div className="w-8 h-8 rounded-full bg-primary-200 flex items-center justify-center text-primary-700 font-bold text-sm shrink-0">
-                    {child.name.charAt(0)}
+                    {(child.name || 'Ç').charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-primary-800">{child.name}</p>
-                    {child.diagnosisInfo && <p className="text-xs text-primary-500">{child.diagnosisInfo}</p>}
+                    <p className="text-sm font-semibold text-primary-800">{child.name || 'İsimsiz Çocuk'}</p>
+                    {child.diagnosisInfo && !child.diagnosisInfo.startsWith('enc:v1:') && <p className="text-xs text-primary-500">{child.diagnosisInfo}</p>}
                   </div>
                 </div>
                 <ChildAnalytics child={child} rangeDays={rangeDays} compact />

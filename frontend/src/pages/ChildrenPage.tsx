@@ -44,7 +44,7 @@ function normalizeTR(str: string): string {
 
 // Fix 5: terapileri parse et
 function parseTherapies(raw?: string): string[] {
-  if (!raw?.trim()) return [];
+  if (!raw?.trim() || raw.startsWith('enc:v1:')) return [];
   return raw.split(/[\n,;]+/).map(t => t.trim()).filter(Boolean);
 }
 
@@ -466,12 +466,12 @@ function ChildCard({ child, onDelete }: { child: Child; onDelete: (child: Child)
       </div>
 
       <div className="flex-1 space-y-3.5 relative z-10 pointer-events-none">
-        {child.diagnosisInfo && (
+        {child.diagnosisInfo && !child.diagnosisInfo.startsWith('enc:v1:') && (
           <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-100/80">
             <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed font-medium">{child.diagnosisInfo}</p>
           </div>
         )}
-        {child.educationProgram && (
+        {child.educationProgram && !child.educationProgram.startsWith('enc:v1:') && (
           <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50/40 border border-indigo-100/30 px-3 py-1.5 rounded-xl w-fit">
             <span>📚</span>
             <span className="truncate">{child.educationProgram}</span>
@@ -501,7 +501,7 @@ function ChildCard({ child, onDelete }: { child: Child; onDelete: (child: Child)
           <span>Profil Bilgileri</span>
         </div>
         <div className="flex gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-          {child.diagnosisInfo && <span className="bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1"><span className="text-green-500 font-bold">✓</span> Tanı</span>}
+          {child.diagnosisInfo && !child.diagnosisInfo.startsWith('enc:v1:') && <span className="bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1"><span className="text-green-500 font-bold">✓</span> Tanı</span>}
           {therapyList.length > 0 && <span className="bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md shadow-sm">{therapyList.length} Terapi</span>}
         </div>
       </div>

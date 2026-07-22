@@ -6,6 +6,7 @@ function capitalizeName(name: string): string {
 }
 
 function cap(child: Child): Child {
+  if (!child || typeof child !== 'object') return child;
   return child.name ? { ...child, name: capitalizeName(child.name) } : child;
 }
 

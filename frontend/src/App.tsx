@@ -254,7 +254,7 @@ export default function App() {
                 <Route path="/bep-raporu" element={<RoleRoute allowedRoles={EXPERT_ONLY}><BepGeneratorPage /></RoleRoute>} />
                 <Route path="/tarama" element={<RoleRoute allowedRoles={PARENT_ONLY}><Navigate to="/cocuklarim" replace /></RoleRoute>} />
                 <Route path="/gunluk-takip" element={<RoleRoute allowedRoles={PARENT_ONLY}><DailyTrackerPage /></RoleRoute>} />
-                <Route path="/gelisim-paneli" element={<RoleRoute allowedRoles={PARENT_ONLY}><AnalyticsPage /></RoleRoute>} />
+                <Route path="/gelisim-paneli" element={<RoleRoute allowedRoles={ALL_ROLES}><AnalyticsPage /></RoleRoute>} />
                 <Route path="/sosyal-hikayeler" element={<RoleRoute allowedRoles={PARENT_ONLY}><Navigate to="/tedavi" replace /></RoleRoute>} />
                 <Route path="/kriz-rehberi" element={<RoleRoute allowedRoles={PARENT_ONLY}><CrisisGuidePage /></RoleRoute>} />
                 <Route path="/gorevler" element={<RoleRoute allowedRoles={PARENT_EXPERT}><TasksPage /></RoleRoute>} />
