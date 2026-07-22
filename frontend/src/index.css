@@ -239,22 +239,46 @@ body {
   scroll-behavior: auto !important;
 }
 
-/* Sakin mod: renk doygunluğunu azaltır, göz yormayan bir görünüm sağlar */
-.a11y-calm body {
-  background-color: #f4f6f8 !important;
+/* Sakin mod: düşük uyaranlı, göz yormayan ama "soluk/bozuk" görünmeyen yumuşak tema.
+   Sert doygunluk kırpması yerine uyumlu-yumuşatılmış bir palet + azaltılmış görsel
+   gürültü (yumuşak gölge, düz yüzey) kullanır; böylece arayüz griye kaçmadan sakin görünür. */
+.a11y-calm {
+  /* Yumuşatılmış ama hâlâ canlı ve uyumlu ana renk paleti */
+  --color-primary-50:  #f0f4f9;
+  --color-primary-100: #e2eaf3;
+  --color-primary-200: #c7d6e8;
+  --color-primary-300: #a3bcd8;
+  --color-primary-400: #7f9ec5;
+  --color-primary-500: #6486b3;
+  --color-primary-600: #52739e;
+  --color-primary-700: #445f83;
+  --color-primary-800: #3a4f6b;
+  --color-primary-900: #324258;
+  /* Çok hafif genel yumuşatma — parlak renkleri sakinleştirir ama soluklaştırmaz */
+  filter: saturate(0.9);
 }
+.a11y-calm body {
+  background-color: #f5f6f8 !important;
+}
+/* Keskin gradyanları düz, sakin yüzeylere çevir */
 .a11y-calm .bg-gradient-to-r,
 .a11y-calm .bg-gradient-to-br,
-.a11y-calm .bg-gradient-to-b {
+.a11y-calm .bg-gradient-to-b,
+.a11y-calm .bg-gradient-to-t,
+.a11y-calm .bg-gradient-to-tr,
+.a11y-calm .bg-gradient-to-tl {
   background-image: none !important;
 }
-.a11y-calm {
-  --color-primary-600: #4a7abf;
-  --color-primary-700: #3a6aaf;
-  filter: saturate(0.75);
+/* Görsel gürültüyü azalt: güçlü gölgeleri yumuşat */
+.a11y-calm .shadow-lg,
+.a11y-calm .shadow-xl,
+.a11y-calm .shadow-2xl {
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06) !important;
 }
-.a11y-calm img {
-  filter: saturate(1.33);
+/* Fotoğraf/görselleri doğal tut (doygunluk kaybını telafi et) */
+.a11y-calm img,
+.a11y-calm video {
+  filter: saturate(1.1);
 }
 
 /* Yüksek kontrast: metin ve arka plan arasındaki farkı artırır */
