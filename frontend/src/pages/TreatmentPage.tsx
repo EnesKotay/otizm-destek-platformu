@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Activity, ArrowRight, CalendarDays, FileText, Gamepad2, Sparkles, Target,
   TrendingUp, Plus, Users, ChevronLeft,
@@ -25,19 +25,25 @@ const SUMMARY_META = [
   { icon: TrendingUp, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', valueCls: 'text-emerald-700' },
 ] as const;
 
-const DETAIL_TABS = [
-  { value: 'today' as const, label: 'Bugün ne yapacağım?', icon: <CalendarDays size={15} aria-hidden="true" /> },
-  { value: 'goals' as const, label: 'Hedeflerim', icon: <Target size={15} aria-hidden="true" /> },
-  { value: 'games' as const, label: 'Oyunlar', icon: <Gamepad2 size={15} aria-hidden="true" /> },
-  { value: 'tools' as const, label: 'Araçlar', icon: <Sparkles size={15} aria-hidden="true" /> },
-];
-
 export function TreatmentPage() {
   return <TreatmentContent />;
 }
 
 function TreatmentContent() {
-  const [activeDetailTab, setActiveDetailTab] = useState<DetailTab>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get('tab');
+  const activeDetailTab: DetailTab = (rawTab && ['overview', 'today', 'goals', 'games', 'tools'].includes(rawTab))
+    ? (rawTab as DetailTab)
+    : 'overview';
+
+  const setActiveDetailTab = (tab: DetailTab) => {
+    if (tab === 'overview') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ tab });
+    }
+  };
+
   const [activeGameFilter, setActiveGameFilter] = useState<'all' | FocusKey>('all');
   const [goalDraft, setGoalDraft] = useState('');
   const [goalDraftFocus, setGoalDraftFocus] = useState<FocusKey>('communication');
@@ -167,7 +173,13 @@ function TreatmentContent() {
   const todayRemainingCount = Math.max(todayStepCount - todayDoneCount, 0);
   const totalGoalCount = mergedGoalGroups.reduce((acc, group) => acc + group.items.length, 0);
   const completedGoalCount = mergedGoalGroups.reduce((acc, group) => acc + group.items.filter((item) => item.status === 'done').length, 0);
-  const activeSection = DETAIL_TABS.find(tab => tab.value === activeDetailTab);
+  const detailTabs = [
+    { value: 'today' as const, label: 'Bugünün Planı', icon: <CalendarDays size={15} aria-hidden="true" />, count: `${todayRemainingCount} kaldı`, badgeColor: 'bg-blue-50 text-blue-700' },
+    { value: 'goals' as const, label: 'Gelişim Hedefleri', icon: <Target size={15} aria-hidden="true" />, count: `${completedGoalCount}/${totalGoalCount || 0}`, badgeColor: 'bg-indigo-50 text-indigo-700' },
+    { value: 'games' as const, label: 'Ev Egzersizleri & Oyunlar', icon: <Gamepad2 size={15} aria-hidden="true" />, count: `${todayCompletedGames.length}/${recommendedGames.length}`, badgeColor: 'bg-emerald-50 text-emerald-700' },
+    { value: 'tools' as const, label: 'Destek Araçları', icon: <Sparkles size={15} aria-hidden="true" />, count: toolCards.length || 5, badgeColor: 'bg-purple-50 text-purple-700' },
+  ];
+  const activeSection = detailTabs.find(tab => tab.value === activeDetailTab);
 
   const sectionCards: Array<{
     tab: Exclude<DetailTab, 'overview'>;
@@ -245,187 +257,169 @@ function TreatmentContent() {
         </div>
       )}
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase text-indigo-600">Hedefler ve egzersizler</p>
-            <h1 className="mt-2 max-w-3xl text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
-              Bugün sadece bir küçük adım seçin.
+      {/* ── Sakin ve Göz Yormayan Karşılations Başlığı ── */}
+      <div className="rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-7 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-xs font-black text-sky-700 ring-1 ring-sky-100">
+              🌿 Sakin & Kolay Takip Paneli
+            </span>
+            <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+              {activeChild.name} İçin Bugün Ne Yapmak İstiyorsunuz?
             </h1>
-            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-              {activeChild.name} için plan, hedef, oyun ve destek araçlarını ayrı bölümlerde düzenledik. Önce bugünün planına bakmanız yeterli.
+            <p className="mt-1.5 text-xs sm:text-sm font-medium text-slate-600 max-w-2xl leading-relaxed">
+              Karmaşık menüler yok! Lütfen aşağıdan ne yapmak istediğinizi belirten <strong className="text-slate-900 font-bold">büyük kutulardan birine dokunun</strong>.
             </p>
           </div>
-
-          <div className="flex shrink-0 flex-wrap gap-2">
+          <div className="flex shrink-0 gap-2">
             <button
               type="button"
               onClick={handleDownloadPdf}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer shadow-xs"
             >
-              <FileText size={16} />
-              Rapor indir
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveDetailTab('goals')}
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-slate-800"
-            >
-              <Plus size={16} />
-              Hedef ekle
+              <FileText size={15} />
+              Raporu İndir
             </button>
           </div>
         </div>
+      </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
-          <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
-            <p className="text-xs font-bold text-indigo-700">Önerilen başlangıç</p>
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-lg font-black text-slate-950">Bugünün planı</p>
-                <p className="mt-1 text-sm leading-5 text-slate-600">{todayRemainingCount} kısa adım kaldı</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveDetailTab('today')}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-black text-white shadow-sm transition-colors hover:bg-indigo-700"
-              >
-                <CalendarDays size={19} />
-                Aç
-                <ArrowRight size={16} />
-              </button>
+      {/* ── 4 Sakin ve Belirgin Dokunma Kutusu (Sensory-Friendly Pastel) ── */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {/* 1. Bugünkü Plan */}
+        <button
+          type="button"
+          onClick={() => setActiveDetailTab('today')}
+          className="group relative flex flex-col justify-between rounded-3xl bg-white p-6 text-slate-900 border-2 border-slate-200/90 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer text-left shadow-xs"
+        >
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                <CalendarDays size={24} />
+              </span>
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-extrabold text-blue-700 ring-1 ring-blue-100">
+                {todayRemainingCount} İş Kaldı
+              </span>
             </div>
-          </div>
-
-          <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
-            <p className="text-xs font-bold text-slate-500">Sıradaki hedef</p>
-            <p className="mt-2 truncate text-sm font-black text-slate-950">
-              {primaryGoal ? primaryGoal.title : 'Henüz seçilmedi'}
+            <h2 className="mt-5 text-lg font-extrabold text-slate-950">1. Bugünün Planı</h2>
+            <p className="mt-1 text-xs text-slate-600 font-medium leading-relaxed">
+              Bugün yapacağınız 1-2 küçük işe bakın ve tamamlayınca kutucuğa basın.
             </p>
-            <p className="mt-1 text-xs text-slate-500">{activeProgramLabel}</p>
           </div>
-
-          <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
-            <p className="text-xs font-bold text-slate-500">Bugün oyun</p>
-            <p className="mt-2 text-2xl font-black text-emerald-700">{todayCompletedGames.length}/{recommendedGames.length}</p>
-            <p className="mt-1 text-xs text-slate-500">tamamlandı</p>
+          <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-bold text-slate-500">
+            <span>DOKUNUN VE AÇIN</span>
+            <span className="flex items-center gap-1.5 bg-blue-50 text-blue-700 font-extrabold px-3 py-1.5 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all shadow-xs">
+              Planı Aç <ArrowRight size={14} />
+            </span>
           </div>
+        </button>
 
-          <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
-            <p className="text-xs font-bold text-slate-500">Kurulum</p>
-            <p className="mt-2 text-2xl font-black text-slate-950">{completedGuideCount}/4</p>
-            <p className="mt-1 text-xs text-slate-500">temel alan hazır</p>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase text-slate-400">Bölümler</p>
-              <h2 className="text-lg font-black text-slate-950">Neyi yapmak istiyorsunuz?</h2>
+        {/* 2. Ev Oyunları */}
+        <button
+          type="button"
+          onClick={() => setActiveDetailTab('games')}
+          className="group relative flex flex-col justify-between rounded-3xl bg-white p-6 text-slate-900 border-2 border-slate-200/90 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer text-left shadow-xs"
+        >
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+                <Gamepad2 size={24} />
+              </span>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700 ring-1 ring-emerald-100">
+                {todayCompletedGames.length}/{recommendedGames.length} Tamamlandı
+              </span>
             </div>
-            <p className="text-xs font-semibold text-slate-500">Her bölüm ayrı açılır, ekran kalabalıklaşmaz.</p>
+            <h2 className="mt-5 text-lg font-extrabold text-slate-950">2. Ev Oyunları & Egzersiz</h2>
+            <p className="mt-1 text-xs text-slate-600 font-medium leading-relaxed">
+              Evde 5 dakikada oynanabilecek eğlenceli çocuk oyunlarını seçin.
+            </p>
           </div>
-
-          <div className="grid gap-3 lg:grid-cols-4">
-            {sectionCards.map(({ tab, icon: Icon, eyebrow, title, description, stat, cta, tone, border }) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveDetailTab(tab)}
-                className={cn(
-                  'group flex min-h-[10.5rem] flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md',
-                  border
-                )}
-              >
-                <span>
-                  <span className="flex items-start justify-between gap-3">
-                    <span className={cn('flex h-10 w-10 items-center justify-center rounded-xl ring-1', tone)}>
-                      <Icon size={18} />
-                    </span>
-                    <span className="rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase text-slate-500 ring-1 ring-slate-100">
-                      {eyebrow}
-                    </span>
-                  </span>
-                  <span className="mt-3 block text-base font-black text-slate-950">{title}</span>
-                  <span className="mt-1 block text-xs font-medium leading-5 text-slate-500">{description}</span>
-                </span>
-                <span className="mt-3 flex items-center justify-between gap-3">
-                  <span className="text-xs font-black text-slate-500">{stat}</span>
-                  <span className="inline-flex items-center gap-1 text-xs font-black text-indigo-700">
-                    {cta}
-                    <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </span>
-              </button>
-            ))}
+          <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-bold text-slate-500">
+            <span>DOKUNUN VE AÇIN</span>
+            <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 font-extrabold px-3 py-1.5 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
+              Oyun Seç <ArrowRight size={14} />
+            </span>
           </div>
-        </div>
+        </button>
 
-        <div className="mt-5 border-t border-slate-100 pt-4">
-          <p className="flex items-start gap-2 text-xs font-semibold leading-5 text-slate-500">
-            <ShieldCheck size={15} className="mt-0.5 shrink-0 text-emerald-600" />
-            Bu alan evde takip desteğidir; tanı, ilaç veya acil müdahale kararı yerine geçmez.
-          </p>
-        </div>
-
-        {children.length > 1 && (
-          <div className="mt-4 border-t border-slate-100 pt-4">
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase text-slate-400">
-              <Users size={14} />
-              Profil seç
+        {/* 3. Hedeflerim */}
+        <button
+          type="button"
+          onClick={() => setActiveDetailTab('goals')}
+          className="group relative flex flex-col justify-between rounded-3xl bg-white p-6 text-slate-900 border-2 border-slate-200/90 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer text-left shadow-xs"
+        >
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
+                <Target size={24} />
+              </span>
+              <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-extrabold text-indigo-700 ring-1 ring-indigo-100">
+                {completedGoalCount}/{totalGoalCount || 0} Hedef
+              </span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {children.map((child) => {
-                const isActive = child.id === activeChild.id;
-                return (
-                  <button
-                    key={child.id}
-                    type="button"
-                    onClick={() => actions.setSelectedChild(child)}
-                    aria-pressed={isActive}
-                    className={cn(
-                      'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition-colors',
-                      isActive
-                        ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                    )}
-                  >
-                    <span className={cn(
-                      'flex h-7 w-7 items-center justify-center rounded-lg text-xs font-black',
-                      isActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
-                    )}>
-                      {child.name.charAt(0).toUpperCase()}
-                    </span>
-                    {child.name}
-                  </button>
-                );
-              })}
-            </div>
+            <h2 className="mt-5 text-lg font-extrabold text-slate-950">3. Gelişim Hedefleri</h2>
+            <p className="mt-1 text-xs text-slate-600 font-medium leading-relaxed">
+              Konuşma, sosyalleşme ve beceri hedeflerini görün veya yeni hedef ekleyin.
+            </p>
           </div>
-        )}
-      </section>
+          <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-bold text-slate-500">
+            <span>DOKUNUN VE AÇIN</span>
+            <span className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 font-extrabold px-3 py-1.5 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
+              Hedefleri Gör <ArrowRight size={14} />
+            </span>
+          </div>
+        </button>
 
-      {activeDetailTab === 'overview' && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          {weeklySummary.map((item, i) => {
-            const meta = SUMMARY_META[i % SUMMARY_META.length];
-            const Icon = meta.icon;
-            return (
-              <div key={item.title} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', meta.iconBg)}>
-                  <Icon size={18} className={meta.iconColor} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-slate-400">{item.title}</p>
-                  <div className="mt-0.5 flex flex-wrap items-baseline gap-2">
-                    <p className={cn('text-xl font-black', meta.valueCls)}>{item.value}</p>
-                    <p className="text-xs font-medium text-slate-500">{item.detail}</p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        {/* 4. Sakinleşme & Araçlar */}
+        <button
+          type="button"
+          onClick={() => setActiveDetailTab('tools')}
+          className="group relative flex flex-col justify-between rounded-3xl bg-white p-6 text-slate-900 border-2 border-slate-200/90 hover:border-amber-300 hover:shadow-md transition-all cursor-pointer text-left shadow-xs"
+        >
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+                <Sparkles size={24} />
+              </span>
+              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-extrabold text-amber-700 ring-1 ring-amber-100">
+                {toolCards.length || 5} Yardımcı
+              </span>
+            </div>
+            <h2 className="mt-5 text-lg font-extrabold text-slate-950">4. Yardımcı Araçlar</h2>
+            <p className="mt-1 text-xs text-slate-600 font-medium leading-relaxed">
+              Sakinleşme kartları, hikayeler ve ödül tablolarını kullanın.
+            </p>
+          </div>
+          <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-bold text-slate-500">
+            <span>DOKUNUN VE AÇIN</span>
+            <span className="flex items-center gap-1.5 bg-amber-50 text-amber-700 font-extrabold px-3 py-1.5 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-all shadow-xs">
+              Araçları Aç <ArrowRight size={14} />
+            </span>
+          </div>
+        </button>
+      </div>
+
+      {children.length > 1 && (
+        <div className="rounded-2xl bg-white p-4 border border-slate-200 shadow-sm flex items-center gap-3">
+          <span className="text-xs font-bold text-slate-500 shrink-0">Çocuk Seçin:</span>
+          <div className="flex flex-wrap gap-2">
+            {children.map((child) => {
+              const isActive = child.id === activeChild.id;
+              return (
+                <button
+                  key={child.id}
+                  type="button"
+                  onClick={() => actions.setSelectedChild(child)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer',
+                    isActive ? 'bg-primary-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  )}
+                >
+                  {child.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -436,10 +430,10 @@ function TreatmentContent() {
               <button
                 type="button"
                 onClick={() => setActiveDetailTab('overview')}
-                className="inline-flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50"
+                className="inline-flex w-fit items-center gap-2 rounded-xl border-2 border-primary-200 bg-primary-50 px-4 py-2.5 text-xs font-black text-primary-800 transition-all hover:bg-primary-100 cursor-pointer shadow-xs"
               >
-                <ChevronLeft size={16} />
-                Bölümlere dön
+                <ChevronLeft size={18} />
+                ← Tüm Bölümleri Gör (Ana Menüye Dön)
               </button>
               <button
                 type="button"
@@ -456,10 +450,10 @@ function TreatmentContent() {
                 <h2 className="mt-1 text-xl font-black text-slate-950">{activeSection?.label}</h2>
               </div>
               <TreatmentDetailTabs
-                tabs={DETAIL_TABS}
+                tabs={detailTabs}
                 value={activeDetailTab}
                 onChange={setActiveDetailTab}
-                label="Tedavi detay bölümleri"
+                label="Hedef ve Egzersiz Detay Bölümleri"
               />
             </div>
           </div>

@@ -141,8 +141,28 @@
 
 body {
   color-scheme: light;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  @apply bg-gray-50 text-gray-900 antialiased;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  @apply bg-slate-50/80 text-slate-900 antialiased;
+}
+
+/* ── Modern Premium UI Sınıfları ── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.08);
+}
+
+.shadow-glow-primary {
+  box-shadow: 0 0 25px -5px rgba(37, 99, 235, 0.2);
 }
 
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {

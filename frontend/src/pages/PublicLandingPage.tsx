@@ -202,51 +202,58 @@ export function PublicLandingPage() {
         />
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(255,255,255,0.98)_0%,rgba(255,255,255,0.93)_38%,rgba(255,255,255,0.48)_68%,rgba(255,255,255,0.12)_100%)]" />
 
-        <div className="mx-auto flex max-w-6xl items-center px-5 py-10 sm:min-h-[620px] sm:py-20 lg:min-h-[640px]">
+        {/* Soft background ambient gradient glow blobs */}
+        <div className="pointer-events-none absolute -left-20 -top-20 -z-15 h-96 w-96 rounded-full bg-blue-400/20 blur-3xl" />
+        <div className="pointer-events-none absolute right-10 top-1/3 -z-15 h-80 w-80 rounded-full bg-indigo-400/15 blur-3xl" />
+
+        <div className="mx-auto flex max-w-6xl items-center px-5 py-12 sm:min-h-[640px] sm:py-20 lg:min-h-[660px]">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white/90 px-4 py-1.5 text-xs font-bold text-primary-700 shadow-sm backdrop-blur">
-              <CheckCircle2 size={14} />
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary-200/80 bg-white/95 px-4 py-1.5 text-xs font-bold text-primary-700 shadow-sm backdrop-blur transition-transform hover:scale-105">
+              <CheckCircle2 size={15} className="text-primary-600 animate-pulse" />
               İlk adım ekranda hazır
             </div>
 
-            <h1 className="mt-7 max-w-xl text-4xl font-black leading-[1.03] text-slate-950 sm:text-5xl lg:text-6xl">
-              Otizm Destek Platformu
+            <h1 className="mt-7 max-w-xl text-4xl font-extrabold tracking-tight leading-[1.05] text-slate-950 sm:text-5xl lg:text-6xl">
+              Otizm Destek <span className="bg-gradient-to-r from-primary-600 via-indigo-600 to-blue-700 bg-clip-text text-transparent">Platformu</span>
             </h1>
 
             <p className="mt-5 max-w-xl text-lg font-medium leading-8 text-slate-700">
               Çocuk profili, bugünün kaydı, randevular ve uzman paylaşımı için sakin, anlaşılır ve güvenli bir çalışma alanı.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-3.5">
               <Link
                 to="/kayit"
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-sm font-bold text-white shadow-lg shadow-primary-600/20 transition-colors hover:bg-primary-700"
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-sm font-bold text-white shadow-lg shadow-primary-600/25 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-xl hover:shadow-primary-600/35 active:scale-95"
               >
                 Aile hesabı aç
                 <ArrowRight size={16} />
               </Link>
               <Link
                 to="/kayit/uzman"
-                className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-6 text-sm font-bold text-slate-800 shadow-sm backdrop-blur transition-colors hover:bg-white"
+                className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-200/90 bg-white/90 px-6 text-sm font-bold text-slate-800 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:border-slate-300 hover:shadow-md active:scale-95"
               >
                 Uzman başvurusu
                 <ArrowRight size={16} />
               </Link>
             </div>
 
-            <div className="mt-8 grid max-w-xl grid-cols-3 gap-2 sm:gap-3">
+            <div className="mt-8 grid max-w-xl grid-cols-3 gap-2.5 sm:gap-3.5">
               {heroStats.map((item) => (
-                <div key={item.label} className="rounded-xl border border-white/70 bg-white/80 px-3 py-3 shadow-sm backdrop-blur sm:px-4">
-                  <p className="text-base font-black leading-none text-slate-950 sm:text-xl">{item.value}</p>
-                  <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs">{item.label}</p>
+                <div
+                  key={item.label}
+                  className="group rounded-2xl border border-white/80 bg-white/85 px-4 py-3.5 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-1 hover:border-primary-200/60 hover:shadow-md sm:px-4"
+                >
+                  <p className="text-base font-extrabold leading-none text-slate-950 group-hover:text-primary-600 sm:text-xl transition-colors">{item.value}</p>
+                  <p className="mt-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:text-xs">{item.label}</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               {['Kontrollü paylaşım', 'Rol bazlı erişim', 'Tıbbi karar değildir'].map((item) => (
                 <span key={item} className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
-                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
                   {item}
                 </span>
               ))}

@@ -1891,10 +1891,10 @@ export function AppointmentPage() {
                 </div>
               </div>
               <div className="flex gap-1.5 items-center">
-                {[0, 4, 8, 12].map(w => (
+                {[0, 4, 8, 12, 24].map(w => (
                   <button key={w} type="button" onClick={() => setBookRecurrenceWeeks(w)}
-                    className={`h-8 px-3 rounded-xl text-xs font-black border transition-all ${bookRecurrenceWeeks === w ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-200'}`}>
-                    {w === 0 ? 'Tek' : `${w}h`}
+                    className={`h-8 px-3 rounded-xl text-xs font-black border transition-all cursor-pointer ${bookRecurrenceWeeks === w ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-200'}`}>
+                    {w === 0 ? 'Tekil' : `${w} Hafta`}
                   </button>
                 ))}
               </div>
@@ -2440,6 +2440,12 @@ function AppointmentCard({ appt, isExpert, completingId, deletingId, compact = f
               {appt.recurringGroupId && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 font-semibold flex items-center gap-1">
                   <Repeat size={9} /> {appt.recurrenceIndex ? `${appt.recurrenceIndex}. seans` : 'Seri'}
+                </span>
+              )}
+              {/* Late cancellation badge */}
+              {appt.lateCancellation && (
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 font-black border border-rose-200 flex items-center gap-1">
+                  <AlertCircle size={10} /> Geç İptal (&lt;24 Saat)
                 </span>
               )}
             </div>

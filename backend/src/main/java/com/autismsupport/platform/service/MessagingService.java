@@ -44,6 +44,7 @@ public class MessagingService {
     private final MessageReadReceiptRepository readReceiptRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final FcmPushService fcmPushService;
+    private final WebPushService webPushService;
 
     @Transactional(readOnly = true)
     public List<ConversationDto> getConversations(UUID userId) {
@@ -530,12 +531,21 @@ public class MessagingService {
                 continue;
             }
             String conversationTitle = conversationTitleForNotification(conversation, sender);
+            String body = messageNotificationBody(conversation, message, sender);
+
             fcmPushService.sendMessageNotification(
                     participant.getId(),
                     conversationTitle,
-                    messageNotificationBody(conversation, message, sender),
+                    body,
                     conversation.getId(),
                     conversationTitle
+            );
+
+            webPushService.sendToUser(
+                    participant.getId(),
+                    conversationTitle,
+                    body,
+                    "/mesajlar?conversationId=" + conversation.getId()
             );
         }
     }

@@ -184,3 +184,74 @@ export function playNotificationSound(): void {
     // Ses çalamazsa sessizce devam et
   }
 }
+
+// ── Tarihe göre bildirim gruplama ─────────────────────
+export interface GroupedNotifications<T extends { createdAt: string }> {
+  today: T[];
+  yesterday: T[];
+  thisWeek: T[];
+  older: T[];
+}
+
+export function groupNotificationsByDate<T extends { createdAt: string }>(items: T[]): GroupedNotifications<T> {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const yesterdayStart = todayStart - 86400000;
+  const weekStart = todayStart - (6 * 86400000);
+
+  const result: GroupedNotifications<T> = {
+    today: [],
+    yesterday: [],
+    thisWeek: [],
+    older: [],
+  };
+
+  for (const item of items) {
+    const itemTime = new Date(item.createdAt).getTime();
+    if (itemTime >= todayStart) {
+      result.today.push(item);
+    } else if (itemTime >= yesterdayStart) {
+      result.yesterday.push(item);
+    } else if (itemTime >= weekStart) {
+      result.thisWeek.push(item);
+    } else {
+      result.older.push(item);
+    }
+  }
+
+  return result;
+}
+
+// ── Tercih Yonetimi ──────────────────────────────────
+export interface NotificationPreferenceSetting {
+  key: string;
+  label: string;
+  description: string;
+  category: NotificationCategory;
+}
+
+export const NOTIFICATION_PREF_ITEMS: NotificationPreferenceSetting[] = [
+  { key: 'notif_calendar', label: 'Randevu & Takvim', description: 'Yaklaşan randevular, saat değişiklikleri ve takvim hatırlatmaları', category: 'appointments' },
+  { key: 'notif_forum', label: 'Forum & Soru-Cevap', description: 'Gönderilerinize gelen yanıtlar ve yorum bildirimleri', category: 'forum' },
+  { key: 'notif_task_assigned', label: 'Ev Görevleri & Egzersizler', description: 'Uzmanlar tarafından atanan yeni görev ve ödev takipleri', category: 'tasks' },
+  { key: 'notif_matching', label: 'Sosyal & Aile Buluşmaları', description: 'Eşleşme istekleri ve topluluk grup etkinlikleri', category: 'social' },
+  { key: 'notif_patient_connection', label: 'Uzman & Hasta Bağlantıları', description: 'Uzman onayları ve klinik veri paylaşım güncellemeleri', category: 'system' },
+];
+
+export function getPreferenceValue(key: string, defaultValue = true): boolean {
+  try {
+    const val = localStorage.getItem(key);
+    return val === null ? defaultValue : val === 'true';
+  } catch {
+    return defaultValue;
+  }
+}
+
+export function setPreferenceValue(key: string, value: boolean): void {
+  try {
+    localStorage.setItem(key, String(value));
+  } catch {
+    /* ignore */
+  }
+}
+

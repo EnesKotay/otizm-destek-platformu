@@ -24,6 +24,7 @@ import { emergencyCardService } from '@/services/emergencyCardService';
 import { wellbeingService } from '@/services/wellbeingService';
 import { behaviorJournalService } from '@/services/behaviorJournalService';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { NotificationPermissionBanner } from '@/components/notifications/NotificationPermissionBanner';
 import { toast } from '@/store/toastStore';
 import { formatDateTime } from '@/utils/date';
 import type { AdminStats, AppointmentRecord, CalendarEvent, DevelopmentNote, ExpertStats, ExpertTask, Medication, MoodEntry, PatientSummary, Report, ExpertConnectionRequest } from '@/types';
@@ -1653,6 +1654,8 @@ export function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      <NotificationPermissionBanner />
 
       {/* ── Uzman isteği bildirimi ── */}
       {connectionRequests.length > 0 && (

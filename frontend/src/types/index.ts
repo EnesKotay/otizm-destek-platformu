@@ -354,6 +354,8 @@ export interface AppointmentRecord {
   createdAt?: string;
   recurringGroupId?: string;
   recurrenceIndex?: number;
+  lateCancellation?: boolean;
+  cancellationBy?: string;
 }
 
 

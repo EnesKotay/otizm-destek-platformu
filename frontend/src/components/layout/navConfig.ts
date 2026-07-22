@@ -61,7 +61,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       items: [
         { to: '/cocuklarim', icon: Baby, label: 'Çocuğumun Bilgileri', mobileLabel: 'Profil', description: 'Ad, doğum tarihi ve temel bilgiler', keywords: ['profil', 'çocuk', 'bilgi'], mobile: true, simple: true },
         { to: '/gelisim-paneli', icon: TrendingUp, label: 'Nasıl İlerliyoruz?', description: 'Haftalık gelişim özeti', keywords: ['grafik', 'rapor', 'ilerleme'], requiresChild: true },
-        { to: '/tedavi', icon: Activity, label: 'Hedefler ve Egzersizler', description: 'Uzmanın verdiği günlük çalışmalar', keywords: ['terapi', 'hedef', 'klinik'], requiresChild: true },
+        { to: '/tedavi', icon: Activity, label: 'Hedefler ve Egzersizler', description: 'Gelişim hedefleri, ev egzersizleri ve çalışma planı', keywords: ['terapi', 'hedef', 'egzersiz', 'oyun', 'klinik'], requiresChild: true },
         { to: '/gorevler', icon: ClipboardCheck, label: 'Ödevler', description: 'Uzman tarafından verilen görevler', keywords: ['ödev', 'görev', 'uzman'], requiresChild: true },
         { to: '/notlar', icon: FileText, label: 'Notlarım', description: 'Gözlem ve gelişim notları', keywords: ['not', 'gözlem', 'kayıt'], requiresChild: true },
       ],

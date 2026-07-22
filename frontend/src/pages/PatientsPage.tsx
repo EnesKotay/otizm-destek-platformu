@@ -14,6 +14,9 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { toast } from '@/store/toastStore';
 import { patientService } from '@/services/patientService';
 import { messagingService } from '@/services/messagingService';
+import { TimestampedVideoPlayer } from '@/components/media/TimestampedVideoPlayer';
+import { MedicationBehaviorTimeline } from '@/components/analytics/MedicationBehaviorTimeline';
+import { InterdisciplinaryConsultationModal } from '@/components/consultation/InterdisciplinaryConsultationModal';
 import type { ExpertTask, PatientSummary, TaskSubmission, ExpertConnectionRequest } from '@/types';
 
 import { normalizeTR } from '@/utils/string';
@@ -56,6 +59,8 @@ export function PatientsPage() {
   const [saving, setSaving] = useState(false);
   const [messaging, setMessaging] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
+  const [activePatientTab, setActivePatientTab] = useState<'tasks' | 'timeline'>('tasks');
   const [patientSort, setPatientSort] = useState<'recent' | 'name' | 'tasks'>('recent');
   const [newTask, setNewTask] = useState({ ...EMPTY_TASK });
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
@@ -631,6 +636,9 @@ export function PatientsPage() {
                       <Button variant="outline" size="sm" onClick={() => setShowReportModal(true)} className="rounded-xl shadow-sm hover:shadow text-xs border-slate-200 text-slate-700 hover:bg-slate-50 font-bold">
                         <BarChart2 size={14} className="mr-1.5 text-emerald-500" /> Rapor
                       </Button>
+                      <Button variant="outline" size="sm" onClick={() => setShowConsultationModal(true)} className="rounded-xl shadow-sm hover:shadow text-xs border-indigo-200 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100 font-bold">
+                        <Users size={14} className="mr-1.5 text-indigo-600" /> Vaka Konsültasyonu
+                      </Button>
                     </div>
                   </div>
 
@@ -705,11 +713,42 @@ export function PatientsPage() {
                 </div>
               </div>
 
-              {/* Görevler */}
-              <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-[28px] border border-slate-200/50 dark:border-slate-800/40 shadow-sm flex-1 flex flex-col overflow-hidden hover:border-slate-300/50 transition-all">
-                <div className="p-5 border-b border-slate-100/60 dark:border-slate-800/30 bg-slate-50/20">
-                  <div className="flex items-center justify-between gap-3 mb-4">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              {/* Tab Seçimi: Görevler vs. İlaç & Davranış Zaman Çizelgesi */}
+              <div className="flex items-center gap-2 px-6 pt-4 border-b border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setActivePatientTab('tasks')}
+                  className={`pb-3 px-1 text-xs font-black border-b-2 transition-all cursor-pointer ${
+                    activePatientTab === 'tasks'
+                      ? 'border-indigo-600 text-indigo-600'
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  Görevler & Ev Ödevleri
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePatientTab('timeline')}
+                  className={`pb-3 px-1 text-xs font-black border-b-2 transition-all cursor-pointer ${
+                    activePatientTab === 'timeline'
+                      ? 'border-indigo-600 text-indigo-600'
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  İlaç & Davranış Çizelgesi 📈
+                </button>
+              </div>
+
+              {activePatientTab === 'timeline' ? (
+                <div className="p-5">
+                  <MedicationBehaviorTimeline childName={selectedPatient.name} />
+                </div>
+              ) : (
+                /* Görevler */
+                <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-[28px] border border-slate-200/50 dark:border-slate-800/40 shadow-sm flex-1 flex flex-col overflow-hidden hover:border-slate-300/50 transition-all">
+                  <div className="p-5 border-b border-slate-100/60 dark:border-slate-800/30 bg-slate-50/20">
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       <Target size={18} className="text-indigo-500" /> Görevler ve Ödevler
                     </h3>
                     <Button size="sm" onClick={() => setShowTaskModal(true)} className="rounded-xl shadow-md shadow-indigo-100 dark:shadow-none bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 h-8">
@@ -904,11 +943,15 @@ export function PatientsPage() {
                                               </div>
                                             )}
                                             {sub.evidenceUrl && (
-                                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col justify-center items-start">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Yüklenen Kanıt/Dosya</p>
-                                                <a href={sub.evidenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-xl transition-colors border border-indigo-100 w-full justify-center">
-                                                  <LinkIcon size={14} /> Bağlantıya Git
-                                                </a>
+                                              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-2">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Ev Ödevi Video / Medya İncelemesi</p>
+                                                <TimestampedVideoPlayer
+                                                  videoUrl={sub.evidenceUrl}
+                                                  onSaveNotes={(notes) => {
+                                                    const formattedText = notes.map(n => `[${n.timeFormatted}] ${n.text}`).join('\n');
+                                                    setFeedbackText(prev => ({ ...prev, [sub.id]: formattedText }));
+                                                  }}
+                                                />
                                               </div>
                                             )}
                                           </div>
@@ -980,6 +1023,7 @@ export function PatientsPage() {
                   )}
                 </div>
               </div>
+              )}
             </div>
           ) : (
             <div className="bg-slate-50/50 border border-slate-200/60 rounded-[32px] h-full flex items-center justify-center text-slate-400 flex-col gap-4">
@@ -1248,6 +1292,13 @@ export function PatientsPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Vaka Konsültasyonu Modalı */}
+      <InterdisciplinaryConsultationModal
+        isOpen={showConsultationModal}
+        onClose={() => setShowConsultationModal(false)}
+        childName={selectedPatient?.name}
+      />
     </div>
   );
 }
