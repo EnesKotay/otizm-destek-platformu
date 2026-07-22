@@ -53,6 +53,25 @@ export default defineConfig(({ mode }) => {
           manualChunks(id) {
             if (id.includes('node_modules')) {
               if (id.includes('lucide-react')) return 'icons-vendor';
+              // recharts + d3 bağımlılıkları tek, kararlı bir chunk'ta toplanmalı.
+              // Aksi halde her sayfa chunk'ına ayrı kopya gömülüyor ve rolldown'ın
+              // modül-init sıralaması bozulup "TypeError: n is not a function"
+              // ile çöküyor (özellikle RadarChart/Polar bileşenlerinde).
+              if (
+                id.includes('/recharts')
+                || id.includes('/victory-vendor')
+                || id.includes('/d3-')
+                || id.includes('/es-toolkit')
+                || id.includes('/decimal.js-light')
+                || id.includes('/react-smooth')
+                || id.includes('/@reduxjs/')
+                || id.includes('/react-redux')
+                || id.includes('/reselect')
+                || id.includes('/immer')
+                || id.includes('/use-sync-external-store')
+                || id.includes('/eventemitter3')
+                || id.includes('/tiny-invariant')
+              ) return 'charts-vendor';
               if (
                 id.includes('/react/')
                 || id.includes('/react-dom/')

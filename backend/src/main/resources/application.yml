@@ -94,7 +94,14 @@ external:
 app:
   auth:
     require-email-verification: ${REQUIRE_EMAIL_VERIFICATION:false}
+    # Çapraz-site kurulumda (frontend vercel.app, backend onrender.com) refresh
+    # çerezinin gönderilebilmesi için üretimde REFRESH_COOKIE_SECURE=true olmalı.
+    # Aksi halde getSameSite() "Strict" döner, tarayıcı çerezi çapraz-site
+    # /auth/refresh isteğinde göndermez ve reload sonrası 400 ile oturum düşer.
     refresh-cookie-secure: ${REFRESH_COOKIE_SECURE:false}
+    # Bırakılırsa refresh-cookie-secure'a göre otomatik seçilir (true -> None,
+    # false -> Strict). Çapraz-site için açıkça "None" verilebilir.
+    cookie-same-site: ${COOKIE_SAME_SITE:}
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   upload:
     dir: ${APP_UPLOAD_DIR:${UPLOAD_DIR:uploads}}

@@ -12,10 +12,12 @@ interface State {
   error: Error | null;
 }
 
-// Rolldown/Vite üretim paketleri, eski (stale) bir build parçası çalışırken
-// tarayıcıya göre farklı hata metinleri verebilir ("chunk failed" yerine
-// "x is not a function" gibi). Bu yüzden dar bir mesaj listesine güvenmek yerine
-// geniş bir örüntü kullanıyoruz.
+// Eski (stale) bir build parçası çalışırken tarayıcı yalnızca modül/chunk
+// YÜKLEME hataları verir. Bu örüntüyü DAR tutuyoruz: "is not a function",
+// "is not defined", "Unexpected token" gibi mesajlar çoğu zaman gerçek runtime
+// bug'larıdır ve bunlarda sayfayı zorla yeniden yüklemek (reload) kullanıcının
+// oturumunu düşürüp onu giriş sayfasına atabilir. Bu yüzden yalnızca gerçek
+// chunk/modül yükleme hatalarında otomatik reload yapıyoruz.
 export const AUTO_RELOAD_FLAG = 'eb-auto-reload-attempted';
 
 function isLikelyStaleBuildError(message: string): boolean {
@@ -24,10 +26,8 @@ function isLikelyStaleBuildError(message: string): boolean {
     || message.includes('Importing a module script failed')
     || message.includes('MIME type of "text/html"')
     || message.includes('Loading chunk')
+    || message.includes('error loading dynamically imported module')
     || message.includes('Unable to preload CSS')
-    || /is not a function/.test(message)
-    || /is not defined/.test(message)
-    || /Unexpected token/.test(message)
   );
 }
 
