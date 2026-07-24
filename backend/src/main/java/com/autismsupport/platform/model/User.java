@@ -96,6 +96,10 @@ public class User {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "onboarding_completed")
+    @Builder.Default
+    private Boolean onboardingCompleted = false;
+
     private Double latitude;
 
     private Double longitude;
@@ -104,6 +108,68 @@ public class User {
     @Column(name = "specializations", columnDefinition = "jsonb")
     @Builder.Default
     private List<String> specializations = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "age_groups", columnDefinition = "jsonb")
+    @Builder.Default
+    private List<String> ageGroups = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "support_topics", columnDefinition = "jsonb")
+    @Builder.Default
+    private List<String> supportTopics = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "spoken_languages", columnDefinition = "jsonb")
+    @Builder.Default
+    private List<String> spokenLanguages = new ArrayList<>(List.of("Türkçe"));
+
+    @Column(name = "session_duration_minutes")
+    @Builder.Default
+    private Integer sessionDurationMinutes = 50;
+
+    @Column(name = "cancellation_policy", columnDefinition = "TEXT")
+    private String cancellationPolicy;
+
+    @Column(name = "reschedule_policy", columnDefinition = "TEXT")
+    private String reschedulePolicy;
+
+    @Column(name = "allow_direct_messages")
+    @Builder.Default
+    private Boolean allowDirectMessages = true;
+
+    @Column(name = "allow_family_messages")
+    @Builder.Default
+    private Boolean allowFamilyMessages = true;
+
+    @Column(name = "hide_online_status")
+    @Builder.Default
+    private Boolean hideOnlineStatus = false;
+
+    @Column(name = "approximate_location_only")
+    @Builder.Default
+    private Boolean approximateLocationOnly = true;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "communication_preferences", columnDefinition = "jsonb")
+    @Builder.Default
+    private List<String> communicationPreferences = new ArrayList<>(List.of("YAZISMA"));
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "support_intents", columnDefinition = "jsonb")
+    @Builder.Default
+    private List<String> supportIntents = new ArrayList<>(List.of("DENEYIM_PAYLASIMI"));
+
+    @Column(name = "session_fee_min", precision = 10, scale = 2)
+    private java.math.BigDecimal sessionFeeMin;
+    @Column(name = "session_fee_max", precision = 10, scale = 2)
+    private java.math.BigDecimal sessionFeeMax;
+    @Column(name = "offers_online")
+    @Builder.Default
+    private Boolean offersOnline = true;
+    @Column(name = "offers_face_to_face")
+    @Builder.Default
+    private Boolean offersFaceToFace = true;
 
     @Column(name = "license_verified")
     @Builder.Default
@@ -158,8 +224,15 @@ public class User {
     public boolean isMatchingEnabled() { return !Boolean.FALSE.equals(matchingEnabled); }
     public boolean isActive() { return !Boolean.FALSE.equals(isActive); }
     public boolean isLicenseVerified() { return Boolean.TRUE.equals(licenseVerified); }
+    public boolean isOnboardingCompleted() { return Boolean.TRUE.equals(onboardingCompleted); }
     public boolean isAcceptingPatients() { return !Boolean.FALSE.equals(acceptingPatients); }
     public boolean isMfaEnabled() { return Boolean.TRUE.equals(mfaEnabled); }
+    public boolean isAllowDirectMessages() { return !Boolean.FALSE.equals(allowDirectMessages); }
+    public boolean isAllowFamilyMessages() { return !Boolean.FALSE.equals(allowFamilyMessages); }
+    public boolean isHideOnlineStatus() { return Boolean.TRUE.equals(hideOnlineStatus); }
+    public boolean isApproximateLocationOnly() { return !Boolean.FALSE.equals(approximateLocationOnly); }
+    public boolean isOffersOnline() { return !Boolean.FALSE.equals(offersOnline); }
+    public boolean isOffersFaceToFace() { return !Boolean.FALSE.equals(offersFaceToFace); }
 
     public void setIsActive(boolean active) {
         this.isActive = active;

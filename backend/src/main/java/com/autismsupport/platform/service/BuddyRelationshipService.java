@@ -23,12 +23,16 @@ public class BuddyRelationshipService {
     private final UserRepository userRepository;
     private final MessagingService messagingService;
     private final NotificationService notificationService;
+    private final com.autismsupport.platform.repository.UserBlockRepository userBlockRepository;
 
     @CacheEvict(value = "similar-families", allEntries = true)
     @Transactional
     public BuddyRelationship sendBuddyRequest(UUID requesterId, UUID receiverId, boolean isMentorRequest, String requestMessage) {
         if (requesterId.equals(receiverId)) {
             throw new RuntimeException("Kendinize eslesme istegi gonderemezsiniz.");
+        }
+        if (userBlockRepository.existsBetween(requesterId, receiverId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Bu kullanıcıyla eşleşme kurulamaz");
         }
 
         Optional<BuddyRelationship> existing = buddyRelationshipRepository.findBetweenUsers(requesterId, receiverId);
@@ -117,6 +121,17 @@ public class BuddyRelationshipService {
 
     @CacheEvict(value = "similar-families", allEntries = true)
     @Transactional
+    public void withdrawBuddyRequest(UUID requesterId, UUID relationshipId) {
+        BuddyRelationship relation = buddyRelationshipRepository.findById(relationshipId)
+                .orElseThrow(() -> new RuntimeException("İstek bulunamadı"));
+        if (!relation.getRequester().getId().equals(requesterId) || !"PENDING".equals(relation.getStatus())) {
+            throw new org.springframework.security.access.AccessDeniedException("Bu isteği geri çekemezsiniz");
+        }
+        buddyRelationshipRepository.delete(relation);
+    }
+
+    @CacheEvict(value = "similar-families", allEntries = true)
+    @Transactional
     public void removeBuddy(UUID userId, UUID relationshipId) {
         BuddyRelationship relation = buddyRelationshipRepository.findById(relationshipId)
                 .orElseThrow(() -> new RuntimeException("Eslesme bulunamadi"));
@@ -171,9 +186,9 @@ public class BuddyRelationshipService {
                     .fullName(other.getFullName())
                     .city(other.getCity())
                     .profileImageUrl(other.getProfileImageUrl())
-                    .latitude(other.getLatitude())
-                    .longitude(other.getLongitude())
-                    .distanceKm(Math.round(distance * 100.0) / 100.0)
+                    .latitude(!myUser.isApproximateLocationOnly() && !other.isApproximateLocationOnly() ? other.getLatitude() : null)
+                    .longitude(!myUser.isApproximateLocationOnly() && !other.isApproximateLocationOnly() ? other.getLongitude() : null)
+                    .distanceKm(approximateDistance(distance))
                     .status("NONE")
                     .build());
         }
@@ -208,13 +223,20 @@ public class BuddyRelationshipService {
                 .fullName(buddy.getFullName())
                 .city(buddy.getCity())
                 .profileImageUrl(buddy.getProfileImageUrl())
-                .latitude(buddy.getLatitude())
-                .longitude(buddy.getLongitude())
-                .distanceKm(distance)
+                .latitude(!me.isApproximateLocationOnly() && !buddy.isApproximateLocationOnly() ? buddy.getLatitude() : null)
+                .longitude(!me.isApproximateLocationOnly() && !buddy.isApproximateLocationOnly() ? buddy.getLongitude() : null)
+                .distanceKm(distance == null ? null : approximateDistance(distance))
                 .isMentorRelation(r.getIsMentorRelation())
                 .requestMessage(r.getRequestMessage())
                 .status(r.getStatus())
                 .build();
+    }
+
+    private double approximateDistance(double distance) {
+        if (distance < 1) return 1;
+        if (distance < 5) return 5;
+        if (distance < 15) return 15;
+        return Math.ceil(distance / 25.0) * 25.0;
     }
 
     private String sanitizeRequestMessage(String requestMessage) {

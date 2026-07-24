@@ -29,6 +29,6 @@ export const expertService = {
     api.post<{ data: ExpertReview }>(`/experts/${expertId}/reviews`, payload).then(r => r.data.data),
   deleteReview: (expertId: string, reviewId: string) =>
     api.delete(`/experts/${expertId}/reviews/${reviewId}`),
-  updateProfile: (data: { bio?: string; expertTitle?: string; institution?: string; city?: string; specializations?: string[] }) =>
+  updateProfile: (data: { bio?: string; expertTitle?: string; institution?: string; city?: string; specializations?: string[]; ageGroups?: string[]; supportTopics?: string[]; spokenLanguages?: string[]; sessionDurationMinutes?: number; cancellationPolicy?: string; reschedulePolicy?: string; acceptingPatients?: boolean; sessionFeeMin?: number; sessionFeeMax?: number; offersOnline?: boolean; offersFaceToFace?: boolean }) =>
     api.put<{ data: User }>('/experts/profile', data).then(r => r.data.data),
 };

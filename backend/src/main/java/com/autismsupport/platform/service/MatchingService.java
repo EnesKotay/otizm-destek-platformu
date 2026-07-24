@@ -36,6 +36,7 @@ public class MatchingService {
     private final SensoryProfileRepository sensoryProfileRepository;
     private final TagService tagService;
     private final ObjectMapper objectMapper;
+    private final com.autismsupport.platform.repository.UserBlockRepository userBlockRepository;
 
     private static final double TAG_WEIGHT = 0.50;
     private static final double AGE_WEIGHT = 0.15;
@@ -86,6 +87,8 @@ public class MatchingService {
         for (Child other : allChildren) {
             if (other.getId().equals(childId)) continue;
             if (other.getParent().getId().equals(parentId)) continue;
+            if (userBlockRepository != null && userBlockRepository.existsBetween(parentId, other.getParent().getId())) continue;
+            if (!other.getParent().isAllowFamilyMessages()) continue;
 
             Set<UUID> otherTagIds = other.getTags() != null
                     ? other.getTags().stream().map(Tag::getId).collect(Collectors.toSet())
@@ -100,12 +103,16 @@ public class MatchingService {
 
             Map<String, Integer> otherSensoryDomains = parseSensoryDomains(childToSensoryDomains.get(other.getId()));
             double sensoryScore = calculateSensorySimilarity(mySensoryDomains, otherSensoryDomains);
+            Set<String> myIntents = new HashSet<>(Optional.ofNullable(myChild.getParent().getSupportIntents()).orElse(List.of()));
+            Set<String> otherIntents = new HashSet<>(Optional.ofNullable(other.getParent().getSupportIntents()).orElse(List.of()));
+            double intentScore = jaccardStrings(myIntents, otherIntents);
 
-            double totalScore = (tagScore * TAG_WEIGHT)
+            double profileScore = (tagScore * TAG_WEIGHT)
                     + (ageScore * AGE_WEIGHT)
                     + (sensoryScore * SENSORY_WEIGHT)
                     + (therapyScore * THERAPY_WEIGHT)
                     + (educationScore * EDUCATION_WEIGHT);
+            double totalScore = profileScore * 0.85 + intentScore * 0.15;
 
             if (totalScore >= normalizedMinScore) {
                 Set<UUID> commonIds = new HashSet<>(myTagIds);
@@ -117,7 +124,7 @@ public class MatchingService {
                         .collect(Collectors.toList());
 
                 scored.add(new ScoredFamily(other, totalScore, tagScore, ageScore,
-                        therapyScore, educationScore, sensoryScore, commonTags));
+                        therapyScore, educationScore, sensoryScore, intentScore, commonTags));
             }
         }
 
@@ -160,6 +167,10 @@ public class MatchingService {
                             .matchReasons(buildMatchReasons(myChild, sf.child, sf))
                             .relationshipStatus(relationship.map(BuddyRelationship::getStatus).orElse("NONE"))
                             .mentorRelation(relationship.map(BuddyRelationship::getIsMentorRelation).orElse(false))
+                            .supportIntents(sf.child.getParent().getSupportIntents())
+                            .communicationPreferences(sf.child.getParent().getCommunicationPreferences())
+                            .relationshipId(relationship.map(BuddyRelationship::getId).orElse(null))
+                            .requestedByMe(relationship.map(r -> r.getRequester().getId().equals(parentId)).orElse(false))
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -296,6 +307,9 @@ public class MatchingService {
         if (scoredFamily.educationScore > 0) {
             reasons.add("Eğitim programı bilgileri benzerlik gösteriyor");
         }
+        if (scoredFamily.intentScore > 0) {
+            reasons.add("Topluluktan beklentileriniz ve iletişim amacınız örtüşüyor");
+        }
         String myCity = myChild.getParent().getCity();
         String otherCity = otherChild.getParent().getCity();
         if (myCity != null && otherCity != null && myCity.equalsIgnoreCase(otherCity)) {
@@ -333,6 +347,15 @@ public class MatchingService {
             Child child, double score,
             double tagScore, double ageScore,
             double therapyScore, double educationScore,
-            double sensoryScore,
+            double sensoryScore, double intentScore,
             List<TagDto> commonTags) {}
+
+    private double jaccardStrings(Set<String> first, Set<String> second) {
+        if (first.isEmpty() || second.isEmpty()) return 0;
+        Set<String> intersection = new HashSet<>(first);
+        intersection.retainAll(second);
+        Set<String> union = new HashSet<>(first);
+        union.addAll(second);
+        return union.isEmpty() ? 0 : (double) intersection.size() / union.size();
+    }
 }

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Play, Pause, Clock, Plus, Trash2, CheckCircle2, MessageSquare, Video } from 'lucide-react';
+import { Play, Pause, Clock, Plus, Trash2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 

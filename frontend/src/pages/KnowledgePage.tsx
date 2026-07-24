@@ -657,9 +657,14 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                 {selectedArticle.category}
               </span>
             )}
-            {selectedArticle.author?.expertTitle && (
+            {selectedArticle.reviewedAt && selectedArticle.reviewedBy && (
               <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1">
-                <CheckCircle size={12} className="fill-emerald-50 text-emerald-600" /> Uzman Onaylı
+                <CheckCircle size={12} className="fill-emerald-50 text-emerald-600" /> Editöryal İncelemeli
+              </span>
+            )}
+            {selectedArticle.aiGenerated && (
+              <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-violet-50 text-violet-700 border border-violet-100">
+                Yapay zekâ destekli taslak
               </span>
             )}
             <span className="flex items-center gap-1 text-xs text-gray-400 ml-auto">
@@ -746,12 +751,12 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
           )}
 
           {/* Source Citation */}
-          {selectedArticle.sourceName && (
+          {(selectedArticle.sourceName || selectedArticle.usageType === 'ORIGINAL') && (
             <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 sm:p-5 flex gap-3 shadow-sm mb-6">
               <BookOpen size={20} className="text-indigo-600 shrink-0 mt-0.5" />
               <div className="min-w-0">
                 <p className="text-sm font-bold text-indigo-950">
-                  Kaynak
+                  Kaynak ve kullanım beyanı
                 </p>
                 {selectedArticle.sourceUrl ? (
                   <a
@@ -760,18 +765,36 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                      rel="noopener noreferrer"
                      className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900 hover:underline break-words"
                   >
-                    {selectedArticle.sourceName}
+                    {selectedArticle.sourceName || 'Platform özgün içeriği'}
                     <ExternalLink size={12} className="shrink-0" />
                   </a>
                 ) : (
                   <p className="mt-1 text-xs font-semibold text-indigo-800">
-                    {selectedArticle.sourceName}
+                    {selectedArticle.sourceName || 'Platform özgün içeriği'}
                   </p>
                 )}
                 <p className="mt-1 text-[11px] text-indigo-600/80">
-                  Daha ayrıntılı bilgi için resmi kaynağı ziyaret edebilirsiniz.
+                  {selectedArticle.usageType === 'ORIGINAL'
+                    ? 'Bu metin platform için özgün olarak hazırlanmıştır.'
+                    : 'Bu içerik kaynak metnin yerine geçmez; ayrıntılar için özgün yayını inceleyin.'}
                 </p>
+                <dl className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-indigo-900">
+                  {selectedArticle.sourceAuthor && <div><dt className="font-bold inline">Yazar: </dt><dd className="inline">{selectedArticle.sourceAuthor}</dd></div>}
+                  {selectedArticle.sourcePublication && <div><dt className="font-bold inline">Yayın: </dt><dd className="inline">{selectedArticle.sourcePublication}</dd></div>}
+                  {selectedArticle.doi && <div><dt className="font-bold inline">DOI: </dt><dd className="inline">{selectedArticle.doi}</dd></div>}
+                  {selectedArticle.licenseType && <div><dt className="font-bold inline">Lisans: </dt><dd className="inline">{selectedArticle.licenseType.replaceAll('_', ' ')}</dd></div>}
+                  {selectedArticle.evidenceLevel && <div><dt className="font-bold inline">Kanıt türü: </dt><dd className="inline">{selectedArticle.evidenceLevel.replaceAll('_', ' ')}</dd></div>}
+                  {selectedArticle.sourceAccessedAt && <div><dt className="font-bold inline">Erişim: </dt><dd className="inline">{formatDate(selectedArticle.sourceAccessedAt)}</dd></div>}
+                </dl>
               </div>
+            </div>
+          )}
+
+          {selectedArticle.reviewedAt && selectedArticle.reviewedBy && (
+            <div className="mb-6 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 text-xs text-emerald-900">
+              <p className="font-bold">Editöryal inceleme</p>
+              <p className="mt-1">{selectedArticle.reviewedBy.fullName} tarafından {formatDate(selectedArticle.reviewedAt)} tarihinde incelendi.</p>
+              {selectedArticle.reviewNotes && <p className="mt-1 text-emerald-800">{selectedArticle.reviewNotes}</p>}
             </div>
           )}
 

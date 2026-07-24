@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   Activity, ArrowRight, CalendarDays, FileText, Gamepad2, Sparkles, Target,
-  TrendingUp, Plus, Users, ChevronLeft,
-  ShieldCheck,
+  ChevronLeft,
 } from 'lucide-react';
 import api from '@/services/api';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -18,12 +17,6 @@ import { cn } from '@/utils/cn';
 import type { FocusKey } from '@/features/treatment/types';
 import { toast } from '@/store/toastStore';
 type DetailTab = 'overview' | 'today' | 'goals' | 'games' | 'tools';
-
-const SUMMARY_META = [
-  { icon: Gamepad2,   iconBg: 'bg-sky-50',     iconColor: 'text-sky-600',     valueCls: 'text-sky-700'     },
-  { icon: Target,     iconBg: 'bg-violet-50',  iconColor: 'text-violet-600',  valueCls: 'text-violet-700'  },
-  { icon: TrendingUp, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', valueCls: 'text-emerald-700' },
-] as const;
 
 export function TreatmentPage() {
   return <TreatmentContent />;
@@ -53,14 +46,14 @@ function TreatmentContent() {
   const {
     activeAppointments, activeChild, actions, childEvents, children,
     customGoals, customStories, detailLoading, gameFeedback, gameSessions, latestNote,
-    loading, mergedGoalGroups, microProgress, primaryGoal, recentNotes,
+    loading, mergedGoalGroups, microProgress, recentNotes,
     savingTreatment, sensoryMetrics, sensoryProfile, showMilestoneBanner,
     streakDays, supportPlan, templateGoalToggles, todayCompletedGames,
-    todayCompletedPlanSteps, todayMood, weeklyProgress, weeklySummary, user,
+    todayCompletedPlanSteps, todayMood, weeklyProgress, user,
   } = treatment;
 
   const {
-    activeProgramLabel, games: recommendedGames,
+    games: recommendedGames,
     smartSuggestions, stories: socialStories, todayPlan, toolCards, triggerSummary,
   } = supportPlan;
 
@@ -162,12 +155,6 @@ function TreatmentContent() {
     );
   }
 
-  const completedGuideCount = [
-    todayPlan.length > 0,
-    Boolean(primaryGoal),
-    todayCompletedGames.length > 0,
-    Boolean(sensoryProfile),
-  ].filter(Boolean).length;
   const todayStepCount = todayPlan.length;
   const todayDoneCount = todayCompletedPlanSteps.size;
   const todayRemainingCount = Math.max(todayStepCount - todayDoneCount, 0);
@@ -180,63 +167,6 @@ function TreatmentContent() {
     { value: 'tools' as const, label: 'Destek Araçları', icon: <Sparkles size={15} aria-hidden="true" />, count: toolCards.length || 5, badgeColor: 'bg-purple-50 text-purple-700' },
   ];
   const activeSection = detailTabs.find(tab => tab.value === activeDetailTab);
-
-  const sectionCards: Array<{
-    tab: Exclude<DetailTab, 'overview'>;
-    icon: typeof CalendarDays;
-    eyebrow: string;
-    title: string;
-    description: string;
-    stat: string;
-    cta: string;
-    tone: string;
-    border: string;
-  }> = [
-    {
-      tab: 'today',
-      icon: CalendarDays,
-      eyebrow: 'Önce burası',
-      title: 'Bugünün planı',
-      description: 'Sadece bugünkü kısa adımları görün. Bir adım tamamlamak yeterli.',
-      stat: `${todayRemainingCount} kaldı`,
-      cta: 'Planı aç',
-      tone: 'bg-blue-50 text-blue-700 ring-blue-100',
-      border: 'hover:border-blue-200 hover:bg-blue-50/30',
-    },
-    {
-      tab: 'goals',
-      icon: Target,
-      eyebrow: 'Takip',
-      title: 'Hedeflerim',
-      description: 'Beceri alanlarını ve küçük hedefleri ayrı ayrı takip edin.',
-      stat: `${completedGoalCount}/${totalGoalCount || 0} tamam`,
-      cta: primaryGoal ? 'Hedefleri gör' : 'Hedef ekle',
-      tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
-      border: 'hover:border-indigo-200 hover:bg-indigo-50/30',
-    },
-    {
-      tab: 'games',
-      icon: Gamepad2,
-      eyebrow: 'Uygulama',
-      title: 'Kısa oyunlar',
-      description: '5-10 dakikalık etkinlik seçin, sonra nasıl geçtiğini işaretleyin.',
-      stat: `${todayCompletedGames.length}/${recommendedGames.length} bugün`,
-      cta: 'Oyun seç',
-      tone: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-      border: 'hover:border-emerald-200 hover:bg-emerald-50/30',
-    },
-    {
-      tab: 'tools',
-      icon: Sparkles,
-      eyebrow: 'Destek',
-      title: 'Araçlar',
-      description: 'Sosyal hikaye, sakinleşme, iletişim ve ödül araçlarını kullanın.',
-      stat: `${toolCards.length || 5} araç`,
-      cta: 'Araçları aç',
-      tone: 'bg-purple-50 text-purple-700 ring-purple-100',
-      border: 'hover:border-purple-200 hover:bg-purple-50/30',
-    },
-  ];
 
   return (
     <div className="space-y-6">

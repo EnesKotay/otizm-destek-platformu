@@ -92,7 +92,10 @@ export function LoginPage() {
       const res = await authService.login(data);
       if (!res.accessToken) throw new Error('Oturum başlatılamadı');
       setAuth(res.user, res.accessToken);
-      navigate('/');
+      const needsOnboarding =
+        ['PARENT', 'EXPERT', 'ADMIN'].includes(res.user.role) &&
+        !res.user.onboardingCompleted;
+      navigate(needsOnboarding ? '/baslangic' : '/', { replace: true });
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ||

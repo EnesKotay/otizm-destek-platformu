@@ -5,7 +5,7 @@ import {
   Clock, BarChart2, Printer, Target, AlertCircle,
   RefreshCw, MessageCircle, Trash2, Pencil, X, AlertTriangle,
   ChevronDown, ChevronUp, Filter, User, ShieldCheck,
-  Activity, Sparkles, Loader2, Link as LinkIcon
+  Activity, Sparkles, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';

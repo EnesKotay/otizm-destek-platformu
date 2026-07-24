@@ -8,6 +8,7 @@ const PUBLIC_META: Record<string, { title: string; description: string; index: b
   '/gizlilik': { title: 'Gizlilik Politikası | Otizm Destek', description: 'Otizm Destek Platformu gizlilik ve veri koruma politikası.', index: true },
   '/kullanim-sartlari': { title: 'Kullanım Şartları | Otizm Destek', description: 'Platform kullanım şartları ve sorumluluklar.', index: true },
   '/tibbi-uyari': { title: 'Tıbbi Uyarı | Otizm Destek', description: 'Platform bilgilerinin kapsamı ve profesyonel destek uyarısı.', index: true },
+  '/guven-merkezi': { title: 'Güven Merkezi | Otizm Destek', description: 'Veri güvenliği, uzman doğrulaması ve kullanıcı kontrolleri hakkında bilgi.', index: true },
 };
 
 function setMeta(name: string, content: string, property = false) {
@@ -36,6 +37,9 @@ export function RouteMetadata() {
     setMeta('og:title', meta.title, true);
     setMeta('og:description', meta.description, true);
     setMeta('og:type', 'website', true);
+    setMeta('twitter:card', 'summary_large_image');
+    setMeta('twitter:title', meta.title);
+    setMeta('twitter:description', meta.description);
 
     const baseUrl = (import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin).replace(/\/$/, '');
     const canonicalUrl = baseUrl + pathname;
@@ -47,6 +51,10 @@ export function RouteMetadata() {
     }
     canonical.href = canonicalUrl;
     setMeta('og:url', canonicalUrl, true);
+
+    const ogImageUrl = baseUrl + '/icon-512.png';
+    setMeta('og:image', ogImageUrl, true);
+    setMeta('twitter:image', ogImageUrl);
 
     window.setTimeout(() => {
       const heading = document.querySelector<HTMLElement>('main h1, [role="main"] h1, h1');

@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import {
   Baby, Tag as TagIcon, Users, ChevronRight, ChevronDown,
   ChevronLeft, Check, Sparkles, ArrowRight, Activity,
-  MessageCircle, TrendingUp, BookOpen, HeartHandshake,
+  TrendingUp, BookOpen,
   CalendarCheck, FileText, ShieldAlert, ShieldCheck, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -133,8 +133,14 @@ export function OnboardingPage() {
     supportNeed: '',
   });
   const [nameError, setNameError] = useState('');
+  const [birthDateError, setBirthDateError] = useState('');
+  const [showOptionalDetails, setShowOptionalDetails] = useState(false);
   const [createdChildId, setCreatedChildId] = useState<string | null>(null);
   const [createdChild, setCreatedChild] = useState<Child | null>(null);
+  const [existingCheckDone, setExistingCheckDone] = useState(false);
+  const [existingCheckError, setExistingCheckError] = useState(false);
+  const [existingCheckAttempt, setExistingCheckAttempt] = useState(0);
+  const [completionLoading, setCompletionLoading] = useState(false);
 
   // Step 2
   const [tagsByCategory, setTagsByCategory] = useState<Record<string, Tag[]>>({});
@@ -171,33 +177,74 @@ export function OnboardingPage() {
       .finally(() => setTagsLoading(false));
   }, []);
 
+  const userId = user?.id;
+  const userRole = user?.role;
+
+  // Yerel saat dilimine göre bugünün tarihi (doğum tarihi üst sınırı)
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
+
+  // Mükerrer çocuk kaydını önle: kullanıcının zaten çocuğu varsa (ör. sayfa
+  // yenilendi veya farklı cihazdan girildi) 1. adımı atlayıp mevcut kayıtla devam et.
+  useEffect(() => {
+    if (!userId) return;
+    if (userRole !== 'PARENT') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setExistingCheckDone(true);
+      return;
+    }
+    let active = true;
+    setExistingCheckDone(false);
+    setExistingCheckError(false);
+    childService.getAll()
+      .then(children => {
+        if (!active || children.length === 0) return;
+        const child = children[0];
+        setCreatedChildId(child.id);
+        setCreatedChild(child);
+        setForm(f => ({ ...f, name: child.name ?? '', birthDate: child.birthDate ?? '' }));
+        setStep(s => (s < 2 ? 2 : s));
+      })
+      .catch(() => {
+        if (active) setExistingCheckError(true);
+      })
+      .finally(() => { if (active) setExistingCheckDone(true); });
+    return () => { active = false; };
+  }, [userId, userRole, existingCheckAttempt]);
+
   const handleStep1 = async () => {
-    if (!form.name.trim()) {
+    const trimmedName = form.name.trim();
+    if (!trimmedName) {
       setNameError('Çocuğun adı zorunludur.');
       return;
     }
     setNameError('');
+    if (form.birthDate && form.birthDate > todayStr) {
+      setBirthDateError('Doğum tarihi gelecekte olamaz.');
+      return;
+    }
+    setBirthDateError('');
     setLoading(true);
     try {
-      const child = await childService.create({
-        name: form.name,
-        birthDate: form.birthDate,
-        diagnosisInfo: form.diagnosisInfo,
+      const payload = {
+        name: trimmedName,
+        birthDate: form.birthDate || undefined,
+        diagnosisInfo: form.diagnosisInfo.trim() || undefined,
         educationProgram: form.primaryFocus ? `Başlangıç odağı: ${form.primaryFocus}` : undefined,
         therapies: [form.communicationLevel, form.supportNeed].filter(Boolean).join(' · ') || undefined,
-        privacySettings: {
-          onboardingPlan: {
-            primaryFocus: form.primaryFocus,
-            communicationLevel: form.communicationLevel,
-            supportNeed: form.supportNeed,
-          },
-        },
-      });
+      };
+      // Geri dönülüp tekrar ilerlendiğinde yeni kayıt açmak yerine mevcut kayıt güncellenir.
+      const child = createdChildId
+        ? await childService.update(createdChildId, payload)
+        : await childService.create(payload);
       setCreatedChildId(child.id);
       setCreatedChild(child);
       setStep(2);
-    } catch {
-      toast.error('Profil oluşturulamadı. Lütfen tekrar deneyin.');
+    } catch (err) {
+      const message = err instanceof Error && err.message ? err.message : '';
+      toast.error(message || 'Profil oluşturulamadı. Lütfen tekrar deneyin.');
     }
     setLoading(false);
   };
@@ -206,28 +253,50 @@ export function OnboardingPage() {
     if (createdChildId && selectedTagIds.size > 0) {
       setLoading(true);
       try {
-        await childService.update(createdChildId, { tagIds: Array.from(selectedTagIds) });
-      } catch { /* skip */ }
+        const updatedChild = await childService.update(createdChildId, { tagIds: Array.from(selectedTagIds) });
+        setCreatedChild(updatedChild);
+      } catch {
+        toast.error('Destek alanları kaydedilemedi. Tekrar deneyin veya bu adımı daha sonra çocuk profilinden tamamlayın.');
+        setLoading(false);
+        return;
+      }
       setLoading(false);
     }
     setStep(3);
   };
 
-  const handleFinish = () => {
-    if (createdChild) addChild(createdChild);
-    setOnboardingCompleted();
-    navigate('/', { replace: true });
+  const completeAndNavigate = async (to: string) => {
+    if (completionLoading) return;
+    setCompletionLoading(true);
+    try {
+      await setOnboardingCompleted();
+      if (createdChild) addChild(createdChild);
+      navigate(to, { replace: true });
+    } catch (err) {
+      const message = err instanceof Error && err.message
+        ? err.message
+        : 'Başlangıç tamamlanamadı. Lütfen tekrar deneyin.';
+      toast.error(message);
+      setCompletionLoading(false);
+    }
   };
+
+  const handleFinish = () => void completeAndNavigate('/anasayfa');
 
   // Guard: eğer bu kullanıcı zaten tamamladıysa direkt dashboard'a
   if (isOnboardingCompleted()) {
-    navigate('/', { replace: true });
-    return null;
+    return <Navigate to="/" replace />;
   }
 
   const progress = step === 0 ? 0 : ((step - 1) / (STEPS.length - 1)) * 100;
   const lineProgress = step <= 1 ? 0 : ((step - 1) / (STEPS.length - 1)) * 100;
   const roleStart = user?.role === 'EXPERT' || user?.role === 'ADMIN' ? ROLE_STARTS[user.role] : null;
+
+  // Çocuk oluşturma akışı yalnızca ebeveynler içindir; rol ekranı olmayan
+  // diğer roller (ör. TEACHER) doğrudan ana sayfaya yönlendirilir.
+  if (user && user.role !== 'PARENT' && !roleStart) {
+    return <Navigate to="/anasayfa" replace />;
+  }
 
   if (roleStart) {
     return (
@@ -241,6 +310,7 @@ export function OnboardingPage() {
           </div>
           <button
             onClick={handleFinish}
+            disabled={completionLoading}
             className="text-sm text-gray-400 hover:text-gray-600 transition-colors cursor-pointer flex items-center gap-1"
           >
             Ana sayfaya geç
@@ -265,9 +335,9 @@ export function OnboardingPage() {
                   key={title}
                   type="button"
                   onClick={() => {
-                    setOnboardingCompleted();
-                    navigate(to);
+                    void completeAndNavigate(to);
                   }}
+                  disabled={completionLoading}
                   className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50/60 p-4 text-left transition-all hover:border-indigo-200 hover:bg-indigo-50/40 hover:shadow-sm"
                 >
                   <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-indigo-600 ring-1 ring-indigo-100 transition-transform group-hover:scale-105">
@@ -288,9 +358,8 @@ export function OnboardingPage() {
                 Bu seçimler yalnızca başlangıç yönlendirmesidir; tüm sayfalara menüden daha sonra ulaşabilirsiniz.
               </p>
               <Button onClick={() => {
-                setOnboardingCompleted();
-                navigate('/anasayfa', { replace: true });
-              }}>
+                void completeAndNavigate('/anasayfa');
+              }} loading={completionLoading}>
                 Ana sayfaya geç
                 <ChevronRight size={16} className="ml-1" />
               </Button>
@@ -309,12 +378,12 @@ export function OnboardingPage() {
       <div className="absolute top-[40%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-100/20 blur-[100px] pointer-events-none z-0" />
 
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/60 bg-white/40 backdrop-blur-md relative z-10">
+      <div className="flex items-center justify-between px-5 sm:px-8 py-3.5 border-b border-slate-200/70 bg-white/80 backdrop-blur-md relative z-10">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-200">
+          <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center">
             <span className="text-white font-extrabold text-sm">O</span>
           </div>
-          <span className="font-extrabold text-slate-800 tracking-tight hidden sm:block">Otizm Destek Platformu</span>
+          <span className="font-bold text-slate-800 tracking-tight">Otizm Destek Platformu</span>
         </div>
       </div>
 
@@ -328,7 +397,7 @@ export function OnboardingPage() {
 
       {/* Step pills / Stepper */}
       {step > 0 && (
-        <div className="w-full max-w-3xl mx-auto px-4 pt-8 pb-4 relative z-10">
+        <div className="w-full max-w-3xl mx-auto px-5 pt-6 pb-4 relative z-10">
           <div className="relative flex items-center justify-between">
             {/* Connecting Line background */}
             <div className="absolute left-[20px] right-[20px] top-5 h-0.5 bg-slate-100 -z-10" />
@@ -374,109 +443,68 @@ export function OnboardingPage() {
       )}
 
       {/* Card content */}
-      <div className={`flex-1 flex ${step === 0 ? 'items-center' : 'items-start'} justify-center px-4 relative z-10 ${step === 0 ? 'py-8' : 'pb-16'}`}>
-        <div className={step === 0 ? 'w-full max-w-5xl' : 'w-full max-w-2xl'}>
+      <div className={`flex-1 flex ${step === 0 ? 'items-center' : 'items-start'} justify-center px-4 sm:px-5 relative z-10 ${step === 0 ? 'py-6 sm:py-10' : 'pb-10'}`}>
+        <div className="w-full max-w-3xl">
 
           {/* ──── STEP 0 — Tanıtım ──── */}
           {step === 0 && (
-            <div className="overflow-hidden rounded-[32px] bg-white border border-white/60 shadow-2xl shadow-indigo-100/30 flex flex-col sm:flex-row">
-
-              {/* ── SOL — Gradient hero ── */}
-              <div className="relative bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 flex flex-col px-8 pt-9 pb-9 overflow-hidden sm:w-[45%] shrink-0 justify-between">
-                {/* Background decorative glows */}
-                <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, white 1.5px, transparent 1.5px)', backgroundSize: '22px 22px' }} />
-                <div className="absolute -right-14 -top-14 h-64 w-64 rounded-full bg-white/8 blur-3xl pointer-events-none" />
-                <div className="absolute -left-10 -bottom-10 h-56 w-56 rounded-full bg-purple-300/20 blur-3xl pointer-events-none" />
-
-                {/* Badge */}
-                <div className="relative z-10 inline-flex items-center gap-2 self-start rounded-full bg-white/15 border border-white/25 px-4 py-1.5 mb-6">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-white">Otizm Destek Platformu</span>
-                </div>
-
-                {/* Başlık & Açıklama */}
-                <div className="relative z-10 my-auto">
-                  <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight">
-                    Hoş geldiniz
-                    {user?.fullName ? (
-                      <span className="block text-indigo-200 mt-1">{user.fullName.split(' ')[0]}! 👋</span>
-                    ) : '! 👋'}
-                  </h1>
-                  <p className="mt-4 text-sm font-medium text-indigo-100 leading-relaxed">
-                    Çocuğunuza en uygun destek ve gelişimi sunabilmemiz için birkaç kısa soru soracağız.
-                  </p>
-
-                  <div className="mt-6 space-y-2.5">
-                    <div className="flex items-center gap-2.5 text-xs font-semibold text-white/90">
-                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-emerald-300 text-xs font-bold">✓</div>
-                      <span>Sadece 1 dakikanızı alır</span>
-                    </div>
-                    <div className="flex items-center gap-2.5 text-xs font-semibold text-white/90">
-                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-emerald-300 text-xs font-bold">✓</div>
-                      <span>Her zaman bilgileri değiştirebilirsiniz</span>
-                    </div>
-                    <div className="flex items-center gap-2.5 text-xs font-semibold text-white/90">
-                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-emerald-300 text-xs font-bold">✓</div>
-                      <span>Yanlış bir şey yapmaktan korkmayın</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Güven şeridi */}
-                <div className="relative z-10 mt-8 flex items-center gap-3 rounded-2xl bg-white/10 border border-white/15 px-4 py-3">
-                  <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-                    <HeartHandshake size={18} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-white">Güvenli ve Gizli</p>
-                    <p className="text-xs text-white/70">Tüm verileriniz yalnızca size aittir.</p>
-                  </div>
-                </div>
+            <div className="overflow-hidden rounded-3xl bg-white border border-slate-200/80 shadow-xl shadow-indigo-100/40">
+              <div className="px-6 py-7 text-center sm:px-10 sm:pt-10">
+                <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700">
+                  <Sparkles size={14} />
+                  Yaklaşık 1 dakika
+                </span>
+                <h1 className="mt-5 text-2xl font-black tracking-tight text-slate-900 sm:text-4xl">
+                  {user?.fullName ? `Hoş geldin, ${user.fullName.split(' ')[0]}` : 'Hoş geldiniz'}
+                </h1>
+                <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">
+                  Çocuğunuz için temel bir profil oluşturalım. Yalnızca adı zorunlu; diğer bilgileri şimdi atlayabilir veya daha sonra değiştirebilirsiniz.
+                </p>
               </div>
 
-              {/* ── SAĞ — Adımlar + CTA ── */}
-              <div className="bg-white flex flex-col px-8 py-8 flex-1 min-w-0 justify-between">
-                <div>
-                  <div className="mb-5">
-                    <span className="text-xs font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-                      3 Kolay Adımda Başlayın
+              <div className="grid gap-3 px-5 sm:grid-cols-3 sm:px-8">
+                {[
+                  { title: 'Temel bilgiler', desc: 'Ad ve isteğe bağlı kısa bilgiler', icon: Baby, tone: 'bg-indigo-50 text-indigo-600' },
+                  { title: 'Destek alanları', desc: 'Gözlemlediğiniz alanları seçin', icon: TagIcon, tone: 'bg-violet-50 text-violet-600' },
+                  { title: 'Başlangıç önerisi', desc: 'İlk yapabileceklerinizi görün', icon: Sparkles, tone: 'bg-teal-50 text-teal-600' },
+                ].map(({ title, desc, icon: Icon, tone }, index) => (
+                  <div key={title} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:block">
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone}`}>
+                      <Icon size={19} />
                     </span>
+                    <div className="sm:mt-4">
+                      <p className="text-sm font-bold text-slate-900">{index + 1}. {title}</p>
+                      <p className="mt-0.5 text-xs leading-5 text-slate-500">{desc}</p>
+                    </div>
                   </div>
+                ))}
+              </div>
 
-                  <div className="space-y-3.5">
-                    {[
-                      { n: 1, title: '1. Çocuğunuzun Adı ve Yaşı', desc: 'Sadece temel bilgilerle profilinizi başlatın.', icon: Baby, g: 'from-indigo-500 to-indigo-600' },
-                      { n: 2, title: '2. Destek İhtiyaçları', desc: 'Gözlemlediğiniz gelişim alanlarını kolayca seçin.', icon: TagIcon, g: 'from-violet-500 to-purple-600' },
-                      { n: 3, title: '3. Kişisel Destek Planı', desc: 'Çocuğunuza özel günlük öneri ve rehberinizi görün.', icon: Sparkles, g: 'from-emerald-500 to-teal-600' },
-                    ].map(item => {
-                      const ItemIcon = item.icon;
-                      return (
-                        <div key={item.n} className="flex items-start gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 transition-all hover:bg-white hover:border-indigo-100 hover:shadow-sm">
-                          <div className={`shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br ${item.g} flex items-center justify-center shadow-md shadow-indigo-100`}>
-                            <ItemIcon size={20} className="text-white" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-base font-extrabold text-slate-800">{item.title}</p>
-                            <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">{item.desc}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="mt-8 pt-4 border-t border-slate-100">
-                  <button
-                    onClick={() => setStep(1)}
-                    className="relative w-full overflow-hidden inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-4 text-base font-extrabold text-white shadow-xl shadow-indigo-500/25 hover:shadow-indigo-500/35 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] cursor-pointer group"
+              <div className="mt-7 border-t border-slate-100 bg-slate-50/60 px-5 py-5 sm:flex sm:items-center sm:justify-between sm:px-8">
+                <p className="mb-4 flex items-center justify-center gap-2 text-xs font-medium text-slate-500 sm:mb-0 sm:justify-start">
+                  <ShieldCheck size={15} className="text-emerald-600" />
+                  Bilgileriniz gizlidir ve yalnızca hesabınıza aittir.
+                </p>
+                <div className="sm:text-right">
+                  {existingCheckError && (
+                    <p role="alert" className="mb-2 text-xs font-semibold text-red-600">
+                      Mevcut çocuk profilleri kontrol edilemedi.
+                    </p>
+                  )}
+                  <Button
+                    onClick={() => {
+                      if (existingCheckError) {
+                        setExistingCheckAttempt(attempt => attempt + 1);
+                        return;
+                      }
+                      setStep(1);
+                    }}
+                    loading={!existingCheckDone}
+                    className="w-full rounded-xl bg-indigo-600 px-7 font-bold text-white hover:bg-indigo-700 sm:w-auto"
                   >
-                    <Sparkles size={18} className="relative z-10" />
-                    <span className="relative z-10">Hemen Başlayalım</span>
-                    <ChevronRight size={20} className="relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
-                  </button>
-                  <p className="text-center text-xs font-medium text-slate-500 mt-3">
-                    Ortalama süre: <span className="text-indigo-600 font-bold">1 dakika</span> • İstediğiniz zaman değiştirebilirsiniz
-                  </p>
+                    {existingCheckError ? 'Tekrar dene' : 'Başlayalım'}
+                    <ChevronRight size={17} className="ml-1" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -484,37 +512,27 @@ export function OnboardingPage() {
 
           {/* ──── STEP 1 ──── */}
           {step === 1 && (
-            <div className="bg-white border border-slate-100 shadow-xl shadow-slate-100/50 rounded-[28px] overflow-hidden flex flex-col sm:flex-row">
+            <div className="bg-white border border-slate-200/80 shadow-xl shadow-slate-100/70 rounded-3xl overflow-hidden flex flex-col sm:flex-row">
               {/* Sidebar */}
-              <div className="sm:w-[240px] shrink-0 bg-gradient-to-br from-indigo-50/80 to-slate-50/50 border-b sm:border-b-0 sm:border-r border-slate-100 p-7 flex flex-col gap-5">
+              <div className="sm:w-[210px] shrink-0 bg-indigo-50/60 border-b sm:border-b-0 sm:border-r border-indigo-100/70 p-5 sm:p-6 flex sm:flex-col items-center sm:items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-200/60">
                   <Baby size={22} className="text-white" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Adım 1 / 3</span>
-                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Çocuk Profili</h2>
-                  <p className="mt-2 text-xs font-medium text-slate-500 leading-relaxed">Temel bilgilerle başlayın. Bu profil ana sayfa önerilerini çocuğunuza göre düzenler.</p>
-                </div>
-                <div className="hidden sm:flex flex-col gap-2.5 mt-1">
-                  {['Ad ve doğum tarihi', 'Varsa tanı veya kısa not', 'Başlangıç odağı ve iletişim düzeyi'].map(item => (
-                    <div key={item} className="flex items-start gap-2 text-[11px] text-slate-500 font-medium">
-                      <div className="w-4 h-4 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check size={9} className="text-indigo-600 stroke-[3]" />
-                      </div>
-                      {item}
-                    </div>
-                  ))}
+                  <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Adım 1 / 3</span>
+                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Temel bilgiler</h2>
+                  <p className="mt-1.5 text-xs font-medium text-slate-500 leading-relaxed">Yalnızca çocuğun adı zorunludur.</p>
                 </div>
               </div>
               {/* Form */}
               <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex-1 px-7 py-7 space-y-4 overflow-y-auto">
+                <div className="flex-1 px-5 py-6 sm:px-7 sm:py-7 space-y-4 overflow-y-auto">
                   <div>
                     <Input
-                      label="Çocuğun Adı *"
+                      label="Çocuğun adı"
                       value={form.name}
                       onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setNameError(''); }}
-                      placeholder="Adını giriniz"
+                      placeholder="Adını yazın"
                       className="border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/40 rounded-xl h-11"
                     />
                     {nameError && (
@@ -526,65 +544,78 @@ export function OnboardingPage() {
                       </div>
                     )}
                   </div>
-                  <Input
-                    label="Doğum Tarihi"
-                    type="date"
-                    value={form.birthDate}
-                    onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))}
-                    className="border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/40 rounded-xl h-11"
-                  />
-                  <TextArea
-                    label="Tanı / Kısa Not"
-                    value={form.diagnosisInfo}
-                    onChange={e => setForm(f => ({ ...f, diagnosisInfo: e.target.value }))}
-                    placeholder="Varsa tanı, hassasiyet veya önemli bir not yazabilirsiniz"
-                    className="border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/40 rounded-xl min-h-[72px]"
-                  />
-                  <div className="rounded-2xl bg-indigo-50/50 border border-indigo-100/60 p-4 space-y-3">
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">Başlangıç odağı</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Ana sayfa önerileri bu bilgiyle kişiselleşir.</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {FOCUS_OPTIONS.map(option => {
-                        const sel = form.primaryFocus === option;
-                        return (
-                          <button key={option} type="button"
-                            onClick={() => setForm(f => ({ ...f, primaryFocus: f.primaryFocus === option ? '' : option }))}
-                            className={`px-3 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-between text-left cursor-pointer transition-all duration-200 ${sel ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm' : 'bg-white border-slate-100 text-slate-700 hover:border-indigo-200'}`}
-                          >
-                            <span>{option}</span>
-                            <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${sel ? 'border-white bg-white/20' : 'border-slate-300'}`}>
-                              {sel && <Check size={8} className="stroke-[3] text-white" />}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                  <div>
+                    <Input
+                      label="Doğum tarihi (isteğe bağlı)"
+                      type="date"
+                      value={form.birthDate}
+                      max={todayStr}
+                      onChange={e => { setForm(f => ({ ...f, birthDate: e.target.value })); setBirthDateError(''); }}
+                      className="border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/40 rounded-xl h-11"
+                    />
+                    {birthDateError && (
+                      <p className="mt-1.5 text-xs font-semibold text-red-600">{birthDateError}</p>
+                    )}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: 'İletişim düzeyi', key: 'communicationLevel' as const, opts: COMMUNICATION_OPTIONS },
-                      { label: 'En gerekli destek', key: 'supportNeed' as const, opts: SUPPORT_OPTIONS },
-                    ].map(({ label, key, opts }) => (
-                      <div key={key}>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1.5">{label}</label>
-                        <div className="relative">
-                          <select value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                            className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/40 transition-all outline-none cursor-pointer appearance-none text-slate-800">
-                            <option value="">Seçiniz</option>
-                            {opts.map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                          <ChevronDown size={14} className="absolute right-3 top-3 pointer-events-none text-slate-400" />
+                  <button
+                    type="button"
+                    onClick={() => setShowOptionalDetails(value => !value)}
+                    aria-expanded={showOptionalDetails}
+                    className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-bold text-slate-700 transition-colors hover:bg-slate-100"
+                  >
+                    Birkaç ayrıntı daha ekle
+                    <ChevronDown size={16} className={`transition-transform ${showOptionalDetails ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showOptionalDetails && (
+                    <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                      <TextArea
+                        label="Tanı veya kısa not (isteğe bağlı)"
+                        value={form.diagnosisInfo}
+                        onChange={e => setForm(f => ({ ...f, diagnosisInfo: e.target.value }))}
+                        placeholder="Önemli bir not veya hassasiyet yazabilirsiniz"
+                        className="border-slate-200 rounded-xl min-h-[72px]"
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-slate-700">Öncelikli destek alanı</p>
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          {FOCUS_OPTIONS.map(option => {
+                            const sel = form.primaryFocus === option;
+                            return (
+                              <button key={option} type="button"
+                                onClick={() => setForm(f => ({ ...f, primaryFocus: f.primaryFocus === option ? '' : option }))}
+                                className={`px-3 py-2.5 rounded-xl border text-xs font-bold text-left transition-colors ${sel ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'}`}
+                              >
+                                {option}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {[
+                          { label: 'İletişim şekli', key: 'communicationLevel' as const, opts: COMMUNICATION_OPTIONS },
+                          { label: 'Yararlı olabilecek destek', key: 'supportNeed' as const, opts: SUPPORT_OPTIONS },
+                        ].map(({ label, key, opts }) => (
+                          <div key={key}>
+                            <label className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</label>
+                            <div className="relative">
+                              <select value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                                className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-indigo-500">
+                                <option value="">Seçim yapın</option>
+                                {opts.map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                              <ChevronDown size={14} className="absolute right-3 top-3 pointer-events-none text-slate-400" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="px-7 pb-7 pt-5 border-t border-slate-100">
                   <Button onClick={handleStep1} loading={loading}
                     className="w-full h-11 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 font-bold rounded-2xl shadow-md shadow-indigo-100 cursor-pointer text-white">
-                    Devam Et <ChevronRight size={16} className="ml-1" />
+                    Devam et <ChevronRight size={16} className="ml-1" />
                   </Button>
                 </div>
               </div>
@@ -593,26 +624,16 @@ export function OnboardingPage() {
 
           {/* ──── STEP 2 ──── */}
           {step === 2 && (
-            <div className="bg-white border border-slate-100 shadow-xl shadow-slate-100/50 rounded-[28px] overflow-hidden flex flex-col sm:flex-row">
+            <div className="bg-white border border-slate-200/80 shadow-xl shadow-slate-100/70 rounded-3xl overflow-hidden flex flex-col sm:flex-row">
               {/* Sidebar */}
-              <div className="sm:w-[240px] shrink-0 bg-gradient-to-br from-purple-50/80 to-slate-50/50 border-b sm:border-b-0 sm:border-r border-slate-100 p-7 flex flex-col gap-5">
+              <div className="sm:w-[210px] shrink-0 bg-purple-50/60 border-b sm:border-b-0 sm:border-r border-purple-100/70 p-5 sm:p-6 flex sm:flex-col items-center sm:items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-md shadow-purple-200/60">
                   <TagIcon size={22} className="text-white" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Adım 2 / 3</span>
-                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Destek Alanları</h2>
-                  <p className="mt-2 text-xs font-medium text-slate-500 leading-relaxed">Gözlemlediğiniz alanları seçin. Bu bilgiler tanı koymaz; sadece önerileri kişiselleştirir.</p>
-                </div>
-                <div className="hidden sm:flex flex-col gap-2.5 mt-1">
-                  {['Kategori bazlı alanlar', 'Hızlı arama desteği', 'Sonradan değiştirilebilir'].map(item => (
-                    <div key={item} className="flex items-start gap-2 text-[11px] text-slate-500 font-medium">
-                      <div className="w-4 h-4 rounded-full bg-purple-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check size={9} className="text-purple-600 stroke-[3]" />
-                      </div>
-                      {item}
-                    </div>
-                  ))}
+                  <span className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">Adım 2 / 3</span>
+                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Destek alanları</h2>
+                  <p className="mt-1.5 text-xs font-medium text-slate-500 leading-relaxed">İsterseniz gözlemlediğiniz alanları seçin.</p>
                 </div>
                 {selectedTagIds.size > 0 && (
                   <div className="hidden sm:flex items-center gap-2 mt-auto rounded-xl bg-purple-600 px-3 py-2">
@@ -623,11 +644,10 @@ export function OnboardingPage() {
               </div>
               {/* İçerik */}
               <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex-1 px-7 py-6 space-y-4 overflow-y-auto">
-                  <div className="rounded-2xl border border-purple-100 bg-purple-50/60 px-4 py-3">
-                    <p className="text-xs font-bold text-purple-950">Bu adım opsiyonel</p>
-                    <p className="mt-1 text-[11px] font-medium leading-5 text-purple-700">
-                      Emin olmadığınız alanları seçmek zorunda değilsiniz. Daha sonra çocuk profilinden değiştirebilirsiniz.
+                <div className="flex-1 px-5 py-6 sm:px-7 space-y-4 overflow-y-auto">
+                  <div className="rounded-xl border border-purple-100 bg-purple-50/60 px-4 py-3">
+                    <p className="text-xs font-semibold leading-5 text-purple-800">
+                      Bu adım isteğe bağlıdır. Emin değilseniz atlayabilirsiniz.
                     </p>
                   </div>
                   <div className="relative">
@@ -716,7 +736,7 @@ export function OnboardingPage() {
                     <ChevronLeft size={16} className="mr-1" /> Geri
                   </Button>
                   <Button onClick={handleStep2} loading={loading} className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 font-bold rounded-2xl shadow-md shadow-indigo-100 cursor-pointer text-white">
-                    {selectedTagIds.size === 0 ? 'Sonra tamamla' : 'Devam Et'} <ChevronRight size={16} className="ml-1" />
+                    {selectedTagIds.size === 0 ? 'Şimdilik atla' : 'Devam et'} <ChevronRight size={16} className="ml-1" />
                   </Button>
                 </div>
               </div>
@@ -725,65 +745,47 @@ export function OnboardingPage() {
 
           {/* ──── STEP 3 ──── */}
           {step === 3 && (
-            <div className="bg-white border border-slate-100 shadow-xl shadow-slate-100/50 rounded-[28px] overflow-hidden flex flex-col sm:flex-row">
+            <div className="bg-white border border-slate-200/80 shadow-xl shadow-slate-100/70 rounded-3xl overflow-hidden flex flex-col sm:flex-row">
               {/* Sidebar */}
-              <div className="sm:w-[240px] shrink-0 bg-gradient-to-br from-teal-50/80 to-slate-50/50 border-b sm:border-b-0 sm:border-r border-slate-100 p-7 flex flex-col gap-5">
+              <div className="sm:w-[210px] shrink-0 bg-teal-50/60 border-b sm:border-b-0 sm:border-r border-teal-100/70 p-5 sm:p-6 flex sm:flex-col items-center sm:items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-600 flex items-center justify-center shadow-md shadow-teal-200/60">
                   <Sparkles size={22} className="text-white" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black text-teal-500 uppercase tracking-widest">Adım 3 / 3</span>
-                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Başlangıç Planı</h2>
-                  <p className="mt-2 text-xs font-medium text-slate-500 leading-relaxed">Kurulum tamam. Bundan sonrası ihtiyacınıza göre sakin adımlarla ilerler.</p>
-                </div>
-                <div className="hidden sm:flex flex-col gap-2.5 mt-1">
-                  {['Bugünkü kısa kayıt', 'Uzman ve randevu akışı', 'Topluluk ve kaynaklar'].map(item => (
-                    <div key={item} className="flex items-start gap-2 text-[11px] text-slate-500 font-medium">
-                      <div className="w-4 h-4 rounded-full bg-teal-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check size={9} className="text-teal-600 stroke-[3]" />
-                      </div>
-                      {item}
-                    </div>
-                  ))}
-                </div>
-                <div className="hidden sm:block mt-auto rounded-2xl bg-teal-50 border border-teal-100/60 p-3">
-                  <p className="text-[10px] font-black text-teal-700 flex items-center gap-1.5 mb-1">
-                    <ShieldCheck size={11} className="text-teal-600" /> Güvenli başlangıç
-                  </p>
-                  <p className="text-[10px] font-medium text-teal-600 leading-relaxed">
-                    Platform takip ve iletişim desteği sağlar; tanı veya tedavi kararı yerine geçmez.
-                  </p>
+                  <span className="text-[10px] font-bold text-teal-600 uppercase tracking-widest">Adım 3 / 3</span>
+                  <h2 className="mt-1 text-lg font-black text-slate-900 leading-snug">Profil hazır</h2>
+                  <p className="mt-1.5 text-xs font-medium text-slate-500 leading-relaxed">Şimdi ilk adımınızı seçebilirsiniz.</p>
                 </div>
               </div>
               {/* İçerik */}
               <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex-1 px-7 py-6 space-y-4">
+                <div className="flex-1 px-5 py-6 sm:px-7 space-y-4">
                   <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4">
-                    <p className="text-sm font-black text-teal-950">Profil hazır</p>
-                    <p className="mt-1 text-xs font-semibold leading-5 text-teal-700">
-                      İlk kaydı bugün girmeniz yeterli. Topluluk, destek planı ve uzman adımlarını ana sayfadan istediğiniz zaman tamamlayabilirsiniz.
+                    <p className="text-sm font-black text-teal-950">Her şey hazır</p>
+                    <p className="mt-1 text-xs font-medium leading-5 text-teal-700">
+                      Aşağıdan bir alan seçebilir veya doğrudan ana sayfaya geçebilirsiniz.
                     </p>
                   </div>
                   <div className="grid gap-3">
                     {[
                       {
                         icon: Activity,
-                        title: 'Bugünkü kısa kaydı girin',
-                        desc: 'Uyku, duygu, ilaç ve kısa gözlemi 1 dakikada kaydedin.',
+                        title: 'Günlük kayıt ekle',
+                        desc: 'Uyku, duygu durumu veya kısa bir gözlem girin.',
                         to: '/gunluk-takip',
                         tone: 'bg-rose-50 text-rose-600 border-rose-100',
                       },
                       {
                         icon: CalendarCheck,
-                        title: 'Uzman veya randevu akışına bakın',
-                        desc: 'Uygun uzmanları inceleyin ve gerektiğinde randevu talebi oluşturun.',
+                        title: 'Uzmanları incele',
+                        desc: 'Uzmanlara göz atın veya randevu talebi oluşturun.',
                         to: '/uzmanlar',
                         tone: 'bg-indigo-50 text-indigo-600 border-indigo-100',
                       },
                       {
                         icon: Users,
-                        title: 'Topluluk ve kaynakları sonra keşfedin',
-                        desc: 'Forum, gruplar ve bilgi bankası kurulumdan bağımsız kullanılabilir.',
+                        title: 'Bilgi ve kaynakları keşfet',
+                        desc: 'Bilgi bankasındaki güvenilir içeriklere göz atın.',
                         to: '/bilgi-bankasi',
                         tone: 'bg-emerald-50 text-emerald-600 border-emerald-100',
                       },
@@ -792,10 +794,9 @@ export function OnboardingPage() {
                         key={title}
                         type="button"
                         onClick={() => {
-                          if (createdChild) addChild(createdChild);
-                          setOnboardingCompleted();
-                          navigate(to, { replace: true });
+                          void completeAndNavigate(to);
                         }}
+                        disabled={completionLoading}
                         className="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 text-left transition-all hover:border-teal-200 hover:bg-teal-50/20 hover:shadow-sm"
                       >
                         <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${tone}`}>
@@ -814,17 +815,19 @@ export function OnboardingPage() {
                   <Button variant="outline" onClick={() => setStep(2)} className="flex-1 h-11 border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-2xl cursor-pointer">
                     <ChevronLeft size={16} className="mr-1" /> Geri
                   </Button>
-                  <Button onClick={handleFinish} className="flex-1 h-11 bg-gradient-to-r from-teal-600 to-emerald-600 font-bold rounded-2xl shadow-md shadow-teal-100 cursor-pointer text-white">
-                    Ana Sayfaya Başla <ChevronRight size={16} className="ml-1" />
+                  <Button onClick={handleFinish} loading={completionLoading} className="flex-1 h-11 bg-gradient-to-r from-teal-600 to-emerald-600 font-bold rounded-2xl shadow-md shadow-teal-100 cursor-pointer text-white">
+                    Ana sayfaya geç <ChevronRight size={16} className="ml-1" />
                   </Button>
                 </div>
               </div>
             </div>
           )}
 
-          <p className="text-center text-[10px] font-semibold text-slate-400 mt-4">
-            {step === 0 ? 'Başlangıç kurulumu · 3 kısa adım · Tüm seçimleri sonra değiştirebilirsiniz' : `Adım ${step} / ${STEPS.length} · İstediğiniz zaman sonra tamamlayabilirsiniz`}
-          </p>
+          {step > 0 && (
+            <p className="text-center text-[11px] font-medium text-slate-400 mt-4">
+              Seçimlerinizi daha sonra değiştirebilirsiniz.
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -34,6 +34,7 @@ public class UserDto {
     private boolean consentEmergencyCard;
     private LocalDateTime consentEmergencyCardDate;
     private boolean isActive;
+    private boolean onboardingCompleted;
     private List<String> specializations;
     private String profileImageUrl;
     private LocalDateTime createdAt;
@@ -41,4 +42,23 @@ public class UserDto {
     private Long articleCount;
     private Long reviewCount;
     private boolean acceptingPatients;
+    private List<String> ageGroups;
+    private List<String> supportTopics;
+    private List<String> spokenLanguages;
+    private Integer sessionDurationMinutes;
+    private String cancellationPolicy;
+    private String reschedulePolicy;
+    private String nextAvailableAppointment;
+    private boolean allowDirectMessages;
+    private boolean allowFamilyMessages;
+    private boolean hideOnlineStatus;
+    private boolean approximateLocationOnly;
+    private List<String> communicationPreferences;
+    private List<String> supportIntents;
+    private java.math.BigDecimal sessionFeeMin;
+    private java.math.BigDecimal sessionFeeMax;
+    private boolean offersOnline;
+    private boolean offersFaceToFace;
+    private Double latitude;
+    private Double longitude;
 }

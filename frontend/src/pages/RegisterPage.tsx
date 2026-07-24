@@ -116,7 +116,7 @@ export function RegisterPage() {
       }
       if (!response.accessToken) throw new Error('Oturum başlatılamadı');
       setAuth(response.user, response.accessToken);
-      navigate('/baslangic');
+      navigate('/baslangic', { replace: true });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Kayıt olurken bir hata oluştu';
       setError(message);
@@ -488,7 +488,7 @@ export function RegisterPage() {
               <div className="w-full border-t border-gray-100" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-slate-50 text-xs text-gray-400">veya</span>
+              <span className="px-3 bg-slate-50 text-xs text-gray-600">veya</span>
             </div>
           </div>
 
@@ -506,7 +506,7 @@ export function RegisterPage() {
                 Uzman Başvurusu Yapın →
               </Link>
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-600">
               Platformu tanımak için{' '}
               <Link to="/tanitim" className="font-bold text-primary-600 hover:text-primary-700">
                 tanıtım sayfasını
@@ -517,8 +517,8 @@ export function RegisterPage() {
 
           {/* Bottom badge */}
           <div className="flex items-center justify-center gap-2 border-t border-gray-100 pt-6">
-            <Shield size={14} className="text-gray-400" />
-            <p className="text-center text-xs text-gray-400">Verileriniz 256-bit SSL ile korunmaktadır.</p>
+            <Shield size={14} className="text-gray-600" />
+            <p className="text-center text-xs text-gray-600">Bilgileriniz güvenli bağlantı üzerinden iletilir.</p>
           </div>
         </div>
       </div>

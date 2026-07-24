@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { getNotificationIconConfig, shouldShowNotification, playNotificationSound } from '@/utils/notificationUtils';
 import { formatRelative } from '@/utils/date';
 import type { Notification } from '@/types';
+import { safeInternalPath } from '@/utils/internalNavigation';
 
 interface ToastItem {
   notification: Notification;
@@ -86,7 +87,7 @@ export function NotificationToast() {
   const handleClick = (toast: ToastItem) => {
     dismissToast(toast.id);
     if (toast.notification.link) {
-      navigate(toast.notification.link);
+      navigate(safeInternalPath(toast.notification.link));
     }
   };
 

@@ -32,8 +32,8 @@ export const appointmentService = {
   delete: (id: string) =>
     api.delete<ApiResponse<void>>(`/appointments/${id}`).then(r => r.data),
 
-  updateSessionNotes: (id: string, sessionNotes: string) =>
-    api.patch<ApiResponse<AppointmentRecord>>(`/appointments/${id}/session-notes`, { sessionNotes }).then(r => r.data.data),
+  updateSessionNotes: (id: string, sessionNotes: string, followUp?: { sessionSummary?: string; followUpRecommendations?: string; followUpTask?: string }) =>
+    api.patch<ApiResponse<AppointmentRecord>>(`/appointments/${id}/session-notes`, { sessionNotes, ...followUp }).then(r => r.data.data),
 
   rate: (id: string, rating: number, comment?: string) =>
     api.patch<ApiResponse<AppointmentRecord>>(
@@ -51,6 +51,9 @@ export const appointmentService = {
 
   getExpertBookedTimes: (expertId: string, date: string, duration?: number) =>
     api.get<ApiResponse<string[]>>(`/appointments/experts/${expertId}/booked-times?date=${encodeURIComponent(date)}${duration ? `&duration=${duration}` : ''}`).then(r => r.data.data),
+
+  getNextAvailable: (expertId: string, duration?: number) =>
+    api.get<ApiResponse<{ date?: string; time?: string }>>(`/appointments/experts/${expertId}/next-available`, { params: { duration } }).then(r => r.data.data),
 
   saveAvailability: async (items: ExpertAvailability[]): Promise<ExpertAvailability[]> => {
     const response = await api.put<ApiResponse<ExpertAvailability[]>>('/appointments/availability', items);

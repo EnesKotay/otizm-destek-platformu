@@ -86,6 +86,7 @@ const MessagesPage = lazyNamed(() => import('@/pages/MessagesPage'), 'MessagesPa
 const GroupsPage = lazyNamed(() => import('@/pages/GroupsPage'), 'GroupsPage');
 const ForumPage = lazyNamed(() => import('@/pages/ForumPage'), 'ForumPage');
 const SimilarFamiliesPage = lazyNamed(() => import('@/pages/SimilarFamiliesPage'), 'SimilarFamiliesPage');
+const CommunityHubPage = lazyNamed(() => import('@/pages/CommunityHubPage'), 'CommunityHubPage');
 const SupportWallPage = lazyNamed(() => import('@/pages/SupportWallPage'), 'SupportWallPage');
 const SettingsPage = lazyNamed(() => import('@/pages/SettingsPage'), 'SettingsPage');
 const KnowledgePage = lazyNamed(() => import('@/pages/KnowledgePage'), 'KnowledgePage');
@@ -160,8 +161,11 @@ export const queryClient = new QueryClient({
 });
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user, isOnboardingCompleted } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/giris" replace />;
+  if (user && ['PARENT', 'EXPERT', 'ADMIN'].includes(user.role) && !isOnboardingCompleted()) {
+    return <Navigate to="/baslangic" replace />;
+  }
   return <>{children}</>;
 }
 
@@ -189,15 +193,23 @@ function PublicRoute({ children }: { children: ReactNode }) {
 }
 
 function OnboardingRoute({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isOnboardingCompleted } = useAuthStore();
+  const { isAuthenticated, user, isOnboardingCompleted } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/giris" replace />;
+  if (!user || !['PARENT', 'EXPERT', 'ADMIN'].includes(user.role)) {
+    return <Navigate to="/anasayfa" replace />;
+  }
   if (isOnboardingCompleted()) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
 function RootRoute() {
-  const { isAuthenticated } = useAuthStore();
-  if (isAuthenticated) return <Navigate to="/anasayfa" replace />;
+  const { isAuthenticated, user, isOnboardingCompleted } = useAuthStore();
+  if (isAuthenticated) {
+    if (user && ['PARENT', 'EXPERT', 'ADMIN'].includes(user.role) && !isOnboardingCompleted()) {
+      return <Navigate to="/baslangic" replace />;
+    }
+    return <Navigate to="/anasayfa" replace />;
+  }
   return <PublicLandingPage />;
 }
 
@@ -223,6 +235,7 @@ export default function App() {
             <Route path="/gizlilik" element={<PublicInfoPage kind="privacy" />} />
             <Route path="/kullanim-sartlari" element={<PublicInfoPage kind="terms" />} />
             <Route path="/tibbi-uyari" element={<PublicInfoPage kind="medical" />} />
+            <Route path="/guven-merkezi" element={<PublicInfoPage kind="trust" />} />
             <Route path="/acil-profil/:id" element={<PublicEmergencyCardPage />} />
             <Route path="/kayit/uzman" element={<Suspense fallback={<PageLoader />}><ExpertRegisterPage /></Suspense>} />
             <Route path="/baslangic" element={<OnboardingRoute><Suspense fallback={<PageLoader />}><OnboardingPage /></Suspense></OnboardingRoute>} />
@@ -237,6 +250,7 @@ export default function App() {
                 <Route path="/mesajlar" element={<RoleRoute allowedRoles={ALL_ROLES}><MessagesPage /></RoleRoute>} />
                 <Route path="/gruplar" element={<RoleRoute allowedRoles={ALL_ROLES}><GroupsPage /></RoleRoute>} />
                 <Route path="/forum" element={<RoleRoute allowedRoles={ALL_ROLES}><ForumPage /></RoleRoute>} />
+                <Route path="/topluluk" element={<RoleRoute allowedRoles={ALL_ROLES}><CommunityHubPage /></RoleRoute>} />
                 <Route path="/dertlesme-duvari" element={<RoleRoute allowedRoles={PARENT_ONLY}><SupportWallPage /></RoleRoute>} />
                 <Route path="/benzer-aileler" element={<RoleRoute allowedRoles={PARENT_ONLY}><SimilarFamiliesPage /></RoleRoute>} />
                 <Route path="/similar-families" element={<RoleRoute allowedRoles={PARENT_ONLY}><Navigate to="/benzer-aileler" replace /></RoleRoute>} />

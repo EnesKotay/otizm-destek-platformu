@@ -17,6 +17,7 @@ import { expertService } from '@/services/expertService';
 import { childService } from '@/services/childService';
 import { patientNoteService, type PatientNote } from '@/services/patientNoteService';
 import type { AppointmentRecord, ExpertAvailability, User, Child } from '@/types';
+import { AppointmentCountdown } from '@/components/appointments/AppointmentCountdown';
 
 const DAYS = [
   { key: 1, label: 'Pazartesi' }, { key: 2, label: 'Salı' }, { key: 3, label: 'Çarşamba' },
@@ -147,6 +148,11 @@ export function AppointmentPage() {
   const [rescheduleLoadingSlots, setRescheduleLoadingSlots] = useState(false);
   const [sessionNotesTarget, setSessionNotesTarget] = useState<AppointmentRecord | null>(null);
   const [sessionNotesText, setSessionNotesText] = useState('');
+  const [bookTopic, setBookTopic] = useState('');
+  const [bookPreSessionNotes, setBookPreSessionNotes] = useState('');
+  const [sessionSummaryText, setSessionSummaryText] = useState('');
+  const [followUpRecommendationsText, setFollowUpRecommendationsText] = useState('');
+  const [followUpTaskText, setFollowUpTaskText] = useState('');
   const [cancelReason, setCancelReason] = useState('');
 
   // rating
@@ -510,12 +516,19 @@ export function AppointmentPage() {
   const openSessionNotes = (appt: AppointmentRecord) => {
     setSessionNotesTarget(appt);
     setSessionNotesText(appt.sessionNotes ?? '');
+    setSessionSummaryText(appt.sessionSummary ?? '');
+    setFollowUpRecommendationsText(appt.followUpRecommendations ?? '');
+    setFollowUpTaskText(appt.followUpTask ?? '');
   };
 
   const handleSessionNotes = async () => {
     if (!sessionNotesTarget || !sessionNotesText.trim()) return;
     try {
-      const updated = await appointmentService.updateSessionNotes(sessionNotesTarget.id, sessionNotesText.trim());
+      const updated = await appointmentService.updateSessionNotes(sessionNotesTarget.id, sessionNotesText.trim(), {
+        sessionSummary: sessionSummaryText.trim(),
+        followUpRecommendations: followUpRecommendationsText.trim(),
+        followUpTask: followUpTaskText.trim(),
+      });
       setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a));
       setSessionNotesTarget(null);
       toast.success('Seans notu kaydedildi.');
@@ -666,7 +679,7 @@ export function AppointmentPage() {
     if (!bookTime) { toast.error('Lütfen bir saat seçin.'); return; }
     setBookingLoading(true);
     try {
-      const newAppt = await appointmentService.create({ expertId: bookExpertId, childId: bookChildId, date: selectedDate, time: bookTime, duration: bookDuration, type: bookType, notes: bookNotes, recurrenceWeeks: bookRecurrenceWeeks > 1 ? bookRecurrenceWeeks : undefined });
+      const newAppt = await appointmentService.create({ expertId: bookExpertId, childId: bookChildId, date: selectedDate, time: bookTime, duration: bookDuration, type: bookType, notes: bookNotes, appointmentTopic: bookTopic, preSessionNotes: bookPreSessionNotes, recurrenceWeeks: bookRecurrenceWeeks > 1 ? bookRecurrenceWeeks : undefined });
       setAppointments(prev => [...prev, newAppt]);
       setShowBookModal(false);
       setDatePickerOpen(false);
@@ -893,10 +906,35 @@ export function AppointmentPage() {
                   {nextAppointment.type === 'ONLINE' ? 'Online' : 'Yüz Yüze'}
                 </span>
               </span>
+              <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold text-white">
+                <AppointmentCountdown date={nextAppointment.date} time={nextAppointment.time.slice(0, 5)} />
+              </span>
             </div>
           )}
         </div>
       </div>
+
+      {!isExpert && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-black text-slate-900">Uzman görüşmesi yolculuğun</h2>
+              <p className="mt-1 text-xs text-slate-500">Her adım ve paylaşacağın bilgi senin kontrolünde.</p>
+            </div>
+            <button type="button" onClick={() => navigate('/uzmanlar')} className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white">
+              Uzman bul
+            </button>
+          </div>
+          <div className="mt-5 grid gap-2 sm:grid-cols-4 lg:grid-cols-8">
+            {['Uzman bul', 'Profili incele', 'Saat seç', 'Talep gönder', 'Onay', 'Görüşmeye katıl', 'Özeti gör', 'Takip görevi'].map((step, index) => (
+              <div key={step} className="rounded-xl bg-slate-50 px-3 py-3 text-center">
+                <span className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-black text-indigo-700">{index + 1}</span>
+                <p className="mt-2 text-[11px] font-bold text-slate-700">{step}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Tabs */}
       {isExpert && (
@@ -1902,10 +1940,17 @@ export function AppointmentPage() {
           </div>
 
           <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Görüşme Konusu</label>
+            <input value={bookTopic} onChange={e => setBookTopic(e.target.value)} maxLength={250}
+              placeholder="Örn: Okula uyum ve iletişim desteği"
+              className="mb-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium outline-none focus:border-indigo-500 focus:bg-white" />
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Uzmana Not (Opsiyonel)</label>
             <textarea rows={2} placeholder="Görüşme nedenini kısaca özetleyin (isteğe bağlı)..."
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition-all resize-none placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
               value={bookNotes} onChange={e => setBookNotes(e.target.value)} />
+            <textarea rows={2} placeholder="Uzmanın görüşmeden önce bilmesini istediğiniz bilgiler..."
+              className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium outline-none resize-none focus:border-indigo-500 focus:bg-white"
+              value={bookPreSessionNotes} onChange={e => setBookPreSessionNotes(e.target.value)} />
           </div>
 
           {/* Özet kartı — tüm seçimler tamamlandığında göster */}
@@ -1942,6 +1987,16 @@ export function AppointmentPage() {
             {detailAppointment.notes && <Info label="Randevu Notu" value={detailAppointment.notes} />}
             {detailAppointment.cancellationReason && <Info label="İptal Gerekçesi" value={detailAppointment.cancellationReason} />}
             {detailAppointment.sessionNotes && <Info label="Seans Notu" value={detailAppointment.sessionNotes} />}
+            {detailAppointment.appointmentTopic && <Info label="Görüşme Konusu" value={detailAppointment.appointmentTopic} />}
+            {detailAppointment.preSessionNotes && <Info label="Görüşme Öncesi Paylaşılan Not" value={detailAppointment.preSessionNotes} />}
+            {detailAppointment.sessionSummary && <Info label="Görüşme Özeti" value={detailAppointment.sessionSummary} />}
+            {detailAppointment.followUpRecommendations && <Info label="Uzman Önerileri" value={detailAppointment.followUpRecommendations} />}
+            {detailAppointment.followUpTask && <Info label="Takip Görevi" value={detailAppointment.followUpTask} />}
+            {detailAppointment.type === 'ONLINE' && !detailAppointment.meetingLink && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-800">
+                Görüşme bağlantısı henüz eklenmedi. Uzman, randevu detayındaki “Düzenle” alanından güvenli video bağlantısını ekleyebilir.
+              </div>
+            )}
             {detailAppointment.rating && <Info label="Değerlendirme Puanı" value={`${detailAppointment.rating} / 5`} />}
             {detailAppointment.ratingComment && <Info label="Değerlendirme Yorumu" value={detailAppointment.ratingComment} />}
             {detailAppointment.meetingLink && (
@@ -2128,9 +2183,18 @@ export function AppointmentPage() {
 
       <Modal isOpen={!!sessionNotesTarget} onClose={() => setSessionNotesTarget(null)} title="Seans Notu">
         <div className="space-y-4">
+          <div className="rounded-xl bg-indigo-50 p-3 text-xs font-semibold leading-5 text-indigo-800">
+            Görüşme sonrası aileye gösterilecek özet, öneri ve takip görevini ayrı alanlarda yazın.
+          </div>
           <textarea value={sessionNotesText} onChange={e => setSessionNotesText(e.target.value)}
-            className="w-full min-h-36 border border-gray-200 rounded-xl px-4 py-3 text-sm"
-            placeholder="Seans gözlemleri, öneriler ve takip notları..." />
+            className="w-full min-h-24 border border-gray-200 rounded-xl px-4 py-3 text-sm"
+            placeholder="Uzmanın özel seans notları..." />
+          <textarea value={sessionSummaryText} onChange={e => setSessionSummaryText(e.target.value)}
+            className="w-full min-h-20 border border-gray-200 rounded-xl px-4 py-3 text-sm" placeholder="Aile için görüşme özeti..." />
+          <textarea value={followUpRecommendationsText} onChange={e => setFollowUpRecommendationsText(e.target.value)}
+            className="w-full min-h-20 border border-gray-200 rounded-xl px-4 py-3 text-sm" placeholder="Öneriler ve bir sonraki adım..." />
+          <textarea value={followUpTaskText} onChange={e => setFollowUpTaskText(e.target.value)}
+            className="w-full min-h-20 border border-gray-200 rounded-xl px-4 py-3 text-sm" placeholder="Takip görevi / ev çalışması..." />
           <Button className="w-full" onClick={handleSessionNotes} disabled={!sessionNotesText.trim()}>
             Notu Kaydet
           </Button>

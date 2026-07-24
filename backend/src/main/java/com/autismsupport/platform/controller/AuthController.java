@@ -173,6 +173,7 @@ public class AuthController {
                         .emailVerified(user.isEmailVerified())
                         .licenseVerified(user.isLicenseVerified())
                         .kvkkConsent(user.isKvkkConsent())
+                        .onboardingCompleted(user.isOnboardingCompleted())
                         .isActive(user.isActive())
                         .specializations(user.getSpecializations())
                         .profileImageUrl(user.getProfileImageUrl())

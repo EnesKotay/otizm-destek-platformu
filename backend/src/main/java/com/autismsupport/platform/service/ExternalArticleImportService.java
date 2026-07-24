@@ -23,6 +23,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -65,8 +66,9 @@ public class ExternalArticleImportService {
                 for (String pmid : searchPmids(kw, RESULTS_PER_KEYWORD)) {
                     String sourceUrl = "https://pubmed.ncbi.nlm.nih.gov/" + pmid + "/";
                     if (articleRepository.existsBySourceUrl(sourceUrl)) continue;
-                    String[] titleAndAbstract = fetchAbstract(pmid);
-                    if (importOne(titleAndAbstract[0], titleAndAbstract[1], sourceUrl, "PubMed")) imported++;
+                    String[] titleAbstractLicense = fetchAbstract(pmid);
+                    if (importOne(titleAbstractLicense[0], titleAbstractLicense[1], sourceUrl, "PubMed",
+                            titleAbstractLicense[2], null)) imported++;
                 }
             } catch (Exception e) {
                 log.error("PubMed import failed for keyword '{}': {}", kw, e.getMessage());
@@ -96,7 +98,8 @@ public class ExternalArticleImportService {
 
                     String title = textOrNull(result, "title");
                     String abstractText = textOrNull(result, "abstractText");
-                    if (importOne(title, abstractText, sourceUrl, "Europe PMC")) imported++;
+                    String licenseType = normalizeOpenLicense(textOrNull(result, "license"));
+                    if (importOne(title, abstractText, sourceUrl, "Europe PMC", licenseType, doi)) imported++;
                 }
             } catch (Exception e) {
                 log.error("Europe PMC import failed for keyword '{}': {}", kw, e.getMessage());
@@ -105,8 +108,12 @@ public class ExternalArticleImportService {
         return imported;
     }
 
-    private boolean importOne(String title, String abstractText, String sourceUrl, String sourceName) {
-        if (abstractText == null || abstractText.isBlank()) return false;
+    private boolean importOne(String title, String abstractText, String sourceUrl, String sourceName,
+                              String licenseType, String doi) {
+        if (abstractText == null || abstractText.isBlank() || licenseType == null) {
+            log.info("Skipping external text without a machine-verifiable open license: {}", sourceUrl);
+            return false;
+        }
         try {
             AiDraftResponse draft = geminiService.summarizeExternalAbstract(title, abstractText);
             if (draft == null || draft.getTitle() == null || draft.getContent() == null) return false;
@@ -118,6 +125,14 @@ public class ExternalArticleImportService {
                     .format("TEXT")
                     .sourceName(sourceName)
                     .sourceUrl(sourceUrl)
+                    .sourcePublication(sourceName)
+                    .sourceAccessedAt(LocalDate.now())
+                    .doi(doi)
+                    .licenseType(licenseType)
+                    .usageType("SUMMARY")
+                    .evidenceLevel("OBSERVATIONAL_STUDY")
+                    .originalLanguage("en")
+                    .aiGenerated(true)
                     .pendingReview(true)
                     .published(false)
                     .build();
@@ -174,12 +189,24 @@ public class ExternalArticleImportService {
             if (abstractBuilder.length() > 0) abstractBuilder.append("\n");
             abstractBuilder.append(abstractTexts.item(i).getTextContent());
         }
-        return new String[]{title, abstractBuilder.toString()};
+        String copyright = textOf(doc, "CopyrightInformation");
+        return new String[]{title, abstractBuilder.toString(), normalizeOpenLicense(copyright)};
     }
 
     private String textOf(Document doc, String tag) {
         NodeList nodes = doc.getElementsByTagName(tag);
         return nodes.getLength() > 0 ? nodes.item(0).getTextContent() : "";
+    }
+
+    private String normalizeOpenLicense(String rawLicense) {
+        if (rawLicense == null || rawLicense.isBlank()) return null;
+        String normalized = rawLicense.toLowerCase(java.util.Locale.ROOT)
+                .replace("-", "").replace("_", "").replace(" ", "");
+        if (normalized.contains("creativecommonsattributionnoncommercial")) return "CC_BY_NC";
+        if (normalized.contains("creativecommonsattributionsharealike")) return "CC_BY_SA";
+        if (normalized.contains("creativecommonsattribution")) return "CC_BY";
+        if (normalized.contains("cc0") || normalized.contains("publicdomain")) return "PUBLIC_DOMAIN";
+        return null;
     }
 
     private String get(String url) throws Exception {

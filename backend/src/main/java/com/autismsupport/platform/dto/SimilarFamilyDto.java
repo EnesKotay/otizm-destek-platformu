@@ -29,4 +29,8 @@ public class SimilarFamilyDto {
     private List<String> matchReasons;
     private String relationshipStatus;
     private Boolean mentorRelation;
+    private List<String> supportIntents;
+    private List<String> communicationPreferences;
+    private UUID relationshipId;
+    private Boolean requestedByMe;
 }

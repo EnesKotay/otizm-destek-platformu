@@ -34,4 +34,10 @@ public class UpdateProfileRequest {
     private Double latitude;
 
     private Double longitude;
+    private Boolean allowDirectMessages;
+    private Boolean allowFamilyMessages;
+    private Boolean hideOnlineStatus;
+    private Boolean approximateLocationOnly;
+    private java.util.List<String> communicationPreferences;
+    private java.util.List<String> supportIntents;
 }

@@ -21,6 +21,7 @@ import { messagingService } from '@/services/messagingService';
 import { buddyService, type BuddyDto } from '@/services/buddyService';
 import { meetupRequestService, type MeetupRequestDto } from '@/services/meetupRequestService';
 import { userService } from '@/services/userService';
+import { reportService } from '@/services/reportService';
 import { useAuthStore } from '@/store/authStore';
 import { useChildStore } from '@/store/childStore';
 import { toast } from '@/store/toastStore';
@@ -68,9 +69,11 @@ const MEETING_TIMES = [
 ];
 
 const FIRST_MESSAGE_TEMPLATES = [
-  'Merhaba, benzer süreçlerden geçtiğimizi gördüm. Uygunsanız önce burada kısa bir tanışma mesajlaşması yapmak isterim.',
-  'Merhaba, çocuklarımızın deneyimleri bazı alanlarda örtüşüyor gibi görünüyor. Size uygun olduğunda karşılıklı deneyim paylaşabilir miyiz?',
-  'Merhaba, sosyal destek çemberimde güvenli ve sakin bir tanışma başlatmak isterim. Önce yalnızca mesaj üzerinden ilerleyebiliriz.',
+  { label: 'Tanışmak istiyorum', text: 'Merhaba, benzer süreçlerden geçtiğimizi gördüm. Uygunsanız önce burada kısa bir tanışma mesajlaşması yapmak isterim.' },
+  { label: 'Terapi deneyimi', text: 'Merhaba, çocuklarımızın deneyimleri örtüşüyor gibi görünüyor. Uygunsanız terapi sürecinde işinize yarayan yaklaşımları konuşabilir miyiz?' },
+  { label: 'Okul süreci', text: 'Merhaba, okul ve eğitim süreci hakkında karşılıklı deneyim paylaşmak isterim. Önce burada yazışabiliriz.' },
+  { label: 'Dertleşmek istiyorum', text: 'Merhaba, benzer bir süreçte olduğumuzu gördüm. Uygunsanız yalnızca deneyimlerimizi paylaşacağımız sakin bir sohbet başlatmak isterim.' },
+  { label: 'Buluşma planlamak', text: 'Merhaba, önce burada tanıştıktan sonra ikimize de uygunsa güvenli bir çevrimiçi veya ortak alanda buluşma planlamak isterim.' },
 ];
 
 const DEFAULT_MATCHING_PREFERENCES: MatchingPreferences = {
@@ -291,6 +294,7 @@ function FamilyMatchCard({
   onOpenMeeting,
   onOpenBuddyRequest,
   onRateMatch,
+  onWithdrawRequest,
 }: {
   family: SimilarFamily;
   selectedChildName?: string;
@@ -301,6 +305,7 @@ function FamilyMatchCard({
   onOpenMeeting: (family: SimilarFamily) => void;
   onOpenBuddyRequest: (draft: BuddyRequestDraft) => void;
   onRateMatch: (parentId: string, feedback: MatchFeedback) => void;
+  onWithdrawRequest: (family: SimilarFamily) => void;
 }) {
   const pill = getAffinityPill(family.similarityScore);
   const sameCity = !!currentCity && !!family.parentCity && family.parentCity.toLocaleLowerCase('tr-TR') === currentCity.toLocaleLowerCase('tr-TR');
@@ -312,7 +317,7 @@ function FamilyMatchCard({
       ? 'İstek bekliyor'
       : null;
   const insight = (family.commonTags?.length || 0) > 0
-    ? `${family.childName || family.parentName} ile ${selectedChildName || 'çocuğunuz'} ${family.commonTags!.slice(0, 3).map(t => t.name).join(', ')} alanlarında ortaklık gösteriyor.`
+    ? `Bu aile yaş grubu, iletişim ihtiyaçları ve duyusal deneyimler açısından sizinle ${Math.max(1, family.matchReasons?.length || family.totalCommonTags)} ortak noktaya sahip.`
     : `${family.childName || 'Bu çocuk'} ile ${selectedChildName || 'çocuğunuz'} yakın gelişim evresinde görünüyor.`;
   const reasons = family.matchReasons?.length ? family.matchReasons : [
     `${formatPercent(family.similarityScore)} genel uyum`,
@@ -356,6 +361,13 @@ function FamilyMatchCard({
               <Sparkles size={15} className="text-indigo-500 mt-0.5 shrink-0" />
               <p className="text-sm leading-6 text-slate-600">{insight}</p>
             </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold text-slate-600">
+            {(family.communicationPreferences || []).map(pref => (
+              <span key={pref} className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">
+                {pref === 'YAZISMA' ? 'Önce yazışmayı tercih eder' : pref === 'GORUNTULU' ? 'Görüntülü görüşmeye açık' : pref === 'AKSAM' ? 'Genellikle akşam yanıt verir' : pref}
+              </span>
+            ))}
           </div>
 
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -449,6 +461,14 @@ function FamilyMatchCard({
             >
               <CalendarDays size={13} /> Buluşma
             </button>
+            {relationshipStatus === 'PENDING' && family.requestedByMe && family.relationshipId && (
+              <button
+                onClick={() => onWithdrawRequest(family)}
+                className="col-span-2 lg:col-span-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700"
+              >
+                İsteği geri çek
+              </button>
+            )}
             <button
               onClick={() => onOpenBuddyRequest({
                 receiverId: family.parentId,
@@ -1409,6 +1429,16 @@ export function SimilarFamiliesPage() {
                   onOpenMeeting={handleOpenMeeting}
                   onOpenBuddyRequest={handleOpenBuddyRequest}
                   onRateMatch={handleRateMatch}
+                  onWithdrawRequest={async family => {
+                    if (!family.relationshipId) return;
+                    try {
+                      await buddyService.withdrawRequest(family.relationshipId);
+                      setResults(prev => prev.map(item => item.parentId === family.parentId
+                        ? { ...item, relationshipStatus: 'NONE', relationshipId: undefined, requestedByMe: false }
+                        : item));
+                      toast.success('Tanışma isteği geri çekildi.');
+                    } catch { toast.error('İstek geri çekilemedi.'); }
+                  }}
                 />
               ))}
             </div>
@@ -2387,12 +2417,30 @@ export function SimilarFamiliesPage() {
                 </div>
               </div>
               
-              <button 
-                onClick={() => setActiveChatBuddy(null)}
-                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const reason = window.prompt('Şikâyet nedeninizi kısaca yazın:');
+                    if (!reason?.trim()) return;
+                    try { await reportService.create('USER', activeChatBuddy.buddyId, reason.trim()); toast.success('Şikâyetiniz incelemeye alındı.'); }
+                    catch { toast.error('Şikâyet gönderilemedi.'); }
+                  }}
+                  className="rounded-lg px-2 py-1.5 text-[10px] font-bold text-amber-700 hover:bg-amber-50"
+                >Şikâyet</button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!window.confirm('Bu kullanıcı engellensin mi? Artık eşleşemez ve mesajlaşamazsınız.')) return;
+                    try { await userService.blockUser(activeChatBuddy.buddyId); setActiveChatBuddy(null); void fetchBuddiesData(); toast.success('Kullanıcı engellendi.'); }
+                    catch { toast.error('Kullanıcı engellenemedi.'); }
+                  }}
+                  className="rounded-lg px-2 py-1.5 text-[10px] font-bold text-red-700 hover:bg-red-50"
+                >Engelle</button>
+                <button onClick={() => setActiveChatBuddy(null)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Drawer Message History */}
@@ -2439,14 +2487,14 @@ export function SimilarFamiliesPage() {
                       Güvenli ilk mesaj önerileri
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      {FIRST_MESSAGE_TEMPLATES.map((template, index) => (
+                      {FIRST_MESSAGE_TEMPLATES.map((template) => (
                         <button
-                          key={template}
+                          key={template.label}
                           type="button"
-                          onClick={() => setDrawerNewMessage(template)}
+                          onClick={() => setDrawerNewMessage(template.text)}
                           className="rounded-full border border-indigo-150 bg-white px-2.5 py-1 text-[10px] font-bold text-indigo-700 transition-colors hover:bg-indigo-50 cursor-pointer"
                         >
-                          Öneri {index + 1}
+                          {template.label}
                         </button>
                       ))}
                     </div>

@@ -9,6 +9,18 @@ CREATE TABLE IF NOT EXISTS knowledge_bookmarks (
 -- Bir kullanıcı bir makaleyi yalnızca bir kez favorilere ekleyebilir
 CREATE UNIQUE INDEX IF NOT EXISTS idx_knowledge_bookmarks_user_article ON knowledge_bookmarks(user_id, article_id);
 
+-- article_comments taze veritabanlarında hiçbir migration'da oluşturulmamıştı (buddy_relationships
+-- ve knowledge_articles.format ile aynı eksik geçmiş sorunu).
+CREATE TABLE IF NOT EXISTS article_comments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    content TEXT NOT NULL,
+    article_id UUID NOT NULL REFERENCES knowledge_articles(id) ON DELETE CASCADE,
+    author_id UUID NOT NULL REFERENCES users(id),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_article_comments_article ON article_comments(article_id);
+
 -- Yorumlar tablosuna yapılandırılmış deneyim paylaşımı sütunlarının eklenmesi
 ALTER TABLE article_comments
     ADD COLUMN IF NOT EXISTS is_experience BOOLEAN NOT NULL DEFAULT FALSE,

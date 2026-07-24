@@ -61,6 +61,16 @@ public class Appointment {
 
     @Column(name = "session_notes", columnDefinition = "TEXT")
     private String sessionNotes;
+    @Column(name = "session_summary", columnDefinition = "TEXT")
+    private String sessionSummary;
+    @Column(name = "follow_up_recommendations", columnDefinition = "TEXT")
+    private String followUpRecommendations;
+    @Column(name = "follow_up_task", columnDefinition = "TEXT")
+    private String followUpTask;
+    @Column(name = "appointment_topic", length = 250)
+    private String appointmentTopic;
+    @Column(name = "pre_session_notes", columnDefinition = "TEXT")
+    private String preSessionNotes;
 
     @Column(name = "cancellation_reason", columnDefinition = "TEXT")
     private String cancellationReason;

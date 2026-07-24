@@ -12,13 +12,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { expertService, type ExpertReviewsResponse } from '@/services/expertService';
 import { messagingService } from '@/services/messagingService';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import type { User } from '@/types';
 
 import { normalizeTR } from '@/utils/string';
+import { appointmentService } from '@/services/appointmentService';
 
 const SPECIALTY_COLORS: Record<string, string> = {
   'ABA':          'bg-blue-100 text-blue-700',
@@ -64,6 +65,15 @@ function Avatar({ expert, size = 'md' }: { expert: User; size?: 'sm' | 'md' | 'l
   ) : (
     <div className={`${dims} rounded-2xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center shrink-0`}>
       <span className="text-white font-bold">{expert.fullName?.charAt(0)}</span>
+    </div>
+  );
+}
+
+function ProfileFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-white p-3">
+      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</p>
+      <p className="mt-1 text-sm font-semibold leading-5 text-slate-800">{value}</p>
     </div>
   );
 }
@@ -366,6 +376,25 @@ function ExpertDetailModal({
                 </div>
               )}
             </div>
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
+              <p className="text-xs font-black uppercase tracking-wider text-indigo-500">Bu uzman çocuğuma neden uygun?</p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-indigo-950">
+                {(expert.supportTopics?.length || expert.ageGroups?.length)
+                  ? `${expert.ageGroups?.length ? `${expert.ageGroups.join(', ')} yaş gruplarıyla çalışıyor. ` : ''}${expert.supportTopics?.length ? `${expert.supportTopics.slice(0, 3).join(', ')} konularında destek veriyor.` : ''}`
+                  : 'Uzmanlık alanı, konum ve değerlendirmeler profilinizle birlikte değerlendirilir. Randevudan önce ihtiyaçlarınızı mesajla paylaşabilirsiniz.'}
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <ProfileFact label="İlk uygun randevu" value={expert.nextAvailableAppointment || 'Takvimden görüntüleyin'} />
+              <ProfileFact label="Görüşme süresi" value={`${expert.sessionDurationMinutes || 50} dakika`} />
+              <ProfileFact label="Çalıştığı yaş grubu" value={expert.ageGroups?.join(', ') || 'Uzmanla görüşün'} />
+              <ProfileFact label="Konuştuğu diller" value={expert.spokenLanguages?.join(', ') || 'Türkçe'} />
+              <ProfileFact label="Destek verdiği konular" value={expert.supportTopics?.join(', ') || expert.specializations?.join(', ') || 'Profilde belirtilmemiş'} />
+              <ProfileFact label="İptal koşulu" value={expert.cancellationPolicy || 'Randevudan önce uzmanla teyit edin'} />
+              <ProfileFact label="Erteleme koşulu" value={expert.reschedulePolicy || 'Uygun saate göre yeniden planlanabilir'} />
+              <ProfileFact label="Hizmet biçimi" value={[expert.offersOnline !== false && 'Online', expert.offersFaceToFace !== false && 'Yüz yüze'].filter(Boolean).join(' · ') || 'Belirtilmemiş'} />
+              <ProfileFact label="Seans ücreti" value={(expert.sessionFeeMin || expert.sessionFeeMax) ? `₺${expert.sessionFeeMin || expert.sessionFeeMax}${expert.sessionFeeMax && expert.sessionFeeMax !== expert.sessionFeeMin ? ` – ₺${expert.sessionFeeMax}` : ''}` : 'Uzmanla görüşün'} />
+            </div>
           </>
         )}
 
@@ -419,6 +448,8 @@ export function ExpertsPage() {
 
 function ExpertsContent() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mapView = searchParams.get('view') === 'map';
   const user = useAuthStore(s => s.user);
   const [experts, setExperts] = useState<User[]>([]);
   const [search, setSearch] = useState('');
@@ -433,12 +464,22 @@ function ExpertsContent() {
   const [onlyVerified, setOnlyVerified] = useState<boolean>(false);
   const [minRating, setMinRating] = useState<number>(0);
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
+  const [onlyAccepting, setOnlyAccepting] = useState<boolean>(false);
+  const [onlyOnline, setOnlyOnline] = useState<boolean>(false);
   const { favorites, toggle: toggleFavorite } = useFavorites();
 
   useEffect(() => {
     expertService.getAll()
-      .then(data => {
-        setExperts(data);
+      .then(async data => {
+        const enriched = await Promise.all(data.map(async expert => {
+          try {
+            const slot = await appointmentService.getNextAvailable(expert.id, expert.sessionDurationMinutes);
+            if (!slot.date || !slot.time) return expert;
+            const label = new Date(`${slot.date}T12:00:00`).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
+            return { ...expert, nextAvailableAppointment: `${label} · ${slot.time}` };
+          } catch { return expert; }
+        }));
+        setExperts(enriched);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -477,8 +518,11 @@ function ExpertsContent() {
     const matchesVerified = !onlyVerified || e.verified;
     const matchesRating = minRating === 0 || (e.avgRating ?? 0) >= minRating;
     const matchesFavorites = !onlyFavorites || favorites.has(e.id);
+    const matchesAccepting = !onlyAccepting || e.acceptingPatients !== false;
+    const matchesOnline = !onlyOnline || e.offersOnline !== false;
 
-    return matchesSearch && matchesFilter && matchesCity && matchesVerified && matchesRating && matchesFavorites;
+    return matchesSearch && matchesFilter && matchesCity && matchesVerified && matchesRating &&
+      matchesFavorites && matchesAccepting && matchesOnline;
   });
 
   // Sort logic
@@ -493,6 +537,17 @@ function ExpertsContent() {
       return (a.fullName ?? '').localeCompare(b.fullName ?? '', 'tr');
     }
     return 0; // Varsayılan (sıralama yok)
+  });
+  const geoExperts = sorted.filter(expert => Number.isFinite(expert.latitude) && Number.isFinite(expert.longitude));
+  const latitudes = geoExperts.map(expert => expert.latitude as number);
+  const longitudes = geoExperts.map(expert => expert.longitude as number);
+  const minLat = Math.min(...latitudes, 0);
+  const maxLat = Math.max(...latitudes, 1);
+  const minLon = Math.min(...longitudes, 0);
+  const maxLon = Math.max(...longitudes, 1);
+  const mapPosition = (expert: User) => ({
+    left: `${8 + (((expert.longitude as number) - minLon) / Math.max(maxLon - minLon, 0.001)) * 84}%`,
+    top: `${8 + (1 - (((expert.latitude as number) - minLat) / Math.max(maxLat - minLat, 0.001))) * 72}%`,
   });
 
   // Fix 4: konuşma ID'sini navigate'e taşı
@@ -515,6 +570,8 @@ function ExpertsContent() {
     activeFilter !== 'Tümü' ||
     selectedCity !== 'Tümü' ||
     onlyVerified ||
+    onlyAccepting ||
+    onlyOnline ||
     minRating > 0 ||
     sortBy !== 'default' ||
     onlyFavorites;
@@ -527,6 +584,8 @@ function ExpertsContent() {
     setMinRating(0);
     setSortBy('default');
     setOnlyFavorites(false);
+    setOnlyAccepting(false);
+    setOnlyOnline(false);
   };
 
   return (
@@ -722,11 +781,15 @@ function ExpertsContent() {
 
           {/* Harita Görünümü Butonu */}
           <button
-            onClick={() => navigate('/uzmanlar?view=map')}
+            onClick={() => {
+              const next = new URLSearchParams(searchParams);
+              if (mapView) next.delete('view'); else next.set('view', 'map');
+              setSearchParams(next);
+            }}
             className="flex items-center justify-center gap-2 px-4 py-2.5 border border-indigo-100 rounded-xl text-sm font-semibold text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-200 transition-all cursor-pointer shrink-0 active:scale-[0.98]"
           >
             <MapPin size={16} />
-            Harita & Kurumlar
+            {mapView ? 'Liste Görünümü' : 'Harita & Kurumlar'}
           </button>
         </div>
 
@@ -745,6 +808,28 @@ function ExpertsContent() {
                 <BadgeCheck size={14} className="text-blue-500" />
                 Yalnızca Onaylı
               </span>
+            </label>
+
+            <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700">
+              <input
+                type="checkbox"
+                checked={onlyAccepting}
+                onChange={e => setOnlyAccepting(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+              />
+              <UserCheck size={14} className="text-emerald-600" />
+              Yeni danışan kabul eden
+            </label>
+
+            <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700">
+              <input
+                type="checkbox"
+                checked={onlyOnline}
+                onChange={e => setOnlyOnline(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+              />
+              <MessageCircle size={14} className="text-blue-600" />
+              Online görüşme
             </label>
 
             <label className="relative inline-flex items-center cursor-pointer select-none">
@@ -802,8 +887,33 @@ function ExpertsContent() {
         </div>
       )}
 
+      {mapView && !loading && (
+        <section className="relative min-h-[420px] overflow-hidden rounded-3xl border border-indigo-100 bg-[radial-gradient(circle_at_center,_#eef2ff_0,_#f8fafc_55%,_#e2e8f0_100%)] p-6">
+          <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'linear-gradient(#c7d2fe 1px, transparent 1px), linear-gradient(90deg, #c7d2fe 1px, transparent 1px)', backgroundSize: '36px 36px' }} />
+          <div className="relative min-h-[360px]">
+            {geoExperts.length > 0 ? geoExperts.map(expert => (
+              <button key={expert.id} type="button" onClick={() => setSelectedExpert(expert)}
+                style={mapPosition(expert)}
+                className="absolute -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-indigo-200 bg-white/95 p-2 text-left shadow-lg transition hover:z-10 hover:scale-105">
+                <span className="flex items-center gap-2">
+                  <Avatar expert={expert} size="sm" />
+                  <span className="max-w-36">
+                    <span className="block truncate text-xs font-black text-slate-900">{expert.fullName}</span>
+                    <span className="block truncate text-[10px] text-indigo-700">{expert.city || 'Konumlu uzman'}</span>
+                  </span>
+                </span>
+              </button>
+            )) : (
+              <div className="flex min-h-[340px] items-center justify-center text-center">
+                <div><MapPin className="mx-auto text-indigo-300" size={34} /><p className="mt-3 font-bold text-slate-700">Konum paylaşan uzman bulunamadı</p><p className="mt-1 text-xs text-slate-500">Online hizmet veren uzmanları liste görünümünden inceleyebilirsiniz.</p></div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* Expert Grid */}
-      {loading ? (
+      {!mapView && (loading ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} lines={4} />)}
         </div>
@@ -910,6 +1020,15 @@ function ExpertsContent() {
                 {expert.bio && (
                   <p className="mt-3 text-xs text-gray-500 line-clamp-2 leading-relaxed font-light">{expert.bio}</p>
                 )}
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {expert.offersOnline !== false && <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700">Online görüşme</span>}
+                  {expert.offersFaceToFace !== false && <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Yüz yüze</span>}
+                  {(expert.sessionFeeMin || expert.sessionFeeMax) && (
+                    <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">
+                      ₺{expert.sessionFeeMin || expert.sessionFeeMax}{expert.sessionFeeMax && expert.sessionFeeMax !== expert.sessionFeeMin ? `–₺${expert.sessionFeeMax}` : ''}
+                    </span>
+                  )}
+                </div>
 
                 {/* Info block */}
                 <div className="mt-4 pt-3 border-t border-gray-50 flex flex-col gap-2 flex-1 justify-end">
@@ -941,6 +1060,10 @@ function ExpertsContent() {
                       <span className="font-medium">{expert.articleCount} bilgi bankası yazısı</span>
                     </div>
                   )}
+                  <div className="flex items-center gap-2 text-xs font-semibold text-indigo-700">
+                    <Calendar size={13} className="shrink-0" />
+                    <span>İlk uygun saat: {expert.nextAvailableAppointment || 'Müsaitlik bilgisi yok'}</span>
+                  </div>
 
                   {!expert.verified && (
                     <div className="flex items-center gap-1.5 text-[10px] font-semibold text-amber-600 bg-amber-50/60 border border-amber-100/50 px-2 py-1 rounded-xl mt-1 w-max">
@@ -967,7 +1090,7 @@ function ExpertsContent() {
             );
           })}
         </div>
-      )}
+      ))}
 
       {/* Platform Trust Strip */}
       {!loading && experts.length > 0 && (

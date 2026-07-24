@@ -5,6 +5,7 @@ import {
   CheckCheck, Check, Users, ChevronRight, Paperclip, FileText,
   Download, RefreshCw, BellOff, Bell, Archive, ArchiveRestore,
   Reply, UserPlus, UserMinus, Settings, CornerUpLeft,
+  Flag,
 } from 'lucide-react';
 import { uploadService } from '@/services/uploadService';
 import { Card } from '@/components/ui/Card';
@@ -14,6 +15,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { messagingService } from '@/services/messagingService';
 import { userService } from '@/services/userService';
+import { reportService } from '@/services/reportService';
 import { toast } from '@/store/toastStore';
 import { formatRelative, formatTime } from '@/utils/date';
 import { cn } from '@/utils/cn';
@@ -1124,6 +1126,21 @@ export function MessagesPage() {
                                     title="Yanıtla">
                                     <CornerUpLeft size={14} className="text-gray-400 hover:text-primary-600" />
                                   </button>
+                                  {!isMine && (
+                                    <button
+                                      onClick={async e => {
+                                        e.stopPropagation();
+                                        const reason = window.prompt('Bu mesajı neden şikâyet ediyorsunuz?');
+                                        if (!reason?.trim()) return;
+                                        try { await reportService.create('MESSAGE', msg.id, reason.trim()); toast.success('Mesaj incelemeye alındı.'); }
+                                        catch { toast.error('Şikâyet gönderilemedi.'); }
+                                      }}
+                                      className="absolute -right-14 top-1 opacity-0 group-hover/msg:opacity-100 text-gray-400 hover:text-red-600"
+                                      title="Mesajı şikâyet et"
+                                    >
+                                      <Flag size={14} />
+                                    </button>
+                                  )}
 
                                   <div className={cn('px-3.5 py-2.5 rounded-2xl',
                                     isMine ? 'bg-primary-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm')}>

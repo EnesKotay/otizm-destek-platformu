@@ -27,6 +27,8 @@ export const buddyService = {
 
   removeBuddy: (relationshipId: string) =>
     api.delete<ApiResponse<void>>(`/buddies/remove/${relationshipId}`).then(r => r.data.data),
+  withdrawRequest: (relationshipId: string) =>
+    api.delete<ApiResponse<void>>(`/buddies/request/${relationshipId}`).then(r => r.data.data),
 
   getMyBuddies: () =>
     api.get<ApiResponse<BuddyDto[]>>('/buddies/my-list').then(r => r.data.data),

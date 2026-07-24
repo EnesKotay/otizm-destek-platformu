@@ -1,3 +1,9 @@
+-- format/media_url were never added by a migration on fresh databases (same ad-hoc
+-- ddl-auto history gap as buddy_relationships in V33).
+ALTER TABLE knowledge_articles
+    ADD COLUMN IF NOT EXISTS format VARCHAR(50) NOT NULL DEFAULT 'TEXT',
+    ADD COLUMN IF NOT EXISTS media_url VARCHAR(500);
+
 -- Frontend used to encode video/podcast type as a "[MEDIA:type:url]" prefix inside the content
 -- column instead of using the dedicated format/media_url columns. Backfill those columns from
 -- the prefix and strip it out of content now that the frontend reads format/media_url directly.
