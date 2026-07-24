@@ -79,6 +79,18 @@ public class ExpertController {
                         .reviewCount(stats != null && stats.getReviewCount() != null ? stats.getReviewCount() : 0L)
                         .articleCount(articleCounts.getOrDefault(u.getId(), 0L))
                         .acceptingPatients(u.isAcceptingPatients())
+                        .ageGroups(u.getAgeGroups())
+                        .supportTopics(u.getSupportTopics())
+                        .spokenLanguages(u.getSpokenLanguages())
+                        .sessionDurationMinutes(u.getSessionDurationMinutes())
+                        .cancellationPolicy(u.getCancellationPolicy())
+                        .reschedulePolicy(u.getReschedulePolicy())
+                        .sessionFeeMin(u.getSessionFeeMin())
+                        .sessionFeeMax(u.getSessionFeeMax())
+                        .offersOnline(u.isOffersOnline())
+                        .offersFaceToFace(u.isOffersFaceToFace())
+                        .latitude(u.getLatitude())
+                        .longitude(u.getLongitude())
                         .build();
                 })
                 .collect(Collectors.toList());
@@ -106,6 +118,23 @@ public class ExpertController {
                 .role(user.getRole().name())
                 .expertTitle(user.getExpertTitle())
                 .verified(user.isVerified())
+                .bio(user.getBio())
+                .city(user.getCity())
+                .institution(user.getInstitution())
+                .specializations(user.getSpecializations())
+                .acceptingPatients(user.isAcceptingPatients())
+                .ageGroups(user.getAgeGroups())
+                .supportTopics(user.getSupportTopics())
+                .spokenLanguages(user.getSpokenLanguages())
+                .sessionDurationMinutes(user.getSessionDurationMinutes())
+                .cancellationPolicy(user.getCancellationPolicy())
+                .reschedulePolicy(user.getReschedulePolicy())
+                .sessionFeeMin(user.getSessionFeeMin())
+                .sessionFeeMax(user.getSessionFeeMax())
+                .offersOnline(user.isOffersOnline())
+                .offersFaceToFace(user.isOffersFaceToFace())
+                .latitude(user.getLatitude())
+                .longitude(user.getLongitude())
                 .profileImageUrl(user.getProfileImageUrl())
                 .createdAt(user.getCreatedAt())
                 .build();
@@ -140,6 +169,18 @@ public class ExpertController {
         if (body.getAcceptingPatients() != null) {
             user.setAcceptingPatients(body.getAcceptingPatients());
         }
+        if (body.getAgeGroups() != null) user.setAgeGroups(body.getAgeGroups());
+        if (body.getSupportTopics() != null) user.setSupportTopics(body.getSupportTopics());
+        if (body.getSpokenLanguages() != null) user.setSpokenLanguages(body.getSpokenLanguages());
+        if (body.getSessionDurationMinutes() != null) {
+            user.setSessionDurationMinutes(Math.max(15, Math.min(180, body.getSessionDurationMinutes())));
+        }
+        if (body.getCancellationPolicy() != null) user.setCancellationPolicy(body.getCancellationPolicy());
+        if (body.getReschedulePolicy() != null) user.setReschedulePolicy(body.getReschedulePolicy());
+        if (body.getSessionFeeMin() != null) user.setSessionFeeMin(body.getSessionFeeMin().max(java.math.BigDecimal.ZERO));
+        if (body.getSessionFeeMax() != null) user.setSessionFeeMax(body.getSessionFeeMax().max(java.math.BigDecimal.ZERO));
+        if (body.getOffersOnline() != null) user.setOffersOnline(body.getOffersOnline());
+        if (body.getOffersFaceToFace() != null) user.setOffersFaceToFace(body.getOffersFaceToFace());
 
         var saved = userRepository.save(user);
 
@@ -149,6 +190,21 @@ public class ExpertController {
                 .role(saved.getRole().name())
                 .expertTitle(saved.getExpertTitle())
                 .verified(saved.isVerified())
+                .bio(saved.getBio())
+                .city(saved.getCity())
+                .institution(saved.getInstitution())
+                .specializations(saved.getSpecializations())
+                .acceptingPatients(saved.isAcceptingPatients())
+                .ageGroups(saved.getAgeGroups())
+                .supportTopics(saved.getSupportTopics())
+                .spokenLanguages(saved.getSpokenLanguages())
+                .sessionDurationMinutes(saved.getSessionDurationMinutes())
+                .cancellationPolicy(saved.getCancellationPolicy())
+                .reschedulePolicy(saved.getReschedulePolicy())
+                .sessionFeeMin(saved.getSessionFeeMin())
+                .sessionFeeMax(saved.getSessionFeeMax())
+                .offersOnline(saved.isOffersOnline())
+                .offersFaceToFace(saved.isOffersFaceToFace())
                 .profileImageUrl(saved.getProfileImageUrl())
                 .createdAt(saved.getCreatedAt())
                 .build();

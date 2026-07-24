@@ -1,10 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Pill, Activity, TrendingUp, Calendar, Info, Sparkles, Heart } from 'lucide-react';
+import { Pill, Sparkles } from 'lucide-react';
 import {
   ResponsiveContainer,
   ComposedChart,
   Line,
-  Bar,
   XAxis,
   YAxis,
   Tooltip,

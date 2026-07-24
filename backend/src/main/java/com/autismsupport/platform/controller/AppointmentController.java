@@ -118,7 +118,8 @@ public class AppointmentController {
             @CurrentUser UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.success(
                 "Seans notu kaydedildi",
-                appointmentService.updateSessionNotes(id, principal.getId(), request.getSessionNotes())
+                appointmentService.updateSessionNotes(id, principal.getId(), request.getSessionNotes(),
+                        request.getSessionSummary(), request.getFollowUpRecommendations(), request.getFollowUpTask())
         ));
     }
 
@@ -139,6 +140,13 @@ public class AppointmentController {
             @RequestParam java.time.LocalDate date,
             @RequestParam(required = false, defaultValue = "50") Integer duration) {
         return ResponseEntity.ok(ApiResponse.success(appointmentService.getBookedTimes(expertId, date, duration)));
+    }
+
+    @GetMapping("/experts/{expertId}/next-available")
+    public ResponseEntity<ApiResponse<java.util.Map<String, String>>> getNextAvailable(
+            @PathVariable UUID expertId,
+            @RequestParam(required = false) Integer duration) {
+        return ResponseEntity.ok(ApiResponse.success(appointmentService.getNextAvailableSlot(expertId, duration)));
     }
 
     @PutMapping("/availability")

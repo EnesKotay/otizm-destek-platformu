@@ -23,12 +23,37 @@ export interface User {
   consentEmergencyCardDate?: string;
   profileImageUrl?: string;
   isActive?: boolean;
+  onboardingCompleted?: boolean;
   createdAt: string;
   avgRating?: number;
   articleCount?: number;
   reviewCount?: number;
   acceptingPatients?: boolean;
-  privacySettings?: Record<string, any>;
+  ageGroups?: string[];
+  supportTopics?: string[];
+  spokenLanguages?: string[];
+  sessionDurationMinutes?: number;
+  cancellationPolicy?: string;
+  reschedulePolicy?: string;
+  nextAvailableAppointment?: string;
+  allowDirectMessages?: boolean;
+  allowFamilyMessages?: boolean;
+  hideOnlineStatus?: boolean;
+  approximateLocationOnly?: boolean;
+  communicationPreferences?: string[];
+  supportIntents?: string[];
+  sessionFeeMin?: number;
+  sessionFeeMax?: number;
+  offersOnline?: boolean;
+  offersFaceToFace?: boolean;
+  privacySettings?: Record<string, unknown> & {
+    accessibility?: {
+      largeText?: boolean;
+      calmMode?: boolean;
+      highContrast?: boolean;
+      simpleMode?: boolean;
+    };
+  };
 }
 
 export interface ConsultationReply {
@@ -255,6 +280,10 @@ export interface SimilarFamily {
   matchReasons?: string[];
   relationshipStatus?: 'NONE' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
   mentorRelation?: boolean;
+  supportIntents?: string[];
+  communicationPreferences?: string[];
+  relationshipId?: string;
+  requestedByMe?: boolean;
 }
 
 export interface ApiResponse<T> {
@@ -283,6 +312,19 @@ export interface KnowledgeArticle {
   sourceName?: string;
   sourceUrl?: string;
   pendingReview?: boolean;
+  sourceAuthor?: string;
+  sourcePublication?: string;
+  sourcePublishedAt?: string;
+  sourceAccessedAt?: string;
+  doi?: string;
+  licenseType?: 'ORIGINAL' | 'CC_BY' | 'CC_BY_SA' | 'CC_BY_NC' | 'CC_BY_ND' | 'PUBLIC_DOMAIN' | 'RIGHTS_RESERVED' | 'UNKNOWN';
+  usageType?: 'ORIGINAL' | 'SUMMARY' | 'TRANSLATION' | 'ADAPTATION' | 'QUOTATION';
+  evidenceLevel?: 'GUIDELINE' | 'SYSTEMATIC_REVIEW' | 'CONTROLLED_STUDY' | 'OBSERVATIONAL_STUDY' | 'EXPERT_REVIEW' | 'LIVED_EXPERIENCE';
+  originalLanguage?: string;
+  aiGenerated?: boolean;
+  reviewedBy?: User;
+  reviewedAt?: string;
+  reviewNotes?: string;
   bookmarked?: boolean;
   tags?: Tag[];
   author?: User;
@@ -348,6 +390,11 @@ export interface AppointmentRecord {
   meetingLink?: string;
   calendarEventId?: string;
   sessionNotes?: string;
+  sessionSummary?: string;
+  followUpRecommendations?: string;
+  followUpTask?: string;
+  appointmentTopic?: string;
+  preSessionNotes?: string;
   cancellationReason?: string;
   rating?: number;
   ratingComment?: string;

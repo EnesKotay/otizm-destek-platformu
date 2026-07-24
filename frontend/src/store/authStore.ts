@@ -4,6 +4,7 @@ import type { User } from '@/types';
 
 import { useChildStore } from './childStore';
 import { childService } from '@/services/childService';
+import { userService } from '@/services/userService';
 
 import { queryClient } from '@/App';
 import { API_BASE_URL } from '@/services/endpoints';
@@ -16,7 +17,7 @@ interface AuthState {
   setAuth: (user: User, accessToken: string) => void;
   setAccessToken: (accessToken: string) => void;
   setUser: (user: User) => void;
-  setOnboardingCompleted: () => void;
+  setOnboardingCompleted: () => Promise<void>;
   isOnboardingCompleted: () => boolean;
   clearSession: () => void;
   logout: () => Promise<void>;
@@ -55,15 +56,33 @@ export const useAuthStore = create<AuthState>()(
       },
       setAccessToken: (accessToken) => set({ accessToken }),
       setUser: (user) => set({ user }),
-      setOnboardingCompleted: () => {
-        const userId = get().user?.id;
-        if (!userId) return;
-        set(s => ({ completedOnboardingIds: [...new Set([...s.completedOnboardingIds, userId])] }));
+      setOnboardingCompleted: async () => {
+        const user = get().user;
+        if (!user) throw new Error('Oturum bilgisi bulunamadı');
+
+        // Tamamlanmanın kalıcı kaynağı sunucudur. Sunucu onayı gelmeden kullanıcıyı
+        // tamamlanmış saymak farklı cihazlarda onboarding'in yeniden açılmasına yol açar.
+        let updatedUser: User;
+        try {
+          updatedUser = await userService.completeOnboarding();
+        } catch (error) {
+          // Eski backend sürümlerinde onboarding tamamlama endpoint'i bulunmayabilir.
+          // Yalnızca 404 için yerel durumu güncelleyerek kullanıcıyı akışta kilitleme.
+          if ((error as Error & { status?: number }).status !== 404) throw error;
+          updatedUser = { ...user, onboardingCompleted: true };
+        }
+        set(s => ({
+          user: s.user?.id === user.id
+            ? { ...s.user, ...updatedUser, onboardingCompleted: true }
+            : s.user,
+          completedOnboardingIds: [...new Set([...s.completedOnboardingIds, user.id])].slice(-10),
+        }));
       },
       isOnboardingCompleted: () => {
-        const userId = get().user?.id;
-        if (!userId) return true;
-        return get().completedOnboardingIds.includes(userId);
+        const user = get().user;
+        if (!user) return true;
+        if (user.onboardingCompleted) return true;
+        return get().completedOnboardingIds.includes(user.id);
       },
       clearSession: () => {
         useChildStore.getState().clearChildren();

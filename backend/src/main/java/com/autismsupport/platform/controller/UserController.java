@@ -27,6 +27,7 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final com.autismsupport.platform.service.AccountDataService accountDataService;
     private final com.autismsupport.platform.service.AccountDeletionService accountDeletionService;
+    private final com.autismsupport.platform.repository.UserBlockRepository userBlockRepository;
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<UserDto>>> searchUsers(@RequestParam String q) {
@@ -73,9 +74,39 @@ public class UserController {
             user.setLatitude(body.getLatitude());
         if (body.getLongitude() != null)
             user.setLongitude(body.getLongitude());
+        if (body.getAllowDirectMessages() != null) user.setAllowDirectMessages(body.getAllowDirectMessages());
+        if (body.getAllowFamilyMessages() != null) user.setAllowFamilyMessages(body.getAllowFamilyMessages());
+        if (body.getHideOnlineStatus() != null) user.setHideOnlineStatus(body.getHideOnlineStatus());
+        if (body.getApproximateLocationOnly() != null) user.setApproximateLocationOnly(body.getApproximateLocationOnly());
+        if (body.getCommunicationPreferences() != null) user.setCommunicationPreferences(body.getCommunicationPreferences());
+        if (body.getSupportIntents() != null) user.setSupportIntents(body.getSupportIntents());
 
         user = userRepository.save(user);
         return ResponseEntity.ok(ApiResponse.success("Profil guncellendi", toUserDto(user)));
+    }
+
+    @PostMapping("/{userId}/block")
+    @Transactional
+    public ResponseEntity<ApiResponse<Void>> blockUser(@PathVariable java.util.UUID userId, @CurrentUser UserPrincipal principal) {
+        if (principal.getId().equals(userId)) throw new IllegalArgumentException("Kendinizi engelleyemezsiniz");
+        User blocker = userRepository.findById(principal.getId()).orElseThrow();
+        User blocked = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+        userBlockRepository.findByBlockerIdAndBlockedId(blocker.getId(), blocked.getId())
+                .orElseGet(() -> userBlockRepository.save(com.autismsupport.platform.model.UserBlock.builder().blocker(blocker).blocked(blocked).build()));
+        return ResponseEntity.ok(ApiResponse.success("Kullanıcı engellendi", null));
+    }
+
+    @DeleteMapping("/{userId}/block")
+    @Transactional
+    public ResponseEntity<ApiResponse<Void>> unblockUser(@PathVariable java.util.UUID userId, @CurrentUser UserPrincipal principal) {
+        userBlockRepository.findByBlockerIdAndBlockedId(principal.getId(), userId).ifPresent(userBlockRepository::delete);
+        return ResponseEntity.ok(ApiResponse.success("Engel kaldırıldı", null));
+    }
+
+    @GetMapping("/me/blocked")
+    public ResponseEntity<ApiResponse<List<UserDto>>> blockedUsers(@CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(userBlockRepository.findByBlockerId(principal.getId()).stream()
+                .map(block -> toUserDto(block.getBlocked())).toList()));
     }
 
     @Transactional
@@ -113,6 +144,18 @@ public class UserController {
         }
         accountDeletionService.delete(user);
         return ResponseEntity.ok(ApiResponse.success("Hesap silindi", null));
+    }
+
+    @Transactional
+    @PostMapping("/me/onboarding-complete")
+    public ResponseEntity<ApiResponse<UserDto>> completeOnboarding(@CurrentUser UserPrincipal principal) {
+        User user = userRepository.findById(principal.getId())
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+        if (!user.isOnboardingCompleted()) {
+            user.setOnboardingCompleted(true);
+            user = userRepository.save(user);
+        }
+        return ResponseEntity.ok(ApiResponse.success("Başlangıç tamamlandı", toUserDto(user)));
     }
 
     @PostMapping("/me/consent/ai")
@@ -161,8 +204,19 @@ public class UserController {
                 .consentEmergencyCard(user.isConsentEmergencyCard())
                 .consentEmergencyCardDate(user.getConsentEmergencyCardDate())
                 .isActive(user.isActive())
+                .onboardingCompleted(user.isOnboardingCompleted())
                 .profileImageUrl(user.getProfileImageUrl())
                 .createdAt(user.getCreatedAt())
+                .allowDirectMessages(user.isAllowDirectMessages())
+                .allowFamilyMessages(user.isAllowFamilyMessages())
+                .hideOnlineStatus(user.isHideOnlineStatus())
+                .approximateLocationOnly(user.isApproximateLocationOnly())
+                .communicationPreferences(user.getCommunicationPreferences())
+                .supportIntents(user.getSupportIntents())
+                .sessionFeeMin(user.getSessionFeeMin())
+                .sessionFeeMax(user.getSessionFeeMax())
+                .offersOnline(user.isOffersOnline())
+                .offersFaceToFace(user.isOffersFaceToFace())
                 .build();
     }
 }

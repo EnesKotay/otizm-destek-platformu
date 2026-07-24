@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -42,9 +42,7 @@ function getRouteHelp(pathname: string) {
 export function AppLayout() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const user = useAuthStore(s => s.user);
-  const isOnboardingCompleted = useAuthStore(s => s.isOnboardingCompleted);
   const location = useLocation();
-  const navigate = useNavigate();
   const isAdminRoute = location.pathname === '/admin';
   const [isSidebarCompact, setIsSidebarCompact] = useState(() => localStorage.getItem('sidebar-compact') === 'true');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -109,12 +107,6 @@ export function AppLayout() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsHelpOpen(false);
   }, [location.pathname]);
-
-  useEffect(() => {
-    if (isAuthenticated && user?.role === 'PARENT' && !isOnboardingCompleted()) {
-      navigate('/baslangic', { replace: true });
-    }
-  }, [isAuthenticated, user, isOnboardingCompleted, navigate]);
 
   useEffect(() => {
     const handleCompactChange = (event: Event) => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, ShieldCheck, MessageSquare, Plus, CheckCircle2, UserCheck, Tag, Send, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Plus, Send } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';

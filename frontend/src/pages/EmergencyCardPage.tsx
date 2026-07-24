@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Printer, ShieldAlert, Phone, Heart, AlertTriangle, CheckCircle, User, Share2, Volume2, VolumeX } from 'lucide-react';
+import { Save, Printer, ShieldAlert, Phone, Heart, AlertTriangle, CheckCircle, User, Share2, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 import { useChildStore } from '@/store/childStore';
@@ -567,4 +567,3 @@ function PrintCard({ profile }: { profile: EmergencyProfile }) {
     </div>
   );
 }
-

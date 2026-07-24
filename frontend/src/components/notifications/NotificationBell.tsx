@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import { formatRelative } from '@/utils/date';
 import { patientService } from '@/services/patientService';
 import { getNotificationIconConfig, shouldShowNotification, playNotificationSound } from '@/utils/notificationUtils';
+import { safeInternalPath } from '@/utils/internalNavigation';
 import type { Notification, ExpertConnectionRequest } from '@/types';
 
 const LOCAL_READ_KEY = 'local_notification_read_ids';
@@ -144,15 +145,12 @@ export function NotificationBell() {
     return () => window.removeEventListener('ws-reconnected', handleReconnect);
   }, [send, fetchUnread]);
 
-  // Request browser notification permission and register push subscription once on mount
+  // İzin isteme yalnızca kullanıcı etkileşimiyle yapılmalı. Tarayıcı zaten izin
+  // verdiyse mevcut oturum için aboneliği sessizce yenile.
   useEffect(() => {
     if (!accessToken || !pushNotificationService.isSupported()) return;
     if (Notification.permission === 'granted') {
       pushNotificationService.subscribe();
-    } else if (Notification.permission === 'default') {
-      Notification.requestPermission().then((result) => {
-        if (result === 'granted') pushNotificationService.subscribe();
-      });
     }
   }, [accessToken]);
 
@@ -246,7 +244,7 @@ export function NotificationBell() {
     }
     setOpen(false);
     if (n.link) {
-      navigate(n.link);
+      navigate(safeInternalPath(n.link));
     }
   };
 

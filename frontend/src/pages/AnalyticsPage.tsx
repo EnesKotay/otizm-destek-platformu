@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ElementType, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ElementType, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -1032,7 +1032,7 @@ export function AnalyticsPage() {
     enabled: !!user,
   });
 
-  const children = Array.isArray(rawChildren) ? rawChildren : [];
+  const children = useMemo(() => Array.isArray(rawChildren) ? rawChildren : [], [rawChildren]);
 
   useEffect(() => {
     if (!globalChild && children.length) setGlobalChild(children[0]);

@@ -48,7 +48,7 @@ export function DailyExerciseWizard({ tasks, onCompleteTask }: DailyExerciseWiza
       toast.success('Fotoğraf / Görsel başarıyla eklendi 🎉');
     } catch {
       toast.error('Görsel yüklenirken bir hata oluştu.');
-    } fontally: {
+    } finally {
       setUploading(false);
     }
   };

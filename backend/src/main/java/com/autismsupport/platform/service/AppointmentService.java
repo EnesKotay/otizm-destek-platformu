@@ -58,6 +58,10 @@ public class AppointmentService {
     private final AuditLogService auditLogService;
     private final PatientService patientService;
 
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
     @Transactional(readOnly = true)
     public List<AppointmentDto> getAppointments(UUID userId, String role) {
         List<Appointment> appointments = "EXPERT".equals(role)
@@ -107,6 +111,24 @@ public class AppointmentService {
         }
 
         return unavailableTimes.stream().toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, String> getNextAvailableSlot(UUID expertId, Integer requestedDuration) {
+        int duration = requestedDuration != null ? resolveDuration(requestedDuration) : DEFAULT_DURATION_MINUTES;
+        for (int offset = 0; offset <= 60; offset++) {
+            LocalDate date = LocalDate.now().plusDays(offset);
+            ExpertAvailability availability = availabilityRepository
+                    .findByExpertIdAndDayOfWeek(expertId, date.getDayOfWeek().getValue()).orElse(null);
+            if (availability == null || !availability.isEnabled() || availability.getStartTime() == null || availability.getEndTime() == null) continue;
+            Set<String> unavailable = new java.util.HashSet<>(getBookedTimes(expertId, date, duration));
+            for (LocalTime slot : generateTimeSlots(availability.getStartTime(), availability.getEndTime(), duration)) {
+                if (date.equals(LocalDate.now()) && !slot.isAfter(LocalTime.now())) continue;
+                String time = slot.format(TIME_FORMAT);
+                if (!unavailable.contains(time)) return Map.of("date", date.toString(), "time", time);
+            }
+        }
+        return Map.of();
     }
 
     @Transactional
@@ -239,6 +261,8 @@ public class AppointmentService {
         appointment.setType(type);
         appointment.setStatus("PENDING");
         appointment.setNotes(dto.getNotes());
+        appointment.setAppointmentTopic(blankToNull(dto.getAppointmentTopic()));
+        appointment.setPreSessionNotes(blankToNull(dto.getPreSessionNotes()));
         appointment.setSessionNotes(null);
         appointment.setCancellationReason(null);
         appointment.setCalendarEventId(null);
@@ -591,7 +615,8 @@ public class AppointmentService {
     }
 
     @Transactional
-    public AppointmentDto updateSessionNotes(UUID appointmentId, UUID expertId, String sessionNotes) {
+    public AppointmentDto updateSessionNotes(UUID appointmentId, UUID expertId, String sessionNotes,
+                                             String sessionSummary, String recommendations, String followUpTask) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Randevu bulunamadi"));
         if (!appointment.getExpert().getId().equals(expertId)) {
@@ -602,6 +627,9 @@ public class AppointmentService {
         }
 
         appointment.setSessionNotes(sessionNotes.trim());
+        appointment.setSessionSummary(blankToNull(sessionSummary));
+        appointment.setFollowUpRecommendations(blankToNull(recommendations));
+        appointment.setFollowUpTask(blankToNull(followUpTask));
         Appointment saved = appointmentRepository.save(appointment);
         if (appointment.getParent() != null) {
             notificationService.createNotification(
@@ -729,6 +757,11 @@ public class AppointmentService {
                 .status(appointment.getStatus())
                 .notes(appointment.getNotes())
                 .sessionNotes(appointment.getSessionNotes())
+                .sessionSummary(appointment.getSessionSummary())
+                .followUpRecommendations(appointment.getFollowUpRecommendations())
+                .followUpTask(appointment.getFollowUpTask())
+                .appointmentTopic(appointment.getAppointmentTopic())
+                .preSessionNotes(appointment.getPreSessionNotes())
                 .cancellationReason(appointment.getCancellationReason())
                 .meetingLink(appointment.getMeetingLink())
                 .calendarEventId(appointment.getCalendarEventId())

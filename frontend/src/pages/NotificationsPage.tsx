@@ -2,10 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell, BellRing, Check, CheckCheck, Trash2, Filter, ChevronDown, Loader2,
-  Settings, Volume2, VolumeX, Sparkles, X,
+  Settings, Volume2, VolumeX, X,
 } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
-import { pushNotificationService } from '@/services/pushNotificationService';
 import { NotificationPermissionBanner } from '@/components/notifications/NotificationPermissionBanner';
 import {
   getNotificationIconConfig,
@@ -18,6 +17,7 @@ import {
   type NotificationCategory,
 } from '@/utils/notificationUtils';
 import { formatRelative } from '@/utils/date';
+import { safeInternalPath } from '@/utils/internalNavigation';
 import type { Notification } from '@/types';
 
 export function NotificationsPage() {
@@ -31,8 +31,6 @@ export function NotificationsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   
   // Push Notification & Settings states
-  const [pushPermission, setPushPermission] = useState<NotificationPermission>(() => pushNotificationService.getPermission());
-  const [pushSubscribing, setPushSubscribing] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(() => getPreferenceValue('notif_sound', true));
   const [prefs, setPrefs] = useState<Record<string, boolean>>(() => {
@@ -57,24 +55,11 @@ export function NotificationsPage() {
   }, []);
 
   useEffect(() => {
+    // Initial async synchronization for the notification feed.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     fetchPage(0, true).finally(() => setLoading(false));
   }, [fetchPage]);
-
-  const handleEnablePush = async () => {
-    setPushSubscribing(true);
-    try {
-      const granted = await pushNotificationService.requestPermission();
-      if (granted) {
-        await pushNotificationService.subscribe();
-      }
-      setPushPermission(pushNotificationService.getPermission());
-    } catch {
-      /* ignore */
-    } finally {
-      setPushSubscribing(false);
-    }
-  };
 
   const handleToggleSound = () => {
     const next = !soundEnabled;
@@ -140,7 +125,7 @@ export function NotificationsPage() {
         setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
       } catch { /* ignore */ }
     }
-    if (n.link) navigate(n.link);
+    if (n.link) navigate(safeInternalPath(n.link));
   };
 
   // Filtreleme
@@ -208,7 +193,7 @@ export function NotificationsPage() {
       </div>
 
       {/* Web Push İzin Banner'ı */}
-      <NotificationPermissionBanner onPermissionChange={setPushPermission} />
+      <NotificationPermissionBanner />
 
       {/* Kategori Sekmeleri */}
       <div className="flex items-center gap-1.5 mb-5 overflow-x-auto pb-1 scrollbar-none">

@@ -18,4 +18,14 @@ public class ExpertProfileUpdateRequest {
     private String city;
     private List<String> specializations;
     private Boolean acceptingPatients;
+    private List<String> ageGroups;
+    private List<String> supportTopics;
+    private List<String> spokenLanguages;
+    private Integer sessionDurationMinutes;
+    private String cancellationPolicy;
+    private String reschedulePolicy;
+    private java.math.BigDecimal sessionFeeMin;
+    private java.math.BigDecimal sessionFeeMax;
+    private Boolean offersOnline;
+    private Boolean offersFaceToFace;
 }

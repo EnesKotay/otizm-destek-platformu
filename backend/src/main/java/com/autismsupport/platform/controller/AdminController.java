@@ -123,10 +123,16 @@ public class AdminController {
     }
 
     @PostMapping("/articles/{articleId}/approve")
-    public ResponseEntity<ApiResponse<com.autismsupport.platform.dto.KnowledgeArticleDto>> approveArticle(@PathVariable UUID articleId) {
+    public ResponseEntity<ApiResponse<com.autismsupport.platform.dto.KnowledgeArticleDto>> approveArticle(
+            @PathVariable UUID articleId,
+            @CurrentUser UserPrincipal principal,
+            @RequestBody(required = false) Map<String, String> body) {
         return ResponseEntity.ok(ApiResponse.success(
                 "Makale yayina alindi",
-                knowledgeArticleService.approveExternalDraft(articleId)
+                knowledgeArticleService.approveExternalDraft(
+                        articleId,
+                        principal.getId(),
+                        body == null ? null : body.get("reviewNotes"))
         ));
     }
 

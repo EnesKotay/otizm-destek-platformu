@@ -12,6 +12,12 @@ interface UpdateProfileData {
   expertTitle?: string;
   latitude?: number;
   longitude?: number;
+  allowDirectMessages?: boolean;
+  allowFamilyMessages?: boolean;
+  hideOnlineStatus?: boolean;
+  approximateLocationOnly?: boolean;
+  communicationPreferences?: string[];
+  supportIntents?: string[];
 }
 
 interface ChangePasswordData {
@@ -41,9 +47,15 @@ export const userService = {
   getOnlineStatusBatch: (userIds: string[]) =>
     api.post<ApiResponse<Record<string, boolean>>>('/users/online-status/batch', userIds).then(r => r.data.data),
 
+  completeOnboarding: () =>
+    api.post<ApiResponse<User>>('/users/me/onboarding-complete').then(r => r.data.data),
+
   updateAiConsent: (consent: boolean) =>
     api.post<ApiResponse<User>>(`/users/me/consent/ai?consent=${consent}`).then(r => r.data.data),
 
   updateEmergencyConsent: (consent: boolean) =>
     api.post<ApiResponse<User>>(`/users/me/consent/emergency?consent=${consent}`).then(r => r.data.data),
+  blockUser: (userId: string) => api.post(`/users/${userId}/block`),
+  unblockUser: (userId: string) => api.delete(`/users/${userId}/block`),
+  getBlockedUsers: () => api.get<ApiResponse<User[]>>('/users/me/blocked').then(r => r.data.data),
 };

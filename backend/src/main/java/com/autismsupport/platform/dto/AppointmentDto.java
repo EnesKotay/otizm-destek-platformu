@@ -41,6 +41,11 @@ public class AppointmentDto {
     private String status;
     private String notes;
     private String sessionNotes;
+    private String sessionSummary;
+    private String followUpRecommendations;
+    private String followUpTask;
+    private String appointmentTopic;
+    private String preSessionNotes;
     private String cancellationReason;
     private String meetingLink;
     private UUID calendarEventId;
@@ -58,4 +63,3 @@ public class AppointmentDto {
     private boolean lateCancellation;
     private String cancellationBy; // PARENT | EXPERT | SYSTEM
 }
-

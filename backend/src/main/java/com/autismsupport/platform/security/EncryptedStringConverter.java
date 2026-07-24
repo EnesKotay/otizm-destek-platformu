@@ -46,7 +46,7 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
         if (value == null || !value.startsWith(PREFIX)) return value; // eski düz metin kayıtlarla geçiş uyumu
         try {
             byte[] payload = Base64.getUrlDecoder().decode(value.substring(PREFIX.length()));
-            if (payload.length < 29) throw new IllegalArgumentException("Şifreli veri biçimi geçersiz");
+            if (payload.length < 28) throw new IllegalArgumentException("Şifreli veri biçimi geçersiz");
             byte[] iv = java.util.Arrays.copyOfRange(payload, 0, 12);
             byte[] encrypted = java.util.Arrays.copyOfRange(payload, 12, payload.length);
             Exception lastFailure = null;

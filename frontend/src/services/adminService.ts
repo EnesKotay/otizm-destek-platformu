@@ -1,5 +1,5 @@
 import api from './api';
-import type { AdminStats, ApiResponse, Report, User } from '@/types';
+import type { AdminStats, ApiResponse, Report, User, KnowledgeArticle } from '@/types';
 import type { WeeklyQuestion } from './communityService';
 
 export interface AuditLogEntry {
@@ -83,6 +83,15 @@ export const adminService = {
 
   rejectExpert: (expertId: string) =>
     api.post<ApiResponse<User>>(`/admin/experts/${expertId}/reject`).then(r => r.data.data),
+
+  getPendingArticles: () =>
+    api.get<ApiResponse<KnowledgeArticle[]>>('/admin/articles/pending').then(r => r.data.data),
+
+  approveArticle: (articleId: string, reviewNotes?: string) =>
+    api.post<ApiResponse<KnowledgeArticle>>(`/admin/articles/${articleId}/approve`, { reviewNotes }).then(r => r.data.data),
+
+  rejectArticle: (articleId: string) =>
+    api.post<ApiResponse<KnowledgeArticle>>(`/admin/articles/${articleId}/reject`).then(r => r.data.data),
 
   // Reports — uses ReportController (already handles status filter + pagination)
   getReports: (status?: string) => {

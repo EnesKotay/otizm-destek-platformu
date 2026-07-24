@@ -2,9 +2,9 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 test.describe('public user journeys', () => {
-  for (const path of ['/', '/giris', '/kayit', '/kvkk']) {
+  for (const path of ['/', '/giris', '/kayit', '/kvkk', '/guven-merkezi']) {
     test(`${path} sayfasında ciddi erişilebilirlik ihlali yok`, async ({ page }) => {
-      await page.goto(path);
+      await page.goto(path, { waitUntil: 'networkidle' });
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
         .analyze();
@@ -16,8 +16,9 @@ test.describe('public user journeys', () => {
     await page.goto('/');
 
     await expect(page).toHaveURL('/');
-    await expect(page.getByRole('heading', { level: 1, name: 'Otizm Destek Platformu' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /Aynı süreci yaşayan ailelerle tanışın/ })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Aile hesabı aç' })).toBeVisible();
+    await expect(page.getByText('Deneyimlerinizi güvenle paylaşın, doğru uzmana ulaşın ve çocuğunuzun gelişimini birlikte takip edin.')).toBeVisible();
   });
 
   test('login fields have accessible labels and announce validation errors', async ({ page }) => {
@@ -43,7 +44,7 @@ test.describe('public user journeys', () => {
   test('mobile landing does not overflow horizontally', async ({ page }) => {
     await page.setViewportSize({ width: 393, height: 851 });
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: 'Otizm Destek Platformu' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /Aynı süreci yaşayan ailelerle tanışın/ })).toBeVisible();
 
     const sizes = await page.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
@@ -52,6 +53,37 @@ test.describe('public user journeys', () => {
     }));
 
     expect(sizes.content).toBe(sizes.viewport);
-    expect(sizes.height).toBeLessThan(5000);
+    expect(sizes.height).toBeLessThan(6500);
+  });
+
+  test('landing clearly explains family and expert journeys', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'Aile hesabı aç' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Uzman başvurusu' })).toBeVisible();
+    await expect(page.getByText('Uzmanla güvenli iletişim kurun')).toBeVisible();
+  });
+
+  test('landing shows the product and links to transparent data controls', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.getByLabel('Aile paneli ürün önizlemesi')).toBeVisible();
+    await page.getByRole('link', { name: /Güven merkezini aç/ }).click();
+
+    await expect(page).toHaveURL('/guven-merkezi');
+    await expect(page.getByRole('heading', { level: 1, name: 'Güven Merkezi' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Veri dışa aktarma ve silme' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Uzman doğrulaması' })).toBeVisible();
+  });
+
+  test('landing primary public links do not lead to a missing page', async ({ page }) => {
+    await page.goto('/');
+    const paths = await page.locator('a[href^="/"]').evaluateAll((links) =>
+      [...new Set(links.map((link) => (link as HTMLAnchorElement).getAttribute('href')).filter(Boolean))],
+    );
+
+    for (const path of paths) {
+      const response = await page.request.get(path as string);
+      expect(response.status(), `${path} should be served`).toBeLessThan(400);
+    }
   });
 });

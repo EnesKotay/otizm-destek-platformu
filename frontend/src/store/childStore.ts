@@ -27,7 +27,12 @@ export const useChildStore = create<ChildState>()((set) => ({
       };
     }),
   setSelectedChild: (child) => set({ selectedChild: child }),
-  addChild: (child) => set((state) => ({ children: [...state.children, child] })),
+  addChild: (child) =>
+    set((state) => ({
+      children: state.children.some((c) => c.id === child.id)
+        ? state.children.map((c) => (c.id === child.id ? child : c))
+        : [...state.children, child],
+    })),
   updateChild: (child) =>
     set((state) => ({
       children: state.children.map((c) => (c.id === child.id ? child : c)),

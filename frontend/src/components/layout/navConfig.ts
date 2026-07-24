@@ -7,13 +7,10 @@ import {
   CalendarCheck,
   ClipboardCheck,
   FileText,
-  Flame,
   GraduationCap,
-  Heart,
   HelpCircle,
   Home,
   Library,
-  MapPin,
   MessageCircle,
   Settings,
   ShieldAlert,
@@ -70,13 +67,8 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       label: 'Topluluk',
       defaultOpen: true,
       items: [
+        { to: '/topluluk', icon: Users, label: 'Topluluk Merkezi', description: 'Aileler, gruplar, buluşmalar ve paylaşımlar tek yerde', keywords: ['aile', 'topluluk', 'merkez'], mobile: true, simple: true },
         { to: '/bilgi-bankasi', icon: Library, label: 'Bilgi Bankası', description: 'Makaleler, rehberler ve kaynaklar', keywords: ['makale', 'rehber', 'bilgi', 'kaynak'] },
-        { to: '/forum', icon: BookOpen, label: 'Forum', description: 'Sorular, yanıtlar ve deneyim paylaşımı', keywords: ['soru', 'cevap', 'paylaşım', 'forum'] },
-        { to: '/gruplar', icon: Users, label: 'Gruplar', description: 'Benzer deneyim gruplarına katılın', keywords: ['grup', 'topluluk', 'sohbet', 'aile'] },
-        { to: '/haftalik-soru', icon: Flame, label: 'Haftanın Sorusu', description: 'Her hafta bir konu, aileler birlikte cevaplar', keywords: ['soru', 'hafta', 'topluluk', 'deneyim'] },
-        { to: '/dertlesme-duvari', icon: Heart, label: 'Dertleşme Duvarı', description: 'Duygu ve deneyim paylaşımı için destek alanı', keywords: ['destek', 'duygu', 'paylaşım', 'dertleşme'] },
-        { to: '/benzer-aileler', icon: Users, label: 'Benzer Aileler', description: 'Sizinle aynı süreci yaşayan ailelerle tanışın', keywords: ['aile', 'benzer', 'topluluk', 'tanış'] },
-        { to: '/bulusmalar', icon: MapPin, label: 'Yerel Buluşmalar', description: 'Aynı şehirdeki ailelerle bir araya gelin', keywords: ['buluşma', 'etkinlik', 'şehir', 'tanış'] },
       ],
     },
     {
@@ -182,10 +174,15 @@ export function getNavGroups(role?: string) {
 }
 
 export function getMobileNavItems(role?: string, hasChild = true) {
-  return getNavGroups(role)
+  const items = getNavGroups(role)
     .flatMap((group) => group.items)
-    .filter((item) => item.mobile && (hasChild || !item.requiresChild))
-    .slice(0, 4);
+    .filter((item) => item.mobile && (hasChild || !item.requiresChild));
+  if (!role || role === 'PARENT') {
+    const community = items.find(item => item.to === '/topluluk');
+    const essentials = items.filter(item => item.to !== '/topluluk').slice(0, 4);
+    return community ? [...essentials, community] : essentials;
+  }
+  return items.slice(0, 4);
 }
 
 export function isNavItemActive(pathname: string, to: string) {

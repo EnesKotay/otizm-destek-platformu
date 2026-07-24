@@ -120,7 +120,9 @@ api.interceptors.response.use(
       }
     }
 
-    return Promise.reject(new Error(normalizeApiError(error)));
+    const normalizedError = new Error(normalizeApiError(error)) as Error & { status?: number };
+    normalizedError.status = status;
+    return Promise.reject(normalizedError);
   }
 );
 

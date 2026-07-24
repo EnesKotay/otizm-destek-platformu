@@ -42,6 +42,8 @@ export function AccessibilityWidget() {
   useEffect(() => {
     const userPrefs = user?.privacySettings?.accessibility;
     if (userPrefs) {
+      // Profile preferences intentionally override local defaults after authentication.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (typeof userPrefs.largeText === 'boolean') setLargeText(userPrefs.largeText);
       if (typeof userPrefs.calmMode === 'boolean') setCalmMode(userPrefs.calmMode);
       if (typeof userPrefs.highContrast === 'boolean') setHighContrast(userPrefs.highContrast);

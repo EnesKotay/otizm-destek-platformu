@@ -42,6 +42,7 @@ import { pushNotificationService } from '@/services/pushNotificationService';
 import { toast } from '@/store/toastStore';
 import { uploadService } from '@/services/uploadService';
 import { userService } from '@/services/userService';
+import { expertService } from '@/services/expertService';
 import { cn } from '@/utils/cn';
 import { validatePassword } from '@/utils/password';
 import { TURKISH_CITIES } from '@/constants/turkishCities';
@@ -193,6 +194,16 @@ function SettingsCore() {
   const [institution, setInstitution] = useState(user?.institution || '');
   const [licenseNumber, setLicenseNumber] = useState(user?.licenseNumber || '');
   const [expertTitle, setExpertTitle] = useState(user?.expertTitle || '');
+  const [ageGroups, setAgeGroups] = useState((user?.ageGroups || []).join(', '));
+  const [supportTopics, setSupportTopics] = useState((user?.supportTopics || []).join(', '));
+  const [spokenLanguages, setSpokenLanguages] = useState((user?.spokenLanguages || ['Türkçe']).join(', '));
+  const [sessionDurationMinutes, setSessionDurationMinutes] = useState(user?.sessionDurationMinutes || 50);
+  const [cancellationPolicy, setCancellationPolicy] = useState(user?.cancellationPolicy || '');
+  const [reschedulePolicy, setReschedulePolicy] = useState(user?.reschedulePolicy || '');
+  const [sessionFeeMin, setSessionFeeMin] = useState(user?.sessionFeeMin || 0);
+  const [sessionFeeMax, setSessionFeeMax] = useState(user?.sessionFeeMax || 0);
+  const [offersOnline, setOffersOnline] = useState(user?.offersOnline !== false);
+  const [offersFaceToFace, setOffersFaceToFace] = useState(user?.offersFaceToFace !== false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
 
@@ -227,6 +238,11 @@ function SettingsCore() {
   const [privacyShowProfile, setPrivacyShowProfile] = useState(() => localStorage.getItem('privacy_show_profile') !== 'false');
   const [privacyAllowMessages, setPrivacyAllowMessages] = useState(() => localStorage.getItem('privacy_allow_messages') !== 'false');
   const [privacyShareProgress, setPrivacyShareProgress] = useState(() => localStorage.getItem('privacy_share_progress') !== 'false');
+  const [privacyApproximateLocation, setPrivacyApproximateLocation] = useState(() => localStorage.getItem('privacy_approximate_location') !== 'false');
+  const [privacyHidePresence, setPrivacyHidePresence] = useState(() => localStorage.getItem('privacy_hide_presence') === 'true');
+  const [privacyFamilyMessages, setPrivacyFamilyMessages] = useState(() => localStorage.getItem('privacy_family_messages') !== 'false');
+  const [supportIntents, setSupportIntents] = useState<string[]>(user?.supportIntents || ['DENEYIM_PAYLASIMI']);
+  const [communicationPreferences, setCommunicationPreferences] = useState<string[]>(user?.communicationPreferences || ['YAZISMA']);
 
   const [sidebarCompact, setSidebarCompact] = useState(() => localStorage.getItem('sidebar-compact') === 'true');
   const [sidebarBadges, setSidebarBadges] = useState(() => localStorage.getItem('sidebar-show-badges') !== 'false');
@@ -318,6 +334,15 @@ function SettingsCore() {
     toast.success(successText);
   };
 
+  const persistPrivacy = async (data: Parameters<typeof userService.updateProfile>[0]) => {
+    try {
+      const updated = await userService.updateProfile(data);
+      setUser({ ...user!, ...updated });
+    } catch {
+      toast.error('Gizlilik tercihi kaydedilemedi.');
+    }
+  };
+
   const handleSidebarCompact = (value: boolean) => {
     localStorage.setItem('sidebar-compact', String(value));
     setSidebarCompact(value);
@@ -351,7 +376,28 @@ function SettingsCore() {
         fullName: fullName.trim(), phone: phone.trim(), city,
         ...(isExpert && { bio: bio.trim(), institution: institution.trim(), licenseNumber: licenseNumber.trim(), expertTitle: expertTitle.trim() }),
       });
-      setUser(updated);
+      if (isExpert) {
+        const split = (value: string) => value.split(',').map(item => item.trim()).filter(Boolean);
+        const expertUpdated = await expertService.updateProfile({
+          bio: bio.trim(),
+          expertTitle: expertTitle.trim(),
+          institution: institution.trim(),
+          city,
+          ageGroups: split(ageGroups),
+          supportTopics: split(supportTopics),
+          spokenLanguages: split(spokenLanguages),
+          sessionDurationMinutes,
+          cancellationPolicy: cancellationPolicy.trim(),
+          reschedulePolicy: reschedulePolicy.trim(),
+          sessionFeeMin,
+          sessionFeeMax,
+          offersOnline,
+          offersFaceToFace,
+        });
+        setUser({ ...updated, ...expertUpdated });
+      } else {
+        setUser(updated);
+      }
       toast.success('Profil bilgileri güncellendi.');
     } catch {
       toast.error('Güncelleme başarısız oldu.');
@@ -601,6 +647,26 @@ function SettingsCore() {
                     onChange={e => setLicenseNumber(e.target.value)}
                     placeholder="Meslek belgesi numarası"
                   />
+                  <Input label="Çalıştığınız yaş grupları" value={ageGroups} onChange={e => setAgeGroups(e.target.value)} placeholder="Örn: 3-5, 6-8, 9-12" />
+                  <Input label="Destek verdiğiniz konular" value={supportTopics} onChange={e => setSupportTopics(e.target.value)} placeholder="Örn: İletişim, duyusal hassasiyet, okul" />
+                  <Input label="Konuştuğunuz diller" value={spokenLanguages} onChange={e => setSpokenLanguages(e.target.value)} placeholder="Örn: Türkçe, İngilizce" />
+                  <Input label="Görüşme süresi (dakika)" type="number" min={15} max={180} value={String(sessionDurationMinutes)} onChange={e => setSessionDurationMinutes(Number(e.target.value) || 50)} />
+                  <Input label="En düşük seans ücreti (₺)" type="number" min={0} value={String(sessionFeeMin)} onChange={e => setSessionFeeMin(Number(e.target.value) || 0)} />
+                  <Input label="En yüksek seans ücreti (₺)" type="number" min={0} value={String(sessionFeeMax)} onChange={e => setSessionFeeMax(Number(e.target.value) || 0)} />
+                </div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <SettingRow icon={Smartphone} label="Online görüşme" description="Video görüşme ile hizmet veriyorum" checked={offersOnline} onChange={setOffersOnline} />
+                  <SettingRow icon={MapPin} label="Yüz yüze görüşme" description="Kurumda veya klinikte hizmet veriyorum" checked={offersFaceToFace} onChange={setOffersFaceToFace} />
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-gray-700">İptal koşulları</label>
+                    <textarea value={cancellationPolicy} onChange={e => setCancellationPolicy(e.target.value)} rows={3} placeholder="Örn: Görüşmeden 24 saat öncesine kadar ücretsiz iptal" className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-gray-700">Erteleme koşulları</label>
+                    <textarea value={reschedulePolicy} onChange={e => setReschedulePolicy(e.target.value)} rows={3} placeholder="Örn: Uygun bir saate bir kez ücretsiz erteleme" className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
                 </div>
                 <div className="pt-3 border-t border-gray-100">
                   <SettingRow
@@ -905,6 +971,33 @@ function SettingsCore() {
                 <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-600 leading-relaxed">
                   Bu ayarlar yalnızca onaylı bağlantılarınız olan uzmanları etkiler.
                 </div>
+                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-indigo-950">Şu an paylaşılanlar</p>
+                      <p className="mt-1 text-xs leading-5 text-indigo-800">
+                        {privacyShowProfile ? 'Profil ve çocuk bilgileri' : 'Profil kapalı'}
+                        {privacyShareProgress ? ' · gelişim notları' : ''}
+                        {privacyAllowMessages ? ' · uygulama içi mesajlaşma' : ''}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-[11px] font-black ${
+                      privacyShowProfile || privacyShareProgress || privacyAllowMessages
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {privacyShowProfile || privacyShareProgress || privacyAllowMessages ? 'Paylaşım açık' : 'Paylaşım kapalı'}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" onClick={() => navigate('/cocuklarim#uzman-istekleri')}>
+                      Bağlı uzmanları yönet
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => navigate('/guven-merkezi')}>
+                      Paylaşım nasıl çalışır?
+                    </Button>
+                  </div>
+                </div>
                 <SettingRow
                   icon={Eye}
                   label="Profilim uzmanlara görünsün"
@@ -924,6 +1017,7 @@ function SettingsCore() {
                   onChange={(value) => {
                     localStorage.setItem('privacy_allow_messages', String(value));
                     setPrivacyAllowMessages(value);
+                    void persistPrivacy({ allowDirectMessages: value });
                     toast.success(value ? 'Mesaj izni verildi.' : 'Mesaj izni kaldırıldı.');
                   }}
                 />
@@ -938,6 +1032,69 @@ function SettingsCore() {
                     toast.success(value ? 'Gelişim paylaşımı açıldı.' : 'Gelişim paylaşımı kapatıldı.');
                   }}
                 />
+                <SettingRow
+                  icon={MapPin}
+                  label="Yalnızca yaklaşık konum"
+                  description="Ailelere mesafe yerine ilçe/bölge düzeyinde yakınlık göster"
+                  checked={privacyApproximateLocation}
+                  onChange={(value) => {
+                    handlePreference('privacy_approximate_location', value, setPrivacyApproximateLocation);
+                    void persistPrivacy({ approximateLocationOnly: value });
+                  }}
+                />
+                <SettingRow
+                  icon={EyeOff}
+                  label="Çevrimiçi durumumu gizle"
+                  description="Son görülme ve çevrimiçi bilgimi diğer kullanıcılara gösterme"
+                  checked={privacyHidePresence}
+                  onChange={(value) => {
+                    handlePreference('privacy_hide_presence', value, setPrivacyHidePresence);
+                    void persistPrivacy({ hideOnlineStatus: value });
+                  }}
+                />
+                <SettingRow
+                  icon={Users}
+                  label="Ailelerden tanışma mesajı al"
+                  description="Yalnızca eşleşme veya kabul edilen istek sonrasında mesaj alınır"
+                  checked={privacyFamilyMessages}
+                  onChange={(value) => {
+                    handlePreference('privacy_family_messages', value, setPrivacyFamilyMessages);
+                    void persistPrivacy({ allowFamilyMessages: value });
+                  }}
+                />
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
+                  Bağlı uzmanların erişimini “Bağlı Uzmanlar” alanından kaldırabilirsiniz. Çocuk profilinde hangi alanların paylaşılacağını ayrıca seçebilirsiniz.
+                </div>
+                <div className="space-y-3 rounded-2xl border border-slate-200 p-4">
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Toplulukta ne arıyorsunuz?</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {[
+                        ['DENEYIM_PAYLASIMI', 'Deneyim paylaşımı'],
+                        ['DUZENLI_DESTEK', 'Düzenli konuşma'],
+                        ['YEREL_BULUSMA', 'Yakında buluşma'],
+                        ['MENTOR_ARIYOR', 'Mentor arıyorum'],
+                        ['MENTORLUK', 'Mentorluk yapabilirim'],
+                      ].map(([value, label]) => (
+                        <button key={value} type="button" onClick={() => {
+                          const next = supportIntents.includes(value) ? supportIntents.filter(x => x !== value) : [...supportIntents, value];
+                          setSupportIntents(next); void persistPrivacy({ supportIntents: next });
+                        }} className={`rounded-full border px-3 py-1.5 text-xs font-bold ${supportIntents.includes(value) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-600'}`}>{label}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">İletişim tercihiniz</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {[['YAZISMA', 'Önce yazışma'], ['GORUNTULU', 'Görüntülü görüşme'], ['AKSAM', 'Akşam yanıtlarım']].map(([value, label]) => (
+                        <button key={value} type="button" onClick={() => {
+                          const next = communicationPreferences.includes(value) ? communicationPreferences.filter(x => x !== value) : [...communicationPreferences, value];
+                          setCommunicationPreferences(next); void persistPrivacy({ communicationPreferences: next });
+                        }} className={`rounded-full border px-3 py-1.5 text-xs font-bold ${communicationPreferences.includes(value) ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-200 bg-white text-slate-600'}`}>{label}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </Card>
           )}

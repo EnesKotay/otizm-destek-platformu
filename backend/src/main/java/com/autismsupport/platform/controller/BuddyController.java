@@ -61,6 +61,12 @@ public class BuddyController {
         return ResponseEntity.ok(ApiResponse.success("Eslesme basariyla silindi", null));
     }
 
+    @DeleteMapping("/request/{id}")
+    public ResponseEntity<ApiResponse<Void>> withdrawRequest(@PathVariable UUID id, @CurrentUser UserPrincipal principal) {
+        buddyRelationshipService.withdrawBuddyRequest(principal.getId(), id);
+        return ResponseEntity.ok(ApiResponse.success("Tanışma isteği geri çekildi", null));
+    }
+
     @GetMapping("/my-list")
     public ResponseEntity<ApiResponse<List<BuddyDto>>> getMyBuddies(@CurrentUser UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.success(buddyRelationshipService.getMyBuddies(principal.getId())));

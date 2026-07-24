@@ -6,6 +6,7 @@ import { toast } from '@/store/toastStore';
 import { Drawer } from '@/components/ui/Drawer';
 import { formatDate } from '@/utils/date';
 import { knowledgeService } from '@/services/knowledgeService';
+import { adminService } from '@/services/adminService';
 import type { KnowledgeArticle } from '@/types';
 
 export function AdminArticlesPage() {
@@ -20,12 +21,25 @@ export function AdminArticlesPage() {
   const [formTitle, setFormTitle] = useState('');
   const [formCategory, setFormCategory] = useState('');
   const [formContent, setFormContent] = useState('');
+  const [formSourceName, setFormSourceName] = useState('');
+  const [formSourceUrl, setFormSourceUrl] = useState('');
+  const [formSourceAuthor, setFormSourceAuthor] = useState('');
+  const [formSourcePublication, setFormSourcePublication] = useState('');
+  const [formDoi, setFormDoi] = useState('');
+  const [formLicenseType, setFormLicenseType] = useState<NonNullable<KnowledgeArticle['licenseType']>>('ORIGINAL');
+  const [formUsageType, setFormUsageType] = useState<NonNullable<KnowledgeArticle['usageType']>>('ORIGINAL');
+  const [formEvidenceLevel, setFormEvidenceLevel] = useState<NonNullable<KnowledgeArticle['evidenceLevel']>>('EXPERT_REVIEW');
+  const [formReviewNotes, setFormReviewNotes] = useState('');
 
   const fetchArticles = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await knowledgeService.getAll(0, 50);
-      setArticles(response.content);
+      const [response, pending] = await Promise.all([
+        knowledgeService.getAll(0, 50),
+        adminService.getPendingArticles()
+      ]);
+      const merged = new Map([...response.content, ...pending].map(article => [article.id, article]));
+      setArticles(Array.from(merged.values()));
     } catch {
       setArticles([]);
       toast.error('Makaleler yüklenemedi.');
@@ -45,11 +59,27 @@ export function AdminArticlesPage() {
       setFormTitle(article.title);
       setFormCategory(article.category || '');
       setFormContent(article.content || '');
+      setFormSourceName(article.sourceName || '');
+      setFormSourceUrl(article.sourceUrl || '');
+      setFormSourceAuthor(article.sourceAuthor || '');
+      setFormSourcePublication(article.sourcePublication || '');
+      setFormDoi(article.doi || '');
+      setFormLicenseType(article.licenseType || 'UNKNOWN');
+      setFormUsageType(article.usageType || 'ORIGINAL');
+      setFormEvidenceLevel(article.evidenceLevel || 'EXPERT_REVIEW');
     } else {
       setEditingArticle(null);
       setFormTitle('');
       setFormCategory('');
       setFormContent('');
+      setFormSourceName('');
+      setFormSourceUrl('');
+      setFormSourceAuthor('');
+      setFormSourcePublication('');
+      setFormDoi('');
+      setFormLicenseType('ORIGINAL');
+      setFormUsageType('ORIGINAL');
+      setFormEvidenceLevel('EXPERT_REVIEW');
     }
     setIsEditorOpen(true);
   };
@@ -65,14 +95,32 @@ export function AdminArticlesPage() {
         await knowledgeService.update(editingArticle.id, {
           title: formTitle,
           category: formCategory || 'Genel',
-          content: formContent
+          content: formContent,
+          sourceName: formSourceName,
+          sourceUrl: formSourceUrl,
+          sourceAuthor: formSourceAuthor,
+          sourcePublication: formSourcePublication,
+          doi: formDoi,
+          licenseType: formLicenseType,
+          usageType: formUsageType,
+          evidenceLevel: formEvidenceLevel,
+          sourceAccessedAt: formSourceUrl ? new Date().toISOString().slice(0, 10) : undefined
         });
         toast.success('Makale güncellendi');
       } else {
         await knowledgeService.create({
           title: formTitle,
           category: formCategory || 'Genel',
-          content: formContent
+          content: formContent,
+          sourceName: formSourceName,
+          sourceUrl: formSourceUrl,
+          sourceAuthor: formSourceAuthor,
+          sourcePublication: formSourcePublication,
+          doi: formDoi,
+          licenseType: formLicenseType,
+          usageType: formUsageType,
+          evidenceLevel: formEvidenceLevel,
+          sourceAccessedAt: formSourceUrl ? new Date().toISOString().slice(0, 10) : undefined
         });
         toast.success('Yeni makale oluşturuldu');
       }
@@ -101,6 +149,17 @@ export function AdminArticlesPage() {
       toast.success(updated.published ? 'Makale yayına alındı' : 'Makale taslağa çekildi');
     } catch {
       toast.error('Durum güncellenemedi');
+    }
+  };
+
+  const approveArticle = async (id: string) => {
+    try {
+      await adminService.approveArticle(id, formReviewNotes || 'Kaynak, lisans ve sağlık dili editöryal olarak kontrol edildi.');
+      setFormReviewNotes('');
+      toast.success('Makale editöryal onayla yayına alındı');
+      fetchArticles();
+    } catch {
+      toast.error('Kaynak ve lisans alanlarını tamamlamadan yayın yapılamaz');
     }
   };
 
@@ -157,16 +216,24 @@ export function AdminArticlesPage() {
                       </span>
                       <span>{formatDate(article.createdAt)}</span>
                       <span className="flex items-center gap-1"><Eye size={12}/> {article.viewCount || 0} Okunma</span>
+                      {article.pendingReview && <span className="font-bold text-amber-700">İnceleme bekliyor</span>}
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <span 
+                    {article.pendingReview ? (
+                      <button
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+                        onClick={() => approveArticle(article.id)}
+                      >
+                        İncele ve yayınla
+                      </button>
+                    ) : <span
                       className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors ${article.published ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}
                       onClick={() => toggleStatus(article.id)}
                     >
                       {article.published ? 'Yayında' : 'Taslak'}
-                    </span>
+                    </span>}
                     
                     <div className="flex items-center ml-2 border-l border-slate-200 pl-2">
                       <button 
@@ -217,6 +284,46 @@ export function AdminArticlesPage() {
                 className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
               />
             </div>
+
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-4">
+              <div>
+                <h3 className="font-bold text-indigo-950">Kaynak, kanıt ve telif beyanı</h3>
+                <p className="text-xs text-indigo-700 mt-1">Özgün olmayan içerikler kaynak ve doğrulanmış lisans olmadan yayımlanamaz.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input value={formSourceName} onChange={e => setFormSourceName(e.target.value)} placeholder="Kaynak adı" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                <input value={formSourceUrl} onChange={e => setFormSourceUrl(e.target.value)} placeholder="Kalıcı kaynak URL'si" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                <input value={formSourceAuthor} onChange={e => setFormSourceAuthor(e.target.value)} placeholder="Özgün yazar(lar)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                <input value={formSourcePublication} onChange={e => setFormSourcePublication(e.target.value)} placeholder="Yayın / kurum" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                <input value={formDoi} onChange={e => setFormDoi(e.target.value)} placeholder="DOI (varsa)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                <select value={formUsageType} onChange={e => setFormUsageType(e.target.value as NonNullable<KnowledgeArticle['usageType']>)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white">
+                  <option value="ORIGINAL">Platform özgün içeriği</option>
+                  <option value="SUMMARY">Bağımsız özet</option>
+                  <option value="TRANSLATION">Çeviri</option>
+                  <option value="ADAPTATION">Uyarlama</option>
+                  <option value="QUOTATION">Kısa alıntı</option>
+                </select>
+                <select value={formLicenseType} onChange={e => setFormLicenseType(e.target.value as NonNullable<KnowledgeArticle['licenseType']>)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white">
+                  <option value="ORIGINAL">Platforma ait</option>
+                  <option value="CC_BY">CC BY</option>
+                  <option value="CC_BY_SA">CC BY-SA</option>
+                  <option value="CC_BY_NC">CC BY-NC</option>
+                  <option value="CC_BY_ND">CC BY-ND</option>
+                  <option value="PUBLIC_DOMAIN">Kamu malı</option>
+                  <option value="RIGHTS_RESERVED">Tüm hakları saklı</option>
+                  <option value="UNKNOWN">Bilinmiyor — yayımlanamaz</option>
+                </select>
+                <select value={formEvidenceLevel} onChange={e => setFormEvidenceLevel(e.target.value as NonNullable<KnowledgeArticle['evidenceLevel']>)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white">
+                  <option value="GUIDELINE">Klinik / kurumsal rehber</option>
+                  <option value="SYSTEMATIC_REVIEW">Sistematik derleme</option>
+                  <option value="CONTROLLED_STUDY">Kontrollü çalışma</option>
+                  <option value="OBSERVATIONAL_STUDY">Gözlemsel çalışma</option>
+                  <option value="EXPERT_REVIEW">Uzman derlemesi</option>
+                  <option value="LIVED_EXPERIENCE">Yaşantı deneyimi</option>
+                </select>
+              </div>
+              <textarea value={formReviewNotes} onChange={e => setFormReviewNotes(e.target.value)} placeholder="Editöryal inceleme notu" rows={2} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            </div>
             
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kategori</label>
@@ -226,9 +333,16 @@ export function AdminArticlesPage() {
                 className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none bg-white transition-all"
               >
                 <option value="">Kategori Seçin</option>
+                <option value="Genel">Genel</option>
                 <option value="Teşhis ve Tanı">Teşhis ve Tanı</option>
+                <option value="İletişim">İletişim</option>
+                <option value="Davranış">Davranış</option>
                 <option value="Eğitim">Eğitim</option>
                 <option value="Terapiler">Terapiler</option>
+                <option value="Sağlık">Sağlık</option>
+                <option value="Beslenme">Beslenme</option>
+                <option value="Duyusal Gelişim">Duyusal Gelişim</option>
+                <option value="Aile">Aile</option>
                 <option value="Günlük Yaşam">Günlük Yaşam</option>
               </select>
             </div>

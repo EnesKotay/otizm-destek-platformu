@@ -24,6 +24,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -122,9 +124,27 @@ public class KnowledgeArticleService {
                 .mediaUrl(dto.getMediaUrl())
                 .sourceName(blankToNull(dto.getSourceName()))
                 .sourceUrl(blankToNull(dto.getSourceUrl()))
+                .sourceAuthor(blankToNull(dto.getSourceAuthor()))
+                .sourcePublication(blankToNull(dto.getSourcePublication()))
+                .sourcePublishedAt(dto.getSourcePublishedAt())
+                .sourceAccessedAt(dto.getSourceAccessedAt())
+                .doi(blankToNull(dto.getDoi()))
+                .licenseType(normalizeMetadata(dto.getLicenseType(), "UNKNOWN"))
+                .usageType(normalizeMetadata(dto.getUsageType(), "ORIGINAL"))
+                .evidenceLevel(normalizeMetadata(dto.getEvidenceLevel(), "EXPERT_REVIEW"))
+                .originalLanguage(normalizeMetadata(dto.getOriginalLanguage(), "tr"))
+                .aiGenerated(dto.isAiGenerated())
                 .author(author)
-                .published(dto.isPublished())
+                .published(false)
+                .pendingReview(true)
                 .build();
+        if (author.getRole() == UserRole.ADMIN && dto.isPublished()) {
+            validateForPublication(article);
+            article.setPublished(true);
+            article.setPendingReview(false);
+            article.setReviewedBy(author);
+            article.setReviewedAt(LocalDateTime.now());
+        }
         return toDto(articleRepository.save(article));
     }
 
@@ -133,7 +153,7 @@ public class KnowledgeArticleService {
         KnowledgeArticle article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-        if (!article.getAuthor().getId().equals(userId) && user.getRole() != UserRole.ADMIN) {
+        if ((article.getAuthor() == null || !article.getAuthor().getId().equals(userId)) && user.getRole() != UserRole.ADMIN) {
             throw new RuntimeException("Bu makaleyi düzenleme yetkiniz yok");
         }
         article.setTitle(dto.getTitle());
@@ -143,7 +163,22 @@ public class KnowledgeArticleService {
         if (dto.getMediaUrl() != null) article.setMediaUrl(dto.getMediaUrl());
         article.setSourceName(blankToNull(dto.getSourceName()));
         article.setSourceUrl(blankToNull(dto.getSourceUrl()));
-        article.setPublished(dto.isPublished());
+        article.setSourceAuthor(blankToNull(dto.getSourceAuthor()));
+        article.setSourcePublication(blankToNull(dto.getSourcePublication()));
+        article.setSourcePublishedAt(dto.getSourcePublishedAt());
+        article.setSourceAccessedAt(dto.getSourceAccessedAt());
+        article.setDoi(blankToNull(dto.getDoi()));
+        article.setLicenseType(normalizeMetadata(dto.getLicenseType(), "UNKNOWN"));
+        article.setUsageType(normalizeMetadata(dto.getUsageType(), "ORIGINAL"));
+        article.setEvidenceLevel(normalizeMetadata(dto.getEvidenceLevel(), "EXPERT_REVIEW"));
+        article.setOriginalLanguage(normalizeMetadata(dto.getOriginalLanguage(), "tr"));
+        article.setAiGenerated(dto.isAiGenerated());
+        // Her esaslı düzenleme önceki onayı geçersiz kılar.
+        article.setPublished(false);
+        article.setPendingReview(true);
+        article.setReviewedBy(null);
+        article.setReviewedAt(null);
+        article.setReviewNotes(null);
         return toDto(articleRepository.save(article));
     }
 
@@ -152,7 +187,7 @@ public class KnowledgeArticleService {
         KnowledgeArticle article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-        if (!article.getAuthor().getId().equals(userId) && user.getRole() != UserRole.ADMIN) {
+        if ((article.getAuthor() == null || !article.getAuthor().getId().equals(userId)) && user.getRole() != UserRole.ADMIN) {
             throw new RuntimeException("Bu makaleyi silme yetkiniz yok");
         }
         articleRepository.delete(article);
@@ -163,10 +198,22 @@ public class KnowledgeArticleService {
         KnowledgeArticle article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-        if (!article.getAuthor().getId().equals(userId) && user.getRole() != UserRole.ADMIN) {
+        if ((article.getAuthor() == null || !article.getAuthor().getId().equals(userId)) && user.getRole() != UserRole.ADMIN) {
             throw new RuntimeException("Yetkiniz yok");
         }
-        article.setPublished(!article.isPublished());
+        if (article.isPublished()) {
+            article.setPublished(false);
+            article.setPendingReview(true);
+        } else {
+            if (user.getRole() != UserRole.ADMIN) {
+                throw new RuntimeException("Yayın için yönetici editöryal onayı gerekir");
+            }
+            validateForPublication(article);
+            article.setPublished(true);
+            article.setPendingReview(false);
+            article.setReviewedBy(user);
+            article.setReviewedAt(LocalDateTime.now());
+        }
         return toDto(articleRepository.save(article));
     }
 
@@ -216,6 +263,19 @@ public class KnowledgeArticleService {
                 .sourceName(a.getSourceName())
                 .sourceUrl(a.getSourceUrl())
                 .pendingReview(a.isPendingReview())
+                .sourceAuthor(a.getSourceAuthor())
+                .sourcePublication(a.getSourcePublication())
+                .sourcePublishedAt(a.getSourcePublishedAt())
+                .sourceAccessedAt(a.getSourceAccessedAt())
+                .doi(a.getDoi())
+                .licenseType(a.getLicenseType())
+                .usageType(a.getUsageType())
+                .evidenceLevel(a.getEvidenceLevel())
+                .originalLanguage(a.getOriginalLanguage())
+                .aiGenerated(a.isAiGenerated())
+                .reviewedBy(toReviewerDto(a.getReviewedBy()))
+                .reviewedAt(a.getReviewedAt())
+                .reviewNotes(a.getReviewNotes())
                 .tags(tagDtos)
                 .author(authorDto)
                 .published(a.isPublished())
@@ -241,11 +301,17 @@ public class KnowledgeArticleService {
     }
 
     @Transactional
-    public KnowledgeArticleDto approveExternalDraft(UUID id) {
+    public KnowledgeArticleDto approveExternalDraft(UUID id, UUID reviewerId, String reviewNotes) {
         KnowledgeArticle article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
+        User reviewer = userRepository.findById(reviewerId)
+                .orElseThrow(() -> new RuntimeException("İnceleyen kullanıcı bulunamadı"));
+        validateForPublication(article);
         article.setPublished(true);
         article.setPendingReview(false);
+        article.setReviewedBy(reviewer);
+        article.setReviewedAt(LocalDateTime.now());
+        article.setReviewNotes(blankToNull(reviewNotes));
         return toDto(articleRepository.save(article));
     }
 
@@ -255,6 +321,41 @@ public class KnowledgeArticleService {
                 .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
         article.setPendingReview(false);
         return toDto(articleRepository.save(article));
+    }
+
+    private UserDto toReviewerDto(User reviewer) {
+        if (reviewer == null) return null;
+        return UserDto.builder()
+                .id(reviewer.getId())
+                .fullName(reviewer.getFullName())
+                .role(reviewer.getRole().name())
+                .expertTitle(reviewer.getExpertTitle())
+                .verified(reviewer.isVerified())
+                .build();
+    }
+
+    private String normalizeMetadata(String value, String fallback) {
+        String normalized = blankToNull(value);
+        return normalized == null ? fallback : normalized.trim().toUpperCase();
+    }
+
+    private void validateForPublication(KnowledgeArticle article) {
+        String usageType = normalizeMetadata(article.getUsageType(), "ORIGINAL");
+        String licenseType = normalizeMetadata(article.getLicenseType(), "UNKNOWN");
+        if (!"ORIGINAL".equals(usageType)) {
+            if (blankToNull(article.getSourceName()) == null || blankToNull(article.getSourceUrl()) == null) {
+                throw new RuntimeException("Özet, çeviri ve uyarlamalarda kaynak adı ile bağlantısı zorunludur");
+            }
+            if ("UNKNOWN".equals(licenseType)) {
+                throw new RuntimeException("Kaynak lisansı doğrulanmadan içerik yayımlanamaz");
+            }
+            if ("TRANSLATION".equals(usageType) && ("CC_BY_ND".equals(licenseType) || "RIGHTS_RESERVED".equals(licenseType))) {
+                throw new RuntimeException("Bu lisans çeviri/uyarlama yayınına izin vermiyor");
+            }
+        }
+        if (article.getSourceUrl() != null && article.getSourceAccessedAt() == null) {
+            article.setSourceAccessedAt(LocalDate.now());
+        }
     }
 
     @Transactional(readOnly = true)

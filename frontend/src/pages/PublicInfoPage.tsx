@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, FileText, HeartHandshake, ShieldCheck } from 'lucide-react';
 
-type InfoPageKind = 'kvkk' | 'privacy' | 'terms' | 'medical';
+type InfoPageKind = 'kvkk' | 'privacy' | 'terms' | 'medical' | 'trust';
 
 interface PublicInfoPageProps {
   kind: InfoPageKind;
@@ -14,6 +14,52 @@ const content: Record<InfoPageKind, {
   icon: typeof ShieldCheck;
   sections: Array<{ title: string; body: string[] }>;
 }> = {
+  trust: {
+    eyebrow: 'Şeffaflık ve kullanıcı kontrolü',
+    title: 'Güven Merkezi',
+    summary: 'Çocuk ve aile verilerinin kimlerle, hangi amaçla ve ne kadar süreyle paylaşılacağını anlamanız için temel kontrolleri tek yerde açıklıyoruz.',
+    icon: ShieldCheck,
+    sections: [
+      {
+        title: 'Erişim nasıl çalışır?',
+        body: [
+          'Aile, uzman ve yönetici rolleri ayrı yetkilere sahiptir. Bir uzman yalnızca bağlantı ve paylaşım izni verilen danışan bilgilerine erişebilir.',
+          'Mevcut paylaşım izinleri hesap ayarlarından görüntülenebilir; ihtiyaç sona erdiğinde erişim geri alınabilir.',
+        ],
+      },
+      {
+        title: 'Uzman doğrulaması',
+        body: [
+          'Uzman başvurularında mesleki bilgiler ve yüklenen belgeler yönetici incelemesine alınır. Onay durumu profil üzerinde görünür; doğrulanmamış hesaplar klinik yetki gerektiren araçlara erişemez.',
+        ],
+      },
+      {
+        title: 'Veri güvenliği',
+        body: [
+          'Hesap erişimi kimlik doğrulama ve rol tabanlı yetkilendirmeyle korunur. Hassas alanlar uygulama seviyesinde şifreleme, aktarım sırasında ise güvenli bağlantı kullanacak şekilde tasarlanmıştır.',
+          'Güvenlik mutlak bir garanti değildir; şüpheli hesap hareketleri ve güvenlik sorunları destek kanalı üzerinden bildirilmelidir.',
+        ],
+      },
+      {
+        title: 'Veri dışa aktarma ve silme',
+        body: [
+          'Kullanıcılar Ayarlar alanından hesap verilerinin dışa aktarılmasını veya hesabın silinmesini talep edebilir. Yasal saklama zorunluluğu bulunmayan veriler silinir ya da anonimleştirilir.',
+        ],
+      },
+      {
+        title: 'Yapay zekâ ve tıbbi sınır',
+        body: [
+          'Yapay zekâ destekli özetler yalnızca kayıtları düzenlemeye yardımcı olur; tanı koymaz, tedavi planlamaz ve sağlık profesyonelinin kararının yerine geçmez.',
+        ],
+      },
+      {
+        title: 'Destek ve başvuru',
+        body: [
+          'Gizlilik, erişim veya hesapla ilgili talepler giriş yaptıktan sonra Yardım Merkezi ve Ayarlar alanından iletilebilir. Acil sağlık durumlarında platform destek kanalı yerine resmi acil yardım hattı kullanılmalıdır.',
+        ],
+      },
+    ],
+  },
   kvkk: {
     eyebrow: 'KVKK ve açık rıza',
     title: 'KVKK Aydınlatma Metni',

@@ -759,7 +759,17 @@ function DailyTrackerCore() {
           {tab === 'mood' && (
             <div className="space-y-4">
               <Card className="p-6">
-                <h2 className="font-bold text-slate-900 mb-5 text-lg">Bugün Nasıl Hissetti?</h2>
+                <div className="mb-5 flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h2 className="font-bold text-slate-900 text-lg">Bugün Nasıl Hissetti?</h2>
+                    <p className="mt-1 text-xs font-medium text-slate-500">
+                      Yalnızca bir duygu seçmeniz yeterli; tetikleyici ve not alanları isteğe bağlıdır.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
+                    Yaklaşık 20 saniye
+                  </span>
+                </div>
                 <div className="flex gap-3 justify-between">
                   {MOOD_OPTIONS.map(opt => (
                     <button key={opt.level} onClick={() => setMoodLevel(opt.level)}
@@ -798,6 +808,18 @@ function DailyTrackerCore() {
                   {todayMood ? 'Güncelle' : 'Kaydet'}
                 </Button>
               </Card>
+
+              {moodLevel > 0 && (
+                <div className="fixed inset-x-4 bottom-24 z-30 lg:hidden">
+                  <Button
+                    className="h-12 w-full rounded-2xl shadow-xl shadow-indigo-900/20"
+                    onClick={saveMood}
+                    loading={savingMood}
+                  >
+                    {todayMood ? 'Bugünkü kaydı güncelle' : 'Bugünkü kaydı tamamla'}
+                  </Button>
+                </div>
+              )}
 
               {/* Son 7 gün (Ruh Hali) */}
               {moodEntries.slice(0, 7).length > 0 && (

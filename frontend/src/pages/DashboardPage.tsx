@@ -147,6 +147,7 @@ export function DashboardPage() {
   const [visitedRoutes, setVisitedRoutes] = useState<Set<string>>(new Set());
   const [showWelcomeWizard, setShowWelcomeWizard] = useState(false);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const [focusMode, setFocusMode] = useState(() => localStorage.getItem('settings-focus-mode') === 'true');
   const [wizardForm, setWizardForm] = useState({ name: '', birthDate: '', gender: '' });
   const [wizardSaving, setWizardSaving] = useState(false);
   const [wizardError, setWizardError] = useState('');
@@ -1831,6 +1832,23 @@ export function DashboardPage() {
         </div>
       )}
 
+      {!loading && !focusMode && (
+        <section className="grid gap-4 md:grid-cols-3">
+          {[
+            { to: '/topluluk', icon: Users, title: 'Ailelerle konuş', text: 'Benzer süreçlerden geçen aileleri bul, önce güvenle mesajlaş.', tone: 'from-violet-600 to-indigo-600' },
+            { to: '/uzmanlar', icon: GraduationCap, title: 'Uzmanla görüş', text: 'Doğrulanmış uzmanları karşılaştır, uygun saat için randevu al.', tone: 'from-blue-600 to-cyan-600' },
+            { to: '/gunluk-takip', icon: Activity, title: 'Gelişimi kaydet', text: 'Bugünün kısa kaydını ekle ve ilerlemeyi görünür kıl.', tone: 'from-emerald-600 to-teal-600' },
+          ].map(({ to, icon: Icon, title, text, tone }) => (
+            <Link key={to} to={to} className={`group rounded-[24px] bg-gradient-to-br ${tone} p-5 text-white shadow-md transition hover:-translate-y-1 hover:shadow-xl`}>
+              <Icon size={23} />
+              <h2 className="mt-5 text-xl font-black">{title}</h2>
+              <p className="mt-1 text-sm leading-6 text-white/80">{text}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs font-extrabold">Başla <ArrowRight size={13} className="transition group-hover:translate-x-1" /></span>
+            </Link>
+          ))}
+        </section>
+      )}
+
       {!loading && (
         <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-b from-white to-indigo-50/30 p-6 sm:p-8 shadow-md shadow-slate-100/60 border border-slate-200/80">
           {/* Decorative background element */}
@@ -1845,7 +1863,20 @@ export function DashboardPage() {
                 </div>
                 <GuideTooltip content="Günlük görevlerinizi sırasıyla tamamlayarak çocuğunuzun gelişim rutinini oluşturun." position="right" />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Bugün ne yapacağım?</h2>
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Bugün ne yapacağım?</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !focusMode;
+                    localStorage.setItem('settings-focus-mode', String(next));
+                    setFocusMode(next);
+                  }}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold text-slate-600 shadow-sm hover:border-indigo-200 hover:text-indigo-700"
+                >
+                  {focusMode ? 'Tüm bölümleri göster' : 'Yalnızca bugünü göster'}
+                </button>
+              </div>
               <p className="mt-2 text-sm font-medium leading-relaxed text-slate-500">
                 {activeChild
                   ? (
@@ -2035,7 +2066,7 @@ export function DashboardPage() {
       )}
 
       {/* ── Hızlı Eylemler — 4 kart ── */}
-      {!loading && activeChild && todayMood && (
+      {!loading && !focusMode && activeChild && todayMood && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {quickCaptureActions.map(({ to, label, detail, icon: Icon, tone }) => {
             const hoverBorderColor =
@@ -2119,7 +2150,7 @@ export function DashboardPage() {
       )}
 
       {/* ── Haftalık konu + Keşfet & Geliş Paneli ── */}
-      {!loading && activeChild && todayMood && (
+      {!loading && !focusMode && activeChild && todayMood && (
         <div className="grid gap-5 xl:grid-cols-2">
           <WeeklyTopicWidget variant="dashboard" />
 

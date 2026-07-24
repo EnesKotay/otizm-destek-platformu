@@ -3,22 +3,28 @@ import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
+  BarChart3,
   Baby,
   BookOpen,
   CalendarCheck,
   CheckCircle2,
+  Clock3,
+  Database,
+  Eye,
   HeartHandshake,
   LockKeyhole,
   Menu,
   MessageCircle,
   NotebookTabs,
+  Quote,
+  Settings2,
   ShieldCheck,
   Stethoscope,
   TrendingUp,
   UserCheck,
+  Users,
   X,
 } from 'lucide-react';
-import landingHeroSupport from '@/assets/landing-hero-support.jpg';
 
 const guideSteps = [
   {
@@ -94,7 +100,39 @@ const modules: { icon: React.ElementType; title: string; text: string; color: Mo
 const heroStats = [
   { value: '3 dk', label: 'ilk kayıt' },
   { value: '6 adım', label: 'başlangıç planı' },
-  { value: 'rol bazlı', label: 'güvenli erişim' },
+  { value: 'Ücretsiz', label: 'aile hesabı' },
+];
+
+const experiences = [
+  {
+    quote: 'Görüşme öncesi ne anlatacağımı düşünmek yerine haftalık özeti açıyorum. Küçük değişimleri daha net görebiliyoruz.',
+    name: 'Aile kullanıcısı',
+    context: 'Günlük takip ve gelişim özeti',
+  },
+  {
+    quote: 'Ailenin yalnızca paylaşmak istediği kayıtları görmek, görüşmeye daha hazırlıklı başlamamı sağlıyor.',
+    name: 'Uzman kullanıcısı',
+    context: 'Yetkili veri paylaşımı',
+  },
+];
+
+const faqs = [
+  {
+    question: 'Aile hesabı gerçekten ücretsiz mi?',
+    answer: 'Evet. Aile hesabını ücretsiz oluşturabilir, çocuk profili ve temel takip araçlarını kullanmaya başlayabilirsiniz.',
+  },
+  {
+    question: 'Uzmanlar nasıl doğrulanıyor?',
+    answer: 'Uzmanların kimlik, diploma ve mesleki yetkinlik bilgileri incelenir. Onay durumu profilde açıkça gösterilir.',
+  },
+  {
+    question: 'Çocuğumun bilgilerini kimler görebilir?',
+    answer: 'Bilgileriniz varsayılan olarak hesabınıza özeldir. Bir uzman ancak sizin verdiğiniz kapsam ve süre içindeki yetkiyle ilgili kayıtlara erişebilir.',
+  },
+  {
+    question: 'Platform tanı veya tedavi öneriyor mu?',
+    answer: 'Hayır. Platform takip, düzenleme ve iletişim desteği sağlar; tanı, acil yardım veya tıbbi karar mekanizması değildir.',
+  },
 ];
 
 const safeguards = [
@@ -116,6 +154,12 @@ const safeguards = [
     text: 'Platform takip ve iletişim desteği sağlar; tanı veya tedavi yerine geçmez.',
     color: 'violet' as ModuleColor,
   },
+];
+
+const trustSteps = [
+  { icon: Eye, title: 'Ne paylaştığınızı görün', text: 'Uzman erişimleri Ayarlar içinden görüntülenir ve yönetilir.' },
+  { icon: Settings2, title: 'Yetkiyi siz yönetin', text: 'Paylaşım iznini ihtiyaç değiştiğinde geri çekebilirsiniz.' },
+  { icon: Database, title: 'Verinizi taşıyın veya silin', text: 'Hesap verisi dışa aktarma ve hesap silme talepleri kullanıcı kontrolündedir.' },
 ];
 
 function BrandMark() {
@@ -156,7 +200,7 @@ export function PublicLandingPage() {
           </Link>
 
           <nav className="hidden items-center gap-6 text-sm font-bold text-slate-600 lg:flex">
-            <a href="#rehber" className="transition-colors hover:text-primary-700">Başlangıç</a>
+            <a href="#rehber" className="transition-colors hover:text-primary-700">Nasıl çalışır?</a>
             <a href="#moduller" className="transition-colors hover:text-primary-700">Araçlar</a>
             <a href="#guven" className="transition-colors hover:text-primary-700">Güven</a>
           </nav>
@@ -166,7 +210,7 @@ export function PublicLandingPage() {
               Giriş
             </Link>
             <Link to="/kayit" className="rounded-xl bg-primary-600 px-3 py-2 text-sm font-bold text-white shadow-lg shadow-primary-600/20 transition-colors hover:bg-primary-700 sm:px-4">
-              Hesap Aç
+              Ücretsiz başla
             </Link>
             <button
               type="button"
@@ -183,7 +227,7 @@ export function PublicLandingPage() {
         {mobileMenuOpen && (
           <div className="border-t border-slate-100 bg-white px-5 py-4 lg:hidden">
             <nav className="flex flex-col gap-3 text-sm font-semibold text-slate-700">
-              <a href="#rehber"   className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Başlangıç</a>
+              <a href="#rehber"   className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Nasıl çalışır?</a>
               <a href="#moduller" className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Araçlar</a>
               <a href="#guven"    className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Güven</a>
               <Link to="/giris"  className="hover:text-primary-700" onClick={() => setMobileMenuOpen(false)}>Giriş yap</Link>
@@ -193,65 +237,43 @@ export function PublicLandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative isolate overflow-hidden border-b border-slate-200 bg-white">
-        <img
-          src={landingHeroSupport}
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
-        />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(255,255,255,0.98)_0%,rgba(255,255,255,0.93)_38%,rgba(255,255,255,0.48)_68%,rgba(255,255,255,0.12)_100%)]" />
+      <section className="relative isolate overflow-hidden border-b border-slate-200 bg-gradient-to-br from-white via-white to-primary-50/70">
+        <div className="pointer-events-none absolute -left-20 -top-20 -z-10 h-96 w-96 rounded-full bg-blue-300/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-0 -z-10 h-96 w-96 rounded-full bg-indigo-300/20 blur-3xl" />
 
-        {/* Soft background ambient gradient glow blobs */}
-        <div className="pointer-events-none absolute -left-20 -top-20 -z-15 h-96 w-96 rounded-full bg-blue-400/20 blur-3xl" />
-        <div className="pointer-events-none absolute right-10 top-1/3 -z-15 h-80 w-80 rounded-full bg-indigo-400/15 blur-3xl" />
-
-        <div className="mx-auto flex max-w-6xl items-center px-5 py-12 sm:min-h-[640px] sm:py-20 lg:min-h-[660px]">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary-200/80 bg-white/95 px-4 py-1.5 text-xs font-bold text-primary-700 shadow-sm backdrop-blur transition-transform hover:scale-105">
-              <CheckCircle2 size={15} className="text-primary-600 animate-pulse" />
-              İlk adım ekranda hazır
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-14 sm:py-20 lg:min-h-[640px] lg:grid-cols-[0.92fr_1.08fr] lg:gap-16">
+          <div className="max-w-xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white px-4 py-1.5 text-xs font-bold text-primary-700 shadow-sm">
+              <HeartHandshake size={15} className="text-primary-600" />
+              Aileler ve uzmanlar için güvenli gelişim alanı
             </div>
 
-            <h1 className="mt-7 max-w-xl text-4xl font-extrabold tracking-tight leading-[1.05] text-slate-950 sm:text-5xl lg:text-6xl">
-              Otizm Destek <span className="bg-gradient-to-r from-primary-600 via-indigo-600 to-blue-700 bg-clip-text text-transparent">Platformu</span>
+            <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-950 sm:text-5xl lg:text-[3.35rem]">
+              Çocuğunuzun gelişim yolculuğunda <span className="text-primary-600">yalnız değilsiniz.</span>
             </h1>
 
-            <p className="mt-5 max-w-xl text-lg font-medium leading-8 text-slate-700">
-              Çocuk profili, bugünün kaydı, randevular ve uzman paylaşımı için sakin, anlaşılır ve güvenli bir çalışma alanı.
+            <p className="mt-5 max-w-lg text-lg font-medium leading-8 text-slate-700">
+              Ailelerle deneyim paylaşın, doğrulanmış uzmanlara ulaşın ve gelişimi güvenle, tek bir yerde takip edin.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3.5">
+            <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/kayit"
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-sm font-bold text-white shadow-lg shadow-primary-600/25 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-xl hover:shadow-primary-600/35 active:scale-95"
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-sm font-bold text-white shadow-lg shadow-primary-600/25 transition-all hover:-translate-y-0.5 hover:bg-primary-700"
               >
-                Aile hesabı aç
+                Ücretsiz aile hesabı oluştur
                 <ArrowRight size={16} />
               </Link>
-              <Link
-                to="/kayit/uzman"
-                className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-200/90 bg-white/90 px-6 text-sm font-bold text-slate-800 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:border-slate-300 hover:shadow-md active:scale-95"
+              <a
+                href="#rehber"
+                className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:border-primary-200 hover:text-primary-700"
               >
-                Uzman başvurusu
-                <ArrowRight size={16} />
-              </Link>
+                Nasıl çalıştığını gör
+              </a>
             </div>
 
-            <div className="mt-8 grid max-w-xl grid-cols-3 gap-2.5 sm:gap-3.5">
-              {heroStats.map((item) => (
-                <div
-                  key={item.label}
-                  className="group rounded-2xl border border-white/80 bg-white/85 px-4 py-3.5 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-1 hover:border-primary-200/60 hover:shadow-md sm:px-4"
-                >
-                  <p className="text-base font-extrabold leading-none text-slate-950 group-hover:text-primary-600 sm:text-xl transition-colors">{item.value}</p>
-                  <p className="mt-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:text-xs">{item.label}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-              {['Kontrollü paylaşım', 'Rol bazlı erişim', 'Tıbbi karar değildir'].map((item) => (
+            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+              {['Ücretsiz aile hesabı', 'Kontrollü paylaşım', 'İstediğiniz zaman çıkış'].map((item) => (
                 <span key={item} className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
                   <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
                   {item}
@@ -259,11 +281,122 @@ export function PublicLandingPage() {
               ))}
             </div>
           </div>
+
+          <div className="relative mx-auto w-full max-w-xl" aria-label="Otizm Destek aile paneli önizlemesi">
+            <div className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-gradient-to-br from-primary-200/60 to-indigo-200/60 blur-2xl" />
+            <div className="overflow-hidden rounded-[1.75rem] border border-white bg-white p-3 shadow-2xl shadow-primary-900/15">
+              <div className="rounded-2xl bg-slate-50 p-4 sm:p-6">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500">Bugün</p>
+                    <p className="mt-1 text-lg font-black text-slate-950">Birlikte küçük adımlar</p>
+                  </div>
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">2 kayıt tamam</span>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><NotebookTabs size={20} /></span>
+                    <p className="mt-3 text-xs font-bold text-slate-500">Günlük gözlem</p>
+                    <p className="mt-1 text-sm font-black text-slate-900">Sakin ve iletişime açık</p>
+                  </div>
+                  <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><CalendarCheck size={20} /></span>
+                    <p className="mt-3 text-xs font-bold text-slate-500">Sıradaki görüşme</p>
+                    <p className="mt-1 text-sm font-black text-slate-900">Yarın, 14:30</p>
+                  </div>
+                </div>
+                <div className="mt-3 rounded-2xl bg-primary-600 p-5 text-white">
+                  <div className="flex items-center justify-between">
+                    <p className="flex items-center gap-2 text-sm font-black"><TrendingUp size={18} /> Haftalık gelişim</p>
+                    <span className="text-xs font-bold text-primary-100">7 gün</span>
+                  </div>
+                  <div className="mt-5 flex h-20 items-end gap-2" aria-hidden="true">
+                    {[38, 54, 48, 68, 63, 82, 76].map((height, index) => (
+                      <span key={index} className="flex-1 rounded-t-md bg-white/75" style={{ height: `${height}%` }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="absolute -bottom-5 -left-3 flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 py-3 shadow-xl sm:-left-8">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"><ShieldCheck size={18} /></span>
+              <span><span className="block text-xs font-black text-slate-900">Paylaşım sizde</span><span className="block text-[11px] font-semibold text-slate-500">Yetkiyi dilediğiniz an yönetin</span></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Ürün önizlemesi ── */}
+      <section id="urun" className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-6xl px-5 py-14 sm:py-20">
+          <div className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-primary-700">Ürünün içinde</p>
+              <h2 className="mt-3 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
+                Günün önemli bilgisi tek bakışta.
+              </h2>
+              <p className="mt-4 text-sm font-medium leading-7 text-slate-600">
+                Bu önizleme, aile ana sayfasındaki gerçek bilgi mimarisini gösterir: önce bugün yapılacaklar, sonra kısa kayıt ve haftalık ilerleme.
+              </p>
+              <ul className="mt-6 space-y-3">
+                {['Bir dakikalık günlük kayıt', 'Yaklaşan görev ve randevular', 'Uzmanla paylaşılabilen haftalık özet'].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-sm font-bold text-slate-700">
+                    <CheckCircle2 size={17} className="shrink-0 text-emerald-600" /> {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 p-3 shadow-2xl shadow-slate-200/70" aria-label="Aile paneli ürün önizlemesi">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+                <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500">Bugünün özeti</p>
+                    <p className="mt-1 text-lg font-black text-slate-950">Merhaba, bugün 3 küçük adım var</p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">1/3 tamam</span>
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {[
+                    { icon: NotebookTabs, label: 'Duygu kaydı', value: 'Tamamlandı', tone: 'bg-emerald-50 text-emerald-700' },
+                    { icon: Clock3, label: 'Ev çalışması', value: '17:30', tone: 'bg-orange-50 text-orange-700' },
+                    { icon: CalendarCheck, label: 'Uzman görüşmesi', value: 'Yarın', tone: 'bg-blue-50 text-blue-700' },
+                  ].map(({ icon: Icon, label, value, tone }) => (
+                    <div key={label} className="rounded-2xl border border-slate-100 p-4">
+                      <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${tone}`}><Icon size={18} /></span>
+                      <p className="mt-3 text-xs font-bold text-slate-500">{label}</p>
+                      <p className="mt-1 text-sm font-black text-slate-900">{value}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm font-black text-indigo-950"><BarChart3 size={18} /> Haftalık ilerleme</div>
+                    <span className="text-xs font-bold text-indigo-700">5 kayıt</span>
+                  </div>
+                  <div className="mt-4 flex h-20 items-end gap-2" aria-hidden="true">
+                    {[42, 64, 50, 78, 68, 88, 74].map((height, index) => (
+                      <span key={index} className="flex-1 rounded-t-md bg-indigo-500/80" style={{ height: `${height}%` }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── Başlangıç rehberi ── */}
       <section id="rehber" className="border-b border-slate-200 bg-slate-50">
+        <div className="mx-auto max-w-6xl px-5 pt-12 sm:pt-16">
+          <div className="grid grid-cols-3 gap-3">
+            {heroStats.map((item) => (
+              <div key={item.label} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center shadow-sm">
+                <p className="text-lg font-black text-slate-950 sm:text-2xl">{item.value}</p>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:text-xs">{item.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
         <div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 sm:py-14 lg:grid-cols-[0.44fr_0.56fr] lg:items-start">
           <div className="lg:sticky lg:top-24">
             <p className="text-xs font-black uppercase tracking-widest text-primary-700">Başlangıç planı</p>
@@ -411,6 +544,42 @@ export function PublicLandingPage() {
         </div>
       </section>
 
+      {/* ── Uzmanlar ── */}
+      <section className="border-t border-slate-200 bg-white">
+        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 lg:grid-cols-2 lg:items-center">
+          <div className="rounded-3xl bg-slate-950 p-6 text-white sm:p-8">
+            <div className="flex items-center justify-between gap-4">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-500 text-white"><UserCheck size={24} /></span>
+              <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black text-emerald-300">Doğrulama süreci</span>
+            </div>
+            <h3 className="mt-8 text-2xl font-black">Güven, görünür bir süreçtir.</h3>
+            <div className="mt-6 space-y-4">
+              {['Kimlik ve iletişim bilgileri kontrol edilir', 'Diploma ve uzmanlık belgeleri incelenir', 'Onay durumu uzman profilinde gösterilir'].map((item, index) => (
+                <div key={item} className="flex items-center gap-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-500 text-xs font-black">{index + 1}</span>
+                  <p className="text-sm font-bold text-slate-100">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-primary-700">Uzmanlarla çalışma</p>
+            <h2 className="mt-3 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">Doğru bilgi, doğru yetkiyle paylaşılır.</h2>
+            <p className="mt-4 max-w-xl text-sm font-medium leading-7 text-slate-600">
+              Doğrulanmış uzman profillerini inceleyin. Görüşme öncesinde yalnızca gerekli kayıtları seçin, erişim kapsamını ve süresini siz belirleyin.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link to="/kayit/uzman" className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 shadow-sm hover:border-primary-200 hover:text-primary-700">
+                Uzman olarak başvur <ArrowRight size={16} />
+              </Link>
+              <Link to="/guven-merkezi" className="inline-flex h-11 items-center gap-2 px-2 text-sm font-bold text-primary-700 hover:text-primary-800">
+                Uzmanları nasıl doğruluyoruz?
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Güven sınırı ── */}
       <section id="guven" className="border-y border-slate-200 bg-white">
         <div className="mx-auto max-w-6xl px-5 py-16">
@@ -441,6 +610,68 @@ export function PublicLandingPage() {
                 );
               })}
             </div>
+          </div>
+          <div className="mt-10 grid gap-4 border-t border-slate-100 pt-10 md:grid-cols-3">
+            {trustSteps.map(({ icon: Icon, title, text }) => (
+              <div key={title} className="flex gap-3 rounded-2xl bg-slate-50 p-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm"><Icon size={19} /></span>
+                <div><h3 className="text-sm font-black text-slate-950">{title}</h3><p className="mt-1 text-xs leading-5 text-slate-600">{text}</p></div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-primary-100 bg-primary-50 p-5">
+            <div>
+              <p className="text-sm font-black text-primary-950">Güvenlik ve veri kontrolü hakkında ayrıntılı bilgi</p>
+              <p className="mt-1 text-xs leading-5 text-primary-800">Yetkilendirme, saklama, silme ve uzman doğrulama sürecini açıkça inceleyin.</p>
+            </div>
+            <Link to="/guven-merkezi" className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-primary-700 shadow-sm ring-1 ring-primary-200 hover:bg-primary-50">
+              Güven merkezini aç <ArrowRight size={15} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Deneyimler ── */}
+      <section className="bg-slate-50">
+        <div className="mx-auto max-w-6xl px-5 py-16">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-black uppercase tracking-widest text-primary-700">Kullanıcı deneyimi</p>
+            <h2 className="mt-3 text-3xl font-black text-slate-950">Takibi kolaylaştıran küçük farklar</h2>
+            <p className="mt-3 text-sm font-medium leading-7 text-slate-600">Platformu kullanan aile ve uzmanların en çok değer verdiği deneyimler.</p>
+          </div>
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            {experiences.map((item) => (
+              <figure key={item.name} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                <Quote size={24} className="text-primary-500" aria-hidden="true" />
+                <blockquote className="mt-5 text-lg font-bold leading-8 text-slate-800">“{item.quote}”</blockquote>
+                <figcaption className="mt-6 flex items-center gap-3 border-t border-slate-100 pt-5">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-primary-700"><Users size={18} /></span>
+                  <span><span className="block text-sm font-black text-slate-950">{item.name}</span><span className="block text-xs font-semibold text-slate-500">{item.context}</span></span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SSS ── */}
+      <section className="border-y border-slate-200 bg-white">
+        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 lg:grid-cols-[0.38fr_0.62fr]">
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-primary-700">Sık sorulanlar</p>
+            <h2 className="mt-3 text-3xl font-black leading-tight text-slate-950">Başlamadan önce merak ettikleriniz</h2>
+            <p className="mt-4 text-sm font-medium leading-7 text-slate-600">Daha fazla bilgi için güven merkezini ve kullanım koşullarını inceleyebilirsiniz.</p>
+          </div>
+          <div className="divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            {faqs.map((item, index) => (
+              <details key={item.question} className="group p-5" open={index === 0}>
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-black text-slate-950">
+                  {item.question}
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg text-primary-700 transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <p className="mt-3 pr-10 text-sm font-medium leading-7 text-slate-600">{item.answer}</p>
+              </details>
+            ))}
           </div>
         </div>
       </section>
@@ -492,6 +723,7 @@ export function PublicLandingPage() {
               <Link to="/gizlilik"           className="transition-colors hover:text-primary-700">Gizlilik</Link>
               <Link to="/kullanim-sartlari"  className="transition-colors hover:text-primary-700">Kullanım Şartları</Link>
               <Link to="/tibbi-uyari"        className="transition-colors hover:text-primary-700">Tıbbi Uyarı</Link>
+              <Link to="/guven-merkezi"      className="transition-colors hover:text-primary-700">Güven Merkezi</Link>
             </div>
           </div>
           <div className="mt-8 border-t border-slate-100 pt-6 text-center text-xs text-slate-600">

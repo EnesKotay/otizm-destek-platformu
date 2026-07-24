@@ -45,6 +45,7 @@ public class MessagingService {
     private final SimpMessagingTemplate messagingTemplate;
     private final FcmPushService fcmPushService;
     private final WebPushService webPushService;
+    private final com.autismsupport.platform.repository.UserBlockRepository userBlockRepository;
 
     @Transactional(readOnly = true)
     public List<ConversationDto> getConversations(UUID userId) {
@@ -69,6 +70,9 @@ public class MessagingService {
         if (userId.equals(otherUserId)) {
             throw new RuntimeException("Kendinizle birebir konuşma başlatamazsınız");
         }
+        if (isBlockedBetween(userId, otherUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Bu kullanıcıyla iletişim kuramazsınız");
+        }
         return conversationRepository.findDirectConversation(userId, otherUserId)
                 .map(conv -> toConversationDto(conv, userId))
                 .orElseGet(() -> {
@@ -76,6 +80,12 @@ public class MessagingService {
                             .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
                     User user2 = userRepository.findById(otherUserId)
                             .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                    if (!user2.isAllowDirectMessages()) {
+                        throw new org.springframework.security.access.AccessDeniedException("Kullanıcı doğrudan mesaj kabul etmiyor");
+                    }
+                    if (user1.getRole() == UserRole.PARENT && user2.getRole() == UserRole.PARENT && !user2.isAllowFamilyMessages()) {
+                        throw new org.springframework.security.access.AccessDeniedException("Kullanıcı ailelerden tanışma mesajı kabul etmiyor");
+                    }
 
                     Conversation conv = Conversation.builder()
                             .type(ConversationType.DIRECT)
@@ -186,6 +196,15 @@ public class MessagingService {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
         assertParticipant(conversation, senderId);
+        if (conversation.getType() == ConversationType.DIRECT) {
+            User other = conversation.getParticipants().stream().filter(p -> !p.getId().equals(senderId)).findFirst().orElseThrow();
+            if (isBlockedBetween(senderId, other.getId())) {
+                throw new org.springframework.security.access.AccessDeniedException("Engellenen kullanıcıyla mesajlaşılamaz");
+            }
+            if (!other.isAllowDirectMessages()) {
+                throw new org.springframework.security.access.AccessDeniedException("Kullanıcı mesaj kabul etmiyor");
+            }
+        }
         String normalizedFileUrl = blankToNull(fileUrl);
         String normalizedMessageType = normalizeMessageType(messageType, normalizedFileUrl);
         String normalizedContent = normalizeMessageContent(content, normalizedMessageType, normalizedFileUrl);
@@ -516,6 +535,10 @@ public class MessagingService {
         }
     }
 
+    private boolean isBlockedBetween(UUID first, UUID second) {
+        return userBlockRepository != null && userBlockRepository.existsBetween(first, second);
+    }
+
     private void ensureGroupConversation(Conversation conversation) {
         if (conversation.getType() != ConversationType.GROUP) {
             throw new RuntimeException("Bu işlem yalnızca grup konuşmaları için geçerlidir");
@@ -533,20 +556,15 @@ public class MessagingService {
             String conversationTitle = conversationTitleForNotification(conversation, sender);
             String body = messageNotificationBody(conversation, message, sender);
 
-            fcmPushService.sendMessageNotification(
-                    participant.getId(),
-                    conversationTitle,
-                    body,
-                    conversation.getId(),
-                    conversationTitle
-            );
-
-            webPushService.sendToUser(
-                    participant.getId(),
-                    conversationTitle,
-                    body,
-                    "/mesajlar?conversationId=" + conversation.getId()
-            );
+            if (fcmPushService != null) {
+                fcmPushService.sendMessageNotification(
+                        participant.getId(), conversationTitle, body, conversation.getId(), conversationTitle);
+            }
+            if (webPushService != null) {
+                webPushService.sendToUser(
+                        participant.getId(), conversationTitle, body,
+                        "/mesajlar?conversationId=" + conversation.getId());
+            }
         }
     }
 
