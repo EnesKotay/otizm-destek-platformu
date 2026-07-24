@@ -16,9 +16,9 @@ test.describe('public user journeys', () => {
     await page.goto('/');
 
     await expect(page).toHaveURL('/');
-    await expect(page.getByRole('heading', { level: 1, name: /Aynı süreci yaşayan ailelerle tanışın/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Aile hesabı aç' })).toBeVisible();
-    await expect(page.getByText('Deneyimlerinizi güvenle paylaşın, doğru uzmana ulaşın ve çocuğunuzun gelişimini birlikte takip edin.')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /yalnız değilsiniz/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ücretsiz aile hesabı oluştur' })).toBeVisible();
+    await expect(page.getByText('Ailelerle deneyim paylaşın, doğrulanmış uzmanlara ulaşın ve gelişimi güvenle, tek bir yerde takip edin.')).toBeVisible();
   });
 
   test('login fields have accessible labels and announce validation errors', async ({ page }) => {
@@ -44,7 +44,7 @@ test.describe('public user journeys', () => {
   test('mobile landing does not overflow horizontally', async ({ page }) => {
     await page.setViewportSize({ width: 393, height: 851 });
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: /Aynı süreci yaşayan ailelerle tanışın/ })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /yalnız değilsiniz/ })).toBeVisible();
 
     const sizes = await page.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
@@ -58,8 +58,8 @@ test.describe('public user journeys', () => {
 
   test('landing clearly explains family and expert journeys', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: 'Aile hesabı aç' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Uzman başvurusu' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ücretsiz aile hesabı oluştur' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Uzman olarak başvur' })).toBeVisible();
     await expect(page.getByText('Uzmanla güvenli iletişim kurun')).toBeVisible();
   });
 
