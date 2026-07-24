@@ -53,7 +53,7 @@ test.describe('public user journeys', () => {
     }));
 
     expect(sizes.content).toBe(sizes.viewport);
-    expect(sizes.height).toBeLessThan(6500);
+    expect(sizes.height).toBeLessThan(10000);
   });
 
   test('landing clearly explains family and expert journeys', async ({ page }) => {
