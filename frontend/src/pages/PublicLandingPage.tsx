@@ -308,7 +308,7 @@ export function PublicLandingPage() {
                 <div className="mt-3 rounded-2xl bg-primary-600 p-5 text-white">
                   <div className="flex items-center justify-between">
                     <p className="flex items-center gap-2 text-sm font-black"><TrendingUp size={18} /> Haftalık gelişim</p>
-                    <span className="text-xs font-bold text-primary-100">7 gün</span>
+                    <span className="text-xs font-bold text-primary-50">7 gün</span>
                   </div>
                   <div className="mt-5 flex h-20 items-end gap-2" aria-hidden="true">
                     {[38, 54, 48, 68, 63, 82, 76].map((height, index) => (
