@@ -100,6 +100,16 @@ public class KnowledgeArticleService {
     public KnowledgeArticleDto getArticle(UUID id, UUID userId) {
         KnowledgeArticle article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Makale bulunamadı"));
+        if (!article.isPublished()) {
+            boolean isAuthor = userId != null && article.getAuthor() != null
+                    && article.getAuthor().getId().equals(userId);
+            boolean isAdmin = userId != null && userRepository.findById(userId)
+                    .map(user -> user.getRole() == UserRole.ADMIN)
+                    .orElse(false);
+            if (!isAuthor && !isAdmin) {
+                throw new RuntimeException("Makale bulunamadı");
+            }
+        }
         article.setViewCount(article.getViewCount() + 1);
         articleRepository.save(article);
         KnowledgeArticleDto dto = toDto(article);

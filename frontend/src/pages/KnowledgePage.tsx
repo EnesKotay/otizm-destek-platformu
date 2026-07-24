@@ -765,12 +765,12 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                      rel="noopener noreferrer"
                      className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900 hover:underline break-words"
                   >
-                    {selectedArticle.sourceName}
+                    {selectedArticle.sourceName || 'Platform özgün içeriği'}
                     <ExternalLink size={12} className="shrink-0" />
                   </a>
                 ) : (
                   <p className="mt-1 text-xs font-semibold text-indigo-800">
-                    {selectedArticle.sourceName}
+                    {selectedArticle.sourceName || 'Platform özgün içeriği'}
                   </p>
                 )}
                 <p className="mt-1 text-[11px] text-indigo-600/80">
