@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="${notificationTitle + ' — Otizm Destek Platformu'}">Bildirim — Otizm Destek Platformu</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #f0f4f8; color: #1a202c; -webkit-font-smoothing: antialiased; }
+    .wrapper { max-width: 600px; margin: 40px auto; padding: 0 16px 40px; }
+    .header { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #7c3aed 100%); border-radius: 16px 16px 0 0; padding: 32px 40px; text-align: center; }
+    .logo-badge { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 50px; padding: 8px 20px; margin-bottom: 16px; }
+    .logo-text { color: white; font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
+    .header h1 { color: white; font-size: 24px; font-weight: 700; }
+    .card { background: white; border-radius: 0 0 16px 16px; padding: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .greeting { font-size: 17px; font-weight: 600; color: #1a202c; margin-bottom: 12px; }
+    .body-text { font-size: 15px; line-height: 1.7; color: #4a5568; margin-bottom: 16px; }
+    .notification-card { background: #f7f9ff; border: 1px solid #e0e7ff; border-radius: 12px; padding: 20px 24px; margin: 24px 0; }
+    .notification-type { font-size: 11px; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .notification-title { font-size: 18px; font-weight: 700; color: #1a202c; margin-bottom: 8px; }
+    .notification-body { font-size: 15px; color: #4a5568; line-height: 1.6; }
+    .btn-wrap { text-align: center; margin: 28px 0; }
+    .btn { display: inline-block; padding: 13px 32px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white !important; text-decoration: none; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 14px rgba(99,102,241,0.4); }
+    .divider { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+    .security-note { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #166534; margin-top: 16px; text-align: center; }
+    .footer { text-align: center; margin-top: 28px; font-size: 12px; color: #a0aec0; line-height: 1.8; }
+    .unsubscribe { font-size: 11px; color: #cbd5e0; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="logo-badge">
+        <span style="font-size:18px">🧩</span>
+        <span class="logo-text">Otizm Destek Platformu</span>
+      </div>
+      <h1>🔔 Yeni Bildiriminiz Var</h1>
+    </div>
+
+    <div class="card">
+      <p class="greeting">Merhaba <span th:text="${name != null ? name : 'Değerli Kullanıcı'}">Kullanıcı</span>,</p>
+
+      <p class="body-text">Platformdan yeni bir bildiriminiz var:</p>
+
+      <div class="notification-card">
+        <div class="notification-type" th:text="${notificationType != null ? notificationType : 'BİLDİRİM'}">BİLDİRİM</div>
+        <div class="notification-title" th:text="${notificationTitle}">Bildirim Başlığı</div>
+        <div class="notification-body" th:text="${notificationBody}">Bildirim içeriği burada görünecek.</div>
+      </div>
+
+      <div class="btn-wrap" th:if="${notificationLink != null}">
+        <a th:href="${frontendUrl + notificationLink}" class="btn">🔗 Detayları Görüntüle</a>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="security-note">
+        🔒 Bu e-posta <strong>Otizm Destek Platformu</strong> tarafından güvenli şekilde gönderilmiştir.
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>© 2025 Otizm Destek Platformu — Tüm hakları saklıdır.</p>
+      <p class="unsubscribe" style="margin-top:8px;">Bu tür bildirimleri almak istemiyorsanız hesap ayarlarınızdan e-posta tercihlerinizi düzenleyebilirsiniz.</p>
+    </div>
+  </div>
+</body>
+</html>

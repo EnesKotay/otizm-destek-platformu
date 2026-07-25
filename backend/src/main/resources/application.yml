@@ -51,6 +51,7 @@ spring:
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
+    from-name: ${MAIL_FROM_NAME:Otizm Destek Platformu}
     properties:
       mail:
         smtp:
@@ -103,6 +104,12 @@ app:
     # false -> Strict). Çapraz-site için açıkça "None" verilebilir.
     cookie-same-site: ${COOKIE_SAME_SITE:}
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  mail:
+    enabled: ${MAIL_ENABLED:true}
+    from-name: ${MAIL_FROM_NAME:Otizm Destek Platformu}
+    # Hangi bildirim tipleri e-posta göndersin?
+    notify-on-appointment: ${MAIL_NOTIFY_APPOINTMENT:true}
+    notify-on-message: ${MAIL_NOTIFY_MESSAGE:false}
   upload:
     dir: ${APP_UPLOAD_DIR:${UPLOAD_DIR:uploads}}
   storage:

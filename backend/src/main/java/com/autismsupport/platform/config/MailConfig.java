@@ -1,5 +1,6 @@
 package com.autismsupport.platform.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +9,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import java.util.Properties;
 
+@Slf4j
 @Configuration
 public class MailConfig {
 
@@ -23,8 +25,17 @@ public class MailConfig {
     @Value("${spring.mail.password:}")
     private String password;
 
+    @Value("${app.mail.enabled:true}")
+    private boolean mailEnabled;
+
     @Bean
     public JavaMailSender javaMailSender() {
+        if (!mailEnabled || username == null || username.isBlank()) {
+            log.warn("E-posta devre dışı (MAIL_ENABLED=false veya MAIL_USERNAME boş). " +
+                     "E-postalar gönderilmeyecek, yalnızca loglanacak.");
+            return createNoOpMailSender();
+        }
+
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost(host);
         mailSender.setPort(port);
@@ -41,6 +52,32 @@ public class MailConfig {
         props.put("mail.smtp.writetimeout", "5000");
         props.put("mail.debug", "false");
 
+        log.info("JavaMailSender yapılandırıldı: host={}, port={}", host, port);
         return mailSender;
+    }
+
+    /**
+     * SMTP yapılandırılmadığında kullanılan NoOp sender.
+     * Tüm send() çağrıları sessizce göz ardı edilir.
+     */
+    private JavaMailSender createNoOpMailSender() {
+        return new JavaMailSenderImpl() {
+            @Override
+            public void send(org.springframework.mail.SimpleMailMessage simpleMessage) {
+                log.info("[NO-OP MAIL] Kime={}, Konu={}", simpleMessage.getTo(), simpleMessage.getSubject());
+            }
+            @Override
+            public void send(org.springframework.mail.SimpleMailMessage... simpleMessages) {
+                for (var m : simpleMessages) send(m);
+            }
+            @Override
+            public void send(jakarta.mail.internet.MimeMessage mimeMessage) {
+                log.info("[NO-OP MAIL] MimeMessage gönderimi atlandı (mail devre dışı)");
+            }
+            @Override
+            public void send(jakarta.mail.internet.MimeMessage... mimeMessages) {
+                for (var m : mimeMessages) send(m);
+            }
+        };
     }
 }

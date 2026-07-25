@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>E-posta Adresinizi Doğrulayın — Otizm Destek Platformu</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #f0f4f8; color: #1a202c; -webkit-font-smoothing: antialiased; }
+    .wrapper { max-width: 600px; margin: 40px auto; padding: 0 16px 40px; }
+    .header { background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); border-radius: 16px 16px 0 0; padding: 36px 40px; text-align: center; }
+    .logo-badge { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 50px; padding: 8px 20px; margin-bottom: 20px; }
+    .logo-text { color: white; font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
+    .header h1 { color: white; font-size: 28px; font-weight: 700; }
+    .header p { color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 8px; }
+    .card { background: white; border-radius: 0 0 16px 16px; padding: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .greeting { font-size: 18px; font-weight: 600; color: #1a202c; margin-bottom: 14px; }
+    .body-text { font-size: 15px; line-height: 1.7; color: #4a5568; margin-bottom: 16px; }
+    .btn-wrap { text-align: center; margin: 36px 0; }
+    .btn { display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #10b981, #059669); color: white !important; text-decoration: none; border-radius: 10px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px rgba(16,185,129,0.4); }
+    .divider { border: none; border-top: 1px solid #e2e8f0; margin: 28px 0; }
+    .info-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #10b981; border-radius: 8px; padding: 16px 20px; margin: 20px 0; font-size: 14px; color: #166534; line-height: 1.6; }
+    .timer-badge { display: inline-flex; align-items: center; gap: 8px; background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 50px; padding: 6px 16px; font-size: 13px; font-weight: 600; color: #166534; margin: 16px auto; }
+    .url-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #718096; word-break: break-all; margin-top: 8px; }
+    .security-note { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #166534; margin-top: 20px; text-align: center; }
+    .footer { text-align: center; margin-top: 28px; font-size: 12px; color: #a0aec0; line-height: 1.8; }
+    .welcome-features { display: grid; gap: 12px; margin: 24px 0; }
+    .feature { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; }
+    .feature-icon { font-size: 22px; }
+    .feature-text { font-size: 14px; color: #374151; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="logo-badge">
+        <span style="font-size:18px">🧩</span>
+        <span class="logo-text">Otizm Destek Platformu</span>
+      </div>
+      <h1>✉️ E-posta Doğrulama</h1>
+      <p>Hesabınızı aktive etmek için bir adım kaldı</p>
+    </div>
+
+    <div class="card">
+      <p class="greeting">Hoş geldiniz, <span th:text="${name != null ? name : 'Değerli Kullanıcı'}">Kullanıcı</span>! 👋</p>
+
+      <p class="body-text">
+        Otizm Destek Platformu'na üyeliğiniz için teşekkür ederiz.
+        Hesabınızı aktive etmek ve tüm özelliklere erişmek için lütfen
+        <strong>e-posta adresinizi doğrulayın</strong>.
+      </p>
+
+      <div style="text-align:center; margin: 8px 0 24px;">
+        <div class="timer-badge">
+          ⏱️ Bu bağlantı <strong>24 saat</strong> süreyle geçerlidir
+        </div>
+      </div>
+
+      <div class="btn-wrap">
+        <a th:href="${verificationUrl}" class="btn">✅ E-postamı Doğrula</a>
+      </div>
+
+      <hr class="divider"/>
+
+      <p style="font-size:14px;font-weight:600;color:#374151;margin-bottom:12px;">Doğrulama sonrası erişebilecekleriniz:</p>
+      <div class="welcome-features">
+        <div class="feature">
+          <span class="feature-icon">👨‍👩‍👧</span>
+          <span class="feature-text">Topluluk forumu — deneyimlerinizi paylaşın</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">📅</span>
+          <span class="feature-text">Uzmanlarla randevu alın</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">📊</span>
+          <span class="feature-text">Çocuğunuzun gelişimini takip edin</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">📚</span>
+          <span class="feature-text">Bilgi bankası ve kaynaklar</span>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="info-box">
+        ℹ️ Bu kaydı siz yapmadıysanız bu e-postayı güvenle görmezden gelebilirsiniz.
+      </div>
+
+      <p style="font-size:12px;color:#a0aec0;margin-top:16px;">Butona tıklanamıyorsa aşağıdaki bağlantıyı kopyalayıp tarayıcınıza yapıştırın:</p>
+      <div class="url-box" th:text="${verificationUrl}"></div>
+
+      <div class="security-note">
+        🔒 Bu e-posta <strong>Otizm Destek Platformu</strong> tarafından güvenli şekilde gönderilmiştir.
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>© 2025 Otizm Destek Platformu — Tüm hakları saklıdır.</p>
+    </div>
+  </div>
+</body>
+</html>

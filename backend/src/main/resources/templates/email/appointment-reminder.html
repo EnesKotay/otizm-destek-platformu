@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Randevu Hatırlatması — Otizm Destek Platformu</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #f0f4f8; color: #1a202c; }
+    .wrapper { max-width: 600px; margin: 40px auto; padding: 0 16px 40px; }
+    .header { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%); border-radius: 16px 16px 0 0; padding: 36px 40px; text-align: center; }
+    .logo-badge { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 50px; padding: 8px 20px; margin-bottom: 20px; }
+    .logo-text { color: white; font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
+    .header h1 { color: white; font-size: 28px; font-weight: 700; }
+    .header p { color: rgba(255,255,255,0.85); font-size: 14px; margin-top: 8px; }
+    .card { background: white; border-radius: 0 0 16px 16px; padding: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .greeting { font-size: 18px; font-weight: 600; color: #1a202c; margin-bottom: 14px; }
+    .body-text { font-size: 15px; line-height: 1.7; color: #4a5568; margin-bottom: 16px; }
+    .appointment-card { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #93c5fd; border-radius: 16px; padding: 24px; margin: 24px 0; }
+    .appointment-card h3 { font-size: 18px; font-weight: 700; color: #1e40af; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .detail-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(147,197,253,0.4); }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-icon { font-size: 18px; min-width: 24px; }
+    .detail-label { font-size: 13px; color: #60a5fa; font-weight: 600; min-width: 80px; }
+    .detail-value { font-size: 14px; color: #1e40af; font-weight: 500; }
+    .reminder-badge { display: inline-flex; align-items: center; gap: 8px; background: #dbeafe; border: 1px solid #93c5fd; border-radius: 50px; padding: 6px 16px; font-size: 13px; font-weight: 600; color: #1d4ed8; margin: 16px 0; }
+    .btn-wrap { text-align: center; margin: 28px 0; }
+    .btn { display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white !important; text-decoration: none; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 14px rgba(59,130,246,0.4); }
+    .tips { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
+    .tip { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #4a5568; }
+    .divider { border: none; border-top: 1px solid #e2e8f0; margin: 28px 0; }
+    .security-note { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #166534; margin-top: 16px; text-align: center; }
+    .footer { text-align: center; margin-top: 28px; font-size: 12px; color: #a0aec0; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="logo-badge">
+        <span style="font-size:18px">🧩</span>
+        <span class="logo-text">Otizm Destek Platformu</span>
+      </div>
+      <h1>📅 Randevu Hatırlatması</h1>
+      <p>Yaklaşan randevunuz hakkında bilgi</p>
+    </div>
+
+    <div class="card">
+      <p class="greeting">Merhaba <span th:text="${name != null ? name : 'Değerli Kullanıcı'}">Kullanıcı</span>,</p>
+
+      <p class="body-text">
+        Yaklaşan bir <strong>randevunuz</strong> var. Aşağıda randevu detaylarınızı bulabilirsiniz:
+      </p>
+
+      <div class="appointment-card">
+        <h3>📋 <span th:text="${appointmentTitle}">Randevu Başlığı</span></h3>
+
+        <div class="detail-row" th:if="${appointmentDate}">
+          <span class="detail-icon">📅</span>
+          <span class="detail-label">Tarih</span>
+          <span class="detail-value" th:text="${appointmentDate}">—</span>
+        </div>
+        <div class="detail-row" th:if="${appointmentTime}">
+          <span class="detail-icon">🕐</span>
+          <span class="detail-label">Saat</span>
+          <span class="detail-value" th:text="${appointmentTime}">—</span>
+        </div>
+        <div class="detail-row" th:if="${appointmentLocation}">
+          <span class="detail-icon">📍</span>
+          <span class="detail-label">Konum</span>
+          <span class="detail-value" th:text="${appointmentLocation}">—</span>
+        </div>
+        <div class="detail-row" th:if="${appointmentExpert}">
+          <span class="detail-icon">👨‍⚕️</span>
+          <span class="detail-label">Uzman</span>
+          <span class="detail-value" th:text="${appointmentExpert}">—</span>
+        </div>
+      </div>
+
+      <p class="body-text" th:if="${appointmentBody}" th:text="${appointmentBody}"></p>
+
+      <p style="font-size:14px;font-weight:600;color:#374151;margin-bottom:10px;">Randevu hazırlığı için:</p>
+      <div class="tips">
+        <div class="tip"><span>✅</span> Belgelerinizi ve notlarınızı önceden hazırlayın</div>
+        <div class="tip"><span>⏰</span> Randevu saatinden 5-10 dakika önce hazır olun</div>
+        <div class="tip"><span>📱</span> Değişiklik için uygulama üzerinden iletişime geçin</div>
+      </div>
+
+      <div class="btn-wrap">
+        <a th:href="${frontendUrl + '/randevular'}" class="btn">📅 Randevularımı Görüntüle</a>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="security-note">
+        🔒 Bu e-posta <strong>Otizm Destek Platformu</strong> tarafından güvenli şekilde gönderilmiştir.
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>© 2025 Otizm Destek Platformu — Tüm hakları saklıdır.</p>
+    </div>
+  </div>
+</body>
+</html>
