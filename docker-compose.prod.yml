@@ -85,10 +85,12 @@ services:
       # Frontend URL (şifre sıfırlama e-postası için)
       - FRONTEND_URL=${FRONTEND_URL}
       # Mail / SMTP
+      - MAIL_ENABLED=${MAIL_ENABLED:-true}
       - MAIL_HOST=${MAIL_HOST}
       - MAIL_PORT=${MAIL_PORT:-587}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME:-Otizm Destek Platformu}
       # Web Push (VAPID)
       - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}

@@ -25,15 +25,26 @@ public class MailConfig {
     @Value("${spring.mail.password:}")
     private String password;
 
-    @Value("${app.mail.enabled:true}")
+    @Value("${app.mail.enabled:false}")
     private boolean mailEnabled;
 
     @Bean
     public JavaMailSender javaMailSender() {
-        if (!mailEnabled || username == null || username.isBlank()) {
-            log.warn("E-posta devre dışı (MAIL_ENABLED=false veya MAIL_USERNAME boş). " +
-                     "E-postalar gönderilmeyecek, yalnızca loglanacak.");
+        if (!mailEnabled) {
+            log.warn("E-posta devre dışı (MAIL_ENABLED=false). E-postalar gönderilmeyecek.");
             return createNoOpMailSender();
+        }
+        if (username == null || username.isBlank()) {
+            throw new IllegalStateException(
+                    "MAIL_ENABLED=true ancak MAIL_USERNAME boş. SMTP kullanıcı adını yapılandırın " +
+                    "veya e-posta gönderimini MAIL_ENABLED=false ile açıkça kapatın."
+            );
+        }
+        if (password == null || password.isBlank()) {
+            throw new IllegalStateException(
+                    "MAIL_ENABLED=true ancak MAIL_PASSWORD boş. SMTP parolasını yapılandırın " +
+                    "veya e-posta gönderimini MAIL_ENABLED=false ile açıkça kapatın."
+            );
         }
 
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();

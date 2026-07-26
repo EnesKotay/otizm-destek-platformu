@@ -105,7 +105,8 @@ app:
     cookie-same-site: ${COOKIE_SAME_SITE:}
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   mail:
-    enabled: ${MAIL_ENABLED:true}
+    # Güvenli varsayılan: SMTP bilinçli olarak etkinleştirilmedikçe gönderim yapma.
+    enabled: ${MAIL_ENABLED:false}
     from-name: ${MAIL_FROM_NAME:Otizm Destek Platformu}
     # Hangi bildirim tipleri e-posta göndersin?
     notify-on-appointment: ${MAIL_NOTIFY_APPOINTMENT:true}

@@ -32,6 +32,9 @@ public class EmailService {
     @Value("${app.mail.from-name:Otizm Destek Platformu}")
     private String fromName;
 
+    @Value("${app.mail.enabled:false}")
+    private boolean mailEnabled;
+
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
@@ -49,6 +52,11 @@ public class EmailService {
      * @param variables    Şablona geçirilecek değişkenler
      */
     private void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
+        if (!mailEnabled) {
+            log.warn("E-posta gönderimi atlandı (MAIL_ENABLED=false): alıcı='{}', konu='{}'",
+                    maskEmail(to), subject);
+            return;
+        }
         try {
             // Şablona her zaman frontendUrl ekle.
             // Not: Çağıranlar Map.of(...) (immutable) gönderebildiği için değiştirilebilir bir kopya kullanıyoruz.
@@ -71,7 +79,8 @@ public class EmailService {
             log.info("E-posta gönderildi: konu='{}', şablon='{}'", subject, templateName);
 
         } catch (Exception e) {
-            log.error("E-posta gönderilemedi: konu='{}', şablon='{}'", subject, templateName, e);
+            log.error("E-posta gönderilemedi: alıcı='{}', konu='{}', şablon='{}', neden='{}'",
+                    maskEmail(to), subject, templateName, rootCauseMessage(e), e);
         }
     }
 
@@ -210,6 +219,22 @@ public class EmailService {
         return local.length() > 0
                 ? Character.toUpperCase(local.charAt(0)) + local.substring(1).replace(".", " ")
                 : "Değerli Kullanıcı";
+    }
+
+    /** Loglarda kişisel veriyi açık etmeden alıcıyı ayırt etmeyi sağlar. */
+    private String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return "***";
+        int at = email.indexOf('@');
+        return email.substring(0, Math.min(2, at)) + "***" + email.substring(at);
+    }
+
+    /** Async gönderim hatalarında en anlamlı SMTP mesajını loga taşır. */
+    private String rootCauseMessage(Throwable error) {
+        Throwable cause = error;
+        while (cause.getCause() != null && cause.getCause() != cause) {
+            cause = cause.getCause();
+        }
+        return cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
     }
 
     /** Bildirim tipini okunabilir Türkçe'ye çevirir. */

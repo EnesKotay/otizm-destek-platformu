@@ -61,10 +61,12 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173}
       - JWT_SECRET=${JWT_SECRET:-YXV0aXNtc3VwcG9ydHBsYXRmb3Jtc2VjcmV0a2V5Zm9ybG9jYWxkZXZlbG9wbWVudDEyMzQ1Njc4}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - MAIL_ENABLED=${MAIL_ENABLED:-true}
       - MAIL_HOST=${MAIL_HOST:-localhost}
       - MAIL_PORT=${MAIL_PORT:-587}
       - MAIL_USERNAME=${MAIL_USERNAME:-}
       - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME:-Otizm Destek Platformu}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
     volumes:
       - uploads_data:/app/uploads
