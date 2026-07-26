@@ -27,3 +27,6 @@ build.log
 backend/target/
 frontend/dist/
 frontend/node_modules/
+
+# Claude yerel ayarları
+.claude/

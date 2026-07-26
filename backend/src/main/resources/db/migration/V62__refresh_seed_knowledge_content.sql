@@ -2,6 +2,15 @@
 -- standarda taşır. Metinler kaynak ifadelerin kopyası değil, platformun kısa
 -- ve güvenlik odaklı bağımsız anlatımıdır.
 
+-- source_url bir içe aktarma kimliği değil, kaynak gösterim alanıdır. Birden
+-- fazla platform yazısı aynı kılavuzu kaynak alabilir (aşağıdaki NICE CG170
+-- yazıları gibi), bu nedenle V38/V40'ta oluşturulan benzersiz indeks uygun değildir.
+-- URL ile arama ve içe aktarma kontrolleri için normal indeksi koruyoruz.
+DROP INDEX IF EXISTS idx_knowledge_source_url;
+CREATE INDEX idx_knowledge_source_url
+    ON knowledge_articles(source_url)
+    WHERE source_url IS NOT NULL;
+
 UPDATE knowledge_articles SET
 content = '<h3>Kısa cevap</h3><p>PECS, konuşma dışındaki iletişim yollarından biridir. Bazı bireyler için işlevsel iletişimi destekleyebilir; her çocuk için aynı sonucu vermesi beklenmez.</p><h3>Güvenli kullanım</h3><p>Hedefler bireyin iletişim tercihleriyle birlikte belirlenmelidir. Başlamadan önce alternatif ve destekleyici iletişim konusunda yetkin bir dil ve konuşma terapistinden değerlendirme alın.</p>',
 source_name = 'Tohum Otizm Vakfı', source_url = 'https://tohumotizm.org.tr/bilgi-bankasi/pecs-nedir',
