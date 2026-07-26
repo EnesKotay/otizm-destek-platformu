@@ -50,11 +50,13 @@ public class EmailService {
      */
     private void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
         try {
-            // Şablona her zaman frontendUrl ekle
-            variables.put("frontendUrl", frontendUrl);
+            // Şablona her zaman frontendUrl ekle.
+            // Not: Çağıranlar Map.of(...) (immutable) gönderebildiği için değiştirilebilir bir kopya kullanıyoruz.
+            Map<String, Object> vars = new java.util.HashMap<>(variables);
+            vars.put("frontendUrl", frontendUrl);
 
             Context ctx = new Context();
-            ctx.setVariables(variables);
+            ctx.setVariables(vars);
 
             String htmlContent = templateEngine.process("email/" + templateName, ctx);
 
@@ -69,7 +71,7 @@ public class EmailService {
             log.info("E-posta gönderildi: konu='{}', şablon='{}'", subject, templateName);
 
         } catch (Exception e) {
-            log.error("E-posta gönderilemedi: konu='{}', şablon='{}', hata={}", subject, templateName, e.getMessage());
+            log.error("E-posta gönderilemedi: konu='{}', şablon='{}'", subject, templateName, e);
         }
     }
 
