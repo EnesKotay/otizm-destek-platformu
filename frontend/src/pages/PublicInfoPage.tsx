@@ -320,7 +320,7 @@ export function PublicInfoPage({ kind }: PublicInfoPageProps) {
           ))}
         </div>
 
-        <p className="mt-8 text-xs font-semibold text-slate-400">
+        <p className="mt-8 text-xs font-semibold text-slate-600">
           Metin sürümü {POLICY_VERSION} · Son güncelleme {LAST_UPDATED}
         </p>
 

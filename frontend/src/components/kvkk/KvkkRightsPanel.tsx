@@ -94,7 +94,7 @@ export function KvkkRightsPanel() {
 
       {requests.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Başvurularım</p>
+          <p className="text-xs font-extrabold uppercase tracking-wide text-slate-600">Başvurularım</p>
           {requests.map(request => (
             <div key={request.id} className="rounded-xl border border-slate-200 bg-white p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">

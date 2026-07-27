@@ -18,7 +18,7 @@ test.describe('public user journeys', () => {
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { level: 1, name: /yalnız değilsiniz/ })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Ücretsiz aile hesabı oluştur' })).toBeVisible();
-    await expect(page.getByText('Ailelerle deneyim paylaşın, doğrulanmış uzmanlara ulaşın ve gelişimi güvenle, tek bir yerde takip edin.')).toBeVisible();
+    await expect(page.getByText(/Günlük gelişimi tek yerde takip edin/)).toBeVisible();
   });
 
   test('login fields have accessible labels and announce validation errors', async ({ page }) => {
@@ -53,20 +53,22 @@ test.describe('public user journeys', () => {
     }));
 
     expect(sizes.content).toBe(sizes.viewport);
-    expect(sizes.height).toBeLessThan(10000);
+    // Tasarım bütçesi değil, kaçak büyüme koruması: yeniden tasarlanan sayfa
+    // mobilde ~11.4k px. Bir bölüm sonsuz büyürse bu eşik yakalar.
+    expect(sizes.height).toBeLessThan(13000);
   });
 
   test('landing clearly explains family and expert journeys', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('link', { name: 'Ücretsiz aile hesabı oluştur' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Uzman olarak başvur' })).toBeVisible();
-    await expect(page.getByText('Uzmanla güvenli iletişim kurun')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Uzmanlar için sayfa' })).toBeVisible();
+    await expect(page.getByText('Doğru bilgi, doğru yetkiyle paylaşılır.')).toBeVisible();
   });
 
   test('landing shows the product and links to transparent data controls', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByLabel('Aile paneli ürün önizlemesi')).toBeVisible();
+    await expect(page.getByLabel('Aile paneli günlük akış önizlemesi')).toBeVisible();
     await page.getByRole('link', { name: /Güven merkezini aç/ }).click();
 
     await expect(page).toHaveURL('/guven-merkezi');
