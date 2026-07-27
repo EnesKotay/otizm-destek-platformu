@@ -40,6 +40,7 @@ class AuthServiceTest {
     @Mock PlatformSettingsService platformSettingsService;
     @Mock EmailVerificationService emailVerificationService;
     @Mock MfaService mfaService;
+    @Mock ConsentService consentService;
 
     @InjectMocks AuthService authService;
 

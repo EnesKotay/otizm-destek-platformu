@@ -10,7 +10,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useChildStore } from '@/store/childStore';
 import { cn } from '@/utils/cn';
 import { prefetchRoute } from '@/utils/routePrefetch';
-import { getNavGroups, isNavItemActive, type NavGroupConfig, type NavItemConfig } from './navConfig';
+import { getNavGroups, isNavItemActive, type NavGroupConfig, type NavItemConfig, type NavRole } from './navConfig';
 import {
   filterCommandItems,
   flattenNavItems,
@@ -23,6 +23,26 @@ import {
 import type { SearchResult } from '@/types';
 
 const MESSAGE_UNREAD_REFRESH_EVENT = 'message-unread-refresh';
+const TUTORIAL_PROGRESS_EVENT = 'tutorial-video-progress';
+const TUTORIAL_WATCHED_STORAGE_PREFIX = 'otizm-tutorial-videos-watched-v2';
+const FIRST_TUTORIAL_BY_ROLE: Record<NavRole, string> = {
+  PARENT: '02',
+  EXPERT: '16',
+  ADMIN: '21',
+  TEACHER: '01',
+};
+
+function hasWatchedFirstTutorial(userId: string | undefined, role: NavRole) {
+  if (!userId || typeof window === 'undefined') return false;
+
+  try {
+    const storageKey = `${TUTORIAL_WATCHED_STORAGE_PREFIX}:${userId}:${role}`;
+    const watchedIds = JSON.parse(window.localStorage.getItem(storageKey) ?? '[]');
+    return Array.isArray(watchedIds) && watchedIds.includes(FIRST_TUTORIAL_BY_ROLE[role]);
+  } catch {
+    return false;
+  }
+}
 
 function NavBadge({ value }: { value?: number | string }) {
   const label = getBadgeLabel(value);
@@ -400,6 +420,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   const navGroups = useMemo(() => getNavGroups(user?.role), [user?.role]);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [badges, setBadges] = useState<BadgeMap>({});
+  const [tutorialProgressRevision, setTutorialProgressRevision] = useState(0);
   const [hasChild, setHasChild] = useState(true);
   const [childrenLoaded, setChildrenLoaded] = useState(user?.role !== 'PARENT');
   const [isSimpleMode, setIsSimpleMode] = useState(() => localStorage.getItem('access-simple-mode') === 'true');
@@ -416,6 +437,18 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   const [showBadges, setShowBadges] = useState(() => localStorage.getItem('sidebar-show-badges') !== 'false');
   const [showDescriptions, setShowDescriptions] = useState(() => localStorage.getItem('sidebar-show-descriptions') === 'true');
   const [rememberGroups, setRememberGroups] = useState(() => localStorage.getItem('sidebar-remember-groups') !== 'false');
+  const hasCompletedFirstTutorial = useMemo(() => {
+    void tutorialProgressRevision;
+    return hasWatchedFirstTutorial(user?.id, role);
+  }, [role, tutorialProgressRevision, user?.id]);
+  const tutorialBadge = user && !hasCompletedFirstTutorial ? 'Yeni' : undefined;
+  const getItemBadge = (item: NavItemConfig) => (
+    item.to === '/kullanici-rehberi' && tutorialBadge
+      ? tutorialBadge
+      : item.badgeKey
+        ? badges[item.badgeKey]
+        : undefined
+  );
   const context = { hasChild: user?.role !== 'PARENT' || !childrenLoaded || hasChild, isExpertVerified: Boolean(user?.verified) };
   const baseDisplayNavGroups = useMemo(
     () => navGroups,
@@ -429,7 +462,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   const displayNavGroups = useMemo(() => {
     if (!isSimpleMode || role !== 'PARENT') return rawNavGroups;
 
-    const primaryPaths = new Set(['/anasayfa', '/gunluk-takip', '/kriz-rehberi', '/uzmanlar', '/randevular', '/mesajlar', '/bilgi-bankasi']);
+    const primaryPaths = new Set(['/anasayfa', '/kullanici-rehberi', '/gunluk-takip', '/kriz-rehberi', '/uzmanlar', '/randevular', '/mesajlar', '/bilgi-bankasi']);
     const primaryItems: NavItemConfig[] = [];
     const secondaryItems: NavItemConfig[] = [];
 
@@ -469,6 +502,19 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
 
   const isCompact = compact && !onClose;
   const currentPath = useRef(location.pathname);
+
+  useEffect(() => {
+    const refreshTutorialProgress = () => {
+      setTutorialProgressRevision((revision) => revision + 1);
+    };
+
+    window.addEventListener('storage', refreshTutorialProgress);
+    window.addEventListener(TUTORIAL_PROGRESS_EVENT, refreshTutorialProgress);
+    return () => {
+      window.removeEventListener('storage', refreshTutorialProgress);
+      window.removeEventListener(TUTORIAL_PROGRESS_EVENT, refreshTutorialProgress);
+    };
+  }, []);
 
   useEffect(() => {
     if (location.pathname !== currentPath.current) {
@@ -726,7 +772,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
                   showDescriptions={effectiveShowDescriptions}
                   disabledReason={getDisabledReason(item, context)}
                   disabledAction={item.requiresChild && !context.hasChild ? childRequiredAction : undefined}
-                  badge={item.badgeKey ? badges[item.badgeKey] : undefined}
+                  badge={getItemBadge(item)}
                 />
               ))}
             </div>
@@ -772,7 +818,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
                       showDescriptions={effectiveShowDescriptions}
                       disabledReason={getDisabledReason(item, context)}
                       disabledAction={item.requiresChild && !context.hasChild ? childRequiredAction : undefined}
-                      badge={item.badgeKey ? badges[item.badgeKey] : undefined}
+                      badge={getItemBadge(item)}
                     />
                   ))}
                 </div>

@@ -1,6 +1,7 @@
 package com.autismsupport.platform.service;
 
 import com.autismsupport.platform.dto.*;
+import com.autismsupport.platform.model.ConsentType;
 import com.autismsupport.platform.model.RefreshToken;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.model.UserRole;
@@ -33,6 +34,7 @@ public class AuthService {
     private final PlatformSettingsService platformSettingsService;
     private final EmailVerificationService emailVerificationService;
     private final MfaService mfaService;
+    private final ConsentService consentService;
 
     @org.springframework.beans.factory.annotation.Value("${app.auth.require-email-verification:false}")
     private boolean requireEmailVerification;
@@ -67,9 +69,13 @@ public class AuthService {
                 .specializations(request.getSpecializations())
                 .kvkkConsent(true)
                 .kvkkConsentDate(LocalDateTime.now())
+                .kvkkPolicyVersion(consentService.currentPolicyVersion())
                 .build();
 
         user = userRepository.save(user);
+        // Rızanın hangi metin sürümüne, ne zaman ve nereden verildiği deftere
+        // yazılır; KVKK'da ispat yükü veri sorumlusundadır.
+        consentService.record(user.getId(), ConsentType.KVKK_AYDINLATMA, true, "KAYIT");
         if (requireEmailVerification) emailVerificationService.issue(user);
         if (role == UserRole.EXPERT) {
             return AuthResponse.builder()

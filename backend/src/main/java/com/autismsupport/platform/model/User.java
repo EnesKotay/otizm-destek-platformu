@@ -74,6 +74,10 @@ public class User {
     @Column(name = "kvkk_consent_date")
     private LocalDateTime kvkkConsentDate;
 
+    /** Rızanın verildiği aydınlatma metni sürümü; güncel değilse yeniden rıza istenir. */
+    @Column(name = "kvkk_policy_version", length = 32)
+    private String kvkkPolicyVersion;
+
     @Column(name = "consent_ai_analysis")
     @Builder.Default
     private Boolean consentAiAnalysis = false;

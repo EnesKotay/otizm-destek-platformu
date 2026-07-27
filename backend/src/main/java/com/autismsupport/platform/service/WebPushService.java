@@ -7,11 +7,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.martijndwars.webpush.Notification;
 import nl.martijndwars.webpush.PushService;
+import org.apache.http.HttpResponse;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
 import java.security.Security;
 import java.util.List;
 import java.util.UUID;
@@ -69,15 +71,43 @@ public class WebPushService {
                         sub.getAuthKey(),
                         payload.getBytes()
                 );
-                pushService.send(notification);
+                HttpResponse response = pushService.send(notification);
+                handleResponse(sub, response);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Push bildirimi gonderimi kesildi (endpoint: {}, hataTuru: {}).",
+                        maskEndpoint(sub.getEndpoint()), e.getClass().getSimpleName());
+                return;
             } catch (Exception e) {
-                log.warn("Push bildirimi gönderilemedi (endpoint: {}): {}", sub.getEndpoint(), e.getMessage());
-                // Geçersiz/süresi dolmuş subscription'ı kaldır
-                if (isExpiredSubscription(e)) {
-                    pushSubscriptionRepository.delete(sub);
-                }
+                log.warn("Push bildirimi gonderilemedi (endpoint: {}, hataTuru: {}).",
+                        maskEndpoint(sub.getEndpoint()), e.getClass().getSimpleName());
             }
         }
+    }
+
+    private void handleResponse(PushSubscription subscription, HttpResponse response) {
+        String maskedEndpoint = maskEndpoint(subscription.getEndpoint());
+
+        if (response == null || response.getStatusLine() == null) {
+            log.warn("Push servisi gecersiz yanit dondurdu (endpoint: {}).", maskedEndpoint);
+            return;
+        }
+
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode >= 200 && statusCode < 300) {
+            log.debug("Push bildirimi gonderildi (endpoint: {}, status: {}).", maskedEndpoint, statusCode);
+            return;
+        }
+
+        if (statusCode == 404 || statusCode == 410) {
+            log.info("Suresi dolmus push aboneligi kaldiriliyor (endpoint: {}, status: {}).",
+                    maskedEndpoint, statusCode);
+            pushSubscriptionRepository.delete(subscription);
+            return;
+        }
+
+        log.warn("Push servisi bildirimi reddetti; abonelik korunuyor (endpoint: {}, status: {}).",
+                maskedEndpoint, statusCode);
     }
 
     private String buildPayload(String title, String body, String link) {
@@ -92,8 +122,22 @@ public class WebPushService {
         return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 
-    private boolean isExpiredSubscription(Exception e) {
-        String msg = e.getMessage();
-        return msg != null && (msg.contains("410") || msg.contains("404") || msg.contains("expired"));
+    private String maskEndpoint(String endpoint) {
+        if (endpoint == null || endpoint.isBlank()) {
+            return "[masked]";
+        }
+
+        try {
+            URI uri = URI.create(endpoint);
+            if (uri.getScheme() == null || uri.getHost() == null) {
+                return "[masked]";
+            }
+
+            String host = uri.getHost().contains(":") ? "[" + uri.getHost() + "]" : uri.getHost();
+            String port = uri.getPort() >= 0 ? ":" + uri.getPort() : "";
+            return uri.getScheme() + "://" + host + port + "/***";
+        } catch (IllegalArgumentException e) {
+            return "[masked]";
+        }
     }
 }

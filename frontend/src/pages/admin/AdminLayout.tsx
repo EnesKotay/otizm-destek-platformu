@@ -13,7 +13,8 @@ import {
   Settings as SettingsIcon,
   ChevronRight,
   ShieldCheck,
-  Activity
+  Activity,
+  Scale
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -46,6 +47,7 @@ export function AdminLayout() {
       badge: stats?.pendingReports && stats.pendingReports > 0 ? stats.pendingReports : undefined,
       badgeColor: 'bg-rose-500 text-white animate-pulse'
     },
+    { to: '/admin/kvkk', label: 'KVKK Başvuruları', icon: Scale },
     { to: '/admin/auditlog', label: 'Aktivite Kaydı', icon: ListChecks },
     { to: '/admin/settings', label: 'Sistem Ayarları', icon: SettingsIcon },
   ];

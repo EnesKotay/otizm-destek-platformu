@@ -5,21 +5,21 @@ import { emergencyCardService } from '@/services/emergencyCardService';
 import type { EmergencyProfile } from '@/pages/EmergencyCardPage';
 
 export function PublicEmergencyCardPage() {
-  const { id } = useParams<{ id: string }>();
+  const { token } = useParams<{ token: string }>();
   const [profile, setProfile] = useState<EmergencyProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
-    emergencyCardService.getPublic(id)
+    if (!token) return;
+    emergencyCardService.getPublicByToken(token)
       .then(data => {
         if (data) setProfile(data);
         else setError(true);
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [token]);
 
   if (loading) {
     return (
@@ -35,8 +35,11 @@ export function PublicEmergencyCardPage() {
       <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
         <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-lg border border-red-100">
           <AlertTriangle size={48} className="mx-auto text-red-500 mb-4" />
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Profil Bulunamadı</h1>
-          <p className="text-gray-500 text-sm">Bu acil durum profili mevcut değil veya silinmiş olabilir.</p>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Bağlantı Geçerli Değil</h1>
+          <p className="text-gray-500 text-sm">
+            Bu acil durum kartı bağlantısının süresi dolmuş, veli tarafından kapatılmış veya hiç var olmamış olabilir.
+            Yeni bir bağlantı için çocuğun velisiyle iletişime geçin.
+          </p>
         </div>
       </div>
     );

@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  /tanitim bilinçli olarak listelenmiyor: `/` ile birebir aynı sayfayı render
+  ediyor ve kanonik olarak `/` gösteriyor. İkisini birden bildirmek duplicate
+  content sinyali üretir.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://otizmdestek.com/</loc><priority>1.0</priority></url>
-  <url><loc>https://otizmdestek.com/tanitim</loc><priority>0.9</priority></url>
-  <url><loc>https://otizmdestek.com/kvkk</loc><priority>0.4</priority></url>
-  <url><loc>https://otizmdestek.com/gizlilik</loc><priority>0.4</priority></url>
-  <url><loc>https://otizmdestek.com/kullanim-sartlari</loc><priority>0.4</priority></url>
-  <url><loc>https://otizmdestek.com/tibbi-uyari</loc><priority>0.4</priority></url>
-  <url><loc>https://otizmdestek.com/guven-merkezi</loc><priority>0.7</priority></url>
+  <url><loc>https://otizmdestek.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://otizmdestek.com/kriz-aninda-ne-yapmali</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://otizmdestek.com/uzmanlar-icin</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://otizmdestek.com/guven-merkezi</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://otizmdestek.com/kvkk</loc><priority>0.4</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://otizmdestek.com/gizlilik</loc><priority>0.4</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://otizmdestek.com/kullanim-sartlari</loc><priority>0.4</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://otizmdestek.com/tibbi-uyari</loc><priority>0.4</priority><changefreq>yearly</changefreq></url>
 </urlset>

@@ -1,6 +1,7 @@
 import api from './api';
 
 let cachedPublicKey = (import.meta as { env?: Record<string, string> }).env?.VITE_VAPID_PUBLIC_KEY ?? '';
+let subscribeInFlight: Promise<boolean> | null = null;
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -10,7 +11,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export const pushNotificationService = {
-  isSupported: () => 'serviceWorker' in navigator && 'PushManager' in window,
+  isSupported: () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
 
   getPermission: () => ('Notification' in window ? Notification.permission : 'denied') as NotificationPermission,
 
@@ -38,24 +39,39 @@ export const pushNotificationService = {
 
   async subscribe(): Promise<boolean> {
     if (!this.isSupported()) return false;
-    const publicKey = await this.getPublicKey();
-    if (!publicKey) return false;
-    try {
-      const reg = await this.getRegistration();
-      const existing = await reg.pushManager.getSubscription();
-      if (existing) {
-        await api.post('/push/subscribe', existing.toJSON());
+
+    if (subscribeInFlight) return subscribeInFlight;
+
+    subscribeInFlight = (async () => {
+      const publicKey = await this.getPublicKey();
+      if (!publicKey) return false;
+
+      let subscription: PushSubscription | null = null;
+      try {
+        const reg = await this.getRegistration();
+        subscription = await reg.pushManager.getSubscription();
+        if (!subscription) {
+          subscription = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey) as unknown as BufferSource,
+          });
+        }
+
+        await api.post('/push/subscribe', subscription.toJSON());
         return true;
+      } catch (error) {
+        // Yerel kayıt sunucuya yazılamadıysa isSubscribed() yanlışlıkla true
+        // dönmesin; kullanıcı güvenle yeniden deneyebilsin.
+        if (subscription) await subscription.unsubscribe().catch(() => false);
+        console.warn('Push subscription failed:', error);
+        return false;
       }
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey) as unknown as BufferSource,
-      });
-      await api.post('/push/subscribe', sub.toJSON());
-      return true;
-    } catch (e) {
-      console.warn('Push subscription failed:', e);
-      return false;
+    })();
+
+    try {
+      return await subscribeInFlight;
+    } finally {
+      subscribeInFlight = null;
     }
   },
 

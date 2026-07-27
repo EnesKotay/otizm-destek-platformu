@@ -93,6 +93,14 @@ export const useAuthStore = create<AuthState>()(
       },
       logout: async () => {
         try {
+          try {
+            // Oturum kapatılmadan önce cihazı bu hesaptan ayır. Böylece ortak
+            // cihazlarda önceki kullanıcıya ait hassas hatırlatmalar görünmez.
+            const { pushNotificationService } = await import('@/services/pushNotificationService');
+            await pushNotificationService.unsubscribe();
+          } catch {
+            // Push temizliği çıkışı engellememeli.
+          }
           await fetch(`${API_BASE_URL}/auth/logout`, {
             method: 'POST',
             credentials: 'include',

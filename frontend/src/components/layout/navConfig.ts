@@ -47,6 +47,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       defaultOpen: true,
       items: [
         { to: '/anasayfa', icon: Home, label: 'Ana Sayfa', mobileLabel: 'Ana', description: 'Bugün ne yapacaksın?', keywords: ['dashboard', 'özet', 'başlangıç'], mobile: true, simple: true },
+        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'Sıralı videolarla platformu adım adım öğrenin', keywords: ['tanıtım', 'rehber', 'başlangıç', 'öğrenme yolu', 'video'], simple: true },
         { to: '/gunluk-takip', icon: Activity, label: 'Bugünkü Kayıt', mobileLabel: 'Kayıt', description: 'İlaç, uyku ve duygu notu', keywords: ['ilaç', 'uyku', 'günlük', 'kayıt'], requiresChild: true, mobile: true, simple: true },
         { to: '/mesajlar', icon: MessageCircle, label: 'Mesajlar', description: 'Uzman ve aile yazışmaları', keywords: ['chat', 'iletişim', 'sohbet'], badgeKey: 'messages', mobile: true, simple: true },
         { to: '/randevular', icon: CalendarCheck, label: 'Doktor & Terapi', mobileLabel: 'Randevu', description: 'Randevu al ve uzmanınla konuş', keywords: ['uzman', 'seans', 'görüşme', 'doktor', 'terapist'], requiresChild: true, mobile: true, simple: true },
@@ -75,7 +76,6 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       label: 'Destek & Rehber',
       defaultOpen: false,
       items: [
-        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'İlk adımlar ve platform sayfa haritası', keywords: ['tanıtım', 'rehber', 'başlangıç', 'sayfa haritası'] },
         { to: '/kriz-rehberi', icon: AlertTriangle, label: 'Zor Anlarda Ne Yapmalı?', description: 'Sakinleşmek için kısa adımlar', keywords: ['kriz', 'sakinleşme', 'destek'], badgeKey: 'crisis', simple: true },
         { to: '/acil-kart', icon: ShieldAlert, label: 'Acil Durum Kartı', description: 'Acil durumda paylaşılacak bilgiler', keywords: ['acil', 'kart', 'güvenlik'], requiresChild: true },
       ],
@@ -87,6 +87,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       defaultOpen: true,
       items: [
         { to: '/anasayfa', icon: Home, label: 'Ana Sayfa', description: 'Bugünkü iş akışı ve özetler', keywords: ['özet', 'başlangıç', 'dashboard'], mobile: true },
+        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'Sıralı videolarla platformu adım adım öğrenin', keywords: ['başlangıç', 'rehber', 'öğrenme yolu', 'video'] },
         { to: '/danisanlarim', icon: Users, label: 'Danışanlarım', description: 'Danışan profilleri, görevler ve notlar', keywords: ['hasta', 'çocuk', 'görev'], mobile: true },
         { to: '/randevular', icon: CalendarCheck, label: 'Randevularım', description: 'Talepler, müsaitlik ve seans takvimi', keywords: ['seans', 'müsaitlik', 'takvim'], mobile: true },
         { to: '/bep-raporu', icon: FileText, label: 'BEP Raporu Yaz', description: 'BEP raporu hazırlama alanı', keywords: ['rapor', 'bep', 'belge'], requiresVerifiedExpert: true },
@@ -106,7 +107,6 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       defaultOpen: false,
       items: [
         { to: '/bilgi-bankasi', icon: Library, label: 'Bilgi Bankası', description: 'Kaynak yazılar ve rehber içerikler', keywords: ['makale', 'rehber', 'bilgi'] },
-        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'İlk adımlar ve platform sayfa haritası', keywords: ['başlangıç', 'rehber', 'kullanım', 'sayfa haritası'] },
         { to: '/yardim', icon: HelpCircle, label: 'Yardım Merkezi', description: 'SSS ve destek kanalları', keywords: ['yardım', 'sss', 'destek'] },
       ],
     },
@@ -117,6 +117,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       defaultOpen: true,
       items: [
         { to: '/anasayfa', icon: Home, label: 'Ana Sayfa', mobile: true },
+        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'Sıralı videolarla platformu adım adım öğrenin', keywords: ['başlangıç', 'rehber', 'öğrenme yolu', 'video'] },
         { to: '/mesajlar', icon: MessageCircle, label: 'Mesajlar', badgeKey: 'messages', mobile: true },
         { to: '/bilgi-bankasi', icon: Library, label: 'Bilgi Bankası', mobile: true },
         { to: '/gruplar', icon: Users, label: 'Gruplar', mobile: true },
@@ -132,6 +133,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       defaultOpen: true,
       items: [
         { to: '/anasayfa', icon: Home, label: 'Ana Sayfa', description: 'Yönetim paneli özeti', keywords: ['özet', 'admin'], mobile: true },
+        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'Sıralı videolarla platformu adım adım öğrenin', keywords: ['başlangıç', 'rehber', 'öğrenme yolu', 'video'] },
         { to: '/admin/analytics', icon: TrendingUp, label: 'Analitik', description: 'Kullanım ve sistem metrikleri', keywords: ['grafik', 'metrik', 'istatistik'], mobile: true },
         { to: '/admin/auditlog', icon: Activity, label: 'Aktivite Kaydı', description: 'Sistem işlem geçmişi', keywords: ['log', 'aktivite', 'geçmiş'] },
       ],
@@ -160,7 +162,6 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       defaultOpen: false,
       items: [
         { to: '/bilgi-bankasi', icon: Library, label: 'Bilgi Bankası', description: 'Yayınlanan kaynak içerikleri', keywords: ['makale', 'rehber', 'bilgi'] },
-        { to: '/kullanici-rehberi', icon: HelpCircle, label: 'Kullanıcı Rehberi', description: 'İlk adımlar ve platform sayfa haritası', keywords: ['başlangıç', 'rehber', 'kullanım', 'sayfa haritası'] },
         { to: '/yardim', icon: HelpCircle, label: 'Yardım Merkezi', description: 'SSS ve destek kanalları', keywords: ['yardım', 'sss', 'destek'] },
         { to: '/admin/settings', icon: Settings, label: 'Sistem Ayarları', description: 'Genel sistem konfigürasyonu', keywords: ['ayar', 'konfigürasyon', 'sistem'] },
       ],

@@ -3,6 +3,14 @@ import { AlertTriangle, ArrowLeft, FileText, HeartHandshake, ShieldCheck } from 
 
 type InfoPageKind = 'kvkk' | 'privacy' | 'terms' | 'medical' | 'trust';
 
+/**
+ * Metinler esaslı biçimde değiştiğinde bu sürüm artırılmalı ve backend'deki
+ * app.legal.policy-version ile aynı tutulmalıdır; aksi halde kullanıcılardan
+ * yeniden rıza istenmez.
+ */
+const POLICY_VERSION = '1.1';
+const LAST_UPDATED = '27 Temmuz 2026';
+
 interface PublicInfoPageProps {
   kind: InfoPageKind;
 }
@@ -87,23 +95,37 @@ const content: Record<InfoPageKind, {
         ],
       },
       {
-        title: 'Aktarım',
+        title: 'Açık rızaya bağlı işlemeler',
         body: [
-          'Kişisel veriler; kullanıcının yetki verdiği uzmanlar, barındırma/altyapı sağlayıcıları ve yapay zeka destekli özellikler için kullanılan servis sağlayıcılar ile (yalnızca hizmetin gerektirdiği ölçüde) ve kanunen yetkili kamu kurum ve kuruluşlarıyla paylaşılabilir.',
-          '[Kullanılan altyapı/servis sağlayıcılarının (barındırma, e-posta, push bildirim, yapay zeka vb.) yurt içi/yurt dışı konumu ve varsa aktarım garanti mekanizmaları hukuk danışmanınca netleştirilip buraya eklenmelidir.]',
+          'Aşağıdaki işlemler yalnızca ayrıca açık rıza verdiğinizde gerçekleşir; rıza vermemeniz hâlinde platformun geri kalanını kullanmaya devam edebilirsiniz:',
+          '1) Yapay zekâ analizi: Çocuğunuzun gelişim, davranış ve sağlık kayıtları özet ve analiz üretilmesi için yapay zekâ sağlayıcısına aktarılır. Rıza verilmediğinde asistan ve analiz özellikleri çocuğa ait hiçbir veri almadan çalışır.',
+          '2) Acil durum kartı paylaşımı: Kart, yalnızca sizin oluşturduğunuz süreli bağlantıyla üçüncü kişilere gösterilir. Bağlantıyı dilediğiniz an kapatabilirsiniz; kapattığınızda mevcut bağlantı da geçersiz olur.',
+          '3) Benzer aile eşleştirmesi ve bilgilendirme e-postaları.',
+          'Verdiğiniz ve geri aldığınız her rıza, tarihi ve hangi metin sürümüne verildiği ile birlikte kayıt altına alınır; bu kayıtları Ayarlar > KVKK ve Gizlilik bölümünden görüntüleyebilirsiniz.',
         ],
       },
       {
-        title: 'Saklama süresi',
+        title: 'Aktarım ve yurt dışına aktarım',
         body: [
-          'Kişisel veriler, ilgili mevzuatta öngörülen süreler ile hesabın aktif olduğu süre boyunca saklanır; hesap silindiğinde veya yasal saklama süresi dolduğunda silinir, yok edilir ya da anonim hale getirilir.',
+          'Kişisel veriler; kullanıcının yetki verdiği uzmanlar, barındırma/altyapı sağlayıcıları ve aşağıda sayılan servis sağlayıcılar ile yalnızca hizmetin gerektirdiği ölçüde ve kanunen yetkili kamu kurum ve kuruluşlarıyla paylaşılabilir.',
+          'Yurt dışında konumlanan sağlayıcılar: yapay zekâ analizi ve asistan özellikleri için Google (Gemini API, ABD — yalnızca açık rıza verdiyseniz); mobil bildirimler için Google Firebase Cloud Messaging (ABD); yüklenen dosyaların saklanması için S3 uyumlu nesne depolama sağlayıcısı; bot koruması için Cloudflare Turnstile. Bu aktarımlar KVKK md. 9 kapsamındadır ve açık rızaya ya da Kurul tarafından yayımlanan standart sözleşmeye dayanılarak yapılır.',
+          '[Veri sorumlusunun hangi sağlayıcılarla standart sözleşme imzaladığı, sözleşmelerin Kurul’a bildirim tarihleri ve sunucuların bulunduğu ülkeler hukuk danışmanınca teyit edilip bu bölümde güncellenmelidir.]',
         ],
       },
       {
-        title: 'Haklarınız',
+        title: 'Saklama ve imha süresi',
+        body: [
+          'Hesap verileri, hesabınız aktif olduğu sürece saklanır. Hesabınızı sildiğinizde profil, çocuk kayıtları ve yüklediğiniz dosyalar silinir; yasal saklama zorunluluğu bulunanlar süresi dolana kadar tutulur.',
+          'Periyodik imha uygulanan süreler: denetim/işlem kayıtları 1 yıl, bildirimler 6 ay, sonuçlanmış KVKK başvuruları 3 yıl (ispat yükümlülüğü nedeniyle), e-posta doğrulaması yapılmamış hesaplar 30 gün, süresi dolan acil durum kartı paylaşım bağlantıları anında geçersiz kılınır.',
+          'İmha işlemleri günlük çalışan otomatik bir görevle yürütülür; süresi dolan kayıtlar elle müdahale gerekmeden silinir.',
+        ],
+      },
+      {
+        title: 'Haklarınız ve başvuru',
         body: [
           'KVKK md. 11 uyarınca; verilerinizin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme, işlenme amacına uygun kullanılıp kullanılmadığını öğrenme, yurt içi/yurt dışı aktarıldığı üçüncü kişileri bilme, eksik/yanlış işlenmişse düzeltilmesini isteme, silinmesini/yok edilmesini isteme, düzeltme-silme işlemlerinin aktarılan üçüncü kişilere bildirilmesini isteme, otomatik sistemlerle analiz sonucu aleyhinize bir sonucun ortaya çıkmasına itiraz etme ve zarara uğramanız halinde zararın giderilmesini talep etme haklarına sahipsiniz.',
-          'Başvurularınızı Ayarlar sayfası üzerinden veya destek kanalı aracılığıyla iletebilirsiniz.',
+          'Başvurularınızı Ayarlar > KVKK ve Gizlilik bölümündeki başvuru formundan iletebilirsiniz. Başvurular KVKK md. 13/2 uyarınca en geç otuz gün içinde sonuçlandırılır; başvurunuzun durumunu aynı ekrandan izleyebilirsiniz.',
+          'Verilerinizin tamamını makine tarafından okunabilir bir dosya olarak Ayarlar > Verilerimi İndir bağlantısından dışa aktarabilir, hesabınızı aynı ekrandan silebilirsiniz.',
         ],
       },
     ],
@@ -130,14 +152,17 @@ const content: Record<InfoPageKind, {
       {
         title: 'Üçüncü taraf servisler',
         body: [
-          'Platform; barındırma, e-posta/bildirim gönderimi, push bildirim ve yapay zeka destekli içerik/öneri özellikleri için üçüncü taraf servis sağlayıcılardan yararlanabilir. Bu servislere yalnızca ilgili özelliğin çalışması için gerekli veri aktarılır.',
-          '[Kullanılan üçüncü taraf servislerin (örn. yapay zeka sağlayıcısı, e-posta/push altyapısı) güncel listesi ve bu servislerin kendi gizlilik politikaları hukuk danışmanınca gözden geçirilip buraya eklenmelidir.]',
+          'Platform; barındırma, e-posta gönderimi, push bildirim, dosya saklama, bot koruması ve yapay zekâ destekli içerik/öneri özellikleri için üçüncü taraf servis sağlayıcılardan yararlanır. Bu servislere yalnızca ilgili özelliğin çalışması için gerekli veri aktarılır.',
+          'Güncel liste: Google Gemini (yapay zekâ analizi — yalnızca açık rıza verildiğinde), Google Firebase Cloud Messaging (mobil bildirim), SMTP e-posta sağlayıcısı (doğrulama ve bildirim e-postaları), S3 uyumlu nesne depolama (yüklenen dosyalar), Cloudflare Turnstile (bot koruması). Servis sağlayıcı değişikliklerinde bu liste güncellenir.',
+          'Yapay zekâ rızası verilmediğinde çocuğa ait hiçbir gelişim, sağlık veya davranış verisi yapay zekâ sağlayıcısına gönderilmez; bu kısıt uygulama seviyesinde zorunlu tutulur.',
         ],
       },
       {
         title: 'Çerezler ve benzer teknolojiler',
         body: [
-          'Platform; oturum yönetimi, güvenlik ve tercihlerin hatırlanması amacıyla zorunlu çerezler/yerel depolama kullanabilir. Zorunlu olmayan izleme/analitik çerezleri kullanılıyorsa ayrı bir çerez politikasıyla ayrıntılandırılmalıdır.',
+          'Platform yalnızca zorunlu çerez ve yerel depolama kullanır: oturumunuzun açık kalması (kimlik doğrulama jetonu ve yenileme çerezi), güvenlik kontrolleri (bot koruması) ve tercihleriniz (erişilebilirlik ayarları, gösterilen bilgilendirmeler).',
+          'Reklam, profilleme veya üçüncü taraf izleme çerezi kullanılmaz; bu nedenle zorunlu çerezler için ayrıca açık rıza aranmaz, yalnızca bilgilendirme yapılır.',
+          'Tarayıcınızdan çerezleri engelleyebilirsiniz; ancak oturum çerezleri engellendiğinde giriş yapılamaz.',
         ],
       },
       {
@@ -150,6 +175,7 @@ const content: Record<InfoPageKind, {
         title: 'Saklama ve silme',
         body: [
           'Veriler, hizmetin gerektirdiği süre boyunca saklanır. Kullanıcı talebi veya yasal gereklilik durumunda silme ya da anonimleştirme süreci işletilir.',
+          'Süresi dolan kayıtlar günlük çalışan otomatik bir imha göreviyle silinir. Ayrıntılı süreler KVKK Aydınlatma Metni’nin "Saklama ve imha süresi" bölümünde listelenmiştir.',
         ],
       },
       {
@@ -294,8 +320,15 @@ export function PublicInfoPage({ kind }: PublicInfoPageProps) {
           ))}
         </div>
 
-        <p className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900">
-          Bu sayfa ürün içinde kullanılacak temel metin taslağıdır. Canlı kullanıma geçmeden önce hukuk danışmanı ve ilgili sağlık/etik uzmanları tarafından gözden geçirilmelidir.
+        <p className="mt-8 text-xs font-semibold text-slate-400">
+          Metin sürümü {POLICY_VERSION} · Son güncelleme {LAST_UPDATED}
+        </p>
+
+        <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900">
+          Bu sayfa ürün içinde kullanılacak temel metin taslağıdır. Köşeli parantez içindeki alanlar
+          (veri sorumlusunun unvanı ve iletişim bilgileri, standart sözleşme bildirimleri, yetkili
+          mahkeme) doldurulmadan canlıya çıkılmamalıdır; metin hukuk danışmanı ve ilgili sağlık/etik
+          uzmanları tarafından gözden geçirilmelidir.
         </p>
       </article>
     </main>

@@ -5,13 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/prerender.mjs",
+    "build:only": "tsc -b && vite build",
+    "prerender": "node scripts/prerender.mjs",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts",
     "test:coverage": "vitest run --config vitest.config.ts --coverage",
     "test:e2e": "playwright test",
     "test:nav-utils": "node scripts/test-nav-utils.cjs",
+    "video:tutorials": "node scripts/record-tutorials.mjs",
+    "og:image": "node scripts/generate-og-image.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

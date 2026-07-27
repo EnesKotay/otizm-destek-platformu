@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
@@ -6,11 +6,11 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { NotificationToast } from '@/components/notifications/NotificationToast';
 import { AccessibilityWidget } from '@/components/ui/AccessibilityWidget';
 import { ChatBot } from '@/components/ChatBot';
-import { AlertTriangle, HelpCircle, Search, Menu, X, Sparkles } from 'lucide-react';
+import { AlertTriangle, ChevronDown, HelpCircle, PlayCircle, Search, Menu, X, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { getTutorialVideoForRoute } from '@/data/tutorialRouteVideos';
 import { cn } from '@/utils/cn';
 import { prefetchCommonRoutes } from '@/utils/routePrefetch';
-import { pushNotificationService } from '@/services/pushNotificationService';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -49,7 +49,12 @@ export function AppLayout() {
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
+  const helpMenuRef = useRef<HTMLDivElement>(null);
+  const helpButtonRef = useRef<HTMLButtonElement>(null);
+  const firstHelpMenuItemRef = useRef<HTMLAnchorElement>(null);
   const routeHelp = useMemo(() => getRouteHelp(location.pathname), [location.pathname]);
+  const routeTutorialVideo = user ? getTutorialVideoForRoute(user.role, location.pathname) : null;
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
 
   useEffect(() => {
@@ -85,14 +90,6 @@ export function AppLayout() {
     window.dispatchEvent(new Event('open-command-palette'));
   };
 
-  // Push bildirim aboneliği — kullanıcı oturum açtıktan sonra otomatik kayıt
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    if (!pushNotificationService.isSupported()) return;
-    if (pushNotificationService.getPermission() === 'denied') return;
-    pushNotificationService.subscribe().catch(() => {});
-  }, [isAuthenticated]);
-
   useEffect(() => {
     // Tarayıcı boşta olduğunda chunk'ları önceden indir
     if ('requestIdleCallback' in window) {
@@ -106,7 +103,55 @@ export function AppLayout() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsHelpOpen(false);
+    setIsHelpMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isHelpMenuOpen) return;
+
+    const focusTimer = window.setTimeout(() => firstHelpMenuItemRef.current?.focus(), 0);
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!helpMenuRef.current?.contains(event.target as Node)) {
+        setIsHelpMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsHelpMenuOpen(false);
+        helpButtonRef.current?.focus();
+        return;
+      }
+
+      if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+      const menuItems = Array.from(
+        helpMenuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
+      );
+      if (menuItems.length === 0) return;
+
+      event.preventDefault();
+      const currentIndex = menuItems.indexOf(document.activeElement as HTMLElement);
+      if (event.key === 'Home') {
+        menuItems[0].focus();
+      } else if (event.key === 'End') {
+        menuItems[menuItems.length - 1].focus();
+      } else {
+        const direction = event.key === 'ArrowDown' ? 1 : -1;
+        const nextIndex = currentIndex < 0
+          ? 0
+          : (currentIndex + direction + menuItems.length) % menuItems.length;
+        menuItems[nextIndex].focus();
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isHelpMenuOpen]);
 
   useEffect(() => {
     const handleCompactChange = (event: Event) => {
@@ -205,15 +250,100 @@ export function AppLayout() {
                 </Link>
               )}
               {isAuthenticated && routeHelp && (
-                <button
-                  type="button"
-                  onClick={() => setIsHelpOpen((value) => !value)}
-                  className="flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:border-gray-100 hover:bg-white hover:text-slate-800 hover:shadow-sm dark:text-slate-300 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-                  aria-expanded={isHelpOpen}
-                >
-                  <HelpCircle size={16} />
-                  <span className="hidden sm:inline">Yardım</span>
-                </button>
+                <div ref={helpMenuRef} className="relative">
+                  <button
+                    ref={helpButtonRef}
+                    type="button"
+                    onClick={() => setIsHelpMenuOpen((value) => !value)}
+                    className="flex items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-2 text-sm font-medium text-slate-600 transition-all hover:border-gray-100 hover:bg-white hover:text-slate-800 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-slate-300 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200 sm:px-3"
+                    aria-expanded={isHelpMenuOpen}
+                    aria-haspopup="menu"
+                    aria-controls="layout-help-menu"
+                    aria-label="Yardım menüsünü aç"
+                  >
+                    <HelpCircle size={16} aria-hidden="true" />
+                    <span className="hidden sm:inline">Yardım</span>
+                    <ChevronDown
+                      size={13}
+                      aria-hidden="true"
+                      className={cn('hidden transition-transform sm:block', isHelpMenuOpen && 'rotate-180')}
+                    />
+                  </button>
+
+                  {isHelpMenuOpen && (
+                    <div
+                      id="layout-help-menu"
+                      role="menu"
+                      aria-label="Yardım seçenekleri"
+                      className="fixed inset-x-4 top-16 z-[60] mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10 dark:border-gray-700 dark:bg-gray-900 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:w-72 sm:max-w-[calc(100vw-2rem)]"
+                    >
+                      <Link
+                        ref={firstHelpMenuItemRef}
+                        to="/kullanici-rehberi"
+                        role="menuitem"
+                        onClick={() => setIsHelpMenuOpen(false)}
+                        className="flex w-full items-start gap-3 rounded-xl bg-primary-50 px-3 py-3 text-left transition-colors hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:bg-primary-950/30 dark:hover:bg-primary-950/50"
+                      >
+                        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-white">
+                          <PlayCircle size={17} aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-sm font-extrabold text-primary-800 dark:text-primary-200">Öğrenme yoluna başla</span>
+                          <span className="mt-0.5 block text-xs font-medium leading-5 text-primary-800 dark:text-primary-200">Rolünüze özel videoları doğru sırayla izleyin.</span>
+                        </span>
+                      </Link>
+
+                      {routeTutorialVideo && (
+                        <Link
+                          to={`/kullanici-rehberi?video=${routeTutorialVideo.id}`}
+                          role="menuitem"
+                          onClick={() => setIsHelpMenuOpen(false)}
+                          className="mt-1 flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:hover:bg-emerald-950/30"
+                        >
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                            <PlayCircle size={17} aria-hidden="true" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-bold text-slate-800 dark:text-slate-100">Bu sayfanın videosunu izle</span>
+                            <span className="mt-0.5 block text-xs font-medium leading-5 text-slate-500 dark:text-slate-400">
+                              {routeTutorialVideo.title}
+                            </span>
+                          </span>
+                        </Link>
+                      )}
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setIsHelpOpen((value) => !value);
+                          setIsHelpMenuOpen(false);
+                        }}
+                        className="mt-1 flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-gray-800"
+                      >
+                        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
+                          <HelpCircle size={17} aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-sm font-bold text-slate-800 dark:text-slate-100">Bu sayfa için hızlı yardım</span>
+                          <span className="mt-0.5 block text-xs font-medium leading-5 text-slate-500 dark:text-slate-400">Bulunduğunuz ekranın kısa adımlarını gösterir.</span>
+                        </span>
+                      </button>
+
+                      <Link
+                        to="/yardim"
+                        role="menuitem"
+                        onClick={() => setIsHelpMenuOpen(false)}
+                        className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-slate-200 dark:hover:bg-gray-800"
+                      >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-gray-800 dark:text-slate-300">
+                          <HelpCircle size={17} aria-hidden="true" />
+                        </span>
+                        Yardım Merkezi
+                      </Link>
+                    </div>
+                  )}
+                </div>
               )}
               {isAuthenticated && <AccessibilityWidget />}
               {isAuthenticated && <NotificationBell />}
@@ -231,6 +361,16 @@ export function AppLayout() {
                     </div>
                   ))}
                 </div>
+                {routeTutorialVideo && (
+                  <Link
+                    to={`/kullanici-rehberi?video=${routeTutorialVideo.id}`}
+                    className="mt-3 inline-flex items-center gap-2 rounded-xl bg-sky-700 px-3.5 py-2.5 text-xs font-extrabold text-white shadow-sm transition-colors hover:bg-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+                  >
+                    <PlayCircle size={16} aria-hidden="true" />
+                    Bu sayfanın videosunu izle
+                    <span className="hidden font-semibold text-sky-100 sm:inline">· {routeTutorialVideo.title}</span>
+                  </Link>
+                )}
               </div>
             </section>
           )}

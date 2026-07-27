@@ -2,6 +2,7 @@ package com.autismsupport.platform.service;
 
 import com.autismsupport.platform.model.ABCEntry;
 import com.autismsupport.platform.model.Appointment;
+import com.autismsupport.platform.model.ConsentType;
 import com.autismsupport.platform.model.DevelopmentNote;
 import com.autismsupport.platform.model.Goal;
 import com.autismsupport.platform.model.Milestone;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 public class AiInsightsService {
 
     private final GeminiService geminiService;
+    private final ConsentService consentService;
     private final ChildRepository childRepository;
     private final MoodEntryRepository moodRepo;
     private final SleepEntryRepository sleepRepo;
@@ -54,6 +56,7 @@ public class AiInsightsService {
 
     public String generateInsights(UUID childId, AnalysisType type, UUID requesterId, String requesterRole) {
         validateChildAccess(childId, requesterId, requesterRole);
+        requireAiConsent(childId);
         return generateInsights(childId, type);
     }
 
@@ -72,6 +75,7 @@ public class AiInsightsService {
 
     public String buildPromptForStreaming(UUID childId, AnalysisType type, UUID requesterId, String requesterRole) {
         validateChildAccess(childId, requesterId, requesterRole);
+        requireAiConsent(childId);
         return buildPromptForStreaming(childId, type);
     }
 
@@ -668,6 +672,21 @@ public class AiInsightsService {
                     appointmentInfo,
                     recentNotes.isEmpty() ? "Kayit yok" : recentNotes
                 );
+    }
+
+    /**
+     * Çocuğun sağlık ve davranış verisi bu noktadan sonra yurt dışındaki yapay
+     * zekâ sağlayıcısına gönderilir. KVKK md. 6 uyarınca özel nitelikli kişisel
+     * verinin işlenmesi ve md. 9 uyarınca yurt dışına aktarılması açık rızaya
+     * bağlıdır; rıza velinindir, isteği yapan uzmanın ya da yöneticinin değil.
+     */
+    private void requireAiConsent(UUID childId) {
+        UUID parentId = childRepository.findById(childId)
+                .map(child -> child.getParent().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cocuk profili bulunamadi"));
+        consentService.requireConsent(parentId, ConsentType.AI_ANALIZ,
+                "Yapay zekâ analizi için veli açık rızası bulunmuyor. Ayarlar > Gizlilik ve Rızalar "
+                        + "bölümünden yapay zekâ analizi rızası verilmeden bu özellik kullanılamaz.");
     }
 
     private void validateChildAccess(UUID childId, UUID requesterId, String requesterRole) {

@@ -27,6 +27,18 @@ public class EmergencyCard {
     @org.hibernate.annotations.ColumnTransformer(write = "?::jsonb")
     private String data;
 
+    /** Veli paylaşımı elle açtı mı? Varsayılan kapalı. */
+    @Column(name = "share_enabled", nullable = false)
+    @Builder.Default
+    private boolean shareEnabled = false;
+
+    /** Tahmin edilemez paylaşım jetonu; paylaşım kapandığında null'lanır. */
+    @Column(name = "share_token", length = 64)
+    private String shareToken;
+
+    @Column(name = "share_expires_at")
+    private LocalDateTime shareExpiresAt;
+
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

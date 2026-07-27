@@ -1,8 +1,6 @@
 package com.autismsupport.platform.service;
 
 import com.autismsupport.platform.dto.PushSubscriptionRequest;
-import com.autismsupport.platform.model.PushSubscription;
-import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.repository.PushSubscriptionRepository;
 import com.autismsupport.platform.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,22 +27,21 @@ public class PushSubscriptionService {
 
     @Transactional
     public void subscribe(UUID userId, PushSubscriptionRequest request, String userAgent) {
-        if (request.getP256dh() == null || request.getAuth() == null) {
+        if (request.getP256dh() == null || request.getP256dh().isBlank()
+                || request.getAuth() == null || request.getAuth().isBlank()) {
             throw new IllegalArgumentException("Push abonelik anahtarlari eksik.");
         }
 
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Kullanici bulunamadi."));
 
-        PushSubscription subscription = pushSubscriptionRepository.findByEndpoint(request.getEndpoint())
-                .orElseGet(() -> PushSubscription.builder().endpoint(request.getEndpoint()).build());
-
-        subscription.setUser(user);
-        subscription.setP256dhKey(request.getP256dh());
-        subscription.setAuthKey(request.getAuth());
-        subscription.setUserAgent(userAgent);
-        subscription.setLastSeenAt(LocalDateTime.now());
-        pushSubscriptionRepository.save(subscription);
+        pushSubscriptionRepository.upsert(
+                userId,
+                request.getEndpoint(),
+                request.getP256dh(),
+                request.getAuth(),
+                userAgent,
+                LocalDateTime.now());
     }
 
     @Transactional

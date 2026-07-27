@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 
 import { useChildStore } from '@/store/childStore';
 import { childService } from '@/services/childService';
-import { emergencyCardService } from '@/services/emergencyCardService';
+import { emergencyCardService, type EmergencyShareStatus } from '@/services/emergencyCardService';
 import { toast } from '@/store/toastStore';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
 import QRCode from 'react-qr-code';
@@ -96,6 +96,8 @@ export function EmergencyCardPage() {
   const [saved, setSaved] = useState(false);
   const [showPrint, setShowPrint] = useState(false);
   const [useDemoMode, setUseDemoMode] = useState(false);
+  const [shareStatus, setShareStatus] = useState<EmergencyShareStatus | null>(null);
+  const [shareHours, setShareHours] = useState(24);
 
   useEffect(() => {
     if (!children.length) childService.getAll().then(setChildren).catch(() => {});
@@ -124,7 +126,34 @@ export function EmergencyCardPage() {
     });
   }, [selectedChildId, children, useDemoMode]);
 
+  useEffect(() => {
+    if (useDemoMode || !selectedChildId) { setShareStatus(null); return; }
+    emergencyCardService.getShareStatus(selectedChildId).then(setShareStatus).catch(() => setShareStatus(null));
+  }, [selectedChildId, useDemoMode]);
+
   const set = (patch: Partial<EmergencyProfile>) => setProfile(p => p ? { ...p, ...patch } : p);
+
+  const shareUrl = (token: string) => `${window.location.origin}/acil-profil/${token}`;
+
+  const handleEnableShare = async () => {
+    try {
+      await emergencyCardService.enableShare(selectedChildId, shareHours);
+      setShareStatus(await emergencyCardService.getShareStatus(selectedChildId));
+      toast.success('Paylaşım bağlantısı oluşturuldu.');
+    } catch {
+      toast.error('Paylaşım bağlantısı oluşturulamadı.');
+    }
+  };
+
+  const handleDisableShare = async () => {
+    try {
+      await emergencyCardService.disableShare(selectedChildId);
+      setShareStatus(await emergencyCardService.getShareStatus(selectedChildId));
+      toast.success('Paylaşım kapatıldı, eski bağlantı artık çalışmıyor.');
+    } catch {
+      toast.error('Paylaşım kapatılamadı.');
+    }
+  };
 
   const handleSave = async () => {
     if (!profile) return;
@@ -416,7 +445,7 @@ export function EmergencyCardPage() {
           </div>
         </section>
 
-        {/* QR Code */}
+        {/* QR Code — paylaşım yalnızca süreli bağlantıyla açılır */}
         {saved && (
           <section className="bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/80 rounded-[32px] border border-indigo-100 p-8 lg:col-span-2 flex flex-col items-center text-center shadow-sm relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-400 to-purple-500" />
@@ -425,44 +454,86 @@ export function EmergencyCardPage() {
             </div>
             <h2 className="text-xl font-black text-slate-900 mb-2">QR Kod ile Paylaş</h2>
             <p className="text-sm font-semibold text-slate-500 max-w-lg mb-6 leading-relaxed">
-              Bu QR kodu telefon kamerasıyla okutunca çocuğunuzun bilgileri açılır. Kodu yazdırıp bilekliğe, çantaya veya okul kartına yapıştırabilirsiniz.
+              Kart yalnızca siz paylaşımı açtığınızda görüntülenebilir. Oluşturduğunuz bağlantının bir
+              son kullanma süresi vardır ve dilediğiniz an kapatabilirsiniz.
             </p>
-            <div className="bg-white p-5 rounded-[24px] shadow-lg shadow-indigo-200/50 border border-indigo-50 mb-6 group hover:scale-105 transition-transform duration-300">
-              <QRCodeComp value={`${window.location.origin}/acil-profil/${selectedChildId}`} size={160} className="rounded-xl" />
-            </div>
-            <div className="flex flex-wrap gap-3 justify-center">
-              <a
-                href={`/acil-profil/${selectedChildId}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-extrabold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-700 px-5 py-2.5 rounded-xl transition-all border border-indigo-100"
-              >
-                Profili Görüntüle →
-              </a>
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(`Çocuğumun acil durum kartını buradan görüntüleyebilirsiniz:\n${window.location.origin}/acil-profil/${selectedChildId}`)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-extrabold text-white bg-[#25D366] hover:bg-[#1fbd5a] px-5 py-2.5 rounded-xl transition-all shadow-sm shadow-green-200"
-              >
-                <Share2 size={16} />
-                WhatsApp'ta Paylaş
-              </a>
-              {navigator.share && (
-                <button
-                  type="button"
-                  onClick={() => navigator.share({
-                    title: `${profile.childName} — Acil Durum Kartı`,
-                    text: 'Çocuğumun acil durum kartını buradan görüntüleyebilirsiniz.',
-                    url: `${window.location.origin}/acil-profil/${selectedChildId}`,
-                  }).catch(() => {})}
-                  className="inline-flex items-center gap-2 text-sm font-extrabold text-slate-700 bg-slate-100 hover:bg-slate-200 px-5 py-2.5 rounded-xl transition-all border border-slate-200"
+
+            {!shareStatus?.consentGranted && (
+              <div className="mb-6 max-w-lg rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold leading-relaxed text-amber-900">
+                Acil durum kartı çocuğunuzun sağlık bilgilerini içerir. Paylaşabilmek için önce{' '}
+                <a href="/ayarlar" className="underline">Ayarlar → Gizlilik ve Rızalar</a> bölümünden
+                acil durum kartı paylaşımına açık rıza vermelisiniz.
+              </div>
+            )}
+
+            {shareStatus?.shareEnabled && shareStatus.shareToken ? (
+              <>
+                <div className="bg-white p-5 rounded-[24px] shadow-lg shadow-indigo-200/50 border border-indigo-50 mb-4 group hover:scale-105 transition-transform duration-300">
+                  <QRCodeComp value={shareUrl(shareStatus.shareToken)} size={160} className="rounded-xl" />
+                </div>
+                {shareStatus.expiresAt && (
+                  <p className="mb-6 text-xs font-bold text-slate-500">
+                    Bağlantı {new Date(shareStatus.expiresAt).toLocaleString('tr-TR')} tarihine kadar geçerli.
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <a
+                    href={shareUrl(shareStatus.shareToken)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-extrabold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-700 px-5 py-2.5 rounded-xl transition-all border border-indigo-100"
+                  >
+                    Profili Görüntüle →
+                  </a>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`Çocuğumun acil durum kartını buradan görüntüleyebilirsiniz:\n${shareUrl(shareStatus.shareToken)}`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-extrabold text-white bg-[#25D366] hover:bg-[#1fbd5a] px-5 py-2.5 rounded-xl transition-all shadow-sm shadow-green-200"
+                  >
+                    <Share2 size={16} />
+                    WhatsApp'ta Paylaş
+                  </a>
+                  {navigator.share && (
+                    <button
+                      type="button"
+                      onClick={() => navigator.share({
+                        title: `${profile.childName} — Acil Durum Kartı`,
+                        text: 'Çocuğumun acil durum kartını buradan görüntüleyebilirsiniz.',
+                        url: shareUrl(shareStatus.shareToken!),
+                      }).catch(() => {})}
+                      className="inline-flex items-center gap-2 text-sm font-extrabold text-slate-700 bg-slate-100 hover:bg-slate-200 px-5 py-2.5 rounded-xl transition-all border border-slate-200"
+                    >
+                      <Share2 size={16} />
+                      Paylaş
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleDisableShare}
+                    className="inline-flex items-center gap-2 text-sm font-extrabold text-rose-600 bg-rose-50 hover:bg-rose-100 px-5 py-2.5 rounded-xl transition-all border border-rose-100"
+                  >
+                    Paylaşımı Kapat
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <select
+                  value={shareHours}
+                  onChange={e => setShareHours(Number(e.target.value))}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700"
                 >
-                  <Share2 size={16} />
-                  Paylaş
-                </button>
-              )}
-            </div>
+                  <option value={24}>24 saat geçerli</option>
+                  <option value={72}>3 gün geçerli</option>
+                  <option value={168}>1 hafta geçerli</option>
+                  <option value={720}>30 gün geçerli</option>
+                </select>
+                <Button onClick={handleEnableShare} disabled={!shareStatus?.consentGranted}>
+                  <Share2 size={16} /> Paylaşım Bağlantısı Oluştur
+                </Button>
+              </div>
+            )}
           </section>
         )}
       </div>

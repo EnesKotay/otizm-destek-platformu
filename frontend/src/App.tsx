@@ -5,6 +5,8 @@ import { useAuthStore } from '@/store/authStore';
 import { ToastContainer } from '@/components/ui/Toast';
 import { UpdateBanner } from '@/components/ui/UpdateBanner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { CookieNotice } from '@/components/kvkk/CookieNotice';
+import { ReconsentBanner } from '@/components/kvkk/ReconsentBanner';
 import {
   ADMIN_ONLY,
   ALL_ROLES,
@@ -71,6 +73,7 @@ const AdminUsersPage = lazyNamed(() => import('./pages/admin/AdminUsersPage'), '
 const AdminArticlesPage = lazyNamed(() => import('./pages/admin/AdminArticlesPage'), 'AdminArticlesPage');
 const AdminReportsPage = lazyNamed(() => import('./pages/admin/AdminReportsPage'), 'AdminReportsPage');
 const AdminAuditLogPage = lazyNamed(() => import('./pages/admin/AdminAuditLogPage'), 'AdminAuditLogPage');
+const AdminKvkkRequestsPage = lazyNamed(() => import('./pages/admin/AdminKvkkRequestsPage'), 'AdminKvkkRequestsPage');
 const AdminSettingsPage = lazyNamed(() => import('./pages/admin/AdminSettingsPage'), 'AdminSettingsPage');
 const ForgotPasswordPage = lazyNamed(() => import('@/pages/ForgotPasswordPage'), 'ForgotPasswordPage');
 const ResetPasswordPage = lazyNamed(() => import('@/pages/ResetPasswordPage'), 'ResetPasswordPage');
@@ -100,6 +103,8 @@ const BepGeneratorPage = lazyNamed(() => import('@/pages/BepGeneratorPage'), 'Be
 const DailyTrackerPage = lazyNamed(() => import('@/pages/DailyTrackerPage'), 'DailyTrackerPage');
 const AnalyticsPage = lazyNamed(() => import('@/pages/AnalyticsPage'), 'AnalyticsPage');
 const CrisisGuidePage = lazyNamed(() => import('@/pages/CrisisGuidePage'), 'CrisisGuidePage');
+const PublicCrisisGuidePage = lazyNamed(() => import('@/pages/PublicCrisisGuidePage'), 'PublicCrisisGuidePage');
+const ExpertLandingPage = lazyNamed(() => import('@/pages/ExpertLandingPage'), 'ExpertLandingPage');
 const TasksPage = lazyNamed(() => import('@/pages/TasksPage'), 'TasksPage');
 const RoutinesPage = lazyNamed(() => import('@/pages/RoutinesPage'), 'RoutinesPage');
 const ProfilePage = lazyNamed(() => import('@/pages/ProfilePage'), 'ProfilePage');
@@ -231,12 +236,17 @@ export default function App() {
             <Route path="/sifre-sifirla" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
             <Route path="/eposta-dogrula" element={<PublicRoute><VerifyEmailPage /></PublicRoute>} />
             <Route path="/tanitim" element={<PublicLandingPage />} />
+            {/* Kriz rehberinin üyeliksiz sürümü. Uygulama içi /kriz-rehberi
+                rotası korunuyor; bu adres arama motorundan gelen ve zor bir anın
+                ortasındaki kullanıcı için giriş duvarı olmadan açılır. */}
+            <Route path="/kriz-aninda-ne-yapmali" element={<Suspense fallback={<PageLoader />}><PublicCrisisGuidePage /></Suspense>} />
+            <Route path="/uzmanlar-icin" element={<Suspense fallback={<PageLoader />}><ExpertLandingPage /></Suspense>} />
             <Route path="/kvkk" element={<PublicInfoPage kind="kvkk" />} />
             <Route path="/gizlilik" element={<PublicInfoPage kind="privacy" />} />
             <Route path="/kullanim-sartlari" element={<PublicInfoPage kind="terms" />} />
             <Route path="/tibbi-uyari" element={<PublicInfoPage kind="medical" />} />
             <Route path="/guven-merkezi" element={<PublicInfoPage kind="trust" />} />
-            <Route path="/acil-profil/:id" element={<PublicEmergencyCardPage />} />
+            <Route path="/acil-profil/:token" element={<PublicEmergencyCardPage />} />
             <Route path="/kayit/uzman" element={<Suspense fallback={<PageLoader />}><ExpertRegisterPage /></Suspense>} />
             <Route path="/baslangic" element={<OnboardingRoute><Suspense fallback={<PageLoader />}><OnboardingPage /></Suspense></OnboardingRoute>} />
 
@@ -282,6 +292,7 @@ export default function App() {
                   <Route path="users" element={<AdminUsersPage />} />
                   <Route path="content" element={<AdminArticlesPage />} />
                   <Route path="reports" element={<AdminReportsPage />} />
+                  <Route path="kvkk" element={<AdminKvkkRequestsPage />} />
                   <Route path="auditlog" element={<AdminAuditLogPage />} />
                   <Route path="settings" element={<AdminSettingsPage />} />
                 </Route>
@@ -307,6 +318,8 @@ export default function App() {
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Suspense>
+            <CookieNotice />
+            <ReconsentBanner />
           </BrowserRouter>
         </AuthBootstrap>
       </QueryClientProvider>

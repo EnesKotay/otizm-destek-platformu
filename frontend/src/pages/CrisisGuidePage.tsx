@@ -150,36 +150,49 @@ function CrisisCardItem({ card }: { card: CrisisCard }) {
 
   return (
     <Card className={`rounded-3xl border overflow-hidden transition-all duration-300 ${open ? 'shadow-lg scale-[1.01]' : 'shadow-sm'} ${card.borderColor}`}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        className={`w-full flex items-center gap-4 p-5 text-left relative overflow-hidden transition-all duration-300 ${card.bgColor} ${open ? 'bg-opacity-100' : 'bg-opacity-50 hover:bg-opacity-70'}`}
+      {/* Akordeon ve "sesli dinle" düğmeleri KARDEŞ olmalı; önceden sesli dinle
+          düğmesi akordeon düğmesinin içindeydi ve iç içe interaktif kontrol
+          klavye/ekran okuyucu için geçersiz bir yapı oluşturuyordu. */}
+      <div
+        className={`flex items-center gap-4 p-5 relative overflow-hidden transition-all duration-300 ${card.bgColor} ${open ? 'bg-opacity-100' : 'bg-opacity-50'}`}
       >
         <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/20 blur-2xl rounded-full pointer-events-none"></div>
-        <div className={`w-14 h-14 rounded-2xl bg-white flex items-center justify-center shrink-0 shadow-sm border border-white/50 backdrop-blur-md`}>
-          <Icon size={24} className={card.color} />
-        </div>
-        <div className="flex-1 min-w-0 z-10">
-          <h3 className="text-base font-black text-gray-900 tracking-tight">{card.title}</h3>
-          <p className="text-[11px] font-bold text-gray-500 mt-0.5 uppercase tracking-wider">{card.subtitle}</p>
-        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          aria-expanded={open}
+          aria-controls={`crisis-panel-${card.id}`}
+          className="flex flex-1 min-w-0 items-center gap-4 text-left z-10 cursor-pointer"
+        >
+          <div className={`w-14 h-14 rounded-2xl bg-white flex items-center justify-center shrink-0 shadow-sm border border-white/50 backdrop-blur-md`}>
+            <Icon size={24} className={card.color} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-black text-gray-900 tracking-tight">{card.title}</h3>
+            <p className="text-[11px] font-bold text-gray-700 mt-0.5 uppercase tracking-wider">{card.subtitle}</p>
+          </div>
+        </button>
         <button
           type="button"
           onClick={toggleSpeech}
-          className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-extrabold transition-all ${
-            speaking ? 'bg-amber-500 text-white animate-pulse' : 'bg-white/80 text-gray-700 hover:bg-white'
+          className={`shrink-0 z-10 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
+            speaking ? 'bg-amber-600 text-white' : 'bg-white/90 text-gray-800 hover:bg-white'
           }`}
           title="Sesli Okut"
         >
-          <Volume2 size={14} />
+          <Volume2 size={14} aria-hidden="true" />
           <span className="hidden sm:inline">{speaking ? 'Durdur' : 'Sesli Dinle'}</span>
         </button>
-        <div className={`shrink-0 w-8 h-8 rounded-full bg-white/50 flex items-center justify-center transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>
+        <div
+          aria-hidden="true"
+          className={`shrink-0 z-10 w-8 h-8 rounded-full bg-white/50 flex items-center justify-center transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+        >
           <ChevronDown size={18} className="text-gray-600" />
         </div>
-      </button>
+      </div>
 
       {open && (
-        <div className="p-6 bg-white space-y-6 border-t border-gray-100 animate-in slide-in-from-top-2 duration-300">
+        <div id={`crisis-panel-${card.id}`} className="p-6 bg-white space-y-6 border-t border-gray-100 animate-in slide-in-from-top-2 duration-300">
           <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50">
             <h4 className="text-xs font-black text-emerald-700 uppercase tracking-widest mb-3 flex items-center gap-2">
               <CheckCircle size={14} /> Ne Yapmalı?
@@ -253,7 +266,12 @@ const playChime = (frequency: number) => {
   }
 };
 
-export function CrisisGuidePage() {
+/**
+ * Rehberin gövdesi. Hem uygulama içi sayfada hem de üyelik gerektirmeyen
+ * public sayfada (PublicCrisisGuidePage) kullanılır; bu yüzden kendi
+ * PageOnboarding'ini veya uygulama kabuğunu içermez.
+ */
+export function CrisisGuideContent() {
   const [breathingStep, setBreathingStep] = useState<'idle' | 'inhale' | 'exhale'>('idle');
   const [timeLeft, setTimeLeft] = useState(0);
 
@@ -286,24 +304,6 @@ export function CrisisGuidePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-      <PageOnboarding
-        pageId="crisis-guide"
-        title="Zor Anlarda Ne Yapmalı?"
-        description="Çocuğunuz bunaldığında veya zor bir an yaşandığında ne yapacağınızı adım adım bulabilirsiniz."
-        steps={[
-          {
-            icon: <AlertTriangle size={20} />,
-            title: "Adımları Takip Edin",
-            description: "Sakin kalın ve sayfadaki adımları sırayla uygulayın. Her durum için ayrı rehber var."
-          },
-          {
-            icon: <Phone size={20} />,
-            title: "Acil Numaralar",
-            description: "Gerekirse tek tıkla ilgili kurumlara ulaşabilirsiniz."
-          }
-        ]}
-      />
-
       {/* Hero Section */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-50 via-white to-orange-50/30 border border-red-100/60 shadow-sm p-6 sm:p-8">
         {/* Dekoratif arka plan öğeleri */}
@@ -382,7 +382,7 @@ export function CrisisGuidePage() {
             {breathingStep === 'idle' ? (
               <div className="space-y-1">
                 <span className="text-sm font-black text-slate-300">Hazır</span>
-                <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-widest">Başlamak için dokunun</span>
+                <span className="text-[10px] font-bold text-slate-300 block uppercase tracking-widest">Başlamak için dokunun</span>
               </div>
             ) : breathingStep === 'inhale' ? (
               <div className="space-y-0.5">
@@ -504,9 +504,35 @@ export function CrisisGuidePage() {
         </ul>
       </Card>
 
-      <p className="text-xs text-center text-gray-400 pb-4">
+      <p className="text-xs text-center text-gray-600 pb-4">
         Bu rehber genel bilgi amacıyla hazırlanmıştır. Ağır vakalarda mutlaka uzman desteği alın.
       </p>
     </div>
+  );
+}
+
+/** Uygulama içi (giriş yapmış) kriz rehberi sayfası. */
+export function CrisisGuidePage() {
+  return (
+    <>
+      <PageOnboarding
+        pageId="crisis-guide"
+        title="Zor Anlarda Ne Yapmalı?"
+        description="Çocuğunuz bunaldığında veya zor bir an yaşandığında ne yapacağınızı adım adım bulabilirsiniz."
+        steps={[
+          {
+            icon: <AlertTriangle size={20} />,
+            title: 'Adımları Takip Edin',
+            description: 'Sakin kalın ve sayfadaki adımları sırayla uygulayın. Her durum için ayrı rehber var.',
+          },
+          {
+            icon: <Phone size={20} />,
+            title: 'Acil Numaralar',
+            description: 'Gerekirse tek tıkla ilgili kurumlara ulaşabilirsiniz.',
+          },
+        ]}
+      />
+      <CrisisGuideContent />
+    </>
   );
 }

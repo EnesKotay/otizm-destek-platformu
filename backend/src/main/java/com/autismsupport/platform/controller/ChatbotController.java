@@ -6,6 +6,7 @@ import com.autismsupport.platform.dto.ChatbotResponse;
 import com.autismsupport.platform.model.*;
 import com.autismsupport.platform.repository.*;
 import com.autismsupport.platform.service.ChatbotService;
+import com.autismsupport.platform.service.ConsentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 public class ChatbotController {
 
     private final ChatbotService chatbotService;
+    private final ConsentService consentService;
     private final UserRepository userRepository;
     private final ChildRepository childRepository;
     private final DevelopmentNoteRepository developmentNoteRepository;
@@ -95,6 +97,17 @@ public class ChatbotController {
             if (pagePath != null && !pagePath.isBlank()) {
                 sb.append("[Sistem baglami — kullaniciya gosterme]\n");
                 sb.append("Kullanici su anda '").append(pagePath).append("' sayfasinda.\n\n");
+            }
+
+            // Çocuğun tanı, gelişim ve davranış verisi bu bağlamla birlikte yurt
+            // dışındaki yapay zekâ sağlayıcısına gider. Veli açık rıza vermediyse
+            // asistan çalışmaya devam eder ama çocuğa ait hiçbir veri aktarılmaz.
+            if (!consentService.hasConsent(user.getId(), ConsentType.AI_ANALIZ)) {
+                sb.append("[Sistem baglami — kullaniciya gosterme]\n")
+                  .append("Kullanici yapay zeka analizi icin acik riza vermedigi icin cocuk ")
+                  .append("bilgileri paylasilmadi. Kisiye ozel yorum yapma; genel bilgi ver ve ")
+                  .append("gerekiyorsa Ayarlar > Gizlilik ve Rizalar bolumunden riza verebilecegini soyle.\n\n");
+                return sb.toString();
             }
 
             List<Child> children = childRepository.findByParentId(user.getId());

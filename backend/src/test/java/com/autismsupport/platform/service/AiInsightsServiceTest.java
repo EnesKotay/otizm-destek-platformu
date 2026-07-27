@@ -39,6 +39,7 @@ class AiInsightsServiceTest {
     @Mock ScreeningResultRepository screeningRepo;
     @Mock AppointmentRepository appointmentRepo;
     @Mock GoalRepository goalRepo;
+    @Mock ConsentService consentService;
 
     @InjectMocks AiInsightsService aiInsightsService;
 
@@ -48,6 +49,12 @@ class AiInsightsServiceTest {
         UUID childId = UUID.randomUUID();
         UUID parentId = UUID.randomUUID();
         when(childRepository.existsByIdAndParentId(childId, parentId)).thenReturn(true);
+        // Veri Gemini'ye gitmeden önce velinin AI rızası aranır.
+        when(childRepository.findById(childId)).thenReturn(java.util.Optional.of(
+                com.autismsupport.platform.model.Child.builder()
+                        .id(childId)
+                        .parent(com.autismsupport.platform.model.User.builder().id(parentId).build())
+                        .build()));
         when(moodRepo.findByChildIdOrderByEntryDateDesc(childId)).thenReturn(List.of());
         when(sleepRepo.findByChildIdOrderBySleepDateDesc(childId)).thenReturn(List.of());
         when(abcRepo.findByChildIdOrderByEntryDateDescEntryTimeDescCreatedAtDesc(childId)).thenReturn(List.of());

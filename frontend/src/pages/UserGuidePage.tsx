@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ElementType } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Activity,
   AlertTriangle,
@@ -37,6 +37,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { TutorialVideoLibrary } from '@/components/guide/TutorialVideoLibrary';
 import {
   FEATURE_PERMISSIONS,
   ROLE_LABELS,
@@ -750,11 +751,11 @@ function RoleStartPanel({ role, onVisit }: { role: UserRole; onVisit: (to: strin
         <div>
           <p className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700">
             <Rocket size={13} />
-            Bugün buradan başlayın
+            Videodan sonra uygulayın
           </p>
-          <h2 className="mt-3 text-xl font-black tracking-tight text-slate-950">{ROLE_LABELS[role]} için ilk adımlar</h2>
+          <h2 className="mt-3 text-xl font-black tracking-tight text-slate-950">{ROLE_LABELS[role]} için uygulama adımları</h2>
           <p className="mt-1 max-w-3xl text-sm font-semibold leading-relaxed text-slate-500">
-            Bu bölüm rehberin kısa yoludur: önce bu adımları tamamlayın, sonra ihtiyacınıza göre aşağıdaki sayfa haritasına geçin.
+            Yukarıdaki sıralı video yolunu izledikten sonra öğrendiklerinizi bu kısa yollarla uygulamada deneyin.
           </p>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-500">
@@ -952,7 +953,9 @@ function ProjectRoadmap() {
 
 export function UserGuidePage() {
   const user = useAuthStore((s) => s.user);
+  const [searchParams] = useSearchParams();
   const role = user?.role ?? 'PARENT';
+  const requestedVideoId = searchParams.get('video');
   const groups = GUIDE_BY_ROLE[role];
   const [query, setQuery] = useState('');
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
@@ -1002,6 +1005,12 @@ export function UserGuidePage() {
           </p>
         </div>
 
+        <TutorialVideoLibrary
+          key={`${user?.id ?? 'guest'}-${role}-${requestedVideoId ?? 'path'}`}
+          role={role}
+          userId={user?.id}
+          initialVideoId={requestedVideoId}
+        />
         {!isSearching && <RoleStartPanel role={role} onVisit={handleRouteVisit} />}
 
         {/* Search Bar */}

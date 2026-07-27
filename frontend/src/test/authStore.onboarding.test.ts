@@ -5,6 +5,7 @@ const completeOnboarding = vi.fn();
 const clearChildren = vi.fn();
 const clearChildCache = vi.fn();
 const clearQueryCache = vi.fn();
+const unsubscribePush = vi.fn();
 
 vi.mock('@/services/userService', () => ({
   userService: { completeOnboarding },
@@ -24,6 +25,10 @@ vi.mock('@/App', () => ({
   queryClient: { clear: clearQueryCache },
 }));
 
+vi.mock('@/services/pushNotificationService', () => ({
+  pushNotificationService: { unsubscribe: unsubscribePush },
+}));
+
 vi.unmock('@/store/authStore');
 const { useAuthStore } = await import('@/store/authStore');
 
@@ -41,6 +46,8 @@ const user: User = {
 describe('authStore onboarding completion', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    unsubscribePush.mockResolvedValue(undefined);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
     localStorage.clear();
     useAuthStore.setState({
       user: null,
@@ -82,5 +89,19 @@ describe('authStore onboarding completion', () => {
 
     expect(useAuthStore.getState().user?.onboardingCompleted).toBe(true);
     expect(useAuthStore.getState().completedOnboardingIds).toEqual([user.id]);
+  });
+
+  it('normal çıkışta cihaz bildirim kaydını oturum temizlenmeden kaldırır', async () => {
+    useAuthStore.getState().setAuth(user, 'token');
+
+    await useAuthStore.getState().logout();
+
+    expect(unsubscribePush).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/auth/logout'), expect.any(Object));
+    expect(unsubscribePush.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(fetch).mock.invocationCallOrder[0],
+    );
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    expect(useAuthStore.getState().accessToken).toBeNull();
   });
 });

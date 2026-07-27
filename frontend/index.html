@@ -5,7 +5,42 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#6366f1" />
-    <meta name="description" content="Otizm spektrum bozukluğu olan çocukların aileleri için destek platformu" />
+
+    <!-- SEO / paylaşım —
+         DİKKAT: Bu etiketler bilinçli olarak statik. WhatsApp, Facebook, LinkedIn ve
+         Twitter crawler'ları JavaScript çalıştırmaz; RouteMetadata.tsx içindeki
+         runtime güncellemeleri onlara asla ulaşmaz. Buradaki değerler ana sayfanın
+         (/) varsayılanıdır; prerender adımı (vite.config.ts) diğer public rotalar
+         için bunları build sırasında rotaya özel değerlerle değiştirir. -->
+    <title>Otizm Destek Platformu — Aileler ve uzmanlar için gelişim takibi</title>
+    <meta
+      name="description"
+      content="Otizmli çocukların aileleri için güvenli gelişim takibi: günlük kayıt, acil durum kartı, BEP hazırlığı, kriz rehberi ve doğrulanmış uzmanlarla kontrollü paylaşım. Aile hesabı ücretsiz."
+    />
+    <link rel="canonical" href="https://otizmdestek.com/" />
+    <meta name="robots" content="index,follow" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Otizm Destek Platformu" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:url" content="https://otizmdestek.com/" />
+    <meta property="og:title" content="Otizm Destek Platformu — Aileler ve uzmanlar için gelişim takibi" />
+    <meta
+      property="og:description"
+      content="Günlük kayıt, acil durum kartı, BEP hazırlığı, kriz rehberi ve doğrulanmış uzmanlarla kontrollü paylaşım. Aile hesabı ücretsiz."
+    />
+    <meta property="og:image" content="https://otizmdestek.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Otizm Destek Platformu — çocuğunuzun gelişim yolculuğunda yalnız değilsiniz" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Otizm Destek Platformu — Aileler ve uzmanlar için gelişim takibi" />
+    <meta
+      name="twitter:description"
+      content="Günlük kayıt, acil durum kartı, BEP hazırlığı, kriz rehberi ve doğrulanmış uzmanlarla kontrollü paylaşım. Aile hesabı ücretsiz."
+    />
+    <meta name="twitter:image" content="https://otizmdestek.com/og-image.png" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
@@ -20,12 +55,23 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
 
-    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-
-    <title>Otizm Destek Platformu</title>
+    <!-- Fontlar self-host ediliyor (bkz. index.css @font-face). Google Fonts'a giden
+         render-blocking stylesheet isteği ve üçüncü taraf bağlantısı kaldırıldı;
+         kullanılmayan Inter ailesi de tamamen çıkarıldı. -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/plus-jakarta-sans-latin.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/plus-jakarta-sans-latin-ext.woff2"
+      crossorigin
+    />
   </head>
   <body>
     <div id="root"></div>

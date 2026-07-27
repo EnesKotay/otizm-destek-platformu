@@ -2,10 +2,15 @@ package com.autismsupport.platform.controller;
 
 import com.autismsupport.platform.dto.ApiResponse;
 import com.autismsupport.platform.dto.UserDto;
+import com.autismsupport.platform.exception.ResourceNotFoundException;
+import com.autismsupport.platform.exception.ValidationException;
+import com.autismsupport.platform.model.ConsentType;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.repository.UserRepository;
 import com.autismsupport.platform.security.CurrentUser;
 import com.autismsupport.platform.security.UserPrincipal;
+import com.autismsupport.platform.service.ConsentService;
+import com.autismsupport.platform.service.EmergencyCardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,6 +33,8 @@ public class UserController {
     private final com.autismsupport.platform.service.AccountDataService accountDataService;
     private final com.autismsupport.platform.service.AccountDeletionService accountDeletionService;
     private final com.autismsupport.platform.repository.UserBlockRepository userBlockRepository;
+    private final ConsentService consentService;
+    private final EmergencyCardService emergencyCardService;
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<UserDto>>> searchUsers(@RequestParam String q) {
@@ -162,11 +169,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserDto>> updateAiConsent(
             @CurrentUser UserPrincipal principal,
             @RequestParam boolean consent) {
-        User user = userRepository.findById(principal.getId())
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-        user.setConsentAiAnalysis(consent);
-        user.setConsentAiAnalysisDate(consent ? LocalDateTime.now() : null);
-        user = userRepository.save(user);
+        User user = consentService.setConsent(principal.getId(), ConsentType.AI_ANALIZ, consent, "AYARLAR");
         return ResponseEntity.ok(ApiResponse.success("Yapay zekâ rıza durumu güncellendi", toUserDto(user)));
     }
 
@@ -174,12 +177,68 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserDto>> updateEmergencyConsent(
             @CurrentUser UserPrincipal principal,
             @RequestParam boolean consent) {
-        User user = userRepository.findById(principal.getId())
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-        user.setConsentEmergencyCard(consent);
-        user.setConsentEmergencyCardDate(consent ? LocalDateTime.now() : null);
-        user = userRepository.save(user);
+        User user = consentService.setConsent(principal.getId(), ConsentType.ACIL_DURUM_KARTI, consent, "AYARLAR");
+        // Rıza geri çekildiğinde dışarıda dolaşan paylaşım bağlantıları da ölmeli.
+        if (!consent) emergencyCardService.revokeAllSharesFor(user.getId());
         return ResponseEntity.ok(ApiResponse.success("Acil kart rıza durumu güncellendi", toUserDto(user)));
+    }
+
+    /** Tüm rıza türlerinin güncel durumu ve değiştirilemez geçmişi (KVKK md. 11). */
+    @GetMapping("/me/consents")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> myConsents(@CurrentUser UserPrincipal principal) {
+        User user = userRepository.findById(principal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
+
+        Map<String, Boolean> current = new LinkedHashMap<>();
+        for (ConsentType type : ConsentType.values()) {
+            current.put(type.name(), consentService.hasConsent(user.getId(), type));
+        }
+
+        List<Map<String, Object>> history = consentService.history(user.getId()).stream()
+                .map(record -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("consentType", record.getConsentType().name());
+                    row.put("granted", record.isGranted());
+                    row.put("policyVersion", record.getPolicyVersion());
+                    row.put("source", record.getSource());
+                    row.put("createdAt", record.getCreatedAt());
+                    return row;
+                })
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(Map.of(
+                "current", current,
+                "policyVersion", consentService.currentPolicyVersion(),
+                "acceptedPolicyVersion", user.getKvkkPolicyVersion(),
+                "requiresReconsent", consentService.requiresReconsent(user),
+                "history", history)));
+    }
+
+    /** Genel rıza değiştirme ucu; türü isimle alır. */
+    @PostMapping("/me/consents/{type}")
+    public ResponseEntity<ApiResponse<UserDto>> updateConsent(
+            @CurrentUser UserPrincipal principal,
+            @PathVariable String type,
+            @RequestParam boolean consent) {
+        ConsentType consentType;
+        try {
+            consentType = ConsentType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ValidationException("Bilinmeyen rıza türü: " + type);
+        }
+        User user = consentService.setConsent(principal.getId(), consentType, consent, "AYARLAR");
+        if (consentType == ConsentType.ACIL_DURUM_KARTI && !consent) {
+            emergencyCardService.revokeAllSharesFor(user.getId());
+        }
+        return ResponseEntity.ok(ApiResponse.success("Rıza durumu güncellendi", toUserDto(user)));
+    }
+
+    /** Aydınlatma metni güncellendiğinde yeniden rıza alma. */
+    @PostMapping("/me/consents/reconsent")
+    public ResponseEntity<ApiResponse<UserDto>> reconsent(@CurrentUser UserPrincipal principal) {
+        User user = consentService.setConsent(
+                principal.getId(), ConsentType.KVKK_AYDINLATMA, true, "YENIDEN_RIZA");
+        return ResponseEntity.ok(ApiResponse.success("Güncel aydınlatma metni onaylandı", toUserDto(user)));
     }
 
     private UserDto toUserDto(User user) {

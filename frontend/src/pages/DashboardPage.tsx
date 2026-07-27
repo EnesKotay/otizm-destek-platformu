@@ -28,6 +28,7 @@ import { NotificationPermissionBanner } from '@/components/notifications/Notific
 import { toast } from '@/store/toastStore';
 import { formatDateTime } from '@/utils/date';
 import type { AdminStats, AppointmentRecord, CalendarEvent, DevelopmentNote, ExpertStats, ExpertTask, Medication, MoodEntry, PatientSummary, Report, ExpertConnectionRequest } from '@/types';
+import type { UserRole } from '@/config/roleAccess';
 
 // Fix: parse gerçek adı — "Dr. Kemal Aydın" → "Kemal"
 const HONORIFICS = new Set(['Dr.', 'Prof.', 'Av.', 'Doç.', 'Op.', 'Uzm.', 'Yrd.', 'Fzt.']);
@@ -65,6 +66,125 @@ function getProfileCompleteness(u?: { fullName?: string; bio?: string; expertTit
   if (!u) return 0;
   const checks = [!!u.fullName, !!u.bio, !!u.expertTitle, !!u.profileImageUrl, !!u.institution];
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+}
+
+const LEARNING_PATH_FIRST_VIDEO: Record<UserRole, string> = {
+  PARENT: '02',
+  EXPERT: '16',
+  ADMIN: '21',
+  TEACHER: '01',
+};
+
+const LEARNING_PATH_DESCRIPTION: Record<UserRole, string> = {
+  PARENT: 'Çocuk profilini hazırlamaktan günlük takibe ve uzman desteğine kadar yapmanız gerekenleri doğru sırayla görün.',
+  EXPERT: 'Danışan yönetimi, randevu planlama, ev çalışmaları ve raporlama adımlarını sırayla öğrenin.',
+  ADMIN: 'Yönetim paneli, kullanıcı işlemleri, moderasyon ve sistem denetimi adımlarını sırayla öğrenin.',
+  TEACHER: 'Platformun temel bölümlerini kısa videolarla tanıyın ve ihtiyacınız olan alana kolayca ulaşın.',
+};
+
+const LEARNING_PATH_DISMISS_KEY_PREFIX = 'dashboard-learning-path-dismissed-v1';
+const LEARNING_PATH_WATCHED_KEY_PREFIX = 'otizm-tutorial-videos-watched-v2';
+
+function wasLearningPathDismissed(userId: string, role: UserRole): boolean {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    return window.localStorage.getItem(`${LEARNING_PATH_DISMISS_KEY_PREFIX}:${userId}:${role}`) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function wasFirstLearningPathVideoWatched(userId: string, role: UserRole): boolean {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    const rawValue = window.localStorage.getItem(`${LEARNING_PATH_WATCHED_KEY_PREFIX}:${userId}:${role}`);
+    const watchedVideoIds: unknown = JSON.parse(rawValue ?? '[]');
+    return Array.isArray(watchedVideoIds) && watchedVideoIds.includes(LEARNING_PATH_FIRST_VIDEO[role]);
+  } catch {
+    return false;
+  }
+}
+
+function LearningPathWelcomeCard({ userId, role }: { userId: string; role: UserRole }) {
+  const [isHidden, setIsHidden] = useState(
+    () => wasLearningPathDismissed(userId, role) || wasFirstLearningPathVideoWatched(userId, role),
+  );
+
+  useEffect(() => {
+    const syncVisibility = () => {
+      if (wasLearningPathDismissed(userId, role) || wasFirstLearningPathVideoWatched(userId, role)) {
+        setIsHidden(true);
+      }
+    };
+
+    window.addEventListener('storage', syncVisibility);
+    window.addEventListener('focus', syncVisibility);
+    return () => {
+      window.removeEventListener('storage', syncVisibility);
+      window.removeEventListener('focus', syncVisibility);
+    };
+  }, [role, userId]);
+
+  if (isHidden) return null;
+
+  const dismissCard = () => {
+    setIsHidden(true);
+    try {
+      window.localStorage.setItem(`${LEARNING_PATH_DISMISS_KEY_PREFIX}:${userId}:${role}`, 'true');
+    } catch {
+      // Kart, tarayıcı depolamasının kapalı olduğu durumlarda da güvenle kapanır.
+    }
+  };
+
+  const titleId = `learning-path-card-title-${role.toLocaleLowerCase('tr-TR')}`;
+
+  return (
+    <section
+      aria-labelledby={titleId}
+      className="relative overflow-hidden rounded-2xl border border-indigo-200 bg-indigo-100 px-5 py-5 shadow-sm shadow-indigo-900/5 dark:border-indigo-800 dark:bg-indigo-950/60 sm:px-6"
+    >
+      <div aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-indigo-500" />
+
+      <button
+        type="button"
+        onClick={dismissCard}
+        aria-label="Öğrenme yolu önerisini kapat"
+        className="absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-xl text-indigo-400 transition-colors hover:bg-white/60 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-100 dark:hover:bg-white/10 dark:hover:text-indigo-200 dark:focus-visible:ring-offset-indigo-950 sm:right-4 sm:top-4"
+      >
+        <XCircle size={18} aria-hidden="true" />
+      </button>
+
+      <div className="flex flex-col gap-5 pr-12 sm:pr-14 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-start gap-4">
+          <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/70 text-indigo-700 ring-1 ring-inset ring-white/80 dark:bg-white/10 dark:text-indigo-200 dark:ring-white/10 sm:flex">
+            <GraduationCap size={22} aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-indigo-700 dark:text-indigo-200">
+              <Sparkles size={12} aria-hidden="true" />
+              Size özel video rehberi
+            </span>
+            <h2 id={titleId} className="mt-1.5 text-lg font-black tracking-tight text-slate-950 dark:text-white sm:text-xl">
+              Nereden başlayacağınızı bilmiyor musunuz?
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm font-medium leading-6 text-slate-700 dark:text-slate-300">
+              {LEARNING_PATH_DESCRIPTION[role]}
+            </p>
+          </div>
+        </div>
+
+        <Link
+          to="/kullanici-rehberi"
+          className="group inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 py-2.5 text-sm font-extrabold text-white shadow-sm transition-colors hover:bg-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-100 dark:bg-indigo-500 dark:hover:bg-indigo-400 dark:focus-visible:ring-offset-indigo-950 sm:w-auto"
+        >
+          Öğrenme yoluna başla
+          <ArrowRight size={17} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+    </section>
+  );
 }
 
 function getPendingMedicationSlots(medications: Medication[]): number {
@@ -683,6 +803,8 @@ export function DashboardPage() {
           <p className="text-gray-500 mt-2 text-lg">Platform yönetim merkezine hoş geldiniz. İşte bugünkü güncel durum.</p>
         </div>
 
+        <LearningPathWelcomeCard key={`${user.id}:${user.role}`} userId={user.id} role={user.role} />
+
         {/* Dynamic Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="p-6 rounded-[24px] border-none bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xl shadow-indigo-200 relative overflow-hidden">
@@ -996,6 +1118,8 @@ export function DashboardPage() {
 
     return (
       <div className="space-y-6">
+        <LearningPathWelcomeCard key={`${user.id}:${user.role}`} userId={user.id} role={user.role} />
+
         <section className="overflow-hidden rounded-[28px] border-none bg-gradient-to-br from-indigo-900 via-slate-800 to-slate-900 shadow-xl shadow-indigo-900/10 text-white relative">
           <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
             <Sparkles size={160} />
@@ -1655,6 +1779,10 @@ export function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {user?.id && user.role && (
+        <LearningPathWelcomeCard key={`${user.id}:${user.role}`} userId={user.id} role={user.role} />
+      )}
 
       <NotificationPermissionBanner />
 

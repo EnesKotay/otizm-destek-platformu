@@ -46,6 +46,7 @@ import { expertService } from '@/services/expertService';
 import { cn } from '@/utils/cn';
 import { validatePassword } from '@/utils/password';
 import { TURKISH_CITIES } from '@/constants/turkishCities';
+import { KvkkRightsPanel } from '@/components/kvkk/KvkkRightsPanel';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -175,12 +176,12 @@ function SettingsCore() {
           return;
         }
         const ok = await pushNotificationService.subscribe();
-        if (ok) { setPushEnabled(true); toast.success('Push bildirimler açıldı.'); }
-        else toast.error('Push bildirim aktif edilemedi.');
+        if (ok) { setPushEnabled(true); toast.success('Cihaz bildirimleri açıldı.'); }
+        else toast.error('Cihaz bildirimleri etkinleştirilemedi.');
       } else {
         await pushNotificationService.unsubscribe();
         setPushEnabled(false);
-        toast.success('Push bildirimler kapatıldı.');
+        toast.success('Cihaz bildirimleri kapatıldı.');
       }
     } catch { toast.error('İşlem başarısız.'); }
     setPushLoading(false);
@@ -1140,7 +1141,7 @@ function SettingsCore() {
               />
               <SettingRow
                 icon={Bell}
-                label="Push Bildirimler"
+                label="Cihaz bildirimleri"
                 description={
                   pushPermissionDenied
                     ? 'Tarayıcı engelledi — kilit ikonundan izin verin'
@@ -1309,6 +1310,8 @@ function SettingsCore() {
                   <Trash2 size={16} className="mr-2" aria-hidden="true" /> Hesabımı Sil
                 </Button>
               </div>
+
+              <KvkkRightsPanel />
             </div>
           </Card>
         </aside>

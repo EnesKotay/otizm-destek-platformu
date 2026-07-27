@@ -149,6 +149,17 @@ app:
     service-account-json: ${FIREBASE_SERVICE_ACCOUNT_JSON:}
     service-account-json-base64: ${FIREBASE_SERVICE_ACCOUNT_JSON_BASE64:}
     service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+  legal:
+    # Aydınlatma metni sürümü. PublicInfoPage'deki metin esaslı biçimde
+    # değiştiğinde artırılır; kullanıcılardan yeniden rıza istenir.
+    policy-version: ${LEGAL_POLICY_VERSION:1.1}
+  retention:
+    # KVKK md. 7 ve Silme/Yok Etme Yönetmeliği gereği periyodik imha.
+    cron: ${RETENTION_CRON:0 30 3 * * *}
+    audit-log-days: ${RETENTION_AUDIT_LOG_DAYS:365}
+    resolved-request-days: ${RETENTION_RESOLVED_REQUEST_DAYS:1095}
+    notification-days: ${RETENTION_NOTIFICATION_DAYS:180}
+    unverified-account-days: ${RETENTION_UNVERIFIED_ACCOUNT_DAYS:30}
 
 management:
   endpoints:
