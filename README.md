@@ -1,101 +1,150 @@
-# Otizm Destek Platformu 🧩
+<div align="center">
+  <img src="frontend/public/og-image.png" alt="Otizm Destek Platformu" width="760" />
 
-Otizmli çocukların ebeveynlerini, uzmanları (terapist/doktor) ve platform yöneticilerini tek bir çatı altında buluşturan web tabanlı gelişim takip ve destek platformudur.
+  # Otizm Destek Platformu
 
----
+  **Aileleri ve uzmanları; gelişim takibi, iletişim ve günlük destek araçlarıyla aynı güvenli platformda buluşturur.**
 
-## 🚀 Öne Çıkan Özellikler
+  [![React](https://img.shields.io/badge/React_19-61DAFB?logo=react&logoColor=111)](https://react.dev/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![Spring Boot](https://img.shields.io/badge/Spring_Boot_3-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL_16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+  [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+</div>
 
-- 📊 **Nasıl İlerliyoruz? (Gelişim Paneli):** Çocukların ruh hali, uyku düzeni, klinik tarama skorları ve kilometre taşlarının görsel grafikleri.
-- 🤖 **Yapay Zeka Analisti:** Gemini AI entegrasyonu ile gelişim verilerinin akıllı özeti ve ABC davranış örüntüsü analizleri.
-- 🗓️ **Günlük Takip & Rutinler:** Uyku, duydu durumu, ilaç kullanımı ve görsel günlük rutin çizelgeleri.
-- 👨‍⚕️ **Uzman & Danışan Yönetimi:** Randevu planlama, BEP (Bireyselleştirilmiş Eğitim Planı) raporu oluşturma ve hasta takibi.
-- 💬 **Mesajlaşma & Topluluk:** Aile-uzman arası güvenli mesajlaşma, forum, yerel buluşmalar ve dertleşme duvarı.
-- 🆘 **Zor An Rehberi & Acil Durum Kartı:** Kriz anlarında sakinleşme adımları ve acil durumlarda paylaşılabilir çocuk profili.
+## Proje hakkında
 
----
+Otizm Destek Platformu; otizmli çocukların ebeveynleri, uzmanlar ve platform yöneticileri için geliştirilen kapsamlı bir web uygulamasıdır. Çocuğun günlük yaşamına ait kayıtları, klinik gelişim göstergelerini, uzman görüşmelerini ve topluluk desteğini tek bir merkezde toplar.
 
-## 🛠️ Teknoloji Yığını
+> Bu yazılım tıbbi tanı veya tedavinin yerini almaz. Klinik kararlar için yetkili sağlık profesyonellerine başvurulmalıdır.
 
-### Frontend
-- **Framework:** React 18 + TypeScript + Vite
-- **Stil:** Tailwind CSS + Lucide React İkonları
-- **State & Query:** Zustand + TanStack React Query (v5)
-- **Grafikler:** Recharts
+## Öne çıkan özellikler
 
-### Backend
-- **Framework:** Java 21 + Spring Boot 3.2
-- **Veritabanı:** PostgreSQL 16 + Redis (Önbellek & Oturum)
-- **Migrasyon:** Flyway
-- **Güvenlik:** JWT + Spring Security
+- **Gelişim paneli:** Ruh hâli, uyku, kilometre taşları ve tarama sonuçlarını grafiklerle izleme
+- **Günlük takip:** Rutin, ilaç, beslenme, okul günlüğü ve duyusal profil kayıtları
+- **Uzman çalışma alanı:** Danışan yönetimi, randevu, görev, özel not ve BEP raporu akışları
+- **AI analizleri:** Kullanıcı rızasına bağlı Gemini özetleri ve ABC davranış örüntüsü analizi
+- **Güvenli iletişim:** Aile–uzman mesajlaşması, bildirimler ve gerçek zamanlı WebSocket desteği
+- **Topluluk:** Forum, gruplar, benzer aile eşleştirmesi, buluşmalar ve destek duvarı
+- **Zor an araçları:** Kriz rehberi, sosyal öyküler ve paylaşılabilir acil durum kartı
+- **Gizlilik altyapısı:** KVKK rıza kayıtları, veri sahibi başvuruları, saklama süreleri ve denetim izleri
 
----
+## Teknoloji yığını
 
-## 🛠️ Kurulum ve Çalıştırma
+| Katman | Teknolojiler |
+| --- | --- |
+| Web arayüzü | React 19, TypeScript, Vite, Tailwind CSS 4 |
+| İstemci durumu | TanStack Query, Zustand, React Hook Form, Zod |
+| Backend | Java 21, Spring Boot 3.3, Spring Security, WebSocket |
+| Veri | PostgreSQL 16, Redis, Flyway, JPA |
+| Dosya ve bildirim | S3 uyumlu depolama, Firebase, Web Push, SMTP |
+| Test | Vitest, Playwright, Spring Boot Test, Testcontainers |
+| Dağıtım | Docker Compose, Nginx, Vercel/Render yapılandırmaları |
 
-### 1. Docker ile Hızlı Başlatma (Önerilen)
+## Mimari
 
-Tüm servisleri (PostgreSQL, Redis, Backend, Frontend) tek komutla başlatmak için:
-
-```bash
-docker-compose up -d
+```text
+otizm-destek-platformu/
+├── frontend/                  # React + TypeScript istemcisi
+│   ├── src/pages/             # Kullanıcı ve uzman ekranları
+│   ├── src/components/        # Yeniden kullanılabilir bileşenler
+│   └── src/services/          # API istemcileri
+├── backend/                   # Spring Boot API
+│   └── src/main/
+│       ├── java/              # Controller, service ve domain katmanları
+│       └── resources/         # Ayarlar ve Flyway migrasyonları
+├── docker-compose.yml         # Yerel geliştirme servisleri
+└── docker-compose.prod.yml    # Üretim ortamı servisleri
 ```
 
-### 2. Yerel Geliştirme (Local Development)
+## Docker ile hızlı başlangıç
 
-#### Veritabanı ve Redis
+### Gereksinimler
+
+- Docker ve Docker Compose
+- Git
+
 ```bash
-docker-compose up -d postgres redis
+git clone https://github.com/EnesKotay/otizm-destek-platformu.git
+cd otizm-destek-platformu
+docker compose up -d --build
 ```
 
-#### Backend (Java 21 / Spring Boot)
+Docker Compose yerel geliştirme için varsayılan değerlerle çalışır. AI, gerçek e-posta ve bildirim özellikleri için `.env.example` dosyasını `.env` adıyla kopyalayıp ilgili değerleri doldurun. Uygulama varsayılan olarak `http://localhost:5173` adresinde açılır.
+
+Servisleri durdurmak için:
+
+```bash
+docker compose down
+```
+
+## Yerel geliştirme
+
+Önce veri servislerini başlatın:
+
+```bash
+docker compose up -d postgres redis
+```
+
+Backend:
+
 ```bash
 cd backend
 ./mvnw spring-boot:run
 ```
 
-#### Frontend (React / Vite)
+Frontend:
+
 ```bash
 cd frontend
-npm install
+npm ci
+cp .env.example .env
 npm run dev
 ```
 
-Platform varsayılan olarak `http://localhost:5173` adresinde çalışacaktır.
-
----
-
-## 🗄️ Veritabanı Kurulumu ve İçe Aktarma
-
-Projede **Flyway** entegre edilmiştir. Backend çalıştırıldığında veritabanı şeması otomatik kurulur (`backend/src/main/resources/db/migration`).
-
-Eğer var olan güncel döküm verilerini içeri aktarmak isterseniz:
+## Test ve kalite kontrolleri
 
 ```bash
-# Docker ortamına aktarma:
-docker exec -i autism-platform-db psql -U postgres -d autism < guncel_veritabani.sql
+# Frontend
+cd frontend
+npm run lint
+npm test
+npm run test:e2e
 
-# Yerel PostgreSQL'e aktarma:
-psql -U postgres -d autism < guncel_veritabani.sql
+# Backend
+cd ../backend
+./mvnw test
 ```
+
+## Ortam değişkenleri
+
+Tüm üretim ayarları kökteki [`.env.example`](.env.example) dosyasında açıklanır. Başlıca gruplar:
+
+- PostgreSQL ve Redis bağlantıları
+- JWT ve şifreleme anahtarları
+- İzin verilen frontend/CORS adresleri
+- SMTP, Web Push ve Firebase bildirimleri
+- S3 uyumlu özel dosya depolama
+- Gemini API anahtarı ve KVKK saklama süreleri
+
+Gerçek anahtarları veya kullanıcı verilerini Git geçmişine eklemeyin.
+
+## Veritabanı
+
+Flyway migrasyonları backend açılırken şemayı otomatik olarak oluşturur ve günceller. Geliştirme amaçlı örnek veri için kökteki `seed.sql` dosyası kullanılabilir. Üretim verisini içe aktarmadan önce yedek alın ve hedef veritabanını doğrulayın.
+
+## API dokümantasyonu
+
+Backend çalışırken OpenAPI arayüzüne şu adresten ulaşabilirsiniz:
+
+```text
+http://localhost:8080/swagger-ui/index.html
+```
+
+## Gizlilik ve güvenlik
+
+Platform hassas çocuk ve sağlık verileri işleyebilir. Üretim ortamında güçlü ve benzersiz anahtarlar kullanın; TLS, erişim kontrolü, şifreli yedekleme ve KVKK süreçlerini devreye almadan gerçek kullanıcı verisi işlemeyin. AI analizleri yalnızca ilgili veli rızası bulunduğunda etkinleştirilmelidir.
 
 ---
 
-## 📂 Proje Dizin Yapısı
-
-```
-Otizm/
-├── backend/                   # Spring Boot 3 Backend
-│   ├── src/main/java/         # Java kaynak kodları
-│   └── src/main/resources/    # db/migration (Flyway SQL dosyaları)
-├── frontend/                  # React + TypeScript Frontend
-│   └── src/
-│       ├── components/        # Yeniden kullanılabilir UI bileşenleri
-│       ├── pages/             # Uygulama sayfaları
-│       ├── services/          # API istemcileri
-│       └── store/             # Zustand state depoları
-├── docker-compose.yml         # Geliştirme ortamı Docker konfigürasyonu
-├── guncel_veritabani.sql      # Güncel PostgreSQL veritabanı dökümü
-├── seed.sql                   # Başlangıç test verileri
-└── README.md                  # Proje dokümantasyonu
-```
+<div align="center">Ailelerin takibini kolaylaştırmak, uzmanlarla iletişimi güçlendirmek ve desteği erişilebilir kılmak için.</div>
