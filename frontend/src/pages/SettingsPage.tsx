@@ -61,6 +61,12 @@ function readPreference(key: string, fallback = true) {
   return localStorage.getItem(key) !== String(!fallback);
 }
 
+const SERVER_NOTIFICATION_KEYS = [
+  'notif_messages', 'notif_forum', 'notif_matching', 'notif_calendar',
+  'notif_appointment_request', 'notif_patient_connection', 'notif_expert_note',
+  'notif_task_assigned', 'notif_appt_confirm',
+] as const;
+
 function Switch({
   checked,
   disabled,
@@ -221,29 +227,60 @@ function SettingsCore() {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleting, setDeleting] = useState(false);
 
-  const [notifMessages, setNotifMessages] = useState(() => readPreference('notif_messages'));
-  const [notifForum, setNotifForum] = useState(() => readPreference('notif_forum'));
-  const [notifMatching, setNotifMatching] = useState(() => readPreference('notif_matching'));
-  const [notifCalendar, setNotifCalendar] = useState(() => readPreference('notif_calendar'));
-  const [notifAppointmentRequest, setNotifAppointmentRequest] = useState(() => readPreference('notif_appointment_request'));
-  const [notifPatientConnection, setNotifPatientConnection] = useState(() => readPreference('notif_patient_connection'));
+  const [notifMessages, setNotifMessages] = useState(() => user?.notificationPreferences?.includes('notif_messages') ?? readPreference('notif_messages'));
+  const [notifForum, setNotifForum] = useState(() => user?.notificationPreferences?.includes('notif_forum') ?? readPreference('notif_forum'));
+  const [notifMatching, setNotifMatching] = useState(() => user?.notificationPreferences?.includes('notif_matching') ?? readPreference('notif_matching'));
+  const [notifCalendar, setNotifCalendar] = useState(() => user?.notificationPreferences?.includes('notif_calendar') ?? readPreference('notif_calendar'));
+  const [notifAppointmentRequest, setNotifAppointmentRequest] = useState(() => user?.notificationPreferences?.includes('notif_appointment_request') ?? readPreference('notif_appointment_request'));
+  const [notifPatientConnection, setNotifPatientConnection] = useState(() => user?.notificationPreferences?.includes('notif_patient_connection') ?? readPreference('notif_patient_connection'));
   const [expertPublicProfile, setExpertPublicProfile] = useState(() => localStorage.getItem('expert-public-profile') !== 'false');
 
   // Parent-specific state
-  const [notifExpertNote, setNotifExpertNote] = useState(() => readPreference('notif_expert_note'));
-  const [notifTaskAssigned, setNotifTaskAssigned] = useState(() => readPreference('notif_task_assigned'));
-  const [notifApptConfirm, setNotifApptConfirm] = useState(() => readPreference('notif_appt_confirm'));
+  const [notifExpertNote, setNotifExpertNote] = useState(() => user?.notificationPreferences?.includes('notif_expert_note') ?? readPreference('notif_expert_note'));
+  const [notifTaskAssigned, setNotifTaskAssigned] = useState(() => user?.notificationPreferences?.includes('notif_task_assigned') ?? readPreference('notif_task_assigned'));
+  const [notifApptConfirm, setNotifApptConfirm] = useState(() => user?.notificationPreferences?.includes('notif_appt_confirm') ?? readPreference('notif_appt_confirm'));
   const [apptPreferOnline, setApptPreferOnline] = useState(() => localStorage.getItem('appt_prefer_online') === 'true');
   const [apptPreferWeekend, setApptPreferWeekend] = useState(() => localStorage.getItem('appt_prefer_weekend') === 'true');
-  const [apptReminder24h, setApptReminder24h] = useState(() => readPreference('appt_reminder_24h'));
-  const [privacyShowProfile, setPrivacyShowProfile] = useState(() => localStorage.getItem('privacy_show_profile') !== 'false');
+  const [apptReminder24h, setApptReminder24h] = useState(() => user?.appointmentReminder24h ?? readPreference('appt_reminder_24h'));
+  const [privacyShowProfile, setPrivacyShowProfile] = useState(() => user?.profileVisibleToExperts ?? localStorage.getItem('privacy_show_profile') !== 'false');
   const [privacyAllowMessages, setPrivacyAllowMessages] = useState(() => localStorage.getItem('privacy_allow_messages') !== 'false');
-  const [privacyShareProgress, setPrivacyShareProgress] = useState(() => localStorage.getItem('privacy_share_progress') !== 'false');
+  const [privacyShareProgress, setPrivacyShareProgress] = useState(() => user?.shareProgressWithExperts ?? localStorage.getItem('privacy_share_progress') !== 'false');
   const [privacyApproximateLocation, setPrivacyApproximateLocation] = useState(() => localStorage.getItem('privacy_approximate_location') !== 'false');
   const [privacyHidePresence, setPrivacyHidePresence] = useState(() => localStorage.getItem('privacy_hide_presence') === 'true');
   const [privacyFamilyMessages, setPrivacyFamilyMessages] = useState(() => localStorage.getItem('privacy_family_messages') !== 'false');
   const [supportIntents, setSupportIntents] = useState<string[]>(user?.supportIntents || ['DENEYIM_PAYLASIMI']);
   const [communicationPreferences, setCommunicationPreferences] = useState<string[]>(user?.communicationPreferences || ['YAZISMA']);
+
+  const userId = user?.id;
+  const notificationPreferences = user?.notificationPreferences;
+  const appointmentReminder24h = user?.appointmentReminder24h;
+  const profileVisibleToExperts = user?.profileVisibleToExperts;
+  const shareProgressWithExperts = user?.shareProgressWithExperts;
+
+  useEffect(() => {
+    if (!userId) return;
+    const enabled = new Set(notificationPreferences ?? SERVER_NOTIFICATION_KEYS);
+    const syncPreference = (key: string, setter: (value: boolean) => void) => {
+      const value = enabled.has(key);
+      localStorage.setItem(key, String(value));
+      setter(value);
+    };
+    syncPreference('notif_messages', setNotifMessages);
+    syncPreference('notif_forum', setNotifForum);
+    syncPreference('notif_matching', setNotifMatching);
+    syncPreference('notif_calendar', setNotifCalendar);
+    syncPreference('notif_appointment_request', setNotifAppointmentRequest);
+    syncPreference('notif_patient_connection', setNotifPatientConnection);
+    syncPreference('notif_expert_note', setNotifExpertNote);
+    syncPreference('notif_task_assigned', setNotifTaskAssigned);
+    syncPreference('notif_appt_confirm', setNotifApptConfirm);
+    // Remote account preferences can refresh while this screen is open.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setApptReminder24h(appointmentReminder24h ?? true);
+    setPrivacyShowProfile(profileVisibleToExperts ?? true);
+    setPrivacyShareProgress(shareProgressWithExperts ?? true);
+  }, [userId, notificationPreferences, appointmentReminder24h,
+      profileVisibleToExperts, shareProgressWithExperts]);
 
   const [sidebarCompact, setSidebarCompact] = useState(() => localStorage.getItem('sidebar-compact') === 'true');
   const [sidebarBadges, setSidebarBadges] = useState(() => localStorage.getItem('sidebar-show-badges') !== 'false');
@@ -323,7 +360,7 @@ function SettingsCore() {
     return checks.filter(Boolean).length;
   }, [newPassword]);
 
-  const handlePreference = (
+  const handlePreference = async (
     key: string,
     value: boolean,
     setter: (value: boolean) => void,
@@ -333,6 +370,18 @@ function SettingsCore() {
     setter(value);
     window.dispatchEvent(new CustomEvent('sidebar-preference-change', { detail: { key, value } }));
     toast.success(successText);
+    if (SERVER_NOTIFICATION_KEYS.includes(key as typeof SERVER_NOTIFICATION_KEYS[number]) && user) {
+      const current = new Set(user.notificationPreferences ?? SERVER_NOTIFICATION_KEYS);
+      if (value) current.add(key); else current.delete(key);
+      try {
+        const updated = await userService.updateProfile({ notificationPreferences: [...current] });
+        setUser({ ...user, ...updated });
+      } catch {
+        localStorage.setItem(key, String(!value));
+        setter(!value);
+        toast.error('Bildirim tercihi kaydedilemedi.');
+      }
+    }
   };
 
   const persistPrivacy = async (data: Parameters<typeof userService.updateProfile>[0]) => {
@@ -953,7 +1002,12 @@ function SettingsCore() {
                   label="24 saat önceden hatırlat"
                   description="Randevudan bir gün önce hatırlatma bildirimi gönder"
                   checked={apptReminder24h}
-                  onChange={(value) => handlePreference('appt_reminder_24h', value, setApptReminder24h, value ? 'Hatırlatma açıldı.' : 'Hatırlatma kapatıldı.')}
+                  onChange={(value) => {
+                    localStorage.setItem('appt_reminder_24h', String(value));
+                    setApptReminder24h(value);
+                    void persistPrivacy({ appointmentReminder24h: value });
+                    toast.success(value ? 'Hatırlatma açıldı.' : 'Hatırlatma kapatıldı.');
+                  }}
                 />
               </div>
             </Card>
@@ -1007,6 +1061,7 @@ function SettingsCore() {
                   onChange={(value) => {
                     localStorage.setItem('privacy_show_profile', String(value));
                     setPrivacyShowProfile(value);
+                    void persistPrivacy({ profileVisibleToExperts: value });
                     toast.success(value ? 'Profil görünürlüğü açıldı.' : 'Profil görünürlüğü kapatıldı.');
                   }}
                 />
@@ -1030,6 +1085,7 @@ function SettingsCore() {
                   onChange={(value) => {
                     localStorage.setItem('privacy_share_progress', String(value));
                     setPrivacyShareProgress(value);
+                    void persistPrivacy({ shareProgressWithExperts: value });
                     toast.success(value ? 'Gelişim paylaşımı açıldı.' : 'Gelişim paylaşımı kapatıldı.');
                   }}
                 />

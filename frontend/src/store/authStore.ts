@@ -6,7 +6,7 @@ import { useChildStore } from './childStore';
 import { childService } from '@/services/childService';
 import { userService } from '@/services/userService';
 
-import { queryClient } from '@/App';
+import { queryClient } from '@/queryClient';
 import { API_BASE_URL } from '@/services/endpoints';
 
 interface AuthState {

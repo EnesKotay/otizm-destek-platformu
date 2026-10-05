@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   BookOpen, Plus, Search, Eye, CheckCircle, XCircle, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight,
@@ -18,6 +18,7 @@ import { formatRelative, formatDate } from '@/utils/date';
 import type { KnowledgeArticle, ExpertAnalytics, ArticleComment, Tag } from '@/types';
 import { toast } from '@/store/toastStore';
 import { PageOnboarding } from '@/components/ui/PageOnboarding';
+import { TrustedResources } from '@/components/knowledge/TrustedResources';
 
 const CATEGORIES = [
   { key: '', label: 'Tümü' },
@@ -191,51 +192,14 @@ function getReadingTime(htmlContent: string): number {
   return time > 0 ? time : 1;
 }
 
-function isForeignResource(article: KnowledgeArticle): boolean {
-  if (!article) return false;
-  const sourceUrl = article.sourceUrl?.trim();
-  const sourceName = article.sourceName?.trim();
-  
-  if (!sourceUrl && !sourceName) {
-    return false; // Yerli Kaynak
-  }
-  
-  if (sourceUrl) {
-    try {
-      const url = new URL(sourceUrl);
-      const hostname = url.hostname.toLowerCase();
-      if (hostname.endsWith('.tr') || hostname.includes('.gov.tr') || hostname.includes('.edu.tr') || hostname.includes('.org.tr')) {
-        return false; // Yerli Kaynak
-      }
-    } catch {
-      const lowerUrl = sourceUrl.toLowerCase();
-      if (lowerUrl.includes('.tr')) {
-        return false;
-      }
-    }
-  }
-  
-  if (sourceName) {
-    const lowerName = sourceName.toLowerCase();
-    const turkishIndicators = ['vakfı', 'vakfi', 'derneği', 'dernegi', 'bakanlığı', 'bakanligi', 'müdürlüğü', 'mudurlugu', 'üniversitesi', 'universitesi', 'hastanesi', 'türkiye', 'turkiye', 'türk', 'turk', 'yerli', 'meb'];
-    if (turkishIndicators.some(indicator => lowerName.includes(indicator))) {
-      return false; // Yerli Kaynak
-    }
-  }
-  
-  if (sourceUrl) {
-    return true; // Yabancı Kaynak
-  }
-  
-  if (sourceName) {
-    const lowerName = sourceName.toLowerCase();
-    const foreignNames = ['autism speaks', 'cdc', 'nhs', 'who', 'pubmed', 'ncbi', 'webmd', 'mayo clinic', 'nature', 'psychology today', 'healthline', 'sciencedirect', 'cochrane', 'scholar', 'springer', 'elsevier', 'healthychildren', 'autism.org', 'star institute', 'sensory', 'pyramid', 'pecs'];
-    if (foreignNames.some(name => lowerName.includes(name))) {
-      return true; // Yabancı Kaynak
-    }
-  }
-  
-  return false;
+function getArticleExcerpt(article: KnowledgeArticle, limit = 150): string {
+  const html = article.content || '';
+  const spaced = html.replace(/<\/(?:h[1-6]|p|div|li|blockquote|section)>|<br\s*\/?\s*>/gi, ' ');
+  const plain = new DOMParser().parseFromString(spaced, 'text/html').body.textContent?.replace(/\s+/g, ' ').trim() || article.summary?.trim() || '';
+  const withoutIntro = plain.replace(/^Kısa cevap\s*/i, '');
+  if (withoutIntro.length <= limit) return withoutIntro;
+  const excerpt = withoutIntro.slice(0, limit).replace(/\s+\S*$/, '').trimEnd();
+  return `${excerpt || withoutIntro.slice(0, limit).trimEnd()}…`;
 }
 
 export function KnowledgePage() {
@@ -293,17 +257,22 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   const [effectivenessRating, setEffectivenessRating] = useState(5);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [showAllTags, setShowAllTags] = useState(false);
   const [analytics, setAnalytics] = useState<ExpertAnalytics | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [articlesLoading, setArticlesLoading] = useState(true);
+  const [articlesError, setArticlesError] = useState(false);
+  const articlesRequestId = useRef(0);
   const [relatedArticles, setRelatedArticles] = useState<KnowledgeArticle[]>([]);
   const [comments, setComments] = useState<ArticleComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loadingComments, setLoadingComments] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [originalityConfirmed, setOriginalityConfirmed] = useState(false);
   const [editingArticle, setEditingArticle] = useState<KnowledgeArticle | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleteArticleId, setDeleteArticleId] = useState<string | null>(null);
@@ -349,19 +318,23 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   };
 
   const loadArticles = async () => {
+    const requestId = ++articlesRequestId.current;
+    setArticlesLoading(true);
+    setArticlesError(false);
     try {
       let data;
       if (showBookmarksOnly) {
         const bookmarksData = await knowledgeService.getBookmarks();
-        setArticles(bookmarksData);
-        setTotalPages(1);
+        if (requestId === articlesRequestId.current) {
+          setArticles(bookmarksData);
+          setTotalPages(1);
+        }
         return;
       }
       if (showMyArticles) {
         data = await knowledgeService.getMy(page);
         if (isExpert && page === 0) {
-          const stats = await knowledgeService.getMyAnalytics();
-          setAnalytics(stats);
+          knowledgeService.getMyAnalytics().then(stats => setAnalytics(stats)).catch(() => setAnalytics(null));
         }
       } else {
         data = await knowledgeService.search({
@@ -372,9 +345,19 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
           page,
         });
       }
-      setArticles(data.content);
-      setTotalPages(data.totalPages);
-    } catch { /* ignore */ }
+      if (requestId === articlesRequestId.current) {
+        setArticles(data.content);
+        setTotalPages(data.totalPages);
+      }
+    } catch {
+      if (requestId === articlesRequestId.current) {
+        setArticles([]);
+        setTotalPages(0);
+        setArticlesError(true);
+      }
+    } finally {
+      if (requestId === articlesRequestId.current) setArticlesLoading(false);
+    }
   };
 
   const loadComments = useCallback(async (articleId: string) => {
@@ -409,6 +392,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
     try {
       const bookmarked = await knowledgeService.toggleBookmark(articleId);
       setArticles(prev => prev.map(a => a.id === articleId ? { ...a, bookmarked } : a));
+      if (showBookmarksOnly && !bookmarked) setArticles(prev => prev.filter(a => a.id !== articleId));
       setSelectedArticle(prev => prev && prev.id === articleId ? { ...prev, bookmarked } : prev);
       setRecommendations(prev => prev.map(a => a.id === articleId ? { ...a, bookmarked } : a));
       toast.success(bookmarked ? 'Yer imlerine kaydedildi.' : 'Yer imlerinden kaldırıldı.');
@@ -490,6 +474,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   const handleOpenCreate = () => {
     setEditingArticle(null);
     setForm({ title: '', content: '', category: 'Genel', contentType: 'makale', mediaUrl: '', sourceName: '', sourceUrl: '' });
+    setOriginalityConfirmed(false);
     setAiPrompt('');
     setShowModal(true);
   };
@@ -497,6 +482,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
   const handleOpenEdit = (article: KnowledgeArticle, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingArticle(article);
+    setOriginalityConfirmed(false);
     const view = getArticleView(article);
     setForm({
       title: article.title,
@@ -515,6 +501,10 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
       toast.error('Lütfen gerekli alanları doldurun.');
       return;
     }
+    if (publish && !originalityConfirmed) {
+      toast.error('Yayımlamadan önce metnin özgünlüğünü ve kaynak kullanım hakkını doğrulayın.');
+      return;
+    }
     setLoading(true);
     try {
       const payload = {
@@ -526,20 +516,22 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
         published: publish,
         sourceName: form.sourceName || undefined,
         sourceUrl: form.sourceUrl || undefined,
+        usageType: editingArticle?.usageType || 'ORIGINAL',
+        licenseType: editingArticle?.licenseType || 'ORIGINAL',
       };
 
       if (editingArticle) {
         await knowledgeService.update(editingArticle.id, payload);
         setShowModal(false);
         loadArticles();
-        toast.success(publish ? 'İçerik güncellendi ve yayınlandı.' : 'İçerik güncellendi.');
+        toast.success(publish ? 'İçerik güncellendi ve yeniden incelemeye gönderildi.' : 'İçerik güncellendi.');
       } else {
         await knowledgeService.create(payload);
         setShowModal(false);
         setActiveCategory('');
         setPage(0);
         setShowMyArticles(true);
-        toast.success(publish ? 'İçerik başarıyla yayınlandı.' : 'İçerik taslak olarak kaydedildi.');
+        toast.success(publish ? 'İçerik incelemeye gönderildi.' : 'İçerik taslak olarak kaydedildi.');
       }
     } catch {
       toast.error('İçerik kaydedilirken bir hata oluştu.');
@@ -582,8 +574,9 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
       a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.content.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = !activeContentType || getArticleView(a).type === activeContentType;
-    const matchesCategory = !showMyArticles || !activeCategory || a.category === activeCategory;
-    return matchesSearch && matchesType && matchesCategory;
+    const matchesCategory = !activeCategory || a.category === activeCategory;
+    const matchesTags = selectedTagIds.length === 0 || selectedTagIds.some(id => a.tags?.some(tag => tag.id === id));
+    return matchesSearch && matchesType && matchesCategory && matchesTags;
   });
 
   // Article detail view
@@ -638,13 +631,9 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
         {/* Article Details Card */}
         <div className="bg-white rounded-3xl border border-gray-100/80 shadow-md shadow-gray-100/50 p-6 sm:p-10 overflow-hidden">
           <div className="flex items-center gap-2 mb-6 flex-wrap">
-            {isForeignResource(selectedArticle) ? (
-              <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/50 flex items-center gap-1">
-                🌍 Yabancı Kaynak
-              </span>
-            ) : (
+            {selectedArticle.sourceName && (
               <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/50 flex items-center gap-1">
-                🇹🇷 Yerli Kaynak
+                Bilgi dayanağı: {selectedArticle.sourceName}
               </span>
             )}
             {parsed.type !== 'makale' && (
@@ -756,7 +745,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
               <BookOpen size={20} className="text-indigo-600 shrink-0 mt-0.5" />
               <div className="min-w-0">
                 <p className="text-sm font-bold text-indigo-950">
-                  Kaynak ve kullanım beyanı
+                  Kaynak ve kullanım bilgisi
                 </p>
                 {selectedArticle.sourceUrl ? (
                   <a
@@ -775,14 +764,14 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                 )}
                 <p className="mt-1 text-[11px] text-indigo-600/80">
                   {selectedArticle.usageType === 'ORIGINAL'
-                    ? 'Bu metin platform için özgün olarak hazırlanmıştır.'
+                    ? 'Bu metin platform için özgün olarak yazılmıştır. Kaynak bağlantısı, ilgili kuruluşun platformu onayladığı anlamına gelmez.'
                     : 'Bu içerik kaynak metnin yerine geçmez; ayrıntılar için özgün yayını inceleyin.'}
                 </p>
                 <dl className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-indigo-900">
                   {selectedArticle.sourceAuthor && <div><dt className="font-bold inline">Yazar: </dt><dd className="inline">{selectedArticle.sourceAuthor}</dd></div>}
                   {selectedArticle.sourcePublication && <div><dt className="font-bold inline">Yayın: </dt><dd className="inline">{selectedArticle.sourcePublication}</dd></div>}
                   {selectedArticle.doi && <div><dt className="font-bold inline">DOI: </dt><dd className="inline">{selectedArticle.doi}</dd></div>}
-                  {selectedArticle.licenseType && <div><dt className="font-bold inline">Lisans: </dt><dd className="inline">{selectedArticle.licenseType.replaceAll('_', ' ')}</dd></div>}
+                  {selectedArticle.licenseType && <div><dt className="font-bold inline">Kullanım hakkı: </dt><dd className="inline">{selectedArticle.licenseType === 'ORIGINAL' ? 'Platformun özgün metni' : selectedArticle.licenseType === 'PUBLIC_DOMAIN' ? 'Kamu malı olarak işaretli' : selectedArticle.licenseType.replaceAll('_', ' ')}</dd></div>}
                   {selectedArticle.evidenceLevel && <div><dt className="font-bold inline">Kanıt türü: </dt><dd className="inline">{selectedArticle.evidenceLevel.replaceAll('_', ' ')}</dd></div>}
                   {selectedArticle.sourceAccessedAt && <div><dt className="font-bold inline">Erişim: </dt><dd className="inline">{formatDate(selectedArticle.sourceAccessedAt)}</dd></div>}
                 </dl>
@@ -1084,7 +1073,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
       <PageOnboarding
         pageId="knowledge"
         title="Bilgi Bankası"
-        description="Uzmanların hazırladığı makaleleri, videoları ve rehberleri buradan okuyabilirsiniz. Otizm hakkında merak ettiğiniz her şeyi arayabilirsiniz."
+        description="Makaleleri, videoları ve rehberleri buradan okuyabilirsiniz. Kaynak ve inceleme bilgilerini her içerikte kontrol edin."
         steps={[
           {
             icon: <BookOpen size={20} />,
@@ -1109,12 +1098,12 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
           <div className="flex-1">
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Bilgi Bankası</h1>
             <p className="text-gray-600 text-sm max-w-lg leading-relaxed">
-              Uzmanların hazırladığı makaleler, videolar ve podcastler ile çocuğunuzun gelişimini destekleyin.
+              Makale, video ve podcastleri keşfedin; kaynak ve inceleme bilgilerini içerik sayfasında görün.
             </p>
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
               {[
                 { icon: Video, label: 'Video rehberler', text: 'YouTube veya direkt video' },
-                { icon: CheckCircle, label: 'Uzman onayı', text: 'Yazar ve kategori görünür' },
+                { icon: CheckCircle, label: 'Şeffaf kaynak', text: 'Kaynak ve inceleme bilgisi' },
                 { icon: ShieldCheck, label: 'Güvenli not', text: 'Tıbbi karar yerine geçmez' },
               ].map(({ icon: Icon, label, text }) => (
                 <div key={label} className="rounded-2xl border border-white/70 bg-white/75 px-3 py-2 shadow-sm">
@@ -1136,6 +1125,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
               </div>
               <input
                 type="text"
+                aria-label="Bilgi bankasında ara"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="İçeriklerde ara..."
@@ -1173,6 +1163,8 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
         </div>
       </div>
 
+      <TrustedResources />
+
       {/* Category and Content Type Filters */}
       <div className="bg-slate-50/50 border border-slate-100/80 rounded-3xl p-3 sm:p-4 my-3 space-y-4">
         {/* Category Tabs */}
@@ -1181,21 +1173,22 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Kategoriye Göre Filtrele</span>
             {activeCategory && (
               <button
-                onClick={() => { setActiveCategory(''); setPage(0); setShowMyArticles(false); }}
+                onClick={() => { setActiveCategory(''); setPage(0); }}
                 className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
               >
                 Filtreyi Temizle
               </button>
             )}
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+          <div className="flex flex-wrap gap-2 pb-1.5">
             {CATEGORIES.map(cat => {
               const IconComponent = CATEGORY_ICONS[cat.key] || LayoutGrid;
-              const isActive = activeCategory === cat.key && !showMyArticles;
+              const isActive = activeCategory === cat.key;
               return (
                 <button
                   key={cat.key}
-                  onClick={() => { setActiveCategory(cat.key); setPage(0); setShowMyArticles(false); }}
+                  onClick={() => { setActiveCategory(cat.key); setPage(0); }}
+                  aria-pressed={isActive}
                   className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border-2 hover:-translate-y-0.5 transform duration-200 shrink-0 ${
                     isActive
                       ? CATEGORY_ACTIVE_COLORS[cat.key] || 'bg-indigo-50 text-indigo-700 border-indigo-200/60 shadow-sm'
@@ -1230,6 +1223,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                 <button
                   key={tab.key}
                   onClick={() => { setActiveContentType(tab.key); setPage(0); }}
+                  aria-pressed={isActive}
                   className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border-2 hover:-translate-y-0.5 transform duration-200 shrink-0 ${
                     isActive
                       ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60 shadow-sm'
@@ -1258,8 +1252,8 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                 </button>
               )}
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
-              {availableTags.map(tag => {
+            <div className="flex flex-wrap gap-2 pb-1.5">
+              {(showAllTags ? availableTags : availableTags.filter((tag, index) => index < 8 || selectedTagIds.includes(tag.id))).map(tag => {
                 const isActive = selectedTagIds.includes(tag.id);
                 return (
                   <button
@@ -1270,6 +1264,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                       );
                       setPage(0);
                     }}
+                    aria-pressed={isActive}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer border hover:-translate-y-0.5 transform duration-150 shrink-0 ${
                       isActive
                         ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60 shadow-sm'
@@ -1282,6 +1277,11 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                 );
               })}
             </div>
+            {availableTags.length > 8 && (
+              <button type="button" onClick={() => setShowAllTags(value => !value)} className="mt-2 px-1 text-xs font-semibold text-indigo-700 hover:underline">
+                {showAllTags ? 'Daha az etiket göster' : `Tüm etiketleri göster (${availableTags.length})`}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -1365,7 +1365,15 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
       )}
 
       {/* Articles grid */}
-      {filteredArticles.length === 0 ? (
+      {articlesLoading ? (
+        <div role="status" className="rounded-2xl border border-slate-100 bg-white p-10 text-center text-sm text-slate-600">İçerikler yükleniyor…</div>
+      ) : articlesError ? (
+        <div role="alert" className="rounded-2xl border border-rose-100 bg-white p-10 text-center">
+          <h3 className="font-bold text-slate-900">İçerikler yüklenemedi</h3>
+          <p className="mt-2 text-sm text-slate-600">Bağlantınızı kontrol edip yeniden deneyin.</p>
+          <Button onClick={loadArticles} className="mt-4">Yeniden dene</Button>
+        </div>
+      ) : filteredArticles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in zoom-in-95 duration-500 bg-white rounded-3xl border border-gray-100 shadow-sm">
           <div className="relative w-24 h-24 mb-6">
             <div className="absolute inset-0 bg-primary-100 rounded-full blur-2xl opacity-60 animate-pulse"></div>
@@ -1373,10 +1381,15 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
               <BookOpen size={40} className="text-primary-500" />
             </div>
           </div>
-          <h3 className="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">Henüz İçerik Yok</h3>
+          <h3 className="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">{showBookmarksOnly ? 'Kaydedilmiş içerik yok' : 'Eşleşen içerik yok'}</h3>
           <p className="text-sm text-gray-500 max-w-xs leading-relaxed mb-6">
-            {isExpert ? 'Sistemde henüz içerik bulunmuyor. İlk içeriği siz oluşturun.' : 'Bu kategoride veya aramada henüz içerik bulunmuyor.'}
+            {showBookmarksOnly ? 'İçerikleri kaydettiğinizde burada görünecek.' : 'Aramanızı veya filtrelerinizi değiştirerek tekrar deneyin.'}
           </p>
+          {(searchQuery || activeCategory || activeContentType || selectedTagIds.length > 0) && (
+            <Button variant="outline" onClick={() => { setSearchQuery(''); setActiveCategory(''); setActiveContentType(''); setSelectedTagIds([]); setPage(0); }} className="mb-3">
+              Filtreleri temizle
+            </Button>
+          )}
           {isExpert && (
             <Button onClick={handleOpenCreate} className="rounded-xl shadow-md shadow-primary-200">
               <Plus size={16} className="mr-1.5" />İçerik Oluştur
@@ -1392,11 +1405,16 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                 <div 
                   key={article.id} 
                   onClick={() => handleViewArticle(article)} 
+                  onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); handleViewArticle(article); } }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${article.title} içeriğini aç`}
                   className="group relative flex flex-col bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer animate-in fade-in slide-in-from-bottom-4"
                   style={{ animationFillMode: 'both', animationDelay: `${index * 40}ms` }}
                 >
                   <button
                     onClick={(e) => handleToggleBookmark(article.id, e)}
+                    aria-label={article.bookmarked ? `${article.title} kaydını kaldır` : `${article.title} içeriğini kaydet`}
                     className="absolute right-4 top-4 p-1.5 rounded-xl bg-white/80 backdrop-blur-sm hover:bg-white hover:text-indigo-600 border border-slate-100 transition-all z-10 cursor-pointer shadow-sm"
                   >
                     <Bookmark size={15} className={article.bookmarked ? 'fill-indigo-600 text-indigo-600' : 'text-slate-400'} />
@@ -1442,13 +1460,9 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
 
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {isForeignResource(article) ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/50 flex items-center gap-1">
-                          🌍 Yabancı Kaynak
-                        </span>
-                      ) : (
+                      {article.sourceName && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200/50 flex items-center gap-1">
-                          🇹🇷 Yerli Kaynak
+                          Dayanak: {article.sourceName}
                         </span>
                       )}
                       {parsed.type !== 'makale' && (
@@ -1466,9 +1480,9 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                           #{t.name}
                         </span>
                       ))}
-                      {article.author?.expertTitle && (
+                      {article.reviewedAt && article.reviewedBy && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                          <CheckCircle size={10} className="fill-emerald-100" /> Uzman Onaylı
+                          <CheckCircle size={10} className="fill-emerald-100" /> Editöryal incelemeli
                         </span>
                       )}
                     </div>
@@ -1478,14 +1492,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                   </div>
 
                   <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2">{article.title}</h3>
-                  {parsed.text && (() => {
-                    const plainText = parsed.text.replace(/<[^>]+>/g, '');
-                    return (
-                      <p className="text-sm text-gray-600 line-clamp-3 flex-1 mt-1">
-                        {plainText.substring(0, 150)}{plainText.length > 150 ? '...' : ''}
-                      </p>
-                    );
-                  })()}
+                  {parsed.text && <p className="text-sm text-gray-600 line-clamp-3 flex-1 mt-1">{getArticleExcerpt(article)}</p>}
                   {!parsed.text && parsed.type !== 'makale' && (
                     <p className="text-sm text-gray-400 italic flex-1">
                       {parsed.type === 'video' ? 'Video içeriği' : 'Podcast içeriği'}
@@ -1539,6 +1546,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
+                aria-label="Önceki sayfa"
                 className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
               >
                 <ChevronLeft size={16} />
@@ -1547,6 +1555,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
+                aria-label="Sonraki sayfa"
                 className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
               >
                 <ChevronRight size={16} />
@@ -1663,8 +1672,8 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
               {/* Source fields - Clean and modern container */}
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-4">
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                  <span>Kaynak Bilgileri (Opsiyonel)</span>
-                  <span className="text-[10px] font-medium text-slate-400 normal-case">Yerli/Yabancı tespiti için</span>
+                  <span>Bilgi dayanağı (varsa)</span>
+                  <span className="text-[10px] font-medium text-slate-500 normal-case">Bağlantı, yeniden yayın izni değildir</span>
                 </div>
                 <div className="grid grid-cols-1 gap-3">
                   <Input
@@ -1694,7 +1703,7 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
                 <RichTextEditor
                   value={form.content}
                   onChange={content => setForm(f => ({ ...f, content }))}
-                  placeholder={form.contentType === 'makale' ? 'Makale içeriğini buraya yazın...' : 'İçeriğin kısa açıklamasını veya özetini buraya yazın...'}
+                  placeholder={form.contentType === 'makale' ? 'Kaynak cümlelerini kopyalamadan kendi anlatımınızla yazın...' : 'Kendi yazdığınız kısa açıklamayı girin...'}
                   rows={15}
                   textareaClassName="flex-1 min-h-[300px] lg:min-h-[370px]"
                 />
@@ -1702,13 +1711,17 @@ function KnowledgeContent({ location }: { location: ReturnType<typeof useLocatio
             </div>
           </div>
 
+          <label className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950">
+            <input type="checkbox" checked={originalityConfirmed} onChange={e => setOriginalityConfirmed(e.target.checked)} className="mt-0.5" />
+            <span>Yayımlanacak metnin kendi özgün anlatımım olduğunu; başka bir kaynaktan metin, görsel veya ses kopyalamadığımı ve kullandığım dış materyalin yayın hakkını ayrıca doğruladığımı onaylıyorum.</span>
+          </label>
           <div className="flex gap-3 pt-4 border-t border-gray-100">
             <Button variant="outline" onClick={() => setShowModal(false)} className="px-6 rounded-2xl">İptal</Button>
             <Button variant="outline" onClick={() => handleSave(false)} loading={loading} className="flex-1 rounded-2xl">
               Taslak Olarak Kaydet
             </Button>
             <Button onClick={() => handleSave(true)} loading={loading} className="flex-1 rounded-2xl shadow-md shadow-primary-200 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white">
-              {editingArticle ? 'Güncelle ve Yayınla' : 'Hemen Yayınla'}
+              {editingArticle ? 'Güncelle ve İncelemeye Gönder' : 'İncelemeye Gönder'}
             </Button>
           </div>
         </div>

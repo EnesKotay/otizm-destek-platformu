@@ -41,6 +41,7 @@ public class PatientService {
                 .findApprovedWithChildByExpertId(expertId, ConnectionStatus.APPROVED, Pageable.unpaged())
                 .stream()
                 .map(ExpertPatientConnection::getChild)
+                .filter(child -> child.getParent().isProfileVisibleToExperts())
                 .toList();
 
         // Tamamlanmış randevusu olan ama onaylı bağlantı kaydı bulunmayan danışanlar.
@@ -49,6 +50,7 @@ public class PatientService {
         List<Child> appointmentChildren = appointmentRepository
                 .findDistinctChildrenWithCompletedAppointments(expertId, TERMINAL_STATUSES)
                 .stream()
+                .filter(child -> child.getParent().isProfileVisibleToExperts())
                 .filter(c -> !connectedIds.contains(c.getId()))
                 .toList();
 
@@ -251,6 +253,10 @@ public class PatientService {
         Child child = childRepository.findById(childId)
                 .orElseThrow(() -> new RuntimeException("Cocuk bulunamadi"));
 
+        if (!child.getParent().isProfileVisibleToExperts()) {
+            throw new AccessDeniedException("Ebeveyn profil görünürlüğünü uzmanlara kapattı");
+        }
+
         if (expertPatientConnectionRepository.existsByExpertIdAndChildIdAndStatusIn(expertId, childId, TERMINAL_STATUSES)) {
             throw new AccessDeniedException("Bu danisana erisim yetkiniz yok");
         }
@@ -297,6 +303,9 @@ public class PatientService {
 
         if (!parent.isMatchingEnabled()) {
             throw new RuntimeException("Bu kullanici uzman arama icin aranabilirligini kapatti");
+        }
+        if (!parent.isProfileVisibleToExperts()) {
+            throw new AccessDeniedException("Bu ebeveyn profilini uzman aramalarına kapattı");
         }
 
         List<Child> children = childRepository.findByParentId(parent.getId());

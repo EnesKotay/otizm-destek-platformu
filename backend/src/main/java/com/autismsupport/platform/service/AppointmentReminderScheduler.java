@@ -32,7 +32,6 @@ public class AppointmentReminderScheduler {
     private final AppointmentStatusHistoryRepository historyRepository;
     private final ExpertTaskRepository expertTaskRepository;
     private final NotificationService notificationService;
-    private final EmailService emailService;
     private final PatientService patientService;
 
     /** Her sabah 08:00'de calisir — ertesi gun randevusu olan herkese hatirlatma gonderir. */
@@ -52,7 +51,7 @@ public class AppointmentReminderScheduler {
             String apptType = "ONLINE".equals(appt.getType()) ? "Online" : "Yuz yuze";
 
             // Ebeveyne bildirim
-            if (appt.getParent() != null) {
+            if (appt.getParent() != null && appt.getParent().isAppointmentReminder24h()) {
                 notificationService.createNotification(
                         appt.getParent().getId(),
                         "APPOINTMENT_REMINDER",
@@ -62,16 +61,10 @@ public class AppointmentReminderScheduler {
                         "/randevular",
                         appt.getId()
                 );
-                emailService.sendAppointmentReminderEmail(
-                        appt.getParent().getEmail(),
-                        "Randevu Hatirlatmasi",
-                        String.format("Yarin %s saat %s — %s ile %s randevunuz var.",
-                                dateStr, timeStr, expertName, apptType)
-                );
             }
 
             // Uzmana bildirim
-            if (appt.getExpert() != null) {
+            if (appt.getExpert() != null && appt.getExpert().isAppointmentReminder24h()) {
                 String parentName = appt.getParent() != null ? appt.getParent().getFullName() : "Danisan";
                 notificationService.createNotification(
                         appt.getExpert().getId(),
@@ -81,12 +74,6 @@ public class AppointmentReminderScheduler {
                                 dateStr, timeStr, parentName, apptType),
                         "/randevular",
                         appt.getId()
-                );
-                emailService.sendAppointmentReminderEmail(
-                        appt.getExpert().getEmail(),
-                        "Randevu Hatirlatmasi",
-                        String.format("Yarin %s saat %s — %s ile %s randevunuz var.",
-                                dateStr, timeStr, parentName, apptType)
                 );
             }
         }
@@ -121,12 +108,6 @@ public class AppointmentReminderScheduler {
                                 "/randevular",
                                 appt.getId()
                         );
-                        emailService.sendAppointmentReminderEmail(
-                                appt.getParent().getEmail(),
-                                "Randevunuz 2 saat sonra",
-                                String.format("Bugun saat %s'de %s ile randevunuz yaklasiyor.",
-                                        timeStr, appt.getExpert().getFullName())
-                        );
                     }
 
                     // Uzmana bildirim
@@ -140,12 +121,6 @@ public class AppointmentReminderScheduler {
                                         timeStr, parentName),
                                 "/randevular",
                                 appt.getId()
-                        );
-                        emailService.sendAppointmentReminderEmail(
-                                appt.getExpert().getEmail(),
-                                "Randevunuz 2 saat sonra",
-                                String.format("Bugun saat %s'de %s ile randevunuz yaklasiyor.",
-                                        timeStr, parentName)
                         );
                     }
                 });

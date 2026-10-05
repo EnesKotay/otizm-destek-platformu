@@ -12,4 +12,8 @@ public class SearchResultDto {
     private String excerpt;
     private LocalDateTime createdAt;
     private double rank;
+    private Boolean answered;
+    private Integer commentCount;
+    private Boolean expertContribution;
+    private Integer workedCount;
 }

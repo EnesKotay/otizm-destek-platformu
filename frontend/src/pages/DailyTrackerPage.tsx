@@ -14,9 +14,8 @@ import { medicationService } from '@/services/medicationService';
 import { moodService } from '@/services/moodService';
 import { sleepService } from '@/services/sleepService';
 import { toast } from '@/store/toastStore';
+import { formatLocalDate } from '@/utils/date';
 import type { Medication, MoodEntry, SleepEntry } from '@/types';
-
-const TODAY = new Date().toISOString().split('T')[0];
 
 const COMMON_SIDE_EFFECTS = [
   'Uyku Hali',
@@ -227,14 +226,14 @@ function DailyTrackerCore() {
     medicationService.getByChild(selectedChildId).then(setMedications).catch(() => {});
     moodService.getByChild(selectedChildId).then(entries => {
       setMoodEntries(entries);
-      const today = entries.find(e => e.entryDate === TODAY) ?? null;
+      const today = entries.find(e => e.entryDate === formatLocalDate()) ?? null;
       setTodayMood(today);
       if (today) { setMoodLevel(today.moodLevel); setMoodNotes(today.notes ?? ''); setSelectedTriggers(today.triggers ?? []); }
       else { setMoodLevel(0); setMoodNotes(''); setSelectedTriggers([]); }
     }).catch(() => {});
     sleepService.getByChild(selectedChildId).then(entries => {
       setSleepEntries(entries);
-      const today = entries.find(e => e.sleepDate === TODAY) ?? null;
+      const today = entries.find(e => e.sleepDate === formatLocalDate()) ?? null;
       setTodaySleep(today);
       if (today) {
         const parsed = deserializeSleepNotes(today.notes ?? '');
@@ -299,13 +298,13 @@ function DailyTrackerCore() {
     if (!medications.length) return;
     const timers: ReturnType<typeof setTimeout>[] = [];
     const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10);
+    const todayStr = formatLocalDate(now);
 
     medications.forEach(med => {
       (med.scheduledTimes ?? []).forEach(timeStr => {
         if (!timeStr) return;
         const [h, m] = timeStr.split(':').map(Number);
-        const target = new Date(todayStr);
+        const target = new Date(`${todayStr}T00:00:00`);
         target.setHours(h, m, 0, 0);
         const alertAt = new Date(target.getTime() - 5 * 60 * 1000);
         const ms = alertAt.getTime() - now.getTime();
@@ -345,7 +344,7 @@ function DailyTrackerCore() {
     setSavingLog(true);
     try {
       const payload = {
-        logDate: TODAY,
+        logDate: formatLocalDate(),
         scheduledTime: activeLogTime,
         taken: logFormTaken,
         notes: logFormNotes,
@@ -373,7 +372,7 @@ function DailyTrackerCore() {
     if (!moodLevel) return;
     setSavingMood(true);
     try {
-      const saved = await moodService.upsert({ childId: selectedChildId, moodLevel: moodLevel as MoodEntry['moodLevel'], notes: moodNotes, triggers: selectedTriggers, entryDate: TODAY });
+      const saved = await moodService.upsert({ childId: selectedChildId, moodLevel: moodLevel as MoodEntry['moodLevel'], notes: moodNotes, triggers: selectedTriggers, entryDate: formatLocalDate() });
       setTodayMood(saved);
       setMoodEntries(prev => { const idx = prev.findIndex(e => e.id === saved.id); return idx >= 0 ? prev.map((e, i) => i === idx ? saved : e) : [saved, ...prev]; });
       toast.success('Ruh hali kaydedildi.');
@@ -388,7 +387,7 @@ function DailyTrackerCore() {
       await moodService.delete(id);
       const deletedEntry = moodEntries.find(e => e.id === id);
       setMoodEntries(prev => prev.filter(e => e.id !== id));
-      if (todayMood?.id === id || deletedEntry?.entryDate === TODAY) {
+      if (todayMood?.id === id || deletedEntry?.entryDate === formatLocalDate()) {
         setTodayMood(null);
         setMoodLevel(0);
         setMoodNotes('');
@@ -413,7 +412,7 @@ function DailyTrackerCore() {
       });
       const saved = await sleepService.upsert({
         childId: selectedChildId,
-        sleepDate: TODAY,
+        sleepDate: formatLocalDate(),
         bedtime: sleepForm.bedtime,
         wakeTime: sleepForm.wakeTime,
         quality: sleepForm.quality as SleepEntry['quality'],
@@ -432,7 +431,7 @@ function DailyTrackerCore() {
       await sleepService.delete(id);
       const deletedEntry = sleepEntries.find(e => e.id === id);
       setSleepEntries(prev => prev.filter(e => e.id !== id));
-      if (todaySleep?.id === id || deletedEntry?.sleepDate === TODAY) {
+      if (todaySleep?.id === id || deletedEntry?.sleepDate === formatLocalDate()) {
         setTodaySleep(null);
         setSleepForm({
           bedtime: '21:00',
@@ -498,23 +497,23 @@ function DailyTrackerCore() {
       {/* Haftalık Özet / İçgörü Kartı */}
       {selectedChildId && (moodEntries.length > 0 || sleepEntries.length > 0) && (
         <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 animate-in fade-in duration-300">
-          <div className="rounded-2xl border border-slate-150 bg-white p-4 shadow-sm flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-              <Moon size={18} />
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow flex items-center gap-4 group cursor-default">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300">
+              <Moon size={20} />
             </div>
             <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Haftalık Ortalama Uyku</p>
-              <p className="text-sm font-bold text-slate-850 mt-0.5">{weeklyInsights.avgSleep}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Haftalık Ortalama Uyku</p>
+              <p className="text-base font-extrabold text-slate-900 mt-0.5">{weeklyInsights.avgSleep}</p>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-150 bg-white p-4 shadow-sm flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-              <Smile size={18} />
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow flex items-center gap-4 group cursor-default">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+              <Smile size={20} />
             </div>
             <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Haftanın Genel Hali</p>
-              <p className="text-sm font-bold text-slate-850 mt-0.5">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Haftanın Genel Hali</p>
+              <p className="text-base font-extrabold text-slate-900 mt-0.5">
                 {weeklyInsights.mostFrequentMood 
                   ? `${weeklyInsights.mostFrequentMood.emoji} ${weeklyInsights.mostFrequentMood.label}` 
                   : 'Gözlem yok'}
@@ -522,65 +521,64 @@ function DailyTrackerCore() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-150 bg-white p-4 shadow-sm flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-              <AlertTriangle size={18} />
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow flex items-center gap-4 group cursor-default">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300">
+              <AlertTriangle size={20} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">En Sık Tetikleyici</p>
-              <p className="text-sm font-bold text-slate-850 mt-0.5 truncate" title={weeklyInsights.topTrigger || 'Gözlem yok'}>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">En Sık Tetikleyici</p>
+              <p className="text-base font-extrabold text-slate-900 mt-0.5 truncate" title={weeklyInsights.topTrigger || 'Gözlem yok'}>
                 {weeklyInsights.topTrigger || 'Gözlem yok'}
               </p>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-150 bg-white p-4 shadow-sm flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <Check size={18} />
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow flex items-center gap-4 group cursor-default">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+              <Check size={20} />
             </div>
             <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Tam Kayıtlı Günler</p>
-              <p className="text-sm font-bold text-slate-850 mt-0.5">{weeklyInsights.completedDaysCount} gün eksiksiz</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tam Kayıtlı Günler</p>
+              <p className="text-base font-extrabold text-slate-900 mt-0.5">{weeklyInsights.completedDaysCount} gün eksiksiz</p>
             </div>
           </div>
         </section>
       )}
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="p-5 sm:p-6">
-            <p className="text-sm font-semibold text-slate-500">Bugünün kaydı</p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Bugün nasıldı?</h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
+          <div className="p-6 sm:p-8">
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Bugünün kaydı</p>
+            <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Bugün nasıldı?</h1>
+            <p className="mt-3 max-w-xl text-base leading-relaxed text-slate-500">
               Hepsini doldurmak zorunda değilsiniz. Bir duygu seçmek bile bugünü anlamak için yeterli bir başlangıç.
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Button size="sm" onClick={() => setTab(nextStep.key)}>
-                <NextStepIcon size={15} />
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button size="lg" onClick={() => setTab(nextStep.key)} className="rounded-xl shadow-md shadow-primary-600/20 font-bold">
+                <NextStepIcon size={18} />
                 {completedAll ? 'Kayıtları gözden geçir' : 'Sıradaki adımı aç'}
               </Button>
               <Link
                 to="/kriz-rehberi"
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-rose-100 bg-rose-50 px-3 text-sm font-bold text-rose-700 transition-colors hover:bg-rose-100"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition-all hover:bg-rose-100 hover:shadow-sm"
               >
-                <AlertTriangle size={15} />
+                <AlertTriangle size={18} />
                 Zor bir an
               </Link>
             </div>
           </div>
 
-          <div className="border-t border-slate-100 bg-slate-50/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
+          <div className="border-t border-slate-100 bg-slate-50/70 p-6 sm:p-8 lg:border-l lg:border-t-0 flex flex-col justify-center">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Bugünün İlerlemesi</p>
-                <p className="mt-1 text-2xl font-bold text-slate-950">{dailyProgress}%</p>
+                <p className="mt-1 text-3xl font-extrabold text-slate-900">{dailyProgress}%</p>
               </div>
               <button
                 onClick={() => {
                   if (!('Notification' in window)) return;
                   if (Notification.permission === 'default') {
                     Notification.requestPermission().then(() => {
-                      // Force re-render to update button state
                       setMedications(prev => [...prev]);
                     });
                   } else if (Notification.permission === 'granted') {
@@ -596,36 +594,36 @@ function DailyTrackerCore() {
                   Notification.permission === 'denied' ? 'Bildirimler kapatılmış — tarayıcı ayarlarından açın' :
                   'Sabah ilaç hatırlatması için bildirime izin ver'
                 }
-                className={`shrink-0 p-2 rounded-xl transition-colors cursor-pointer ${
+                className={`shrink-0 p-3 rounded-2xl transition-all cursor-pointer shadow-sm ${
                   !('Notification' in window) || Notification.permission === 'denied'
-                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
                     : Notification.permission === 'granted'
-                    ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                    : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 animate-pulse'
+                    ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:shadow-md'
+                    : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 animate-pulse hover:shadow-md'
                 }`}
               >
-                <Bell size={18} />
+                <Bell size={20} />
               </button>
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
-              <div className="h-full rounded-full bg-slate-800 transition-all" style={{ width: `${dailyProgress}%` }} />
+            <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-200/60">
+              <div className="h-full rounded-full bg-slate-900 transition-all duration-500" style={{ width: `${dailyProgress}%` }} />
             </div>
-            <div className="mt-4 grid gap-2">
+            <div className="mt-6 grid gap-2.5">
               {dailySteps.map(({ key, icon: Icon, title, detail, done }) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => setTab(key)}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-left ring-1 transition-colors ${
-                    tab === key ? 'bg-white text-slate-950 ring-slate-200 shadow-sm' : 'bg-white/70 text-slate-600 ring-slate-100 hover:bg-white'
+                  className={`flex items-center gap-3.5 rounded-2xl px-4 py-3 text-left border transition-all duration-200 cursor-pointer ${
+                    tab === key ? 'bg-white text-slate-900 border-slate-200 shadow-md shadow-slate-200/40 -translate-y-0.5' : 'bg-white/70 text-slate-600 border-transparent hover:bg-white hover:border-slate-200 hover:shadow-sm'
                   }`}
                 >
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${done ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                    {done ? <Check size={17} /> : <Icon size={17} />}
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] transition-colors ${done ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                    {done ? <Check size={20} /> : <Icon size={20} />}
                   </span>
-                  <span className="min-w-0">
+                  <span className="min-w-0 flex-1">
                     <span className="block text-sm font-bold">{title}</span>
-                    <span className="block truncate text-xs text-slate-500">{detail}</span>
+                    <span className="block truncate text-xs text-slate-500 font-medium mt-0.5">{detail}</span>
                   </span>
                 </button>
               ))}
@@ -634,15 +632,17 @@ function DailyTrackerCore() {
         </div>
       </section>
 
-      <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-        <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+      <div className="flex gap-4 rounded-3xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-50/30 p-5 text-sm leading-relaxed text-amber-900 shadow-sm">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100/50 text-amber-600">
+          <AlertTriangle size={20} />
+        </div>
         <div>
-          <p className="font-extrabold">İlaç güvenliği</p>
-          <p className="mt-1">
+          <p className="font-extrabold text-amber-950 text-base">İlaç güvenliği</p>
+          <p className="mt-1 text-amber-800">
             İlaç hatırlatıcıları destek amaçlıdır. İlaç başlama, bırakma, doz değişikliği veya yan etki kararlarını yalnızca doktorunuzla birlikte verin.
           </p>
-          <Link to="/tibbi-uyari" className="mt-2 inline-flex text-xs font-extrabold text-amber-950 underline">
-            Tıbbi güvenlik uyarılarını oku
+          <Link to="/tibbi-uyari" className="mt-3 inline-flex items-center gap-1 text-xs font-extrabold text-amber-700 hover:text-amber-900 transition-colors">
+            Tıbbi güvenlik uyarılarını oku &rarr;
           </Link>
         </div>
       </div>
@@ -668,15 +668,18 @@ function DailyTrackerCore() {
       ) : (
         <>
           {/* Sekmeler */}
-          <div className="flex gap-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-xl">
+          <div className="flex gap-2 p-2 bg-slate-100/50 rounded-2xl border border-slate-200/60">
             {TABS.map(t => {
               const done = dailySteps.find(s => s.key === t.key)?.done ?? false;
               const TabIcon = t.icon;
               return (
                 <button key={t.key} onClick={() => setTab(t.key)}
-                  className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${tab === t.key ? 'bg-white shadow-sm text-slate-800 border border-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}>
-                  <TabIcon size={16} /> {t.label}
-                  {done && <Check size={13} className="text-emerald-500" />}
+                  className={`relative flex-1 flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                    tab === t.key ? 'bg-white shadow-md shadow-slate-200/50 text-indigo-700 ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                  }`}>
+                  <TabIcon size={18} className={tab === t.key ? 'text-indigo-600' : 'text-slate-400'} /> 
+                  {t.label}
+                  {done && <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 ml-1"><Check size={12} strokeWidth={3} /></span>}
                 </button>
               );
             })}
@@ -770,31 +773,37 @@ function DailyTrackerCore() {
                     Yaklaşık 20 saniye
                   </span>
                 </div>
-                <div className="flex gap-3 justify-between">
+                <div className="flex gap-4 justify-between mt-2">
                   {MOOD_OPTIONS.map(opt => (
                     <button key={opt.level} onClick={() => setMoodLevel(opt.level)}
-                      className={`flex-1 flex flex-col items-center gap-1.5 py-4 rounded-xl border-2 transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] cursor-pointer ${moodLevel === opt.level ? opt.activeColor : opt.passiveColor}`}>
-                      <span className="text-3xl">{opt.emoji}</span>
-                      <span className="text-xs font-semibold">{opt.label}</span>
+                      className={`flex-1 flex flex-col items-center gap-3 py-6 rounded-2xl border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md active:scale-[0.97] cursor-pointer ${
+                        moodLevel === opt.level ? opt.activeColor : opt.passiveColor
+                      }`}>
+                      <span className="text-5xl filter drop-shadow-sm transition-transform duration-300 group-hover:scale-110">{opt.emoji}</span>
+                      <span className="text-sm font-bold">{opt.label}</span>
                     </button>
                   ))}
                 </div>
 
-                <div className="mt-4">
-                  <div className="flex items-center gap-1.5 mb-3 mt-6">
-                    <p className="text-sm font-semibold text-slate-700">Tetikleyiciler (isteğe bağlı)</p>
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <p className="text-sm font-bold text-slate-800">Tetikleyiciler <span className="text-slate-400 font-medium">(isteğe bağlı)</span></p>
                     <div className="group relative">
-                      <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-slate-150 text-[11px] font-extrabold text-slate-500 cursor-help hover:bg-slate-200 transition-colors">?</span>
-                      <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-xl bg-slate-900 p-3.5 text-xs leading-relaxed text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md">
-                        <p className="font-extrabold text-amber-400 mb-1">💡 Otizm ve Tetikleyiciler</p>
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-xs font-extrabold text-slate-500 cursor-help hover:bg-slate-200 transition-colors">?</span>
+                      <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-2xl bg-slate-800 p-4 text-xs leading-relaxed text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-xl">
+                        <p className="font-extrabold text-amber-400 mb-1.5">💡 Otizm ve Tetikleyiciler</p>
                         Duyusal taşkınlıklar, ani rutin değişiklikleri veya iletişim engelleri genellikle davranış değişikliklerine yol açar. Bunları kaydetmek, davranış örüntülerini analiz etmenize yardımcı olur.
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2.5">
                     {MOOD_TRIGGERS.map(t => (
                       <button key={t} onClick={() => toggleTrigger(t)}
-                        className={`px-3 py-1.5 rounded-lg text-[13px] font-medium border transition-all cursor-pointer ${selectedTriggers.includes(t) ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+                        className={`px-4 py-2 rounded-full text-[13px] font-bold border transition-all cursor-pointer ${
+                          selectedTriggers.includes(t) 
+                            ? 'bg-slate-800 text-white border-slate-800 shadow-md shadow-slate-800/20' 
+                            : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                        }`}>
                         {t}
                       </button>
                     ))}

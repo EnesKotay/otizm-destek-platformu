@@ -7,6 +7,10 @@ export interface WeeklyAnswer {
   city?: string;
   authorRole?: string;
   expertTitle?: string;
+  anonymous?: boolean;
+  hideCity?: boolean;
+  own?: boolean;
+  tags?: string[];
   text: string;
   likes: number;
   liked: boolean;
@@ -41,8 +45,11 @@ export const communityService = {
   getWeeklyQuestions: () =>
     api.get<ApiResponse<WeeklyQuestion[]>>('/community/weekly-questions').then(r => r.data.data),
 
-  createWeeklyAnswer: (questionId: string, text: string) =>
-    api.post<ApiResponse<WeeklyAnswer>>(`/community/weekly-questions/${questionId}/answers`, { text }).then(r => r.data.data),
+  supportsWeeklyAnswerPrivacy: () =>
+    api.get<ApiResponse<boolean>>('/community/weekly-questions/privacy-capabilities').then(r => r.data.data === true),
+
+  createWeeklyAnswer: (questionId: string, answer: { text: string; anonymous: boolean; hideCity: boolean; tags: string[] }) =>
+    api.post<ApiResponse<WeeklyAnswer>>(`/community/weekly-questions/${questionId}/answers`, answer).then(r => r.data.data),
 
   toggleWeeklyAnswerLike: (answerId: string) =>
     api.post<ApiResponse<WeeklyAnswer>>(`/community/weekly-answers/${answerId}/like`).then(r => r.data.data),

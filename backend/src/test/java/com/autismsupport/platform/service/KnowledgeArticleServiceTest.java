@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -120,5 +121,40 @@ class KnowledgeArticleServiceTest {
 
         assertThat(result.getSourceName()).isEqualTo("American Academy of Pediatrics (AAP)");
         assertThat(result.getSourceUrl()).isEqualTo("https://www.aap.org/en/patient-care/autism/");
+    }
+
+    @Test
+    @DisplayName("Kapalı lisanslı özet yönetici tarafından da yayımlanamaz")
+    void togglePublish_rejectsRightsReservedSummary() {
+        UUID articleId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        User admin = User.builder().id(adminId).role(UserRole.ADMIN).build();
+        KnowledgeArticle article = KnowledgeArticle.builder()
+                .id(articleId).author(admin).title("Özet").content("Metin")
+                .sourceName("Dış kaynak").sourceUrl("https://example.org/article")
+                .usageType("SUMMARY").licenseType("RIGHTS_RESERVED").build();
+        when(articleRepository.findById(articleId)).thenReturn(Optional.of(article));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+
+        assertThatThrownBy(() -> service.togglePublish(articleId, adminId))
+                .hasMessageContaining("yeniden yayımlama");
+        assertThat(article.isPublished()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Özgün diye işaretlenen metnin lisansı da platforma ait olmalıdır")
+    void togglePublish_rejectsUnclearOriginalRights() {
+        UUID articleId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        User admin = User.builder().id(adminId).role(UserRole.ADMIN).build();
+        KnowledgeArticle article = KnowledgeArticle.builder()
+                .id(articleId).author(admin).title("Makale").content("Metin")
+                .usageType("ORIGINAL").licenseType("UNKNOWN").build();
+        when(articleRepository.findById(articleId)).thenReturn(Optional.of(article));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+
+        assertThatThrownBy(() -> service.togglePublish(articleId, adminId))
+                .hasMessageContaining("Özgün metin");
+        assertThat(article.isPublished()).isFalse();
     }
 }

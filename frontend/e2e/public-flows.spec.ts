@@ -16,9 +16,9 @@ test.describe('public user journeys', () => {
     await page.goto('/');
 
     await expect(page).toHaveURL('/');
-    await expect(page.getByRole('heading', { level: 1, name: /yalnız değilsiniz/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Ücretsiz aile hesabı oluştur' })).toBeVisible();
-    await expect(page.getByText(/Günlük gelişimi tek yerde takip edin/)).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /daha önce çözen bir aile olabilir/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ailelerden destek almaya başla' })).toBeVisible();
+    await expect(page.getByText(/aynı süreci yaşamış ailelerin deneyimlerini/)).toBeVisible();
   });
 
   test('login fields have accessible labels and announce validation errors', async ({ page }) => {
@@ -44,7 +44,7 @@ test.describe('public user journeys', () => {
   test('mobile landing does not overflow horizontally', async ({ page }) => {
     await page.setViewportSize({ width: 393, height: 851 });
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: /yalnız değilsiniz/ })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /daha önce çözen bir aile olabilir/ })).toBeVisible();
 
     const sizes = await page.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
@@ -60,7 +60,8 @@ test.describe('public user journeys', () => {
 
   test('landing clearly explains family and expert journeys', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: 'Ücretsiz aile hesabı oluştur' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ailelerden destek almaya başla' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Tek bir sorudan doğru desteğe' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Uzmanlar için sayfa' })).toBeVisible();
     await expect(page.getByText('Doğru bilgi, doğru yetkiyle paylaşılır.')).toBeVisible();
   });
@@ -68,7 +69,7 @@ test.describe('public user journeys', () => {
   test('landing shows the product and links to transparent data controls', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByLabel('Aile paneli günlük akış önizlemesi')).toBeVisible();
+    await expect(page.getByLabel('Aile deneyimlerinde çözüm arama önizlemesi')).toBeVisible();
     await page.getByRole('link', { name: /Güven merkezini aç/ }).click();
 
     await expect(page).toHaveURL('/guven-merkezi');

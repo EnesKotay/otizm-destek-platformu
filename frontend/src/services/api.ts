@@ -113,7 +113,8 @@ api.interceptors.response.use(
       } catch {
         processQueue(error, null);
         useAuthStore.getState().clearSession();
-        window.location.href = '/giris';
+        // React Router bypass'ı yerine özel event — App.tsx içinde dinleniyor.
+        window.dispatchEvent(new Event('auth-session-expired'));
         return Promise.reject(error);
       } finally {
         isRefreshing = false;

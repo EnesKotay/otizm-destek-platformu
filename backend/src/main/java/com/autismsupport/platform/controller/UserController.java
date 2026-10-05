@@ -37,9 +37,17 @@ public class UserController {
     private final EmergencyCardService emergencyCardService;
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<UserDto>>> searchUsers(@RequestParam String q) {
+    public ResponseEntity<ApiResponse<List<UserDto>>> searchUsers(
+            @RequestParam String q, @CurrentUser UserPrincipal principal) {
         if (q == null || q.trim().length() < 2) return ResponseEntity.ok(ApiResponse.success(List.of()));
+        User requester = userRepository.findById(principal.getId())
+                .orElseThrow(() -> new RuntimeException("Kullanici bulunamadi"));
+        boolean requesterIsProfessional = requester.getRole() == com.autismsupport.platform.model.UserRole.EXPERT
+                || requester.getRole() == com.autismsupport.platform.model.UserRole.TEACHER;
         List<UserDto> users = userRepository.searchByName(q.trim()).stream()
+                .filter(candidate -> !requesterIsProfessional
+                        || candidate.getId().equals(principal.getId())
+                        || candidate.isProfileVisibleToExperts())
                 .limit(20)
                 .map(this::toUserDto)
                 .collect(Collectors.toList());
@@ -85,6 +93,10 @@ public class UserController {
         if (body.getAllowFamilyMessages() != null) user.setAllowFamilyMessages(body.getAllowFamilyMessages());
         if (body.getHideOnlineStatus() != null) user.setHideOnlineStatus(body.getHideOnlineStatus());
         if (body.getApproximateLocationOnly() != null) user.setApproximateLocationOnly(body.getApproximateLocationOnly());
+        if (body.getProfileVisibleToExperts() != null) user.setProfileVisibleToExperts(body.getProfileVisibleToExperts());
+        if (body.getShareProgressWithExperts() != null) user.setShareProgressWithExperts(body.getShareProgressWithExperts());
+        if (body.getNotificationPreferences() != null) user.setNotificationPreferences(body.getNotificationPreferences());
+        if (body.getAppointmentReminder24h() != null) user.setAppointmentReminder24h(body.getAppointmentReminder24h());
         if (body.getCommunicationPreferences() != null) user.setCommunicationPreferences(body.getCommunicationPreferences());
         if (body.getSupportIntents() != null) user.setSupportIntents(body.getSupportIntents());
 
@@ -270,6 +282,10 @@ public class UserController {
                 .allowFamilyMessages(user.isAllowFamilyMessages())
                 .hideOnlineStatus(user.isHideOnlineStatus())
                 .approximateLocationOnly(user.isApproximateLocationOnly())
+                .profileVisibleToExperts(user.isProfileVisibleToExperts())
+                .shareProgressWithExperts(user.isShareProgressWithExperts())
+                .notificationPreferences(user.getNotificationPreferences())
+                .appointmentReminder24h(user.isAppointmentReminder24h())
                 .communicationPreferences(user.getCommunicationPreferences())
                 .supportIntents(user.getSupportIntents())
                 .sessionFeeMin(user.getSessionFeeMin())

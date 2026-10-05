@@ -6,7 +6,7 @@ import { childService } from '@/services/childService';
 import { pushNotificationService } from '@/services/pushNotificationService';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useAuthStore } from '@/store/authStore';
-import { formatRelative } from '@/utils/date';
+import { formatLocalDate, formatRelative } from '@/utils/date';
 import { patientService } from '@/services/patientService';
 import { getNotificationIconConfig, shouldShowNotification, playNotificationSound } from '@/utils/notificationUtils';
 import { safeInternalPath } from '@/utils/internalNavigation';
@@ -36,7 +36,7 @@ function isLocalNotification(id: string) {
 function hasActivityDoneToday(childId: string): boolean {
   try {
     const stored = JSON.parse(localStorage.getItem(LOCAL_ACTIVITY_KEY) || '{}') as Record<string, string>;
-    return stored[childId] === new Date().toISOString().slice(0, 10);
+    return stored[childId] === formatLocalDate();
   } catch {
     return false;
   }
@@ -57,7 +57,7 @@ export function NotificationBell() {
     if (!accessToken || user?.role !== 'PARENT') return [];
     try {
       const readIds = getReadLocalIds();
-      const today = new Date().toISOString().slice(0, 10);
+      const today = formatLocalDate();
       const children = await childService.getAll();
       return children
         .filter(child => !hasActivityDoneToday(child.id))

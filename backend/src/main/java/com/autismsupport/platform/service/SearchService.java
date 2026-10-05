@@ -124,7 +124,10 @@ public class SearchService {
         }
         
         String sql = "SELECT p.id::text, p.title, LEFT(p.content, 200) AS excerpt, p.created_at, " +
-                     "ts_rank(to_tsvector(CAST(:lang AS regconfig), coalesce(p.title,'') || ' ' || coalesce(p.content,'')), plainto_tsquery(CAST(:lang AS regconfig), :q)) AS rank " +
+                     "ts_rank(to_tsvector(CAST(:lang AS regconfig), coalesce(p.title,'') || ' ' || coalesce(p.content,'')), plainto_tsquery(CAST(:lang AS regconfig), :q)) AS rank, " +
+                     "p.is_answered, p.comment_count, " +
+                     "EXISTS (SELECT 1 FROM forum_comments fc JOIN users fu ON fu.id = fc.author_id WHERE fc.post_id = p.id AND fu.role = 'EXPERT') AS expert_contribution, " +
+                     "(SELECT COUNT(*) FROM forum_answer_feedback faf WHERE faf.comment_id = p.accepted_answer_id AND faf.outcome = 'WORKED') AS worked_count " +
                      "FROM forum_posts p " + where + " ORDER BY rank DESC, p.created_at DESC LIMIT " + LIMIT;
 
         var query = em.createNativeQuery(sql)
@@ -218,14 +221,20 @@ public class SearchService {
     private List<SearchResultDto> toResults(List<?> rows, String type) {
         return rows.stream().map(raw -> {
             Object[] r = (Object[]) raw;
-            return SearchResultDto.builder()
+            SearchResultDto.SearchResultDtoBuilder builder = SearchResultDto.builder()
                     .id(UUID.fromString((String) r[0]))
                     .type(type)
                     .title((String) r[1])
                     .excerpt(r[2] != null ? (String) r[2] : "")
                     .createdAt(r[3] instanceof Timestamp ts ? ts.toLocalDateTime() : null)
-                    .rank(r[4] instanceof Number n ? n.doubleValue() : 0.0)
-                    .build();
+                    .rank(r[4] instanceof Number n ? n.doubleValue() : 0.0);
+            if ("POST".equals(type) && r.length >= 9) {
+                builder.answered(r[5] instanceof Boolean b ? b : Boolean.FALSE)
+                        .commentCount(r[6] instanceof Number n ? n.intValue() : 0)
+                        .expertContribution(r[7] instanceof Boolean b ? b : Boolean.FALSE)
+                        .workedCount(r[8] instanceof Number n ? n.intValue() : 0);
+            }
+            return builder.build();
         }).collect(Collectors.toList());
     }
 }

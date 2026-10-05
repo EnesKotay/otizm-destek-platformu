@@ -19,7 +19,7 @@ export function TrustAndPrivacyPanel({
           <div className="min-w-0">
             <h4 className="text-sm font-bold text-slate-900">Güven ve gizlilik kontrolü</h4>
             <p className="mt-1 text-xs leading-relaxed text-slate-500">
-              Eşleştirme; çocuğunuzun etiketleri, yaş aralığı, terapi/eğitim notları ve isteğe bağlı şehir/konum bilgisini kullanır. Kesin konum karşı tarafa gösterilmez.
+              Eşleştirme: çocuğunuzun etiketleri, yaş aralığı, terapi/eğitim notları ve isteğe bağlı şehir/konum bilgisini kullanır. Kesin konum karşı tarafa gösterilmez.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {['İsteğe bağlı görünürlük', 'Notlu bağlantı isteği', 'Önce mesajla tanışma'].map(item => (
@@ -36,7 +36,7 @@ export function TrustAndPrivacyPanel({
           <div>
             <p className="text-xs font-bold text-slate-900">Konum hassasiyeti</p>
             <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
-              Yakındaki velilerde koordinatı sadece kendi ekranınızda görmeyi seçebilirsiniz.
+              Kendi kesin koordinatlarınızı sadece kendi ekranınızda görmeyi seçebilirsiniz.
             </p>
           </div>
           <LockKeyhole size={17} className="text-slate-400 shrink-0" />

@@ -32,6 +32,7 @@ public class ForumPostDto {
     private int likeCount;
     private int commentCount;
     private Map<String, Object> privacySettings;
+    private Map<String, Object> questionContext;
     private List<TagDto> tags;
     private Set<UUID> tagIds;
     private boolean likedByMe;

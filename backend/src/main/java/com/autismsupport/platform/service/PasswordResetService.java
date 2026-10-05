@@ -23,6 +23,7 @@ public class PasswordResetService {
     private final SecureRandom secureRandom = new SecureRandom();
 
     private final PasswordResetTokenRepository tokenRepository;
+    private final com.autismsupport.platform.repository.RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -67,6 +68,10 @@ public class PasswordResetService {
         User user = resetToken.getUser();
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+
+        // Şifre kurtarma hesabın ele geçirilmiş olabileceği anlamına gelir.
+        // Eski cihazlardaki tüm oturumları sonlandır.
+        refreshTokenRepository.deleteByUserId(user.getId());
 
         resetToken.setUsed(true);
         tokenRepository.save(resetToken);

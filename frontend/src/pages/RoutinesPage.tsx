@@ -14,6 +14,7 @@ import { useChildStore } from '@/store/childStore';
 import { childService } from '@/services/childService';
 import { routineService, type RoutineDto } from '@/services/routineService';
 import { toast } from '@/store/toastStore';
+import { formatLocalDate } from '@/utils/date';
 
 const ICON_OPTIONS = [
   { value: 'morning',   label: '🌅 Sabah' },
@@ -36,12 +37,11 @@ function iconEmoji(name?: string) {
 
 type CompletedMap = Record<string, Set<string>>;
 
-const TODAY = new Date().toISOString().slice(0, 10);
-const STORAGE_KEY = `routine_completed_${TODAY}`;
+const storageKey = () => `routine_completed_${formatLocalDate()}`;
 
 function loadCompletedFromStorage(): CompletedMap {
   try {
-    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') as Record<string, string[]>;
+    const raw = JSON.parse(localStorage.getItem(storageKey()) || '{}') as Record<string, string[]>;
     return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, new Set(v)]));
   } catch {
     return {};
@@ -50,7 +50,7 @@ function loadCompletedFromStorage(): CompletedMap {
 
 function saveCompletedToStorage(map: CompletedMap) {
   const serialized = Object.fromEntries(Object.entries(map).map(([k, v]) => [k, [...v]]));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+  localStorage.setItem(storageKey(), JSON.stringify(serialized));
 }
 
 export function RoutinesPage() {

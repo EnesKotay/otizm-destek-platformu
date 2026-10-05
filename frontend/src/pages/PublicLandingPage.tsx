@@ -4,34 +4,39 @@ import {
   CheckCircle2,
   HeartHandshake,
   LifeBuoy,
+  MessageCircleQuestion,
   Phone,
   QrCode,
+  Search,
   UserCheck,
+  Users,
 } from 'lucide-react';
 import { PublicHeader, type PublicNavItem } from '@/components/landing/PublicHeader';
 import { PublicFooter } from '@/components/landing/PublicFooter';
 import { GuideStepper } from '@/components/landing/GuideStepper';
-import { DailyFlowPreview, WeeklyReportPreview } from '@/components/landing/ProductPreviews';
+import { CommunitySupportPreview, WeeklyReportPreview } from '@/components/landing/ProductPreviews';
 import {
   accentMap,
-  designRationale,
   expertVerificationSteps,
   faqs,
   heroHighlights,
-  heroStats,
   modules,
   safeguards,
-  trustSteps,
 } from '@/content/landing';
 
 const navItems: PublicNavItem[] = [
+  { label: 'Aile desteği', href: '#aile-destegi' },
   { label: 'Araçlar', href: '#moduller' },
   { label: 'Nasıl çalışır?', href: '#rehber' },
   { label: 'Güven', href: '#guven' },
   { label: 'Kriz rehberi', href: '/kriz-aninda-ne-yapmali', route: true },
 ];
 
+import { useState } from 'react';
+
 export function PublicLandingPage() {
+  const [openFaqIndex, setOpenFaqIndex] = useState(0);
+
   return (
     <div className="min-h-screen bg-white text-slate-950">
       {/* Skip link <main>'in DIŞINDA ve ondan önce olmalı: önceden <main> içinde
@@ -55,16 +60,16 @@ export function PublicLandingPage() {
             <div className="max-w-xl">
               <p className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white px-4 py-1.5 text-xs font-bold text-primary-800 shadow-sm">
                 <HeartHandshake size={15} className="text-primary-700" aria-hidden="true" />
-                Aileler ve uzmanlar için güvenli gelişim alanı
+                Otizmli çocukların aileleri için güvenli dayanışma
               </p>
 
               <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-950 sm:text-5xl lg:text-[3.35rem]">
-                Çocuğunuzun gelişim yolculuğunda <span className="text-primary-700">yalnız değilsiniz.</span>
+                Yaşadığınız sorunu daha önce çözen <span className="text-primary-700">bir aile olabilir.</span>
               </h1>
 
               <p className="mt-5 max-w-lg text-lg font-medium leading-8 text-slate-700">
-                Günlük gelişimi tek yerde takip edin, zor anlarda hazır rehbere ulaşın ve doğrulanmış uzmanlarla
-                yalnızca sizin belirlediğiniz kadarını paylaşın.
+                Sorununuzu yazın; aynı süreci yaşamış ailelerin deneyimlerini, benzer aileleri ve güvenilir
+                kaynakları tek yerde bulun. Yanıt yoksa topluluğa güvenle sorun.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -72,14 +77,14 @@ export function PublicLandingPage() {
                   to="/kayit"
                   className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-sm font-bold text-white shadow-lg shadow-primary-600/25 transition-all hover:-translate-y-0.5 hover:bg-primary-700"
                 >
-                  Ücretsiz aile hesabı oluştur
+                  Ailelerden destek almaya başla
                   <ArrowRight size={16} aria-hidden="true" />
                 </Link>
                 <a
-                  href="#rehber"
+                  href="#aile-destegi"
                   className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:border-primary-200 hover:text-primary-800"
                 >
-                  Nasıl çalıştığını gör
+                  Topluluk nasıl çalışır?
                 </a>
               </div>
 
@@ -93,23 +98,40 @@ export function PublicLandingPage() {
               </ul>
             </div>
 
-            <div aria-label="Aile paneli günlük akış önizlemesi" role="img">
-              <DailyFlowPreview />
+            <div aria-label="Aile deneyimlerinde çözüm arama önizlemesi" role="img">
+              <CommunitySupportPreview />
             </div>
           </div>
         </section>
 
-        {/* ── Doğrulanabilir nitelikler ──
-            Kanıtlanamayan kullanıcı sayısı/başarı metriği yerine ürünün
-            doğrulanabilir özellikleri gösteriliyor. */}
-        <section className="border-b border-slate-200 bg-slate-50">
-          <div className="mx-auto grid max-w-6xl grid-cols-3 gap-3 px-5 py-6">
-            {heroStats.map((item) => (
-              <div key={item.label} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center shadow-sm">
-                <p className="text-lg font-extrabold text-slate-950 sm:text-2xl">{item.value}</p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-slate-600">{item.label}</p>
-              </div>
-            ))}
+        <section id="aile-destegi" className="scroll-mt-20 border-b border-slate-200 bg-white">
+          <div className="mx-auto max-w-6xl px-5 py-14 sm:py-16">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-xs font-extrabold uppercase tracking-widest text-violet-700">Aileden aileye destek</p>
+              <h2 className="mt-2 text-3xl font-extrabold text-slate-950">Tek bir sorudan doğru desteğe</h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm font-medium leading-7 text-slate-600">
+                Ayrı ayrı forumlarda ve gruplarda kaybolmadan önce benzer deneyimleri görün, sonra ihtiyacınız olan kişiyle iletişim kurun.
+              </p>
+            </div>
+            <ol className="mt-8 grid gap-4 md:grid-cols-3">
+              {[
+                { icon: Search, title: 'Sorununu yaz', text: 'Uyku, beslenme, okul, iletişim veya zor bir anı günlük dilde anlat.' },
+                { icon: Users, title: 'Deneyimleri karşılaştır', text: 'Aile paylaşımlarını, benzer profilleri ve güvenilir kaynakları birlikte gör.' },
+                { icon: MessageCircleQuestion, title: 'Yanıt yoksa topluluğa sor', text: 'Soruyu hazır başlıkla aç; istersen adını ve çocuğuna ait ayrıntıları gizle.' },
+              ].map(({ icon: Icon, title, text }, index) => (
+                <li key={title} className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-100 text-violet-700"><Icon size={21} aria-hidden="true" /></span>
+                  <p className="mt-4 text-xs font-extrabold text-violet-700">ADIM {index + 1}</p>
+                  <h3 className="mt-1 font-extrabold text-slate-950">{title}</h3>
+                  <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{text}</p>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-7 text-center">
+              <Link to="/kayit" className="inline-flex h-11 items-center gap-2 rounded-xl bg-violet-700 px-5 text-sm font-bold text-white shadow-sm hover:bg-violet-800">
+                Ücretsiz topluluğa katıl <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -179,10 +201,10 @@ export function PublicLandingPage() {
           <div className="mx-auto max-w-6xl px-5 py-14 sm:py-16">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-xs font-extrabold uppercase tracking-widest text-primary-700">Araçlar</p>
-              <h2 className="mt-2 text-3xl font-extrabold text-slate-950">Dağınık defterler yerine tek panel</h2>
+              <h2 className="mt-2 text-3xl font-extrabold text-slate-950">Dayanışmayı güçlendiren araçlar</h2>
               <p className="mx-auto mt-3 max-w-xl text-sm font-medium leading-7 text-slate-600">
-                Günlük takipten acil durum kartına, BEP hazırlığından topluluk desteğine kadar ihtiyaç duyduğunuz
-                araçlar aynı yerde. Kullanmadıklarınız yolunuza çıkmaz.
+                Günlük takip, acil durum kartı ve uzman görüşmeleri; ailelerden aldığınız tavsiyeleri kendi
+                koşullarınıza göre uygulamanızı ve ilerlemeyi görmenizi kolaylaştırır.
               </p>
             </div>
 
@@ -331,20 +353,6 @@ export function PublicLandingPage() {
               </ul>
             </div>
 
-            <ul className="mt-10 grid gap-4 border-t border-slate-100 pt-10 md:grid-cols-3">
-              {trustSteps.map(({ icon: Icon, title, text }) => (
-                <li key={title} className="flex gap-3 rounded-2xl bg-slate-50 p-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm">
-                    <Icon size={19} aria-hidden="true" />
-                  </span>
-                  <span>
-                    <h3 className="text-sm font-extrabold text-slate-950">{title}</h3>
-                    <p className="mt-1 text-xs leading-5 text-slate-600">{text}</p>
-                  </span>
-                </li>
-              ))}
-            </ul>
-
             <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-primary-100 bg-primary-50 p-5">
               <div>
                 <p className="text-sm font-extrabold text-primary-950">Güvenlik ve veri kontrolü hakkında ayrıntılı bilgi</p>
@@ -363,32 +371,6 @@ export function PublicLandingPage() {
           </div>
         </section>
 
-        {/* ── Tasarım gerekçesi ──
-            Doğrulanabilir kullanıcı yorumu bulunana kadar atıfsız alıntı yerine
-            ürün kararlarının gerekçesi gösteriliyor. */}
-        <section className="border-b border-slate-200 bg-slate-50">
-          <div className="mx-auto max-w-6xl px-5 py-16">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-xs font-extrabold uppercase tracking-widest text-primary-700">Tasarım yaklaşımı</p>
-              <h2 className="mt-3 text-3xl font-extrabold text-slate-950">Neden böyle çalışıyor?</h2>
-              <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
-                Ürünü şekillendiren üç temel karar.
-              </p>
-            </div>
-            <ul className="mt-8 grid gap-4 md:grid-cols-3">
-              {designRationale.map(({ icon: Icon, title, text }) => (
-                <li key={title} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary-50 text-primary-700">
-                    <Icon size={21} aria-hidden="true" />
-                  </span>
-                  <h3 className="mt-4 text-base font-extrabold leading-snug text-slate-950">{title}</h3>
-                  <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{text}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
         {/* ── SSS ── */}
         <section className="border-b border-slate-200 bg-white">
           <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 lg:grid-cols-[0.38fr_0.62fr]">
@@ -403,18 +385,26 @@ export function PublicLandingPage() {
             </div>
             <div className="divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">
               {faqs.map((item, index) => (
-                <details key={item.question} className="group p-5" open={index === 0}>
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-extrabold text-slate-950">
+                <div key={item.question} className="p-5">
+                  <button 
+                    type="button"
+                    onClick={() => setOpenFaqIndex(openFaqIndex === index ? -1 : index)}
+                    className="flex w-full cursor-pointer items-center justify-between gap-4 text-left text-sm font-extrabold text-slate-950"
+                  >
                     {item.question}
                     <span
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg text-primary-800 transition-transform group-open:rotate-45"
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg text-primary-800 transition-transform ${openFaqIndex === index ? 'rotate-45' : ''}`}
                       aria-hidden="true"
                     >
                       +
                     </span>
-                  </summary>
-                  <p className="mt-3 pr-10 text-sm font-medium leading-7 text-slate-600">{item.answer}</p>
-                </details>
+                  </button>
+                  {openFaqIndex === index && (
+                    <p className="mt-3 pr-10 text-sm font-medium leading-7 text-slate-600 animate-fade-in">
+                      {item.answer}
+                    </p>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -425,9 +415,9 @@ export function PublicLandingPage() {
           <div className="relative mx-auto flex max-w-6xl flex-col items-start justify-between gap-8 px-5 py-16 sm:flex-row sm:items-center">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-widest text-primary-200">Hazır olduğunuzda</p>
-              <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">İlk adım: çocuk profilini hazırlayın.</h2>
+              <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Sorunuzu tek başınıza taşımayın.</h2>
               <p className="mt-3 max-w-md text-sm leading-6 text-primary-50">
-                Kısa bir kayıt sonrası temel bilgileri ekleyip günlük akışı kullanmaya başlayabilirsiniz.
+                Ücretsiz aile hesabınızı açın; deneyimleri arayın, soru sorun ve benzer ailelerle tanışın.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">

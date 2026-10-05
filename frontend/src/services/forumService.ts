@@ -43,6 +43,10 @@ export const forumService = {
   acceptAnswer: (postId: string, commentId: string) =>
     api.post<ApiResponse<ForumPost>>(`/forum/posts/${postId}/accept/${commentId}`).then(r => r.data.data),
 
+  recordAnswerOutcome: (postId: string, commentId: string, outcome: 'WORKED' | 'PARTIAL' | 'NOT_WORKED') =>
+    api.put<ApiResponse<ForumComment>>(`/forum/posts/${postId}/comments/${commentId}/outcome`, { outcome })
+      .then(r => r.data.data),
+
   getComments: (postId: string, page = 0) =>
     api.get<ApiResponse<PageResponse<ForumComment>>>(`/forum/posts/${postId}/comments?page=${page}`)
       .then(r => r.data.data),

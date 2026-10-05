@@ -4,7 +4,8 @@ import { useInView } from 'react-intersection-observer';
 import {
   BookOpen, Plus, MessageSquare, Heart, ArrowLeft, Check, ChevronUp,
   ChevronDown, HelpCircle, Lightbulb, Award, Filter, X, EyeOff,
-  ShieldCheck, Tag as TagIcon, Flag, Pencil, Trash2, Reply, Search, Users
+  ShieldCheck, Tag as TagIcon, Flag, Pencil, Trash2, Reply, Search, Users,
+  ThumbsUp, ThumbsDown, CircleMinus, Clock3, Baby
 } from 'lucide-react';
 import { Card, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -60,7 +61,22 @@ const defaultPrivacy: PostPrivacySettings = {
 };
 
 function emptyForm(postType: string) {
-  return { title: '', content: '', category: '', postType, tagIds: [] as string[], anonymous: false, privacySettings: { ...defaultPrivacy } };
+  return {
+    title: '',
+    content: '',
+    category: '',
+    postType,
+    tagIds: [] as string[],
+    anonymous: false,
+    privacySettings: { ...defaultPrivacy },
+    questionContext: { childAgeRange: '', duration: '', triedMethods: '', desiredSupport: '' },
+  };
+}
+
+function containsSensitiveContactInfo(value: string) {
+  const plain = htmlToPlainText(value);
+  return /\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b/.test(plain)
+    || /(?:\+?90\s*)?(?:0?5\d{2})[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2}/.test(plain);
 }
 
 export function ForumPage() {
@@ -72,11 +88,12 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
   const user = useAuthStore(s => s.user);
   const navigate = useNavigate();
   const openPostId = (location.state as { openPostId?: string } | null)?.openPostId;
-  const [activeTab, setActiveTab] = useState<TabType>('DENEYIM');
+  const supportQuery = (location.state as { supportQuery?: string } | null)?.supportQuery;
+  const [activeTab, setActiveTab] = useState<TabType>(supportQuery ? 'QUESTION' : 'DENEYIM');
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
   const [comments, setComments] = useState<ForumComment[]>([]);
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(Boolean(supportQuery));
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [newComment, setNewComment] = useState('');
@@ -99,7 +116,15 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
     });
   };
 
-  const [form, setForm] = useState(emptyForm('DENEYIM'));
+  const [form, setForm] = useState(() => ({
+    ...emptyForm(supportQuery ? 'QUESTION' : 'DENEYIM'),
+    title: supportQuery ?? '',
+  }));
+
+  useEffect(() => {
+    if (!supportQuery) return;
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, navigate, supportQuery]);
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -216,6 +241,7 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
         tagIds: form.tagIds,
         anonymous: form.anonymous,
         privacySettings: form.privacySettings,
+        questionContext: form.postType === 'QUESTION' ? form.questionContext : undefined,
       });
       setShowModal(false);
       setForm(emptyForm(activeTab));
@@ -308,6 +334,17 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
       setComments(data.content);
       toast.success('En iyi cevap işaretlendi.');
     } catch { toast.error('Cevap kabul edilemedi.'); }
+  };
+
+  const handleAnswerOutcome = async (commentId: string, outcome: 'WORKED' | 'PARTIAL' | 'NOT_WORKED') => {
+    if (!selectedPost) return;
+    try {
+      const updated = await forumService.recordAnswerOutcome(selectedPost.id, commentId, outcome);
+      setComments(prev => prev.map(comment => comment.id === updated.id ? updated : comment));
+      toast.success('Deneyiminiz kaydedildi.');
+    } catch {
+      toast.error('Geri bildirim kaydedilemedi.');
+    }
   };
 
   const handleSaveEditComment = async () => {
@@ -468,6 +505,28 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
               </div>
             )}
 
+            {isQuestion && selectedPost.questionContext && Object.values(selectedPost.questionContext).some(Boolean) && (
+              <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
+                <p className="text-xs font-extrabold uppercase tracking-wide text-indigo-700">Sorunun bağlamı</p>
+                <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {[
+                    ['Yaş aralığı', selectedPost.questionContext.childAgeRange, Baby],
+                    ['Ne zamandır?', selectedPost.questionContext.duration, Clock3],
+                    ['Denenen yöntemler', selectedPost.questionContext.triedMethods, Lightbulb],
+                    ['Beklenen destek', selectedPost.questionContext.desiredSupport, HelpCircle],
+                  ].filter(([, value]) => Boolean(value)).map(([label, value, Icon]) => {
+                    const ContextIcon = Icon as typeof Baby;
+                    return (
+                      <div key={String(label)} className="flex items-start gap-2 rounded-xl bg-white/80 p-3 ring-1 ring-indigo-100">
+                        <ContextIcon size={16} className="mt-0.5 shrink-0 text-indigo-600" />
+                        <div><dt className="text-[11px] font-extrabold uppercase text-slate-500">{String(label)}</dt><dd className="mt-0.5 text-sm font-semibold text-slate-800">{String(value)}</dd></div>
+                      </div>
+                    );
+                  })}
+                </dl>
+              </div>
+            )}
+
             <div className="mt-5 rounded-2xl bg-slate-50/70 px-5 py-4 text-[15px] leading-7 text-slate-700 ring-1 ring-inset ring-slate-100 [&_p]:mb-3 [&_p:last-child]:mb-0" dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedPost.content) }} />
           </div>
 
@@ -518,7 +577,11 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
                 <p className="mt-1 text-sm text-slate-500">İlk katkıyı siz bırakabilirsiniz.</p>
               </div>
             )}
-            {[...topLevelComments].sort((a, b) => (b.expertApproved ? 1 : 0) - (a.expertApproved ? 1 : 0)).map(comment => (
+            {[...topLevelComments].sort((a, b) => {
+              if (a.accepted !== b.accepted) return b.accepted ? 1 : -1;
+              if (a.expertApproved !== b.expertApproved) return b.expertApproved ? 1 : -1;
+              return b.voteCount - a.voteCount;
+            }).map(comment => (
               <div key={comment.id}>
                 <div className={`flex items-start gap-3 rounded-2xl border p-4 transition-all ${comment.expertApproved ? 'bg-indigo-50 border-indigo-100 shadow-sm' : comment.accepted ? 'bg-green-50 border-green-200' : 'bg-white border-slate-100 shadow-sm'}`}>
                   {isQuestion && (
@@ -567,6 +630,45 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
                       {comment.accepted && <Badge variant="success">En İyi Cevap</Badge>}
                     </div>
                     <p className="mt-2 text-sm leading-6 text-slate-700">{comment.content}</p>
+                    {isQuestion && (
+                      <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-extrabold text-slate-700">Bu öneri işe yaradıysa oylayarak diğer ailelere yardımcı olun.</p>
+                          {comment.workedCount > 0 && <span className="text-xs font-bold text-emerald-700">🟢 {comment.workedCount} aileye yardım etti</span>}
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {[
+                            ['WORKED', 'Evet, işe yaradı', ThumbsUp, comment.workedCount, 'emerald'],
+                            ['PARTIAL', 'Kısmen', CircleMinus, comment.partialCount, 'amber'],
+                            ['NOT_WORKED', 'Yaramadı', ThumbsDown, comment.notWorkedCount, 'slate'],
+                          ].map(([outcome, label, Icon, count, tone]) => {
+                            const OutcomeIcon = Icon as typeof ThumbsUp;
+                            const active = comment.outcomeByMe === outcome;
+                            const isWorked = outcome === 'WORKED';
+                            const activeClass = tone === 'emerald'
+                              ? 'border-emerald-400 bg-emerald-500 text-white'
+                              : tone === 'amber'
+                                ? 'border-amber-300 bg-amber-100 text-amber-800'
+                                : 'border-slate-300 bg-slate-200 text-slate-800';
+                            
+                            const inactiveClass = isWorked
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300'
+                              : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-slate-50';
+
+                            return (
+                              <button
+                                key={String(outcome)}
+                                type="button"
+                                onClick={() => handleAnswerOutcome(comment.id, outcome as 'WORKED' | 'PARTIAL' | 'NOT_WORKED')}
+                                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-extrabold transition-colors ${active ? activeClass : inactiveClass} ${isWorked && !active ? 'shadow-sm' : ''}`}
+                              >
+                                <OutcomeIcon size={14} className={isWorked && !active ? 'text-emerald-500' : ''} /> {String(label)} {Number(count) > 0 && <span>({String(count)})</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 mt-2">
                       {!isQuestion && (
                         <button
@@ -1201,14 +1303,50 @@ function ForumContent({ location }: { location: ReturnType<typeof useLocation> }
             placeholder={form.postType === 'QUESTION' ? 'Sorunuzu kısaca özetleyin' : 'Gönderinizin başlığı'}
           />
 
+          {form.postType === 'QUESTION' && (
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
+              <div className="flex items-start gap-2">
+                <Lightbulb size={17} className="mt-0.5 shrink-0 text-indigo-700" />
+                <div>
+                  <p className="text-sm font-extrabold text-indigo-950">Doğru ailelerin cevaplamasına yardımcı olun</p>
+                  <p className="mt-0.5 text-xs leading-5 text-indigo-800">Bu alanlar isteğe bağlıdır; isim veya tanı gibi özel bilgiler yazmanız gerekmez.</p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="text-xs font-bold text-slate-700">Çocuğun yaş aralığı
+                  <select value={form.questionContext.childAgeRange} onChange={e => setForm(f => ({ ...f, questionContext: { ...f.questionContext, childAgeRange: e.target.value } }))} className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-indigo-400">
+                    <option value="">Belirtmek istemiyorum</option><option>0–3 yaş</option><option>4–6 yaş</option><option>7–12 yaş</option><option>13–17 yaş</option><option>18 yaş ve üzeri</option>
+                  </select>
+                </label>
+                <label className="text-xs font-bold text-slate-700">Ne zamandır yaşanıyor?
+                  <select value={form.questionContext.duration} onChange={e => setForm(f => ({ ...f, questionContext: { ...f.questionContext, duration: e.target.value } }))} className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-indigo-400">
+                    <option value="">Seçiniz</option><option>Yeni başladı</option><option>Birkaç haftadır</option><option>Birkaç aydır</option><option>Uzun süredir</option>
+                  </select>
+                </label>
+              </div>
+              <label className="mt-3 block text-xs font-bold text-slate-700">Şimdiye kadar neler denediniz?
+                <textarea value={form.questionContext.triedMethods} onChange={e => setForm(f => ({ ...f, questionContext: { ...f.questionContext, triedMethods: e.target.value } }))} rows={2} placeholder="Kısaca yazabilirsiniz" className="mt-1 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-indigo-400" />
+              </label>
+              <label className="mt-3 block text-xs font-bold text-slate-700">Nasıl bir destek arıyorsunuz?
+                <input value={form.questionContext.desiredSupport} onChange={e => setForm(f => ({ ...f, questionContext: { ...f.questionContext, desiredSupport: e.target.value } }))} placeholder="Örn. evde uygulanabilecek rutin önerileri" className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-indigo-400" />
+              </label>
+            </div>
+          )}
+
           <div className="mb-4 z-50">
-            <label className="block text-sm font-medium text-gray-700 mb-1">İçerik *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{form.postType === 'QUESTION' ? 'Durumu biraz daha anlatın *' : 'İçerik *'}</label>
             <RichTextEditor
               value={form.content}
               onChange={value => setForm(f => ({ ...f, content: value }))}
               rows={7}
             />
           </div>
+
+          {containsSensitiveContactInfo(`${form.title} ${form.content} ${form.questionContext.triedMethods}`) && (
+            <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+              <strong>İletişim bilgisi algılandı.</strong> Güvenliğiniz için telefon veya e-posta adresinizi gönderiden çıkarıp önce platform içinde mesajlaşın.
+            </div>
+          )}
 
           {/* Tag selection */}
           <div>

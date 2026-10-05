@@ -1,4 +1,8 @@
 spring:
+  config:
+    # Yerel çalıştırmada proje kökündeki .env dosyasını da oku. Docker/üretimde
+    # değişkenler doğrudan ortamdan gelir; dosya olmadığı için import atlanır.
+    import: optional:file:../.env[.properties],optional:file:.env[.properties]
   application:
     name: autism-support-platform
 

@@ -61,6 +61,14 @@ const content: Record<InfoPageKind, {
         ],
       },
       {
+        title: 'Ürün tercihleri',
+        body: [
+          'Günlük kayıt kısa tutulur; yazı yazmak isteğe bağlıdır. Böylece yoğun günlerde de temel gözlem kaydedilebilir.',
+          'Paylaşım varsayılan olarak kapalıdır. Aile, uzman erişiminin kapsamını ve süresini seçer; verdiği izni geri alabilir.',
+          'Haftalık özetin amacı kayıtları görüşmede kullanılabilir hâle getirmektir. Grafikler tanı veya tedavi kararı yerine geçmez.',
+        ],
+      },
+      {
         title: 'Destek ve başvuru',
         body: [
           'Gizlilik, erişim veya hesapla ilgili talepler giriş yaptıktan sonra Yardım Merkezi ve Ayarlar alanından iletilebilir. Acil sağlık durumlarında platform destek kanalı yerine resmi acil yardım hattı kullanılmalıdır.',

@@ -68,19 +68,31 @@ public class EmailService {
 
             String htmlContent = templateEngine.process("email/" + templateName, ctx);
 
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-            helper.setFrom(fromEmail, fromName);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(htmlContent, true); // true = HTML
-
-            mailSender.send(mimeMessage);
-            log.info("E-posta gönderildi: konu='{}', şablon='{}'", subject, templateName);
+            Exception lastFailure = null;
+            for (int attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    MimeMessage mimeMessage = mailSender.createMimeMessage();
+                    MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+                    helper.setFrom(fromEmail, fromName);
+                    helper.setTo(to);
+                    helper.setSubject(subject);
+                    helper.setText(htmlContent, true);
+                    mailSender.send(mimeMessage);
+                    log.info("E-posta gönderildi: konu='{}', şablon='{}', deneme={}", subject, templateName, attempt);
+                    return;
+                } catch (Exception e) {
+                    lastFailure = e;
+                    log.warn("E-posta gönderim denemesi başarısız: konu='{}', deneme={}/3, neden='{}'",
+                            subject, attempt, rootCauseMessage(e));
+                    if (attempt < 3) Thread.sleep(250L * attempt);
+                }
+            }
+            throw new IllegalStateException("E-posta üç denemede gönderilemedi", lastFailure);
 
         } catch (Exception e) {
-            log.error("E-posta gönderilemedi: alıcı='{}', konu='{}', şablon='{}', neden='{}'",
+            log.error("E-posta kalıcı olarak gönderilemedi: alıcı='{}', konu='{}', şablon='{}', neden='{}'",
                     maskEmail(to), subject, templateName, rootCauseMessage(e), e);
+            throw new IllegalStateException("E-posta gönderilemedi", e);
         }
     }
 
@@ -204,6 +216,19 @@ public class EmailService {
                 toEmail,
                 "🔔 " + title + " — Otizm Destek Platformu",
                 "notification",
+                vars
+        );
+    }
+
+    @Async
+    public void sendWeeklySummaryEmail(String toEmail, com.autismsupport.platform.dto.WeeklySummaryDto summary) {
+        java.util.Map<String, Object> vars = new java.util.HashMap<>();
+        vars.put("summary", summary);
+        
+        sendHtmlEmail(
+                toEmail,
+                "📅 Haftalık Gelişim Özeti — Otizm Destek Platformu",
+                "weekly-summary",
                 vars
         );
     }

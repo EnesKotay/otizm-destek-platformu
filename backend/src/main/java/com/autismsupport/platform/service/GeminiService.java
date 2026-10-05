@@ -127,9 +127,7 @@ public class GeminiService {
 
     public String sendMessage(String userMessage, List<Map<String, String>> history, String contextNote) {
         platformSettingsService.requireAiEnabled();
-        if (apiKey == null || apiKey.isBlank()) {
-            return buildFallbackResponse(userMessage);
-        }
+        requireApiKey();
         try {
             String body = buildRequestBody(userMessage, history, contextNote, false);
             HttpRequest request = HttpRequest.newBuilder()
@@ -152,10 +150,7 @@ public class GeminiService {
     public void streamMessage(String userMessage, List<Map<String, String>> history,
                               String contextNote, SseEmitter emitter) {
         platformSettingsService.requireAiEnabled();
-        if (apiKey == null || apiKey.isBlank()) {
-            sendFallbackStream(userMessage, emitter);
-            return;
-        }
+        requireApiKey();
 
         String streamUrl = apiUrl.replace(":generateContent", ":streamGenerateContent") + "?key=" + apiKey + "&alt=sse";
 
@@ -277,32 +272,6 @@ public class GeminiService {
         }
     }
 
-    /* ── Fallback (API key yoksa basit kural tabanli yanit) ──────────────────── */
-
-    private String buildFallbackResponse(String message) {
-        String lower = message.toLowerCase();
-        if (lower.contains("aba")) return "**ABA (Uygulamali Davranis Analizi)**, otizmde en guclu kanit tabanina sahip terapi yontemidir. Hedef davranislari kucuk adimlara boler, olumlu pekistirme kullanir. Turkiye'de bircok ozel rehabilitasyon merkezinde uygulanmaktadir.";
-        if (lower.contains("bep")) return "**BEP (Bireysellestirilmis Egitim Programi)**, otizm tanili her cocuk icin yasal olarak hazirlanmasi gereken bireysel egitim belgesidir. RAM uzerinden basvuru yapilir. /bep-raporu sayfamizda BEP hazirlamaniza yardimci olan araclar bulabilirsiniz.";
-        if (lower.contains("ram")) return "**RAM (Rehberlik ve Arastirma Merkezi)**, otizm tanisi sonrasi basvurulacak ilk devlet kurumudur. Egitsel degerlendirme ve okul yerlestirmesi yapar. Tani belgenizle bolgenizdeki RAM'a basvurabilirsiniz.";
-        if (lower.contains("kriz") || lower.contains("meltdown")) return "Kriz aninda sakin kalmak onemlidir. /kriz-rehberi sayfamizda adim adim rehber bulabilirsiniz. Acil destek icin **ALO 182**'yi arayabilirsiniz.";
-        if (lower.contains("platform") || lower.contains("nasil kullan")) return "Platform ana ozelliklerine sol menuden ulasabilirsiniz. Cocuk profili icin /cocuklarim, randevu icin /randevular, gelisim takibi icin /gelisim-paneli sayfalarini ziyaret edin. Sorulariniz icin buradayim!";
-        return "Merhaba! Ben AutiBot, otizm destek platformunuzun AI asistaniyim. Otizm, terapi yontemleri, platform kullanimi veya Turkiye'deki haklar hakkinda sorularinizi yanitlayabilirim. Nasil yardimci olabilirim?";
-    }
-
-    private void sendFallbackStream(String message, SseEmitter emitter) {
-        String response = buildFallbackResponse(message);
-        try {
-            for (String word : response.split("(?<=\\s)")) {
-                emitter.send(SseEmitter.event().name("chunk").data(word));
-                Thread.sleep(30);
-            }
-            emitter.send(SseEmitter.event().name("done").data("[DONE]"));
-            emitter.complete();
-        } catch (Exception e) {
-            try { emitter.completeWithError(e); } catch (Exception ignored) {}
-        }
-    }
-
     private String fallbackMsg() { return "Uzgunum, su an yanit uretemiyorum. Lutfen tekrar deneyin."; }
 
     private String jsonString(String s) {
@@ -327,19 +296,11 @@ public class GeminiService {
             }
             """;
 
-        String responseJson = null;
-        if (apiKey != null && !apiKey.isBlank()) {
-            responseJson = sendCustomMessage(systemInstruction, prompt);
-        }
+        requireApiKey();
+        String responseJson = sendCustomMessage(systemInstruction, prompt);
 
         if (responseJson == null || responseJson.isBlank()) {
-            // Fallback mock response in Turkish if API is unavailable
-            return com.autismsupport.platform.dto.AiDraftResponse.builder()
-                    .title(prompt + " Hakkında Rehber (Taslak)")
-                    .category("Genel")
-                    .content("<h3>" + prompt + " Giriş</h3><p>Bu makale taslağı <b>" + prompt + "</b> konusu hakkında bilgilendirme amacıyla yapay zeka tarafından taslak olarak hazırlanmıştır. Yapay zeka servis anahtarı yapılandırılmadığı için bu varsayılan şablon gösterilmektedir.</p><h3>Öneriler ve Detaylar</h3><ul><li>Çocuğunuzun bireysel gelişim planına sadık kalın.</li><li>Uzman tavsiyelerini ve seans takvimini düzenli takip edin.</li><li>Benzer durumdaki diğer ailelerle forum üzerinden bilgi alışverişinde bulunun.</li></ul>")
-                    .aiGenerated(false)
-                    .build();
+            throw new IllegalStateException("Yapay zeka sağlayıcısından yanıt alınamadı");
         }
 
         try {
@@ -352,6 +313,14 @@ public class GeminiService {
                     .category("Genel")
                     .content("<p>" + responseJson.replace("\n", "<br/>") + "</p>")
                     .build();
+        }
+    }
+
+    private void requireApiKey() {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new com.autismsupport.platform.exception.ValidationException(
+                    "Yapay zeka servisi yapılandırılmamış. Yönetici GEMINI_API_KEY ayarını eklemelidir."
+            );
         }
     }
 

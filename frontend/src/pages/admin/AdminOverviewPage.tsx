@@ -30,7 +30,11 @@ export function AdminOverviewPage() {
   const [recentLogs, setRecentLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentQuestion, setCurrentQuestion] = useState<WeeklyQuestion | null>(null);
+  const [draftQuestion, setDraftQuestion] = useState<WeeklyQuestion | null>(null);
+  const [draftText, setDraftText] = useState('');
+  const [draftTag, setDraftTag] = useState('#oyun');
   const [generatingAi, setGeneratingAi] = useState(false);
+  const [savingQuestion, setSavingQuestion] = useState(false);
 
   // System Health — gerçek API metrikleri
   const [cpuUsage, setCpuUsage] = useState<number | null>(null);
@@ -51,12 +55,40 @@ export function AdminOverviewPage() {
     setGeneratingAi(true);
     try {
       const newQuestion = await adminService.generateWeeklyQuestionWithAI();
-      setCurrentQuestion(newQuestion);
-      toast.success('Yapay zeka ile yeni haftalık soru başarıyla üretildi ve yayınlandı.');
+      setDraftQuestion(newQuestion);
+      setDraftText(newQuestion.question);
+      setDraftTag(newQuestion.tag || '#oyun');
+      toast.success('Yeni soru taslağı hazır. Düzenleyip yayımlayabilirsiniz.');
     } catch {
       toast.error('Soru üretilirken hata oluştu.');
     } finally {
       setGeneratingAi(false);
+    }
+  };
+
+  const handleSaveOrPublishQuestion = async () => {
+    const question = draftText.trim();
+    if (!question || question.length > 150) {
+      toast.error('Soru 1–150 karakter arasında olmalı.');
+      return;
+    }
+    setSavingQuestion(true);
+    try {
+      if (!draftQuestion) {
+        const saved = await adminService.createWeeklyQuestionDraft({ question, tag: draftTag });
+        setDraftQuestion(saved);
+        toast.success('Taslak kaydedildi. Kontrol edip yayımlayın.');
+      } else {
+        const published = await adminService.publishWeeklyQuestion(draftQuestion.id, { question, tag: draftTag });
+        setCurrentQuestion(published);
+        setDraftQuestion(null);
+        setDraftText('');
+        toast.success('Haftalık soru yayımlandı.');
+      }
+    } catch {
+      toast.error('Soru kaydedilemedi. Metni ve etiketi kontrol edip tekrar deneyin.');
+    } finally {
+      setSavingQuestion(false);
     }
   };
 
@@ -72,6 +104,12 @@ export function AdminOverviewPage() {
         if (questions && questions.length > 0) {
           setCurrentQuestion(questions[0]);
         }
+      }),
+      adminService.getWeeklyQuestionDraft().then(draft => {
+        if (!draft) return;
+        setDraftQuestion(draft);
+        setDraftText(draft.question);
+        setDraftTag(draft.tag || '#oyun');
       })
     ])
       .finally(() => setLoading(false));
@@ -379,7 +417,7 @@ export function AdminOverviewPage() {
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm">
                 <Sparkles size={15} />
               </div>
-              <h3 className="text-xs font-black text-indigo-900 uppercase tracking-wider">Yapay Zeka Soru Yönetimi</h3>
+              <h3 className="text-xs font-black text-indigo-900 uppercase tracking-wider">Haftalık Soru Yönetimi</h3>
             </div>
             
             <div className="space-y-1.5">
@@ -402,16 +440,43 @@ export function AdminOverviewPage() {
                 <p className="text-sm text-slate-400 italic">Yükleniyor veya aktif haftalık soru bulunamadı...</p>
               )}
             </div>
+            <div className="rounded-2xl border border-indigo-100 bg-white p-4 space-y-3">
+              <label htmlFor="weekly-draft-question" className="block text-xs font-bold text-slate-700">
+                {draftQuestion ? 'Yayın bekleyen taslak' : 'Yeni soru taslağı'}
+              </label>
+              <textarea
+                id="weekly-draft-question"
+                value={draftText}
+                maxLength={150}
+                onChange={event => setDraftText(event.target.value)}
+                rows={2}
+                placeholder="Ailelerin deneyimlerini anlatabileceği açık uçlu bir soru yazın"
+                className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-indigo-400 focus:outline-none"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <select
+                  aria-label="Soru etiketi"
+                  value={draftTag}
+                  onChange={event => setDraftTag(event.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                >
+                  {['#oyun', '#duyusal', '#rutin', '#eğitim', '#kriz-yönetimi'].map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                </select>
+                <Button onClick={handleSaveOrPublishQuestion} disabled={!draftText.trim() || savingQuestion} loading={savingQuestion}>
+                  {draftQuestion ? 'İncele ve Yayımla' : 'Taslağı Kaydet'}
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="shrink-0 flex items-center">
             <Button 
               onClick={handleGenerateAiQuestion} 
-              disabled={generatingAi}
+              disabled={generatingAi || Boolean(draftQuestion)}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-indigo-600/10 flex items-center gap-2 hover:-translate-y-0.5 transition-all cursor-pointer"
             >
               <Sparkles size={16} className={generatingAi ? 'animate-spin' : ''} />
-              {generatingAi ? 'Yeni Soru Üretiliyor...' : 'Yapay Zeka ile Soru Üret ve Yayınla'}
+              {generatingAi ? 'Taslak Üretiliyor...' : draftQuestion ? 'Önce taslağı yayımlayın' : 'Yapay Zeka ile Taslak Üret'}
             </Button>
           </div>
         </div>

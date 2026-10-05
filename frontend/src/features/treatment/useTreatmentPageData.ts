@@ -8,6 +8,7 @@ import { treatmentStateService } from '@/services/treatmentStateService';
 import { useAuthStore } from '@/store/authStore';
 import { useChildStore } from '@/store/childStore';
 import { toast } from '@/store/toastStore';
+import { formatLocalDate } from '@/utils/date';
 import type { AppointmentRecord, CalendarEvent, Child, DevelopmentNote } from '@/types';
 import {
   DEFAULT_SENSORY_PROFILE,
@@ -302,7 +303,7 @@ export function useTreatmentPageData() {
     const loadChildDetails = async () => {
       setDetailLoading(true);
       try {
-        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayStr = formatLocalDate();
         const [eventsData, notesData, moodData] = await Promise.all([
           calendarService.getByChild(activeChildId),
           noteService.getRecent(activeChildId),

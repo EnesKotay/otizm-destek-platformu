@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -19,6 +20,10 @@ public class WeeklyAnswerDto {
     private String city;
     private String authorRole;
     private String expertTitle;
+    private boolean anonymous;
+    private boolean hideCity;
+    private boolean own;
+    private List<String> tags;
 
     @NotBlank(message = "Cevap zorunludur")
     private String text;
@@ -27,4 +32,3 @@ public class WeeklyAnswerDto {
     private boolean liked;
     private LocalDateTime createdAt;
 }
-

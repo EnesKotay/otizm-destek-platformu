@@ -4,7 +4,7 @@ import {
   Users, MessageSquare, ChevronDown, Sparkles,
   SlidersHorizontal, EyeOff, Eye, ArrowUpDown,
   CalendarDays, MapPin, Video, Handshake, X, Send,
-  Smile, GraduationCap, Tag, Activity, Map, UserCheck, Trash2,
+  Smile, GraduationCap, Activity, Map, UserCheck, Trash2,
   Compass, List, Navigation, ShieldCheck, Info,
   CheckCircle2, Search, ThumbsDown, ThumbsUp
 } from 'lucide-react';
@@ -26,6 +26,10 @@ import { useAuthStore } from '@/store/authStore';
 import { useChildStore } from '@/store/childStore';
 import { toast } from '@/store/toastStore';
 import type { SimilarFamily, Conversation, Message } from '@/types';
+import { tagService } from "@/services/tagService";
+import type { Tag } from "@/types";
+
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 
 const CATEGORY_COLORS: Record<string, string> = {
   ILETISIM: 'bg-blue-50 text-blue-700 border border-blue-150',
@@ -301,7 +305,7 @@ function FamilyMatchCard({
   currentCity?: string;
   messaging: boolean;
   feedback?: MatchFeedback;
-  onMessage: (parentId: string) => void;
+  onMessage: (family: SimilarFamily) => void;
   onOpenMeeting: (family: SimilarFamily) => void;
   onOpenBuddyRequest: (draft: BuddyRequestDraft) => void;
   onRateMatch: (parentId: string, feedback: MatchFeedback) => void;
@@ -370,12 +374,21 @@ function FamilyMatchCard({
             ))}
           </div>
 
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <ScoreBar label="Etiket" value={family.tagScore} color="bg-indigo-500" icon={<Tag size={12} />} />
-            <ScoreBar label="Yaş" value={family.ageScore} color="bg-blue-500" icon={<Smile size={12} />} />
-            <ScoreBar label="Duyusal" value={family.sensoryScore} color="bg-amber-500" icon={<Sparkles size={12} />} />
-            <ScoreBar label="Terapi" value={family.therapyScore} color="bg-teal-500" icon={<Activity size={12} />} />
-            <ScoreBar label="Eğitim" value={family.educationScore} color="bg-emerald-500" icon={<GraduationCap size={12} />} />
+          <div className="mt-4 h-48 w-full bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-center p-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="70%" data={[
+                { subject: 'Etiket', score: Math.round((family.tagScore || 0) * 100) },
+                { subject: 'Yaş', score: Math.round((family.ageScore || 0) * 100) },
+                { subject: 'Duyusal', score: Math.round((family.sensoryScore || 0) * 100) },
+                { subject: 'Terapi', score: Math.round((family.therapyScore || 0) * 100) },
+                { subject: 'Eğitim', score: Math.round((family.educationScore || 0) * 100) },
+              ]}>
+                <PolarGrid stroke="#e2e8f0" strokeDasharray="3 3" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                <Radar name="Uyum" dataKey="score" stroke="#6366f1" fill="#6366f1" fillOpacity={0.35} />
+              </RadarChart>
+            </ResponsiveContainer>
           </div>
 
           {(family.commonTags?.length || 0) > 0 && (
@@ -450,7 +463,7 @@ function FamilyMatchCard({
               size="sm"
               variant="outline"
               loading={messaging}
-              onClick={() => onMessage(family.parentId)}
+              onClick={() => onMessage(family)}
               className="rounded-xl border-slate-200 text-xs"
             >
               <MessageSquare size={13} className="mr-1.5" /> Mesaj
@@ -500,7 +513,64 @@ function FamilyMatchCard({
   );
 }
 
+function QuickTagWizard({ isOpen, onClose, childId, childName, onComplete }: { isOpen: boolean, onClose: () => void, childId: string, childName: string, onComplete: () => void }) {
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      tagService.getAllTags().then(t => setTags(t.slice(0, 20))).catch(() => {});
+    }
+  }, [isOpen]);
+
+  const handleSave = async () => {
+    if (selectedTagIds.length === 0) return;
+    setSaving(true);
+    try {
+      const selected = tags.filter(t => selectedTagIds.includes(t.id));
+      await childService.update(childId, { tags: selected } as any);
+      toast.success('Etiketler başarıyla eklendi! Eşleşmeler aranıyor...');
+      onComplete();
+      onClose();
+    } catch {
+      toast.error('Etiketler kaydedilemedi.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Hızlı Etiket Ekle">
+      <div className="p-4">
+        <p className="text-sm text-slate-600 mb-4">
+          <strong>{childName}</strong> için en çok öne çıkan 1-2 özelliği seçerek hemen eşleşmeleri görmeye başlayabilirsiniz. Daha sonra profilinden tüm detayları güncelleyebilirsiniz.
+        </p>
+        <div className="flex flex-wrap gap-2 mb-6 max-h-60 overflow-y-auto">
+          {tags.map(tag => {
+            const isSelected = selectedTagIds.includes(tag.id);
+            return (
+              <button
+                key={tag.id}
+                onClick={() => setSelectedTagIds(prev => isSelected ? prev.filter(id => id !== tag.id) : [...prev, tag.id])}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer border ${
+                  isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                {tag.name}
+              </button>
+            );
+          })}
+        </div>
+        <Button onClick={handleSave} loading={saving} disabled={selectedTagIds.length === 0} className="w-full">
+          Eşleşmeleri Bul
+        </Button>
+      </div>
+    </Modal>
+  );
+}
 export function SimilarFamiliesPage() {
+
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { children, setChildren, selectedChild, setSelectedChild } = useChildStore();
@@ -540,7 +610,7 @@ export function SimilarFamiliesPage() {
   const [priorityFocus, setPriorityFocus] = useState<'BALANCED' | 'SYMPTOMS' | 'AGE' | 'THERAPY' | 'SENSORY'>('BALANCED');
 
   // Quick-Chat Drawer states
-  const [activeChatBuddy, setActiveChatBuddy] = useState<BuddyDto | null>(null);
+  const [activeChatBuddy, setActiveChatBuddy] = useState<{buddyId: string; fullName: string; profileImageUrl?: string; commonTags?: string[]} | null>(null);
   const [drawerConversation, setDrawerConversation] = useState<Conversation | null>(null);
   const [drawerMessages, setDrawerMessages] = useState<Message[]>([]);
   const [drawerNewMessage, setDrawerNewMessage] = useState('');
@@ -570,6 +640,8 @@ export function SimilarFamiliesPage() {
   const [sortBy, setSortBy] = useState('score');
   const [cityOnly, setCityOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showQuickTagWizard, setShowQuickTagWizard] = useState(false);
+
   const userLatitude = toCoordinate(user?.latitude);
   const userLongitude = toCoordinate(user?.longitude);
   const hasUserCoordinates = userLatitude !== null && userLongitude !== null;
@@ -823,13 +895,12 @@ export function SimilarFamiliesPage() {
     setTogglingOptOut(false);
   };
 
-  const handleMessage = async (parentId: string) => {
-    setMessagingId(parentId);
-    try {
-      const conv = await messagingService.getOrCreateDirect(parentId);
-      navigate('/mesajlar', { state: { openConversationId: conv.id } });
-    } catch { toast.error('Mesaj başlatılamadı.'); }
-    setMessagingId(null);
+  const handleMessage = (family: SimilarFamily) => {
+    setActiveChatBuddy({
+      buddyId: family.parentId,
+      fullName: family.parentName,
+      commonTags: family.commonTags?.map(t => t.name) || [],
+    });
   };
 
   // Buddy & Mentor Operations
@@ -1041,18 +1112,24 @@ export function SimilarFamiliesPage() {
           </div>
         </div>
         {children.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 w-full xl:w-auto">
-            <div className="rounded-2xl bg-white border border-slate-100 px-4 py-3 shadow-sm">
-              <p className="text-[11px] font-semibold text-slate-400">AI eşleşme</p>
-              <p className="text-lg font-bold text-slate-950">{finalResults.length}</p>
+          <div className="grid grid-cols-3 gap-3 w-full xl:w-auto">
+            <div className="flex flex-col justify-center rounded-3xl bg-white border border-slate-100 px-5 py-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-lg">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Akıllı eşleşme</p>
+              <p className="text-2xl font-black text-slate-900">{finalResults.length}</p>
             </div>
-            <div className="rounded-2xl bg-white border border-slate-100 px-4 py-3 shadow-sm">
-              <p className="text-[11px] font-semibold text-slate-400">En iyi uyum</p>
-              <p className="text-lg font-bold text-slate-950">{bestMatch ? formatPercent(bestMatch.similarityScore) : '—'}</p>
+            <div className="flex flex-col justify-center rounded-3xl bg-white border border-slate-100 px-5 py-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-lg">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">En iyi uyum</p>
+              <p className="text-2xl font-black text-slate-900">{bestMatch ? formatPercent(bestMatch.similarityScore) : '—'}</p>
             </div>
-            <div className="rounded-2xl bg-white border border-slate-100 px-4 py-3 shadow-sm">
-              <p className="text-[11px] font-semibold text-slate-400">Bekleyen</p>
-              <p className="text-lg font-bold text-slate-950">{pendingBuddies.length}</p>
+            <div className="flex flex-col justify-center rounded-3xl bg-white border border-slate-100 px-5 py-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-lg relative">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Bekleyen</p>
+              <p className="text-2xl font-black text-slate-900">{pendingBuddies.length}</p>
+              {pendingBuddies.length > 0 && (
+                <span className="absolute top-4 right-4 flex h-3 w-3 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -1060,21 +1137,21 @@ export function SimilarFamiliesPage() {
 
       {/* Premium Eşleşme Aktiflik Kartı (Status Hub) */}
       {children.length > 0 && (
-        <div className={`p-4 rounded-2xl border transition-all duration-300 ${
+        <div className={`p-5 rounded-3xl border transition-all duration-300 ${
           matchingEnabled
-            ? 'bg-white border-emerald-100 text-slate-900 shadow-sm'
-            : 'bg-amber-50 border-amber-200 text-amber-950 shadow-sm'
+            ? 'bg-gradient-to-r from-emerald-50 to-teal-50/30 border-emerald-200/60 shadow-[0_4px_20px_-4px_rgba(16,185,129,0.1)]'
+            : 'bg-gradient-to-r from-amber-50 to-orange-50/30 border-amber-200/60 shadow-[0_4px_20px_-4px_rgba(245,158,11,0.1)]'
         }`}>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${matchingEnabled ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-100 text-amber-700'}`}>
-                {matchingEnabled ? <Eye size={18} /> : <EyeOff size={18} />}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${matchingEnabled ? 'bg-emerald-100/50 text-emerald-600' : 'bg-amber-100/50 text-amber-600'}`}>
+                {matchingEnabled ? <Eye size={22} /> : <EyeOff size={22} />}
               </div>
               <div>
-                <h4 className="font-semibold text-sm">
+                <h4 className={`font-bold text-base ${matchingEnabled ? 'text-emerald-950' : 'text-amber-950'}`}>
                   {matchingEnabled ? 'Eşleşme görünürlüğü açık' : 'Eşleşme görünürlüğü kapalı'}
                 </h4>
-                <p className="text-xs text-slate-500 leading-relaxed max-w-2xl mt-1">
+                <p className={`text-[13px] leading-relaxed max-w-2xl mt-1 ${matchingEnabled ? 'text-emerald-800' : 'text-amber-800'}`}>
                   {matchingEnabled
                     ? 'Profiliniz benzer aileler tarafından bulunabilir. İstediğiniz zaman görünürlüğü kapatabilirsiniz.'
                     : 'Diğer aileler sizi eşleşme sonuçlarında göremez. Destek ağına katılmak için görünürlüğü açabilirsiniz.'}
@@ -1084,13 +1161,13 @@ export function SimilarFamiliesPage() {
             <button
               onClick={handleToggleOptOut}
               disabled={togglingOptOut}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shrink-0 ${
+              className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold border transition-all cursor-pointer shrink-0 w-full sm:w-auto ${
                 matchingEnabled
-                  ? 'bg-white hover:bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm'
-                  : 'bg-indigo-600 hover:bg-indigo-700 border-transparent text-white shadow-md shadow-indigo-100/50'
+                  ? 'bg-white hover:bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm hover:shadow-md'
+                  : 'bg-indigo-600 hover:bg-indigo-700 border-transparent text-white shadow-md shadow-indigo-100/50 hover:shadow-lg hover:-translate-y-0.5'
               }`}
             >
-              {matchingEnabled ? <EyeOff size={13} /> : <Eye size={13} />}
+              {matchingEnabled ? <EyeOff size={16} /> : <Eye size={16} />}
               {matchingEnabled ? 'Eşleşmeden Gizlen' : 'Eşleşmeyi Aktif Et'}
             </button>
           </div>
@@ -1106,32 +1183,32 @@ export function SimilarFamiliesPage() {
 
       {/* Tab Navigation */}
       {children.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 bg-slate-100 p-1 rounded-2xl">
+        <div className="flex flex-col sm:flex-row gap-2 p-2 bg-slate-100/50 rounded-2xl border border-slate-200/60">
           <button
             onClick={() => setActiveTab('ai-match')}
-            className={`h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'ai-match' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            className={`flex-1 relative flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+              activeTab === 'ai-match' ? 'bg-white shadow-md shadow-slate-200/50 text-indigo-700 ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
             }`}
           >
-            <Sparkles size={16} /> Akıllı Uyum
+            <Sparkles size={18} className={activeTab === 'ai-match' ? 'text-indigo-600' : 'text-slate-400'} /> Akıllı Uyum
           </button>
           <button
             onClick={() => setActiveTab('nearby')}
-            className={`h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'nearby' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            className={`flex-1 relative flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+              activeTab === 'nearby' ? 'bg-white shadow-md shadow-slate-200/50 text-indigo-700 ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
             }`}
           >
-            <MapPin size={16} /> Yakındaki Veliler
+            <MapPin size={18} className={activeTab === 'nearby' ? 'text-indigo-600' : 'text-slate-400'} /> Yakındaki Veliler
           </button>
           <button
             onClick={() => setActiveTab('my-circle')}
-            className={`h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer relative ${
-              activeTab === 'my-circle' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            className={`flex-1 relative flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+              activeTab === 'my-circle' ? 'bg-white shadow-md shadow-slate-200/50 text-indigo-700 ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
             }`}
           >
-            <Handshake size={16} /> Sosyal Çember
+            <Handshake size={18} className={activeTab === 'my-circle' ? 'text-indigo-600' : 'text-slate-400'} /> Sosyal Çember
             {(pendingBuddies.length + incomingMeetupRequests.length) > 0 && (
-              <span className="absolute top-1 right-2 bg-red-500 text-white rounded-full min-w-5 h-5 px-1 text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-600 font-black text-[11px] ring-2 ring-white">
                 {pendingBuddies.length + incomingMeetupRequests.length}
               </span>
             )}
@@ -1162,36 +1239,40 @@ export function SimilarFamiliesPage() {
       {children.length > 0 && activeTab === 'ai-match' && (
         <div className="space-y-6 animate-fadeIn">
           {/* Child selector + search */}
-          <Card className="shadow-xs hover:shadow-sm transition-all duration-300">
+          <Card className="shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 border-slate-100/60 rounded-3xl p-5">
             <div className="flex flex-col sm:flex-row gap-4 items-end">
               <div className="flex-1 w-full">
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Çocuk Profili Seçin</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Çocuk Profili Seçin</label>
                 <div className="relative">
                   <select
                     value={selectedChildId}
                     onChange={e => { const c = children.find(ch => ch.id === e.target.value); if (c) setSelectedChild(c); }}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm appearance-none bg-white font-medium text-slate-700 cursor-pointer shadow-xs"
+                    className="h-12 w-full rounded-xl border pl-4 pr-10 text-sm font-bold text-slate-900 focus:outline-none focus:ring-4 transition-all duration-200 border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 appearance-none cursor-pointer"
                   >
                     {children.map(child => (
                       <option key={child.id} value={child.id}>{child.name}</option>
                     ))}
                   </select>
-                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
               </div>
-              <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
+              <div className="flex gap-3 w-full sm:w-auto shrink-0 justify-end">
                 <button
                   onClick={() => setShowFilters(v => !v)}
-                  className={`flex items-center gap-1.5 px-4 py-3 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
-                    showFilters ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-slate-200 text-slate-650 hover:bg-slate-50'
+                  className={`flex items-center gap-2 h-12 px-5 rounded-xl border text-sm font-bold transition-all cursor-pointer ${
+                    showFilters ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-inner' : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800'
                   }`}
                 >
-                  <SlidersHorizontal size={14} /> Filtreler
+                  <SlidersHorizontal size={16} /> Filtreler
                 </button>
-                <Button onClick={handleSearch} loading={loading} disabled={!selectedChildId || !!hasNoTags} className="shadow-md shadow-indigo-100/50">
-                  <Sparkles size={16} className="mr-2" />
-                  Yenile
-                </Button>
+                <button 
+                  onClick={handleSearch} 
+                  disabled={!selectedChildId || !!hasNoTags || loading} 
+                  className="flex items-center gap-2 h-12 px-6 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition-all cursor-pointer shadow-sm shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Sparkles size={16} />
+                  {loading ? 'Aranıyor...' : 'Yenile'}
+                </button>
               </div>
             </div>
 
@@ -1347,19 +1428,25 @@ export function SimilarFamiliesPage() {
             )}
 
             {hasNoTags && (
-              <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 shadow-inner">
-                <div className="flex items-start gap-2 mb-3">
-                  <span className="text-amber-500 mt-0.5 shrink-0 text-base">⚠</span>
-                  <p className="text-sm text-amber-800">
-                    <strong>{selectedChild?.name}</strong> için henüz semptom veya gelişim etiketleri eklenmemiş.
-                    Benzer aileleri bulabilmek için önce çocuğunuzun profilinde etiket seçmeniz gerekiyor.
-                  </p>
+              <div className="mt-6 p-5 rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50/30 border border-amber-200/60 shadow-sm">
+                <div className="flex items-start gap-4 mb-5">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100/50 text-amber-600">
+                    <span className="text-xl font-bold">⚠</span>
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-amber-950 mb-1">
+                      {selectedChild?.name} için etiket eklenmemiş
+                    </p>
+                    <p className="text-sm text-amber-800 leading-relaxed">
+                      Benzer aileleri bulabilmek için önce çocuğunuzun profilinde semptom veya gelişim etiketleri seçmeniz gerekiyor. Bu sayede yapay zeka en uygun aileleri sizinle eşleştirebilir.
+                    </p>
+                  </div>
                 </div>
                 <button
-                  onClick={() => navigate(`/cocuklarim/${selectedChildId}`, { state: { openTagEditor: true } })}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer shadow-xs"
+                  onClick={() => setShowQuickTagWizard(true)}
+                  className="w-full flex items-center justify-center gap-2 h-12 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-sm font-bold rounded-xl transition-all cursor-pointer shadow-sm shadow-amber-500/20"
                 >
-                  {selectedChild?.name} için etiket ekle →
+                  {selectedChild?.name} için etiket ekle &rarr;
                 </button>
               </div>
             )}
@@ -1402,7 +1489,7 @@ export function SimilarFamiliesPage() {
             </div>
           )}
 
-          {!loading && searched && finalResults.length === 0 && (
+          {!loading && searched && !hasNoTags && finalResults.length === 0 && (
             <EmptyState
               icon={<Users size={32} />}
               title="Uyumlu Aile Bulunamadı"
@@ -2195,6 +2282,21 @@ export function SimilarFamiliesPage() {
         </div>
       )}
 
+      {showQuickTagWizard && selectedChild && (
+        <QuickTagWizard
+          isOpen={showQuickTagWizard}
+          onClose={() => setShowQuickTagWizard(false)}
+          childId={selectedChildId}
+          childName={selectedChild.name}
+          onComplete={async () => {
+            const data = await childService.getAll();
+            setChildren(data);
+            const updated = data.find((c: any) => c.id === selectedChildId);
+            if (updated) setSelectedChild(updated);
+            doSearch(selectedChildId);
+          }}
+        />
+      )}
       <BuddyRequestModal
         draft={requestDraft}
         message={requestMessage}
@@ -2487,7 +2589,13 @@ export function SimilarFamiliesPage() {
                       Güvenli ilk mesaj önerileri
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      {FIRST_MESSAGE_TEMPLATES.map((template) => (
+                      {[
+                        ...(activeChatBuddy.commonTags && activeChatBuddy.commonTags.length > 0 ? [{
+                          label: `Ortak Nokta: ${activeChatBuddy.commonTags[0]}`,
+                          text: `Merhaba, çocuklarımızın ikisinde de "${activeChatBuddy.commonTags[0]}" süreçleri olduğunu gördüm. Bu konuda sizin işinize yarayan veya önerebileceğiniz yaklaşımlar oldu mu? Tanışmak isterim.`
+                        }] : []),
+                        ...FIRST_MESSAGE_TEMPLATES
+                      ].map((template) => (
                         <button
                           key={template.label}
                           type="button"

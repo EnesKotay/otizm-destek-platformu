@@ -154,6 +154,27 @@ public class User {
     @Builder.Default
     private Boolean approximateLocationOnly = true;
 
+    @Column(name = "profile_visible_to_experts")
+    @Builder.Default
+    private Boolean profileVisibleToExperts = true;
+
+    @Column(name = "share_progress_with_experts")
+    @Builder.Default
+    private Boolean shareProgressWithExperts = true;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "notification_preferences", columnDefinition = "jsonb")
+    @Builder.Default
+    private List<String> notificationPreferences = new ArrayList<>(List.of(
+            "notif_messages", "notif_forum", "notif_matching", "notif_calendar",
+            "notif_appointment_request", "notif_patient_connection", "notif_expert_note",
+            "notif_task_assigned", "notif_appt_confirm"
+    ));
+
+    @Column(name = "appointment_reminder_24h")
+    @Builder.Default
+    private Boolean appointmentReminder24h = true;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "communication_preferences", columnDefinition = "jsonb")
     @Builder.Default
@@ -235,6 +256,9 @@ public class User {
     public boolean isAllowFamilyMessages() { return !Boolean.FALSE.equals(allowFamilyMessages); }
     public boolean isHideOnlineStatus() { return Boolean.TRUE.equals(hideOnlineStatus); }
     public boolean isApproximateLocationOnly() { return !Boolean.FALSE.equals(approximateLocationOnly); }
+    public boolean isProfileVisibleToExperts() { return !Boolean.FALSE.equals(profileVisibleToExperts); }
+    public boolean isShareProgressWithExperts() { return !Boolean.FALSE.equals(shareProgressWithExperts); }
+    public boolean isAppointmentReminder24h() { return !Boolean.FALSE.equals(appointmentReminder24h); }
     public boolean isOffersOnline() { return !Boolean.FALSE.equals(offersOnline); }
     public boolean isOffersFaceToFace() { return !Boolean.FALSE.equals(offersFaceToFace); }
 

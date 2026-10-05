@@ -15,13 +15,15 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -29,8 +31,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class CommunityService {
-    // Monday reference point the weekly rotation counts forward from.
-    private static final LocalDate WEEK_ROTATION_ANCHOR = LocalDate.of(2024, 1, 1);
+    private static final String LEGACY_ANONYMOUS_PREFIX = "[ANONYMOUS_META:true]";
+    private static final String LEGACY_HIDE_CITY_PREFIX = "[HIDE_CITY_META:true]";
+    private static final Set<String> ANSWER_TAGS = Set.of("Oyun", "Duyusal", "Rutin", "Eğitim", "Kriz Yönetimi");
+    private static final Set<String> QUESTION_TAGS = Set.of("#oyun", "#duyusal", "#rutin", "#eğitim", "#kriz-yönetimi");
+    private static final ZoneId COMMUNITY_ZONE = ZoneId.of("Europe/Istanbul");
 
     private final WeeklyQuestionRepository weeklyQuestionRepository;
     private final WeeklyAnswerRepository weeklyAnswerRepository;
@@ -43,14 +48,14 @@ public class CommunityService {
 
     @Transactional(readOnly = true)
     public List<WeeklyQuestionDto> getWeeklyQuestions(UUID userId) {
-        List<WeeklyQuestion> pool = weeklyQuestionRepository.findByActiveTrueOrderByCreatedAtDesc();
+        List<WeeklyQuestion> pool = weeklyQuestionRepository.findByActiveTrueOrderByPublishedAtDescSortOrderAsc();
         if (pool.isEmpty()) {
             return List.of();
         }
 
         List<WeeklyQuestionDto> ordered = new ArrayList<>(pool.size());
         for (int offset = 0; offset < pool.size(); offset++) {
-            ordered.add(toWeeklyQuestionDto(pool.get(offset), userId, weekLabelFor(offset)));
+            ordered.add(toWeeklyQuestionDto(pool.get(offset), userId, weekLabelFor(pool.get(offset), offset)));
         }
         return ordered;
     }
@@ -65,6 +70,8 @@ public class CommunityService {
         String prompt = "Otizm spektrumundaki çocukların aileleri ve uzmanlar arasındaki haftalık " +
                 "tartışma paneli için yeni ve son derece destekleyici, empati dolu ve etkileşim artırıcı " +
                 "bir soru ve buna uygun kısa bir hashtag/etiket üret. " +
+                "Ailelerin kendi deneyimlerini anlatabileceği tek bir açık uçlu soru sor. " +
+                "Tanı, tedavi önerisi, kesin başarı vaadi, tıbbi yönlendirme veya yüzdelik iddia üretme. " +
                 "Soru 150 karakteri geçmesin, samimi ve Türkçe olsun. " +
                 "Dönüş formatı sadece şu ham JSON yapısında olsun, başka hiçbir açıklama veya markdown backtick bloğu içermesin: " +
                 "{\"question\": \"çocuklarda uyku geçişlerinde hangi rutini uyguluyorsunuz?\", \"tag\": \"#rutin\"} " +
@@ -101,6 +108,13 @@ public class CommunityService {
             if (tagText == null || tagText.isBlank()) {
                 tagText = "#rutin";
             }
+            questionText = questionText.trim();
+            tagText = tagText.trim().toLowerCase(java.util.Locale.ROOT);
+            String normalizedQuestion = questionText;
+            if (questionText.length() > 150 || !QUESTION_TAGS.contains(tagText) ||
+                    existingQuestions.stream().anyMatch(q -> q.getQuestion().trim().equalsIgnoreCase(normalizedQuestion))) {
+                throw new ValidationException("Üretilen soru tekrar ediyor veya geçerli biçimde değil");
+            }
 
             int maxSortOrder = existingQuestions.stream()
                     .mapToInt(WeeklyQuestion::getSortOrder)
@@ -111,21 +125,67 @@ public class CommunityService {
                     .question(questionText)
                     .tag(tagText)
                     .sortOrder(maxSortOrder + 1)
-                    .active(true)
+                    .active(false)
                     .build();
 
             WeeklyQuestion saved = weeklyQuestionRepository.save(newQuestion);
-            return toWeeklyQuestionDto(saved, null, "Bu Hafta");
+            return toWeeklyQuestionDto(saved, null, "Taslak");
         } catch (Exception e) {
             log.error("Failed to generate AI weekly question", e);
             throw new RuntimeException("Yapay zeka sorusu ayrıştırılamadı: " + e.getMessage());
         }
     }
 
-    @Scheduled(cron = "0 0 0 * * MON")
+    @Transactional(readOnly = true)
+    public WeeklyQuestionDto getLatestWeeklyQuestionDraft() {
+        return weeklyQuestionRepository.findFirstByActiveFalseOrderByCreatedAtDesc()
+                .map(question -> toWeeklyQuestionDto(question, null, "Taslak"))
+                .orElse(null);
+    }
+
+    @Transactional
+    public WeeklyQuestionDto createWeeklyQuestionDraft(WeeklyQuestionDto draft) {
+        String text = requireText(draft.getQuestion(), "Soru zorunludur");
+        if (text.length() > 150) throw new ValidationException("Soru 150 karakteri geçemez");
+        String tag = requireText(draft.getTag(), "Etiket zorunludur").toLowerCase(java.util.Locale.ROOT);
+        if (!QUESTION_TAGS.contains(tag)) throw new ValidationException("Geçersiz soru etiketi");
+        int nextOrder = weeklyQuestionRepository.findAll().stream()
+                .mapToInt(WeeklyQuestion::getSortOrder).max().orElse(0) + 1;
+        WeeklyQuestion question = weeklyQuestionRepository.save(WeeklyQuestion.builder()
+                .question(text).tag(tag).sortOrder(nextOrder).active(false).build());
+        return toWeeklyQuestionDto(question, null, "Taslak");
+    }
+
+    @Transactional
+    public WeeklyQuestionDto publishWeeklyQuestion(UUID questionId, WeeklyQuestionDto draft) {
+        WeeklyQuestion question = weeklyQuestionRepository.findById(questionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Soru taslağı bulunamadı"));
+        if (question.isActive()) throw new ConflictException("Bu soru zaten yayımlandı");
+        String text = requireText(draft.getQuestion(), "Soru zorunludur");
+        if (text.length() > 150) throw new ValidationException("Soru 150 karakteri geçemez");
+        String tag = requireText(draft.getTag(), "Etiket zorunludur").toLowerCase(java.util.Locale.ROOT);
+        if (!QUESTION_TAGS.contains(tag)) throw new ValidationException("Geçersiz soru etiketi");
+        if (weeklyQuestionRepository.findAll().stream()
+                .anyMatch(other -> !other.getId().equals(questionId) && other.getQuestion().trim().equalsIgnoreCase(text))) {
+            throw new ConflictException("Bu soru daha önce yayımlandı");
+        }
+        question.setQuestion(text);
+        question.setTag(tag);
+        question.setActive(true);
+        question.setPublishedAt(LocalDateTime.now(COMMUNITY_ZONE));
+        return toWeeklyQuestionDto(weeklyQuestionRepository.save(question), null, "Bu Hafta");
+    }
+
+    @Scheduled(cron = "0 0 0 * * MON", zone = "Europe/Istanbul")
     public void scheduleWeeklyAiQuestion() {
         log.info("Starting automated AI weekly question generation...");
         try {
+            LocalDate monday = LocalDate.now(COMMUNITY_ZONE).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            if (weeklyQuestionRepository.existsByCreatedAtGreaterThanEqual(monday.atStartOfDay()) ||
+                    weeklyQuestionRepository.existsByPublishedAtGreaterThanEqual(monday.atStartOfDay())) {
+                log.info("A weekly question has already been published this week; skipping generation.");
+                return;
+            }
             generateWeeklyQuestionWithAI();
             log.info("Automated AI weekly question generated successfully.");
         } catch (Exception e) {
@@ -133,16 +193,13 @@ public class CommunityService {
         }
     }
 
-    private int currentRotationIndex(int poolSize) {
-        LocalDate currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        long weeksSinceAnchor = ChronoUnit.WEEKS.between(WEEK_ROTATION_ANCHOR, currentMonday);
-        return Math.floorMod(weeksSinceAnchor, poolSize);
-    }
-
-    private String weekLabelFor(int offset) {
-        if (offset == 0) return "Bu Hafta";
-        if (offset == 1) return "Geçen Hafta";
-        return offset + " Hafta Önce";
+    private String weekLabelFor(WeeklyQuestion question, int offset) {
+        LocalDateTime publishedAt = question.getPublishedAt() != null ? question.getPublishedAt() : question.getCreatedAt();
+        if (publishedAt == null) return offset == 0 ? "Son Yayımlanan" : "Önceki Soru";
+        LocalDate monday = LocalDate.now(COMMUNITY_ZONE).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate published = publishedAt.toLocalDate();
+        if (offset == 0) return published.isBefore(monday) ? "Son Yayımlanan" : "Bu Hafta";
+        return published.isBefore(monday.minusWeeks(1)) ? "Önceki Soru" : "Geçen Hafta";
     }
 
     @Transactional
@@ -158,10 +215,38 @@ public class CommunityService {
             throw new ConflictException("Bu soruya zaten cevap verdiniz");
         }
 
+        String text = requireText(dto.getText(), "Cevap zorunludur");
+        boolean anonymous = dto.isAnonymous();
+        boolean hideCity = dto.isHideCity();
+        if (text.startsWith(LEGACY_ANONYMOUS_PREFIX)) {
+            anonymous = true;
+            text = text.substring(LEGACY_ANONYMOUS_PREFIX.length());
+        }
+        if (text.startsWith(LEGACY_HIDE_CITY_PREFIX)) {
+            hideCity = true;
+            text = text.substring(LEGACY_HIDE_CITY_PREFIX.length());
+        }
+        List<String> tags = dto.getTags();
+        if (text.startsWith("[TAGS:")) {
+            int end = text.indexOf(']');
+            if (end > 6) {
+                tags = List.of(text.substring(6, end).split(","));
+                text = text.substring(end + 1);
+            }
+        }
+        text = requireText(text, "Cevap zorunludur");
+        if (text.length() > 500) throw new ValidationException("Cevap 500 karakteri geçemez");
+        String safeTags = tags == null ? "" : tags.stream()
+                .map(String::trim).filter(ANSWER_TAGS::contains).distinct()
+                .collect(Collectors.joining(","));
+
         WeeklyAnswer answer = WeeklyAnswer.builder()
                 .question(question)
                 .author(author)
-                .text(requireText(dto.getText(), "Cevap zorunludur"))
+                .text(text)
+                .anonymous(anonymous)
+                .hideCity(hideCity)
+                .tags(safeTags)
                 .build();
 
         return toWeeklyAnswerDto(weeklyAnswerRepository.save(answer), userId);
@@ -258,13 +343,36 @@ public class CommunityService {
 
     private WeeklyAnswerDto toWeeklyAnswerDto(WeeklyAnswer answer, UUID userId) {
         User author = answer.getAuthor();
+        String text = answer.getText();
+        boolean anonymous = answer.isAnonymous();
+        boolean hideCity = answer.isHideCity();
+        if (text.startsWith(LEGACY_ANONYMOUS_PREFIX)) {
+            anonymous = true;
+            text = text.substring(LEGACY_ANONYMOUS_PREFIX.length());
+        }
+        if (text.startsWith(LEGACY_HIDE_CITY_PREFIX)) {
+            hideCity = true;
+            text = text.substring(LEGACY_HIDE_CITY_PREFIX.length());
+        }
+        String tags = answer.getTags();
+        if (text.startsWith("[TAGS:")) {
+            int end = text.indexOf(']');
+            if (end > 6) {
+                tags = text.substring(6, end);
+                text = text.substring(end + 1);
+            }
+        }
         return WeeklyAnswerDto.builder()
                 .id(answer.getId())
-                .author(author != null ? author.getFullName() : "Kullanıcı")
-                .city(author != null ? author.getCity() : null)
-                .authorRole(author != null && author.getRole() != null ? author.getRole().name() : null)
-                .expertTitle(author != null ? author.getExpertTitle() : null)
-                .text(answer.getText())
+                .author(anonymous ? "Bir Aile" : author != null ? author.getFullName() : "Kullanıcı")
+                .city(anonymous || hideCity ? null : author != null ? author.getCity() : null)
+                .authorRole(anonymous ? null : author != null && author.getRole() != null ? author.getRole().name() : null)
+                .expertTitle(anonymous ? null : author != null ? author.getExpertTitle() : null)
+                .anonymous(anonymous)
+                .hideCity(hideCity)
+                .own(author != null && userId != null && userId.equals(author.getId()))
+                .tags(tags == null || tags.isBlank() ? List.of() : List.of(tags.split(",")))
+                .text(text)
                 .likes(answer.getLikeCount())
                 .liked(userId != null && weeklyAnswerLikeRepository.existsByAnswerIdAndUserId(answer.getId(), userId))
                 .createdAt(answer.getCreatedAt())

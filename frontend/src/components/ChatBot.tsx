@@ -1413,7 +1413,8 @@ const CHATBOT_STYLES = `
 
 /* === Mobile === */
 @media (max-width: 480px) {
-  .cb-fab { bottom: 80px; right: 16px; }
+  .cb-fab { bottom: 82px; right: 12px; width: 48px; height: 48px; }
+  .cb-fab svg { width: 22px; height: 22px; }
   .cb-window {
     bottom: 0; right: 0; left: 0;
     width: 100vw; max-width: 100vw;

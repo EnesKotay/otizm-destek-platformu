@@ -271,6 +271,15 @@ const PARENT_GUIDE: GuideGroup[] = [
         keywords: ['benzer aileler', 'topluluk', 'aile', 'tanışma', 'akran'],
       },
       {
+        icon: Search,
+        title: 'Çözüm Ara (Yapay Zeka)',
+        to: '/destek-ara',
+        purpose: 'Yapay zeka desteğiyle topluluk deneyimlerini özetler ve tam olarak aradığınız çözümleri hızlı alt-konular ve benzer profillerle filtreler.',
+        useWhen: 'Belirli bir konuda doğrudan işe yarayan çözümleri bulmak ve ailelerin deneyimlerini hızlıca özetlemek istediğinizde.',
+        badge: 'Yeni',
+        keywords: ['arama', 'çözüm', 'yapay zeka', 'ai', 'destek', 'özet', 'benzer profil'],
+      },
+      {
         icon: BookOpen,
         title: 'Bilgi Bankası',
         to: '/bilgi-bankasi',

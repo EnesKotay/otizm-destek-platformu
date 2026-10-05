@@ -40,6 +40,10 @@ export interface User {
   allowFamilyMessages?: boolean;
   hideOnlineStatus?: boolean;
   approximateLocationOnly?: boolean;
+  profileVisibleToExperts?: boolean;
+  shareProgressWithExperts?: boolean;
+  notificationPreferences?: string[];
+  appointmentReminder24h?: boolean;
   communicationPreferences?: string[];
   supportIntents?: string[];
   sessionFeeMin?: number;
@@ -231,6 +235,12 @@ export interface ForumPost {
   likeCount: number;
   commentCount: number;
   privacySettings?: PostPrivacySettings;
+  questionContext?: {
+    childAgeRange?: string;
+    duration?: string;
+    triedMethods?: string;
+    desiredSupport?: string;
+  };
   tags?: Tag[];
   tagIds?: string[];
   likedByMe?: boolean;
@@ -253,6 +263,10 @@ export interface ForumComment {
   anonymous?: boolean;
   expertApproved?: boolean;
   ownedByMe?: boolean;
+  workedCount: number;
+  partialCount: number;
+  notWorkedCount: number;
+  outcomeByMe?: 'WORKED' | 'PARTIAL' | 'NOT_WORKED';
   author: User;
   createdAt: string;
 }
@@ -294,11 +308,16 @@ export interface ApiResponse<T> {
 
 export interface SearchResult {
   id: string;
+  authorId?: string;
   type: 'POST' | 'ARTICLE' | 'GROUP' | 'EXPERT';
   title: string;
   excerpt?: string;
   createdAt?: string;
   rank: number;
+  answered?: boolean;
+  commentCount?: number;
+  expertContribution?: boolean;
+  workedCount?: number;
 }
 
 export interface KnowledgeArticle {

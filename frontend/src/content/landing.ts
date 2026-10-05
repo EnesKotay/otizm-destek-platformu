@@ -124,7 +124,7 @@ export const modules: ToolModule[] = [
 ];
 
 /** Hero altındaki güven satırı — ürün mekaniği değil, kullanıcı kazancı anlatır. */
-export const heroHighlights = ['Ücretsiz aile hesabı', 'Kontrollü paylaşım', 'İstediğiniz zaman veri silme'];
+export const heroHighlights = ['Gerçek aile deneyimleri', 'İstersen anonim soru', 'Kontrollü ve güvenli iletişim'];
 
 export interface HeroStat {
   value: string;

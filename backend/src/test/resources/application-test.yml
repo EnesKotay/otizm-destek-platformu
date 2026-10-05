@@ -16,6 +16,8 @@ spring:
         enabled: false
 
 app:
+  mail:
+    enabled: false
   jwt:
     secret: test-secret-key-for-junit-integration-tests-which-is-long-enough
     access-token-expiration: 900000

@@ -489,6 +489,21 @@ const CORE_CAPTION_TRACKS = {
 
 const TOUR_DEFINITIONS = [
   {
+    id: '25-ai-destekli-cozum-arama', index: 'Video 25', series: 'Aile', role: 'parent',
+    title: 'Çözüm Ara',
+    description: 'Sorunuzu yazın, ilgili kaynakları bulun ve aramanızı adım adım daraltın.',
+    pathLabel: 'Topluluk → Çözüm Ara',
+    outro: 'Bir konuyla başlayın, sonuçları inceleyin ve ihtiyacınıza uygun kaynağa geçin.',
+    chapters: [
+      { route: '/destek-ara', target: { type: 'placeholder', name: 'Örn. Çocuğum konuşmaya ne zaman başladı?' }, title: 'Sorunuzu günlük dilde yazın', body: 'Arama alanına destek aradığınız konuyu yazabilir veya aşağıdaki hazır konulardan birini seçebilirsiniz.' },
+      { route: '/destek-ara', target: { type: 'button', name: 'Konuşma ve iletişim' }, click: true, title: 'Bir konuyla başlayın', body: 'Konuşma ve iletişim konusunu seçerek ilgili kaynakları birlikte görüntüleyelim.' },
+      { route: '/destek-ara', target: { type: 'heading', name: '“Konuşma ve iletişim”' }, title: 'Sonuçları inceleyin', body: 'Sonuç sayısı ve içerik kartları, aradığınız konuyla ilgili kaynakları gösterir.' },
+      { route: '/destek-ara', target: { type: 'button', name: 'Uzman İçerikleri' }, click: true, title: 'İçerik türüne göre filtreleyin', body: 'Uzman İçerikleri sekmesini kullanarak kaynaklara odaklanabilirsiniz.' },
+      { route: '/destek-ara', target: { type: 'text', name: 'Otizmde Dil ve Konuşma Terapisi Süreci' }, title: 'Kaynağın ayrıntılarına ulaşın', body: 'Kartın başlığına veya İçeriğe git bağlantısına basarak yazının tamamını açabilirsiniz.' },
+      { route: '/destek-ara', target: { type: 'heading', name: 'Benzer yollardan geçen aileler' }, title: 'Benzer aileleri keşfedin', body: 'Çocuk profilindeki ilgi ve destek bilgilerini tamamlayarak aile eşleşmelerini inceleyebilirsiniz.' },
+    ],
+  },
+  {
     id: '04-ana-sayfa-ve-navigasyon', index: 'Video 04', series: 'Aile', role: 'parent',
     title: 'Ana Sayfa, Menü ve Hızlı Navigasyon',
     description: 'Bugünün işlerini görün; menü, arama, rehber ve yardım araçlarıyla kaybolmadan ilerleyin.',
@@ -791,9 +806,15 @@ async function writeVttTrack(videoId, cues) {
 }
 
 async function recordGenericTour(tour) {
+  const recordedCues = [];
   const output = await record(tour.id, async (page) => {
+    const recordingStart = Date.now();
     let activeRoute = tour.chapters[0].route;
     await goTo(page, activeRoute);
+    if (tour.id === '25-ai-destekli-cozum-arama') {
+      const cookieNotice = page.getByRole('button', { name: 'Anladım', exact: true });
+      if (await cookieNotice.isVisible()) await cookieNotice.click();
+    }
     await showIntro(page, tour);
     await capturePoster(page, tour.id);
     await hideStage(page);
@@ -806,13 +827,15 @@ async function recordGenericTour(tour) {
       }
       await safePointTo(page, chapter.target, { click: Boolean(chapter.click) });
       if (chapter.click) await sleep(900);
+      const cueStart = (Date.now() - recordingStart) / 1000;
       await caption(page, `${index + 1} / ${tour.chapters.length}`, chapter.title, chapter.body, 3000);
+      recordedCues.push({ start: cueStart, end: cueStart + 3, title: chapter.title, body: chapter.body });
     }
 
     await showOutro(page, tour);
   }, prepareRoleContext(tour.role));
 
-  await writeVttTrack(tour.id, tour.chapters.map((chapter, index) => ({
+  await writeVttTrack(tour.id, tour.id === '25-ai-destekli-cozum-arama' ? recordedCues : tour.chapters.map((chapter, index) => ({
     start: 2.4 + index * 4.55,
     end: 6.5 + index * 4.55,
     title: chapter.title,

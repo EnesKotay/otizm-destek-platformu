@@ -352,15 +352,19 @@ public class KnowledgeArticleService {
     private void validateForPublication(KnowledgeArticle article) {
         String usageType = normalizeMetadata(article.getUsageType(), "ORIGINAL");
         String licenseType = normalizeMetadata(article.getLicenseType(), "UNKNOWN");
-        if (!"ORIGINAL".equals(usageType)) {
+        if ("ORIGINAL".equals(usageType)) {
+            if (!"ORIGINAL".equals(licenseType)) {
+                throw new RuntimeException("Özgün metin yalnızca platforma ait olarak doğrulandığında yayımlanabilir");
+            }
+        } else {
             if (blankToNull(article.getSourceName()) == null || blankToNull(article.getSourceUrl()) == null) {
-                throw new RuntimeException("Özet, çeviri ve uyarlamalarda kaynak adı ile bağlantısı zorunludur");
+                throw new RuntimeException("Özgün olmayan içeriklerde kaynak adı ve bağlantısı zorunludur");
             }
-            if ("UNKNOWN".equals(licenseType)) {
-                throw new RuntimeException("Kaynak lisansı doğrulanmadan içerik yayımlanamaz");
-            }
-            if ("TRANSLATION".equals(usageType) && ("CC_BY_ND".equals(licenseType) || "RIGHTS_RESERVED".equals(licenseType))) {
-                throw new RuntimeException("Bu lisans çeviri/uyarlama yayınına izin vermiyor");
+            // Bağımsız bir özet bile kaynak metnin kopyası veya çevirisi olabilir.
+            // Bu yüzden kapalı, belirsiz, ticari kullanım kısıtlı ve türev yasaklı
+            // lisanslar otomatik yayın izni olarak kabul edilmez.
+            if (!Set.of("PUBLIC_DOMAIN", "CC_BY", "CC_BY_SA").contains(licenseType)) {
+                throw new RuntimeException("Bu kaynak lisansı yeniden yayımlama için doğrulanmadı; özgün metin yazın veya açık lisanslı kaynak kullanın");
             }
         }
         if (article.getSourceUrl() != null && article.getSourceAccessedAt() == null) {

@@ -46,9 +46,27 @@ public class AdminController {
     @PostMapping("/weekly-questions/generate-ai")
     public ResponseEntity<ApiResponse<WeeklyQuestionDto>> generateWeeklyQuestionWithAI() {
         return ResponseEntity.ok(ApiResponse.success(
-                "Yapay zeka haftanın sorusunu başarıyla üretti",
+                "Yapay zeka soru taslağını üretti",
                 communityService.generateWeeklyQuestionWithAI()
         ));
+    }
+
+    @GetMapping("/weekly-questions/draft")
+    public ResponseEntity<ApiResponse<WeeklyQuestionDto>> getWeeklyQuestionDraft() {
+        return ResponseEntity.ok(ApiResponse.success(communityService.getLatestWeeklyQuestionDraft()));
+    }
+
+    @PostMapping("/weekly-questions/draft")
+    public ResponseEntity<ApiResponse<WeeklyQuestionDto>> createWeeklyQuestionDraft(@RequestBody WeeklyQuestionDto draft) {
+        return ResponseEntity.ok(ApiResponse.success("Soru taslağı kaydedildi",
+                communityService.createWeeklyQuestionDraft(draft)));
+    }
+
+    @PostMapping("/weekly-questions/{questionId}/publish")
+    public ResponseEntity<ApiResponse<WeeklyQuestionDto>> publishWeeklyQuestion(
+            @PathVariable UUID questionId, @RequestBody WeeklyQuestionDto draft) {
+        return ResponseEntity.ok(ApiResponse.success("Haftalık soru yayımlandı",
+                communityService.publishWeeklyQuestion(questionId, draft)));
     }
 
     @GetMapping("/stats")

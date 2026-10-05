@@ -12,6 +12,7 @@ import com.autismsupport.platform.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import com.autismsupport.platform.dto.SimilarFamilyDto;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -27,6 +28,8 @@ public class ChildService {
     private final TagService tagService;
     private final PatientAccessService patientAccessService;
     private final ClinicalDataShareService clinicalDataShareService;
+    private final org.springframework.beans.factory.ObjectProvider<MatchingService> matchingServiceProvider;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public List<ChildDto> getChildrenByParent(UUID parentId) {
@@ -70,6 +73,27 @@ public class ChildService {
         }
 
         child = childRepository.save(child);
+
+        try {
+            if (parent.isMatchingEnabled()) {
+                MatchingService matchingService = matchingServiceProvider.getIfAvailable();
+                if (matchingService != null) {
+                    List<SimilarFamilyDto> matches = matchingService.findSimilarFamilies(child.getId(), parent.getId(), 10, "all", "score");
+                    for (SimilarFamilyDto match : matches) {
+                        notificationService.createNotification(
+                                match.getParentId(),
+                                "BUDDY_REQUEST",
+                                "Sizinle benzer bir aile platforma katıldı",
+                                "Ortak deneyimleriniz olabilecek yeni bir aile platforma kayıt oldu. Tanışmak ister misiniz?",
+                                "/benzer-aileler"
+                        );
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Yeni aile bildirimi gönderilirken hata oluştu: ", e);
+        }
+
         return toDto(child);
     }
 

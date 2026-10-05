@@ -16,6 +16,10 @@ interface UpdateProfileData {
   allowFamilyMessages?: boolean;
   hideOnlineStatus?: boolean;
   approximateLocationOnly?: boolean;
+  profileVisibleToExperts?: boolean;
+  shareProgressWithExperts?: boolean;
+  notificationPreferences?: string[];
+  appointmentReminder24h?: boolean;
   communicationPreferences?: string[];
   supportIntents?: string[];
 }

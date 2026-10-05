@@ -32,6 +32,17 @@ public class WeeklyAnswer {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String text;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean anonymous = false;
+
+    @Column(name = "hide_city", nullable = false)
+    @Builder.Default
+    private boolean hideCity = false;
+
+    @Column(length = 255)
+    private String tags;
+
     @Column(name = "like_count", nullable = false)
     @Builder.Default
     private int likeCount = 0;

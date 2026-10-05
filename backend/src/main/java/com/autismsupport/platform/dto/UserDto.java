@@ -53,6 +53,10 @@ public class UserDto {
     private boolean allowFamilyMessages;
     private boolean hideOnlineStatus;
     private boolean approximateLocationOnly;
+    private boolean profileVisibleToExperts;
+    private boolean shareProgressWithExperts;
+    private List<String> notificationPreferences;
+    private boolean appointmentReminder24h;
     private List<String> communicationPreferences;
     private List<String> supportIntents;
     private java.math.BigDecimal sessionFeeMin;

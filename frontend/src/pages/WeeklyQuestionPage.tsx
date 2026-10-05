@@ -11,10 +11,8 @@ import {
   Award, 
   Users, 
   MapPin, 
-  Sparkles, 
-  Clock, 
   EyeOff, 
-  TrendingUp, 
+  TrendingUp,
   CheckCircle2, 
   Info 
 } from 'lucide-react';
@@ -24,27 +22,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { communityService, type WeeklyAnswer, type WeeklyQuestion } from '@/services/communityService';
 import { toast } from '@/store/toastStore';
 import { useAuthStore } from '@/store/authStore';
-
-const EXPERT_ADVICE: Record<string, { author: string; title: string; text: string; avatar: string }> = {
-  '#günlük': {
-    author: 'Dr. Enes Can Kotay',
-    title: 'Çocuk Psikiyatristi',
-    text: 'Duyusal ve motor becerileri destekleyen oyunlarda çocuğun liderliğini takip edin. Eğer yapbozu ters yerleştiriyorsa düzeltmeyin, önce onun oyun dünyasına dahil olun. Ortak dikkat geliştirmek için harika bir fırsattır.',
-    avatar: 'E'
-  },
-  '#okul': {
-    author: 'Uzm. Özel Eğitimci Yasin Gülşen',
-    title: 'Özel Eğitim Uzmanı',
-    text: 'Okul ve terapi geçişlerinde görsel çizelgeler kaygıyı %80 azaltır. Rutinin her adımını resimli kartlarla takip etmek, çocuğun ne zaman ne olacağını öngörmesini sağlayarak öfke nöbetlerini engeller.',
-    avatar: 'Y'
-  },
-  '#duyusal': {
-    author: 'Dr. Enes Can Kotay',
-    title: 'Çocuk Psikiyatristi',
-    text: 'Duyusal bunalma sırasında derin basınç uygulaması (ağır battaniye, sıkı sarılma) sinir sistemini yatıştırır. Bu hassas anlarda sözel yönergeleri minimumda tutun ve sakin bir ses tonu kullanın.',
-    avatar: 'E'
-  }
-};
 
 const AVAILABLE_TAGS = ['Oyun', 'Duyusal', 'Rutin', 'Eğitim', 'Kriz Yönetimi'];
 const CHAR_LIMIT = 500;
@@ -56,25 +33,30 @@ const TABS = [
   { id: 'local', label: 'Şehrimden', icon: MapPin },
 ] as const;
 
-// Metadata parse helper
-const parseAnswerText = (rawText: string) => {
-  let text = rawText;
-  let isAnonymous = false;
-  let tags: string[] = [];
-
-  if (text.startsWith('[ANONYMOUS_META:true]')) {
-    isAnonymous = true;
-    text = text.replace('[ANONYMOUS_META:true]', '');
+function presentAnswer(answer: WeeklyAnswer, privacySupported: boolean) {
+  let text = answer.text;
+  const legacyAnonymous = text.startsWith('[ANONYMOUS_META:true]');
+  if (legacyAnonymous) text = text.slice('[ANONYMOUS_META:true]'.length);
+  if (text.startsWith('[HIDE_CITY_META:true]')) text = text.slice('[HIDE_CITY_META:true]'.length);
+  let legacyTags: string[] = [];
+  const match = /^\[TAGS:([^\]]*)\]/.exec(text);
+  if (match) {
+    legacyTags = match[1].split(',').filter(Boolean);
+    text = text.slice(match[0].length);
   }
-
-  const tagsMatch = text.match(/^\[TAGS:(.*?)\]/);
-  if (tagsMatch) {
-    tags = tagsMatch[1].split(',').filter(Boolean);
-    text = text.replace(/^\[TAGS:(.*?)\]/, '');
-  }
-
-  return { text, isAnonymous, tags };
-};
+  const anonymous = Boolean(answer.anonymous || legacyAnonymous);
+  return {
+    ...answer,
+    author: anonymous ? 'Bir Aile' : answer.author,
+    authorRole: anonymous ? undefined : answer.authorRole,
+    expertTitle: anonymous ? undefined : answer.expertTitle,
+    city: anonymous || !privacySupported ? undefined : answer.city,
+    displayText: text,
+    isAnonymous: anonymous,
+    tags: answer.tags ?? legacyTags,
+    isExpert: !anonymous && answer.authorRole === 'EXPERT',
+  };
+}
 
 export function WeeklyQuestionPage() {
   const { user } = useAuthStore();
@@ -88,6 +70,9 @@ export function WeeklyQuestionPage() {
   const [hideLocation, setHideLocation] = useState(false);
   
   const [loading, setLoading] = useState(true);
+  const [privacySupported, setPrivacySupported] = useState<boolean | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [likingIds, setLikingIds] = useState<Set<string>>(new Set());
   const [poppingAnswerId, setPoppingAnswerId] = useState<string | null>(null);
@@ -96,16 +81,23 @@ export function WeeklyQuestionPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    let current = true;
+    communityService.supportsWeeklyAnswerPrivacy()
+      .then(supported => { if (current) setPrivacySupported(supported); })
+      .catch(() => { if (current) setPrivacySupported(false); });
     communityService.getWeeklyQuestions()
       .then(data => {
+        if (!current) return;
+        setLoadError(false);
         setQuestions(data);
         if (data[0]) {
           setExpandedIds(new Set([data[0].id]));
         }
       })
-      .catch(err => toast.error(err instanceof Error ? err.message : 'Haftanın soruları yüklenemedi.'))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => { if (current) setLoadError(true); })
+      .finally(() => { if (current) setLoading(false); });
+    return () => { current = false; };
+  }, [reloadKey]);
 
   const currentQuestion = questions[0];
   const pastQuestions = questions.slice(1);
@@ -158,16 +150,12 @@ export function WeeklyQuestionPage() {
     if (!answerText.trim() || !currentQuestion) return;
     setSubmitting(true);
     try {
-      let rawText = '';
-      if (isAnonymous) {
-        rawText += '[ANONYMOUS_META:true]';
-      }
-      if (selectedTags.length > 0) {
-        rawText += `[TAGS:${selectedTags.join(',')}]`;
-      }
-      rawText += answerText.trim();
-
-      const answer = await communityService.createWeeklyAnswer(currentQuestion.id, rawText);
+      const answer = await communityService.createWeeklyAnswer(currentQuestion.id, {
+        text: answerText.trim(),
+        anonymous: isAnonymous,
+        hideCity: hideLocation,
+        tags: selectedTags,
+      });
       updateAnswer(currentQuestion.id, answer);
       setAnswerText('');
       setSelectedTags([]);
@@ -189,6 +177,14 @@ export function WeeklyQuestionPage() {
     );
   }
 
+  if (loadError) {
+    return <div role="alert" className="mx-auto max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-6 text-slate-900">
+      <h1 className="text-lg font-bold">Haftanın sorusu yüklenemedi</h1>
+      <p className="mt-2 text-sm">Bağlantınızı kontrol edip tekrar deneyin.</p>
+      <Button className="mt-4" onClick={() => { setLoading(true); setReloadKey(value => value + 1); }}>Tekrar dene</Button>
+    </div>;
+  }
+
   if (!currentQuestion) {
     return (
       <EmptyState
@@ -200,23 +196,14 @@ export function WeeklyQuestionPage() {
   }
 
   // Parse and filter current answers
-  const filteredAnswers = (currentQuestion.answers || []).map(answer => {
-    const parsed = parseAnswerText(answer.text);
-    const isExpertUser = answer.authorRole === 'EXPERT' || answer.author.includes('Uzm.') || answer.author.includes('Dr.');
-    return {
-      ...answer,
-      displayText: parsed.text,
-      isAnonymous: parsed.isAnonymous,
-      tags: parsed.tags,
-      isExpert: isExpertUser
-    };
-  }).filter(answer => {
+  const currentAnswers = (currentQuestion.answers || []).map(answer => presentAnswer(answer, privacySupported === true));
+  const filteredAnswers = currentAnswers.filter(answer => {
     // Search query check
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       const matchesText = answer.displayText.toLowerCase().includes(query);
       const matchesAuthor = answer.isAnonymous ? false : answer.author.toLowerCase().includes(query);
-      const matchesCity = (answer.isAnonymous || hideLocation) ? false : (answer.city?.toLowerCase().includes(query) || false);
+      const matchesCity = answer.city?.toLowerCase().includes(query) || false;
       const matchesTitle = answer.expertTitle?.toLowerCase().includes(query) || false;
       if (!matchesText && !matchesAuthor && !matchesCity && !matchesTitle) {
         return false;
@@ -228,8 +215,7 @@ export function WeeklyQuestionPage() {
       return answer.isExpert;
     }
     if (activeTab === 'local') {
-      if (answer.isAnonymous) return false;
-      return userCity ? answer.city?.toLowerCase() === userCity.toLowerCase() : true;
+      return userCity ? answer.city?.toLocaleLowerCase('tr-TR') === userCity.toLocaleLowerCase('tr-TR') : true;
     }
     return true;
   });
@@ -240,9 +226,9 @@ export function WeeklyQuestionPage() {
   }
 
   // Dashboard Stats
-  const totalAnswersCount = questions.reduce((acc, q) => acc + (q.answers?.length || 0), 0);
-  const totalLikesCount = questions.reduce((acc, q) => acc + (q.answers?.reduce((sum, a) => sum + a.likes, 0) || 0), 0);
-  const activeExpertAdvice = currentQuestion.tag ? EXPERT_ADVICE[currentQuestion.tag] : null;
+  const currentAnswerCount = currentQuestion.answers?.length ?? 0;
+  const currentLikeCount = currentQuestion.answers?.reduce((sum, answer) => sum + answer.likes, 0) ?? 0;
+  const hasAnswered = currentQuestion.answers?.some(answer => answer.own) ?? false;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
@@ -295,15 +281,15 @@ export function WeeklyQuestionPage() {
                 <div className="mt-5 grid grid-cols-3 gap-3 border-t border-white/10 pt-4 text-xs text-sky-100">
                   <div className="flex items-center justify-center gap-1.5 bg-white/10 border border-white/5 rounded-xl px-2.5 py-1.5 backdrop-blur-sm shadow-sm">
                     <Users size={14} className="text-sky-200" />
-                    <span className="font-semibold">{currentQuestion.answers?.length || 0} Aile</span>
+                    <span className="font-semibold">{currentAnswerCount} Yanıt</span>
                   </div>
                   <div className="flex items-center justify-center gap-1.5 bg-white/10 border border-white/5 rounded-xl px-2.5 py-1.5 backdrop-blur-sm shadow-sm">
                     <Award size={14} className="text-yellow-300" />
-                    <span className="font-semibold">{currentQuestion.answers?.filter(a => a.authorRole === 'EXPERT' || a.author.includes('Uzm.') || a.author.includes('Dr.')).length || 0} Uzman</span>
+                    <span className="font-semibold">{currentAnswers.filter(answer => answer.isExpert).length} Uzman</span>
                   </div>
                   <div className="flex items-center justify-center gap-1.5 bg-white/10 border border-white/5 rounded-xl px-2.5 py-1.5 backdrop-blur-sm shadow-sm">
                     <Heart size={14} className="text-rose-300" />
-                    <span className="font-semibold">{currentQuestion.answers?.reduce((acc, a) => acc + a.likes, 0) || 0} Beğeni</span>
+                    <span className="font-semibold">{currentLikeCount} Beğeni</span>
                   </div>
                 </div>
               </div>
@@ -311,10 +297,24 @@ export function WeeklyQuestionPage() {
 
             {/* Answer Box */}
             <div className="bg-white p-5 border-b border-gray-100 space-y-4">
+              {privacySupported === null ? (
+                <p role="status" className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  Paylaşım ayarları denetleniyor…
+                </p>
+              ) : !privacySupported ? (
+                <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  Güvenli paylaşım için sunucu güncellemesi bekleniyor. Önceki yanıtları incelemeye devam edebilirsiniz.
+                </p>
+              ) : hasAnswered ? (
+                <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                  Bu haftanın sorusunu yanıtladınız. Yanıtınızı aşağıda görebilirsiniz.
+                </p>
+              ) : <>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Siz ne yapıyorsunuz?</label>
+                <label htmlFor="weekly-answer" className="block text-sm font-bold text-gray-700 mb-2">Siz ne yapıyorsunuz?</label>
                 <div className="relative">
                   <textarea
+                    id="weekly-answer"
                     rows={3}
                     value={answerText}
                     maxLength={CHAR_LIMIT}
@@ -345,6 +345,7 @@ export function WeeklyQuestionPage() {
                             prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
                           );
                         }}
+                        aria-pressed={isSelected}
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                           isSelected 
                             ? 'bg-sky-50 border-sky-200 text-sky-700 shadow-sm' 
@@ -369,7 +370,7 @@ export function WeeklyQuestionPage() {
                       className="rounded border-slate-300 text-sky-600 focus:ring-sky-500" 
                     />
                     <EyeOff size={14} className="shrink-0" />
-                    Anonim olarak paylaş
+                    Adımı gizle
                   </label>
 
                   <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-700 transition-colors select-none">
@@ -384,11 +385,14 @@ export function WeeklyQuestionPage() {
                   </label>
                 </div>
 
+                <p className="w-full text-xs text-slate-500">Bu seçimler yayımlanan cevapta da korunur. Kişisel veya tıbbi bilgi paylaşmayın.</p>
+
                 <Button onClick={handleSubmit} disabled={!answerText.trim() || submitting} loading={submitting}>
                   <Send size={15} className="mr-2" />
                   Cevabı Paylaş
                 </Button>
               </div>
+              </>}
             </div>
 
             {/* Filter and Search Bar */}
@@ -401,12 +405,14 @@ export function WeeklyQuestionPage() {
                     
                     return (
                       <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                          isActive 
-                            ? 'bg-white text-sky-600 shadow-sm border border-slate-200/60' 
-                            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      aria-pressed={isActive}
+                      disabled={tab.id === 'local' && privacySupported !== true}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        isActive 
+                          ? 'bg-white text-sky-600 shadow-sm border border-slate-200/60' 
+                          : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50'
                         }`}
                       >
                         <IconComponent size={13} />
@@ -423,6 +429,7 @@ export function WeeklyQuestionPage() {
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Cevaplarda ara..."
+                    aria-label="Cevaplarda ara"
                     className="w-full pl-9 pr-4 py-1.5 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-300 transition-all"
                   />
                 </div>
@@ -446,12 +453,14 @@ export function WeeklyQuestionPage() {
               {filteredAnswers.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 space-y-2">
                   <MessageSquare className="mx-auto text-slate-300" size={24} />
-                  <p className="text-sm font-medium">Aradığınız kriterde cevap bulunamadı.</p>
-                  <p className="text-xs">İlk cevabı siz yazarak topluluğa rehberlik edebilirsiniz.</p>
+                  <p className="text-sm font-medium">{currentAnswerCount === 0 ? 'Henüz cevap yok.' : 'Bu filtreye uygun cevap yok.'}</p>
+                  <p className="text-xs">{currentAnswerCount === 0
+                    ? privacySupported ? 'İlk deneyimi siz paylaşabilirsiniz.' : 'Paylaşım, sunucu güncellemesinden sonra açılacak.'
+                    : 'Başka bir filtre veya arama deneyin.'}</p>
                 </div>
               ) : (
                 filteredAnswers.map(answer => {
-                  const isCurrentUser = answer.author === 'Siz' || answer.author === user?.fullName;
+                  const isCurrentUser = Boolean(answer.own);
                   return (
                     <div 
                       key={answer.id} 
@@ -506,7 +515,7 @@ export function WeeklyQuestionPage() {
                               </span>
                             )}
 
-                            {!answer.isAnonymous && !hideLocation && answer.city && (
+                            {answer.city && (
                               <span className="inline-flex items-center gap-0.5 text-xs text-slate-400 font-semibold">
                                 <MapPin size={10} />
                                 {answer.city}
@@ -562,100 +571,10 @@ export function WeeklyQuestionPage() {
         {/* Right Column: Information & Sidebars */}
         <div className="space-y-6">
           
-          {/* Expert tip widget */}
-          {/* Expert tip widget */}
-          {activeExpertAdvice && (
-            <div className="bg-gradient-to-br from-amber-50/40 via-white to-amber-50/10 rounded-2xl border border-amber-100 shadow-sm overflow-hidden p-5 space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-amber-100/60">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
-                  <Award size={15} />
-                </div>
-                <h3 className="text-xs font-black text-amber-900 uppercase tracking-wider">Haftanın Uzman Tavsiyesi</h3>
-              </div>
-              
-              <div className="space-y-3">
-                <p className="text-xs text-amber-800 font-semibold italic leading-relaxed">
-                  "{activeExpertAdvice.text}"
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Topluluk İstatistikleri */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-sky-400 to-sky-600" />
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-50 text-sky-600 border border-sky-100 shadow-sm">
-                <TrendingUp size={15} />
-              </div>
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Topluluk Katılımı</h3>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100">
-                <span className="block text-[10px] font-bold text-slate-400 uppercase">Toplam Katılım</span>
-                <span className="text-lg font-extrabold text-slate-800">{totalAnswersCount} Yanıt</span>
-              </div>
-              <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100">
-                <span className="block text-[10px] font-bold text-slate-400 uppercase">Faydalı Fikirler</span>
-                <span className="text-lg font-extrabold text-slate-800">{totalLikesCount} Kalp</span>
-              </div>
-            </div>
-
-            <div className="space-y-2.5 text-xs">
-              <div className="flex justify-between items-center text-slate-600 py-1 border-b border-slate-50">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <Users size={12} className="text-slate-400" /> Aktif Aileler
-                </span>
-                <span className="font-bold text-slate-800">24 Aile</span>
-              </div>
-              <div className="flex justify-between items-center text-slate-600 py-1 border-b border-slate-50">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <MapPin size={12} className="text-slate-400" /> En Aktif Şehir
-                </span>
-                <span className="font-bold text-slate-800">İstanbul</span>
-              </div>
-              <div className="flex justify-between items-center text-slate-600 py-1">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <Sparkles size={12} className="text-slate-400" /> Öne Çıkan Etiket
-                </span>
-                <span className="font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full text-[10px]">#Oyun</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Countdown & Upcoming Topic */}
-          <div className="bg-gradient-to-tr from-slate-900 to-slate-800 text-white rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 -mr-8 -mt-8 w-24 h-24 rounded-full bg-sky-500/10 blur-xl pointer-events-none" />
-            
-            <div className="flex items-center gap-2 pb-3 border-b border-white/10">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-sky-400 border border-white/5 shadow-sm">
-                <Clock size={14} />
-              </div>
-              <h3 className="text-xs font-black text-white uppercase tracking-wider">Yeni Soruya Kalan Süre</h3>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex gap-2 text-center">
-                <div className="flex-1 bg-white/5 rounded-xl p-2 border border-white/5">
-                  <span className="block text-lg font-black text-sky-400">03</span>
-                  <span className="text-[9px] text-slate-400 uppercase font-semibold">Gün</span>
-                </div>
-                <div className="flex-1 bg-white/5 rounded-xl p-2 border border-white/5">
-                  <span className="block text-lg font-black text-sky-400">12</span>
-                  <span className="text-[9px] text-slate-400 uppercase font-semibold">Saat</span>
-                </div>
-                <div className="flex-1 bg-white/5 rounded-xl p-2 border border-white/5">
-                  <span className="block text-lg font-black text-sky-400">45</span>
-                  <span className="text-[9px] text-slate-400 uppercase font-semibold">Dakika</span>
-                </div>
-              </div>
-
-              <div className="bg-white/5 rounded-xl p-3 border border-white/5 space-y-1">
-                <span className="block text-[10px] font-bold text-sky-400 uppercase">Gelecek Haftanın Konusu</span>
-                <p className="text-xs font-bold text-slate-200">Çocuklarda Akran Etkileşimi ve Sosyalleşme</p>
-              </div>
-            </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-2">
+            <h3 className="text-sm font-bold text-slate-900">Her hafta konu nasıl belirlenir?</h3>
+            <p className="text-xs leading-5 text-slate-600">Her Pazartesi ailelerin günlük deneyimlerini paylaşabileceği yeni bir soru yayımlanması planlanır. Yönetici gerektiğinde soruyu yenileyebilir.</p>
+            <p className="text-xs leading-5 text-slate-500">Sıradaki konu kesinleşmeden tahmini başlık veya geri sayım gösterilmez. Önceki soruları aşağıda bulabilirsiniz.</p>
           </div>
         </div>
       </div>
@@ -669,22 +588,14 @@ export function WeeklyQuestionPage() {
           </h2>
           {pastQuestions.map(q => {
             const isExpanded = expandedIds.has(q.id);
-            const parsedAnswers = (q.answers || []).map(a => {
-              const parsed = parseAnswerText(a.text);
-              const isExpertUser = a.authorRole === 'EXPERT' || a.author.includes('Uzm.') || a.author.includes('Dr.');
-              return {
-                ...a,
-                displayText: parsed.text,
-                isAnonymous: parsed.isAnonymous,
-                isExpert: isExpertUser
-              };
-            });
+            const parsedAnswers = (q.answers || []).map(answer => presentAnswer(answer, privacySupported === true));
             const topAnswer = [...parsedAnswers].sort((a, b) => b.likes - a.likes)[0];
 
             return (
               <div key={q.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-200 hover:border-gray-200">
                 <button
                   onClick={() => toggleExpand(q.id)}
+                  aria-expanded={isExpanded}
                   className="w-full flex items-start justify-between gap-3 p-5 text-left cursor-pointer hover:bg-gray-50/50 transition-colors"
                 >
                   <div className="flex-1 min-w-0">
@@ -729,7 +640,7 @@ export function WeeklyQuestionPage() {
                           {answer.isExpert && (
                             <span className="text-[9px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full">Uzman Görüşü</span>
                           )}
-                          {!answer.isAnonymous && answer.city && (
+                          {answer.city && (
                             <span className="text-xs text-slate-400 flex items-center gap-0.5 font-semibold">
                               <MapPin size={10} />
                               {answer.city}

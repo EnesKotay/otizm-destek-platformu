@@ -100,6 +100,19 @@ class SharedProgressServiceTest {
     }
 
     @Test
+    @DisplayName("verifySharedProgressAccess: ebeveyn gelişim paylaşımını kapattığında uzman erişemez")
+    void verifySharedProgressAccess_parentDisabledSharing_throwsAccessDenied() {
+        parent.setShareProgressWithExperts(false);
+        when(childRepository.findById(childId)).thenReturn(Optional.of(child));
+
+        assertThatThrownBy(() -> sharedProgressService.verifySharedProgressAccess(childId, expertId))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("paylaşımını kapattı");
+
+        verify(shareRepository, never()).findActiveShare(any(), any());
+    }
+
+    @Test
     @DisplayName("verifySharedProgressAccess: süresi dolmuş paylaşımı olan uzman erişemez")
     void verifySharedProgressAccess_expertWithExpiredShare_throwsAccessDenied() {
         when(childRepository.findById(childId)).thenReturn(Optional.of(child));

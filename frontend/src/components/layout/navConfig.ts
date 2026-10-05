@@ -12,6 +12,7 @@ import {
   Home,
   Library,
   MessageCircle,
+  Search,
   Settings,
   ShieldAlert,
   TrendingUp,
@@ -68,6 +69,7 @@ export const NAV_GROUPS: Record<NavRole, NavGroupConfig[]> = {
       label: 'Topluluk',
       defaultOpen: true,
       items: [
+        { to: '/destek-ara', icon: Search, label: 'Çözüm Ara', mobileLabel: 'Destek', description: 'Sorununu yaz; aile deneyimlerini ve kaynakları bul', keywords: ['sorun', 'çözüm', 'deneyim', 'tavsiye', 'aile'], mobile: true, simple: true },
         { to: '/topluluk', icon: Users, label: 'Topluluk Merkezi', description: 'Aileler, gruplar, buluşmalar ve paylaşımlar tek yerde', keywords: ['aile', 'topluluk', 'merkez'], mobile: true, simple: true },
         { to: '/bilgi-bankasi', icon: Library, label: 'Bilgi Bankası', description: 'Makaleler, rehberler ve kaynaklar', keywords: ['makale', 'rehber', 'bilgi', 'kaynak'] },
       ],
@@ -179,9 +181,12 @@ export function getMobileNavItems(role?: string, hasChild = true) {
     .flatMap((group) => group.items)
     .filter((item) => item.mobile && (hasChild || !item.requiresChild));
   if (!role || role === 'PARENT') {
-    const community = items.find(item => item.to === '/topluluk');
-    const essentials = items.filter(item => item.to !== '/topluluk').slice(0, 4);
-    return community ? [...essentials, community] : essentials;
+    const preferredPaths = hasChild
+      ? ['/anasayfa', '/gunluk-takip', '/destek-ara', '/mesajlar']
+      : ['/anasayfa', '/destek-ara', '/mesajlar', '/topluluk'];
+    return preferredPaths
+      .map((path) => items.find((item) => item.to === path))
+      .filter((item): item is NavItemConfig => Boolean(item));
   }
   return items.slice(0, 4);
 }

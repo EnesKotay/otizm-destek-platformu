@@ -1,8 +1,20 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import { formatDate, formatDateTime, formatTime } from '@/utils/date';
+import { formatDate, formatDateTime, formatLocalDate, formatTime } from '@/utils/date';
+
+declare const process: { env: { TZ?: string } };
 
 describe('date utils', () => {
+  it('formatLocalDate: UTC gece sınırında yerel takvim gününü kullanır', () => {
+    const previousTimezone = process.env.TZ;
+    process.env.TZ = 'Europe/Istanbul';
+    try {
+      expect(formatLocalDate(new Date('2026-10-04T22:30:00Z'))).toBe('2026-10-05');
+    } finally {
+      if (previousTimezone === undefined) delete process.env.TZ;
+      else process.env.TZ = previousTimezone;
+    }
+  });
   it('formatDate: ISO tarihini Türkçe biçime çevirir', () => {
     expect(formatDate('2026-06-03T10:00:00')).toBe('3 Haziran 2026');
   });

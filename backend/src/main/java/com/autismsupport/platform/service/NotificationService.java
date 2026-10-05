@@ -43,7 +43,10 @@ public class NotificationService {
             "APPOINTMENT_CANCELLED",
             "APPOINTMENT_UPDATED",
             "EXPERT_APPROVAL",
-            "BUDDY_REQUEST"
+            "BUDDY_REQUEST",
+            "COMMENT",
+            "ANSWER_ACCEPTED",
+            "SOLUTION_FEEDBACK"
     );
 
     @Value("${app.mail.notify-on-appointment:true}")
@@ -65,6 +68,10 @@ public class NotificationService {
     public void createNotification(UUID userId, String type, String title, String body, String link, UUID appointmentId) {
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) return;
+        if (!isNotificationEnabled(user, type)) {
+            log.debug("Bildirim kullanıcı tercihi nedeniyle atlandı (userId={}, tip={})", userId, type);
+            return;
+        }
 
         // 1. Veritabanına kaydet
         Notification notification = Notification.builder()
@@ -117,16 +124,18 @@ public class NotificationService {
         String upperType = type != null ? type.toUpperCase() : "";
 
         // Randevu bildirimleri
-        if (notifyOnAppointment && upperType.startsWith("APPOINTMENT")) {
-            emailService.sendNotificationEmail(
-                    user.getEmail(),
-                    user.getFullName(),
-                    type,
-                    title,
-                    body,
-                    link
-            );
-            log.info("Randevu e-posta bildirimi gönderildi (userId={}, tip={})", user.getId(), type);
+        if (upperType.startsWith("APPOINTMENT")) {
+            if (notifyOnAppointment) {
+                emailService.sendNotificationEmail(
+                        user.getEmail(),
+                        user.getFullName(),
+                        type,
+                        title,
+                        body,
+                        link
+                );
+                log.info("Randevu e-posta bildirimi gönderildi (userId={}, tip={})", user.getId(), type);
+            }
             return;
         }
 
@@ -222,6 +231,24 @@ public class NotificationService {
     private boolean isAppointmentNotification(String type, String link) {
         return (type != null && type.startsWith("APPOINTMENT"))
                 || "/randevular".equals(link);
+    }
+
+    private boolean isNotificationEnabled(User user, String type) {
+        List<String> enabled = user.getNotificationPreferences();
+        if (enabled == null) return true;
+        String preference = switch (type == null ? "" : type.toUpperCase()) {
+            case "MESSAGE", "NEW_MESSAGE" -> "notif_messages";
+            case "COMMENT", "CONSULTATION_REPLY", "ANSWER_ACCEPTED", "SOLUTION_FEEDBACK" -> "notif_forum";
+            case "BUDDY_REQUEST", "BUDDY_ACCEPT", "MEETING_INVITE", "MEETING_UPDATE" -> "notif_matching";
+            case "APPOINTMENT_REMINDER", "APPOINTMENT_SOON", "CALENDAR_REMINDER" -> "notif_calendar";
+            case "APPOINTMENT_REQUEST" -> "notif_appointment_request";
+            case "APPOINTMENT_CONFIRMED", "APPOINTMENT_CANCELLED", "APPOINTMENT_RESCHEDULED", "APPOINTMENT_UPDATED" -> "notif_appt_confirm";
+            case "TASK_ASSIGNED", "TASK_COMPLETED", "TASK_REVIEWED", "TASK_OVERDUE" -> "notif_task_assigned";
+            case "SESSION_NOTES_ADDED" -> "notif_expert_note";
+            case "PATIENT_LINKED", "CONNECTION_AUTO_APPROVED", "CONNECTION_APPROVED", "CONNECTION_REJECTED", "CONNECTION_REVOKED" -> "notif_patient_connection";
+            default -> null;
+        };
+        return preference == null || enabled.contains(preference);
     }
 
     private NotificationDto toDto(Notification n) {

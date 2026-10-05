@@ -33,7 +33,7 @@ function generateTimeSlots(startTime: string, endTime: string, duration = 50): s
   const end = eh * 60 + em;
   while (total + duration <= end) {
     slots.push(`${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`);
-    total += 30;
+    total += duration; // Sabit 30 yerine gerçek seans süresi kadar ilerle
   }
   return slots;
 }
@@ -680,7 +680,14 @@ export function AppointmentPage() {
     setBookingLoading(true);
     try {
       const newAppt = await appointmentService.create({ expertId: bookExpertId, childId: bookChildId, date: selectedDate, time: bookTime, duration: bookDuration, type: bookType, notes: bookNotes, appointmentTopic: bookTopic, preSessionNotes: bookPreSessionNotes, recurrenceWeeks: bookRecurrenceWeeks > 1 ? bookRecurrenceWeeks : undefined });
-      setAppointments(prev => [...prev, newAppt]);
+      if (bookRecurrenceWeeks > 1) {
+        // Seri oluşturulduğunda backend birden fazla kayıt döndürür;
+        // tüm listeyi yeniden çekerek eksiksiz göster.
+        const all = await appointmentService.getAll();
+        setAppointments(all || []);
+      } else {
+        setAppointments(prev => [...prev, newAppt]);
+      }
       setShowBookModal(false);
       setDatePickerOpen(false);
       setBookTime(''); setBookNotes(''); setBookRecurrenceWeeks(0);

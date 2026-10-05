@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/queryClient';
 import { useAuthStore } from '@/store/authStore';
 import { ToastContainer } from '@/components/ui/Toast';
 import { UpdateBanner } from '@/components/ui/UpdateBanner';
@@ -90,6 +91,7 @@ const GroupsPage = lazyNamed(() => import('@/pages/GroupsPage'), 'GroupsPage');
 const ForumPage = lazyNamed(() => import('@/pages/ForumPage'), 'ForumPage');
 const SimilarFamiliesPage = lazyNamed(() => import('@/pages/SimilarFamiliesPage'), 'SimilarFamiliesPage');
 const CommunityHubPage = lazyNamed(() => import('@/pages/CommunityHubPage'), 'CommunityHubPage');
+const SupportDiscoveryPage = lazyNamed(() => import('@/pages/SupportDiscoveryPage'), 'SupportDiscoveryPage');
 const SupportWallPage = lazyNamed(() => import('@/pages/SupportWallPage'), 'SupportWallPage');
 const SettingsPage = lazyNamed(() => import('@/pages/SettingsPage'), 'SettingsPage');
 const KnowledgePage = lazyNamed(() => import('@/pages/KnowledgePage'), 'KnowledgePage');
@@ -153,17 +155,20 @@ function AuthBootstrap({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+// SessionExpiredHandler: api.ts'ten gelen 'auth-session-expired' event'ini React Router ile yönlendirir.
+// window.location.href yerine useNavigate kullanıldığı için full page reload olmaz.
+function SessionExpiredHandler() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const handler = () => navigate('/giris', { replace: true });
+    window.addEventListener('auth-session-expired', handler);
+    return () => window.removeEventListener('auth-session-expired', handler);
+  }, [navigate]);
+  return null;
+}
+
 // eslint-disable-next-line react-refresh/only-export-components
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { 
-      retry: 1, 
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 dakika boyunca veriyi taze kabul et (gereksiz fetch'i engeller)
-      gcTime: 10 * 60 * 1000,   // 10 dakika boyunca cache'te tut
-    },
-  },
-});
+export { queryClient };
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, user, isOnboardingCompleted } = useAuthStore();
@@ -226,6 +231,7 @@ export default function App() {
         <UpdateBanner />
         <AuthBootstrap>
           <BrowserRouter>
+            <SessionExpiredHandler />
             <RouteMetadata />
             <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -239,16 +245,16 @@ export default function App() {
             {/* Kriz rehberinin üyeliksiz sürümü. Uygulama içi /kriz-rehberi
                 rotası korunuyor; bu adres arama motorundan gelen ve zor bir anın
                 ortasındaki kullanıcı için giriş duvarı olmadan açılır. */}
-            <Route path="/kriz-aninda-ne-yapmali" element={<Suspense fallback={<PageLoader />}><PublicCrisisGuidePage /></Suspense>} />
-            <Route path="/uzmanlar-icin" element={<Suspense fallback={<PageLoader />}><ExpertLandingPage /></Suspense>} />
+            <Route path="/kriz-aninda-ne-yapmali" element={<PublicCrisisGuidePage />} />
+            <Route path="/uzmanlar-icin" element={<ExpertLandingPage />} />
             <Route path="/kvkk" element={<PublicInfoPage kind="kvkk" />} />
             <Route path="/gizlilik" element={<PublicInfoPage kind="privacy" />} />
             <Route path="/kullanim-sartlari" element={<PublicInfoPage kind="terms" />} />
             <Route path="/tibbi-uyari" element={<PublicInfoPage kind="medical" />} />
             <Route path="/guven-merkezi" element={<PublicInfoPage kind="trust" />} />
             <Route path="/acil-profil/:token" element={<PublicEmergencyCardPage />} />
-            <Route path="/kayit/uzman" element={<Suspense fallback={<PageLoader />}><ExpertRegisterPage /></Suspense>} />
-            <Route path="/baslangic" element={<OnboardingRoute><Suspense fallback={<PageLoader />}><OnboardingPage /></Suspense></OnboardingRoute>} />
+            <Route path="/kayit/uzman" element={<ExpertRegisterPage />} />
+            <Route path="/baslangic" element={<OnboardingRoute><OnboardingPage /></OnboardingRoute>} />
 
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                 <Route path="/anasayfa" element={<DashboardPage />} />
@@ -261,6 +267,7 @@ export default function App() {
                 <Route path="/gruplar" element={<RoleRoute allowedRoles={ALL_ROLES}><GroupsPage /></RoleRoute>} />
                 <Route path="/forum" element={<RoleRoute allowedRoles={ALL_ROLES}><ForumPage /></RoleRoute>} />
                 <Route path="/topluluk" element={<RoleRoute allowedRoles={ALL_ROLES}><CommunityHubPage /></RoleRoute>} />
+                <Route path="/destek-ara" element={<RoleRoute allowedRoles={PARENT_ONLY}><SupportDiscoveryPage /></RoleRoute>} />
                 <Route path="/dertlesme-duvari" element={<RoleRoute allowedRoles={PARENT_ONLY}><SupportWallPage /></RoleRoute>} />
                 <Route path="/benzer-aileler" element={<RoleRoute allowedRoles={PARENT_ONLY}><SimilarFamiliesPage /></RoleRoute>} />
                 <Route path="/similar-families" element={<RoleRoute allowedRoles={PARENT_ONLY}><Navigate to="/benzer-aileler" replace /></RoleRoute>} />

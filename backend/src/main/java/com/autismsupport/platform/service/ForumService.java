@@ -7,10 +7,12 @@ import com.autismsupport.platform.dto.UserDto;
 import com.autismsupport.platform.exception.ResourceNotFoundException;
 import com.autismsupport.platform.exception.ValidationException;
 import com.autismsupport.platform.model.ForumComment;
+import com.autismsupport.platform.model.ForumAnswerFeedback;
 import com.autismsupport.platform.model.ForumPost;
 import com.autismsupport.platform.model.Tag;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.repository.ForumCommentRepository;
+import com.autismsupport.platform.repository.ForumAnswerFeedbackRepository;
 import com.autismsupport.platform.repository.ForumPostRepository;
 import com.autismsupport.platform.repository.UserRepository;
 import com.autismsupport.platform.repository.VoteRepository;
@@ -35,6 +37,7 @@ public class ForumService {
 
     private final ForumPostRepository postRepository;
     private final ForumCommentRepository commentRepository;
+    private final ForumAnswerFeedbackRepository answerFeedbackRepository;
     private final UserRepository userRepository;
     private final TagService tagService;
     private final VoteRepository voteRepository;
@@ -122,6 +125,7 @@ public class ForumService {
                 .category(normalizeOptional(dto.getCategory()))
                 .postType(normalizePostType(dto.getPostType()))
                 .privacySettings(dto.getPrivacySettings())
+                .questionContext(dto.getQuestionContext())
                 .anonymous(dto.isAnonymous())
                 .build();
 
@@ -152,6 +156,9 @@ public class ForumService {
         }
         if (dto.getPrivacySettings() != null) {
             post.setPrivacySettings(dto.getPrivacySettings());
+        }
+        if (dto.getQuestionContext() != null) {
+            post.setQuestionContext(dto.getQuestionContext());
         }
         if (dto.getTagIds() != null) {
             post.setTags(tagService.findTagsByIds(dto.getTagIds()));
@@ -204,7 +211,55 @@ public class ForumService {
         post.setAnswered(true);
         post = postRepository.save(post);
 
+        if (!comment.getAuthor().getId().equals(userId)) {
+            notificationService.createNotification(
+                    comment.getAuthor().getId(),
+                    "ANSWER_ACCEPTED",
+                    "Cevabınız çözüm olarak seçildi",
+                    "Bir aile cevabınızı en iyi çözüm olarak işaretledi.",
+                    "/forum"
+            );
+        }
+
         return toPostDto(post, userId);
+    }
+
+    @Transactional
+    public ForumCommentDto recordAnswerOutcome(UUID postId, UUID commentId, String rawOutcome, UUID userId) {
+        String outcome = rawOutcome == null ? "" : rawOutcome.trim().toUpperCase(Locale.ROOT);
+        if (!Set.of("WORKED", "PARTIAL", "NOT_WORKED").contains(outcome)) {
+            throw new ValidationException("Geçersiz sonuç seçimi");
+        }
+
+        ForumComment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cevap bulunamadı"));
+        ensureCommentBelongsToPost(comment, postId);
+        if (comment.getParentComment() != null) {
+            throw new ValidationException("Sonuç geri bildirimi yalnızca ana cevaplara verilebilir");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
+
+        Optional<ForumAnswerFeedback> existing = answerFeedbackRepository.findByCommentIdAndUserId(commentId, userId);
+        String previousOutcome = existing.map(ForumAnswerFeedback::getOutcome).orElse(null);
+        ForumAnswerFeedback feedback = existing.orElseGet(() -> ForumAnswerFeedback.builder()
+                .comment(comment)
+                .user(user)
+                .build());
+        feedback.setOutcome(outcome);
+        answerFeedbackRepository.save(feedback);
+
+        if ("WORKED".equals(outcome) && !"WORKED".equals(previousOutcome)
+                && !comment.getAuthor().getId().equals(userId)) {
+            notificationService.createNotification(
+                    comment.getAuthor().getId(),
+                    "SOLUTION_FEEDBACK",
+                    "Tavsiyeniz işe yaradı",
+                    "Bir aile paylaştığınız yöntemin kendilerinde işe yaradığını bildirdi.",
+                    "/forum"
+            );
+        }
+        return toCommentDto(comment, userId);
     }
 
     public Page<ForumCommentDto> getComments(UUID postId, Pageable pageable, UUID currentUserId) {
@@ -319,6 +374,7 @@ public class ForumService {
                 .likeCount(post.getLikeCount())
                 .commentCount(post.getCommentCount())
                 .privacySettings(post.getPrivacySettings())
+                .questionContext(post.getQuestionContext())
                 .tags(tagDtos)
                 .likedByMe(likedByMe)
                 .ownedByMe(ownedByMe)
@@ -364,6 +420,13 @@ public class ForumService {
                 .anonymous(comment.isAnonymous())
                 .expertApproved(comment.isExpertApproved())
                 .ownedByMe(currentUserId != null && comment.getAuthor() != null && currentUserId.equals(comment.getAuthor().getId()))
+                .workedCount((int) answerFeedbackRepository.countByCommentIdAndOutcome(comment.getId(), "WORKED"))
+                .partialCount((int) answerFeedbackRepository.countByCommentIdAndOutcome(comment.getId(), "PARTIAL"))
+                .notWorkedCount((int) answerFeedbackRepository.countByCommentIdAndOutcome(comment.getId(), "NOT_WORKED"))
+                .outcomeByMe(currentUserId == null ? null : answerFeedbackRepository
+                        .findByCommentIdAndUserId(comment.getId(), currentUserId)
+                        .map(ForumAnswerFeedback::getOutcome)
+                        .orElse(null))
                 .author(comment.isAnonymous() ?
                         UserDto.builder()
                                 .fullName("Anonim Ebeveyn")

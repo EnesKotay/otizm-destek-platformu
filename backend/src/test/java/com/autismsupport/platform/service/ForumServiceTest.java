@@ -3,9 +3,11 @@ package com.autismsupport.platform.service;
 import com.autismsupport.platform.dto.ForumCommentDto;
 import com.autismsupport.platform.dto.ForumPostDto;
 import com.autismsupport.platform.model.ForumComment;
+import com.autismsupport.platform.model.ForumAnswerFeedback;
 import com.autismsupport.platform.model.ForumPost;
 import com.autismsupport.platform.model.User;
 import com.autismsupport.platform.repository.ForumCommentRepository;
+import com.autismsupport.platform.repository.ForumAnswerFeedbackRepository;
 import com.autismsupport.platform.repository.ForumPostRepository;
 import com.autismsupport.platform.repository.UserRepository;
 import com.autismsupport.platform.repository.VoteRepository;
@@ -32,6 +34,7 @@ class ForumServiceTest {
 
     @Mock ForumPostRepository postRepository;
     @Mock ForumCommentRepository commentRepository;
+    @Mock ForumAnswerFeedbackRepository answerFeedbackRepository;
     @Mock UserRepository userRepository;
     @Mock TagService tagService;
     @Mock VoteRepository voteRepository;
@@ -175,6 +178,41 @@ class ForumServiceTest {
 
         verify(notificationService).createNotification(
                 eq(authorId), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("recordAnswerOutcome: işe yaradı sonucu kaydedilir ve cevap sahibine bildirim gider")
+    void recordAnswerOutcome_savesAndNotifies() {
+        UUID postId = UUID.randomUUID();
+        UUID commentId = UUID.randomUUID();
+        UUID answerAuthorId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        User answerAuthor = User.builder().id(answerAuthorId).fullName("Yanıtlayan")
+                .role(com.autismsupport.platform.model.UserRole.PARENT).build();
+        User user = User.builder().id(userId).fullName("Deneyen")
+                .role(com.autismsupport.platform.model.UserRole.PARENT).build();
+        ForumPost post = ForumPost.builder().id(postId).author(answerAuthor).title("Soru").content("İçerik").postType("QUESTION").build();
+        ForumComment comment = ForumComment.builder().id(commentId).post(post).author(answerAuthor).content("Öneri").build();
+
+        when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(answerFeedbackRepository.findByCommentIdAndUserId(commentId, userId)).thenReturn(Optional.empty());
+        when(answerFeedbackRepository.save(any(ForumAnswerFeedback.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ForumCommentDto result = forumService.recordAnswerOutcome(postId, commentId, "WORKED", userId);
+
+        assertThat(result).isNotNull();
+        verify(answerFeedbackRepository).save(argThat(feedback -> "WORKED".equals(feedback.getOutcome())));
+        verify(notificationService).createNotification(eq(answerAuthorId), eq("SOLUTION_FEEDBACK"), any(), any(), eq("/forum"));
+    }
+
+    @Test
+    @DisplayName("recordAnswerOutcome: geçersiz sonuç reddedilir")
+    void recordAnswerOutcome_invalidOutcomeRejected() {
+        assertThatThrownBy(() -> forumService.recordAnswerOutcome(
+                UUID.randomUUID(), UUID.randomUUID(), "MAYBE", UUID.randomUUID()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Geçersiz");
     }
 
     // ── deletePost ────────────────────────────────────────────────────────────

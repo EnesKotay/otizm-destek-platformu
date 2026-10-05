@@ -55,7 +55,7 @@ export const TUTORIAL_LEARNING_PATHS: Record<UserRole, readonly TutorialLearning
       title: 'Uzman ve topluluk desteğine bağlanın',
       description: 'Uzman desteği alın, güvenli iletişim kurun ve topluluk ile yardım kaynaklarını keşfedin.',
       kind: 'CORE',
-      videoIds: ['12', '13', '14', '15'],
+      videoIds: ['12', '13', '14', '15', '25'],
     },
     {
       id: 'parent-ek-rehberler',
@@ -424,5 +424,17 @@ export const TUTORIAL_VIDEOS: readonly TutorialVideo[] = [
     poster: '/videos/tutorials/24-aktivite-kaydi-sistem-ayarlari.png',
     captions: '/videos/tutorials/24-aktivite-kaydi-sistem-ayarlari.vtt',
     duration: '33 sn',
+  },
+  {
+    id: '25',
+    title: 'AI Destekli Çözüm Arama',
+    description: 'Konu seçerek arama yapın, ilgili kaynakları inceleyin, içerik türüne göre filtreleyin ve benzer aileler bölümünü keşfedin.',
+    audience: 'GENERAL',
+    category: 'Arama ve Destek',
+    keywords: ['arama', 'yapay zeka', 'çözüm', 'filtre', 'benzer profil', 'AI özet', 'empati'],
+    src: '/videos/tutorials/25-ai-destekli-cozum-arama.webm',
+    poster: '/videos/tutorials/25-ai-destekli-cozum-arama.png',
+    captions: '/videos/tutorials/25-ai-destekli-cozum-arama.vtt',
+    duration: '39 sn',
   },
 ];

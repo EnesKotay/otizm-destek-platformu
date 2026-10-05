@@ -29,6 +29,10 @@ public class ForumCommentDto {
     private boolean downvotedByMe;
     private boolean expertApproved;
     private boolean ownedByMe;
+    private int workedCount;
+    private int partialCount;
+    private int notWorkedCount;
+    private String outcomeByMe;
     private UserDto author;
     private LocalDateTime createdAt;
 }

@@ -13,7 +13,7 @@ import { useChildStore } from '@/store/childStore';
 import { childService } from '@/services/childService';
 import { noteService } from '@/services/noteService';
 import { uploadService } from '@/services/uploadService';
-import { formatDate } from '@/utils/date';
+import { formatDate, formatLocalDate } from '@/utils/date';
 import type { DevelopmentNote } from '@/types';
 import { toast } from '@/store/toastStore';
 
@@ -43,7 +43,7 @@ const moods = [
   { value: 'sad',     icon: Frown, label: 'Zor Gün', color: 'text-red-500',    ring: 'ring-red-400',    bg: 'bg-red-50'    },
 ];
 
-const emptyForm = { title: '', content: '', category: '', mood: '', noteDate: new Date().toISOString().split('T')[0], imageUrl: '' };
+const emptyForm = () => ({ title: '', content: '', category: '', mood: '', noteDate: formatLocalDate(), imageUrl: '' });
 
 const MOCK_NOTES: DevelopmentNote[] = [
   {
@@ -93,11 +93,11 @@ export function NotesPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ ...emptyForm });
+  const [form, setForm] = useState(emptyForm);
 
   // Edit state
   const [editingNote, setEditingNote] = useState<DevelopmentNote | null>(null);
-  const [editForm, setEditForm] = useState({ ...emptyForm });
+  const [editForm, setEditForm] = useState(emptyForm);
   const [editLoading, setEditLoading] = useState(false);
 
   // Delete confirm
@@ -177,7 +177,7 @@ export function NotesPage() {
       const note = await noteService.create({ ...form, noteDate: form.noteDate.slice(0, 10), childId: selectedChild.id });
       setNotes(prev => [note, ...prev]);
       setShowModal(false);
-      setForm({ ...emptyForm });
+      setForm(emptyForm());
       toast.success('Not kaydedildi.');
     } catch { toast.error('Not oluşturulamadı.'); }
     setLoading(false);

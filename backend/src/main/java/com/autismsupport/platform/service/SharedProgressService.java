@@ -39,6 +39,10 @@ public class SharedProgressService {
             return;
         }
 
+        if (!child.getParent().isShareProgressWithExperts()) {
+            throw new AccessDeniedException("Ebeveyn gelişim notları paylaşımını kapattı.");
+        }
+
         ClinicalDataShare share = shareRepository.findActiveShare(childId, userId)
                 .orElseThrow(() -> new AccessDeniedException("Bu çocuğun verilerine erişim yetkiniz yok."));
 

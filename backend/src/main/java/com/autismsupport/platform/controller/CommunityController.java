@@ -27,6 +27,11 @@ public class CommunityController {
         return ResponseEntity.ok(ApiResponse.success(communityService.getWeeklyQuestions(requireUserId(principal))));
     }
 
+    @GetMapping("/weekly-questions/privacy-capabilities")
+    public ResponseEntity<ApiResponse<Boolean>> weeklyAnswerPrivacyCapabilities() {
+        return ResponseEntity.ok(ApiResponse.success(true));
+    }
+
     @PostMapping("/weekly-questions/{questionId}/answers")
     public ResponseEntity<ApiResponse<WeeklyAnswerDto>> createWeeklyAnswer(
             @PathVariable UUID questionId,

@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import {
   ArrowRight, BookOpen, Flame, Heart, MapPin, MessageCircle,
-  ShieldCheck, Sparkles, Users,
+  Sparkles, Users,
 } from 'lucide-react';
+import { SupportSearchBox } from '@/components/community/SupportSearchBox';
 
 const areas = [
   { to: '/benzer-aileler', icon: Sparkles, title: 'Sana uygun aileler', text: 'Ortak deneyimleri ve eşleşme nedenlerini gör, güvenli bir tanışma başlat.', tone: 'bg-violet-50 text-violet-700' },
@@ -17,29 +18,11 @@ const areas = [
 export function CommunityHubPage() {
   return (
     <div className="space-y-6 animate-fade-in">
-      <section className="overflow-hidden rounded-[28px] border border-indigo-100 bg-gradient-to-br from-indigo-600 to-violet-700 p-6 text-white shadow-lg sm:p-8">
-        <div className="max-w-2xl">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-bold">
-            <ShieldCheck size={14} /> Kontrollü ve güvenli iletişim
-          </span>
-          <h1 className="mt-4 text-3xl font-black">Topluluk</h1>
-          <p className="mt-2 leading-7 text-indigo-100">
-            Aynı süreci yaşayan aileleri bul, önce mesajlaş, hazır olduğunda grup veya buluşmalara katıl.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link to="/benzer-aileler" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-indigo-700">
-              Bana uygun aileleri göster <ArrowRight size={15} />
-            </Link>
-            <Link to="/mesajlar" className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-bold text-white">
-              Mesajları aç
-            </Link>
-          </div>
-        </div>
-      </section>
+      <SupportSearchBox />
 
       <section>
-        <h2 className="text-lg font-black text-slate-900">Ne yapmak istersin?</h2>
-        <p className="mt-1 text-sm text-slate-500">Bütün topluluk alanları artık bu merkezde.</p>
+        <h2 className="text-lg font-black text-slate-900">Toplulukta başka neler var?</h2>
+        <p className="mt-1 text-sm text-slate-500">Soru sorabilir, benzer ailelerle tanışabilir veya güvenli gruplara katılabilirsin.</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {areas.map(({ to, icon: Icon, title, text, tone }) => (
             <Link key={to} to={to} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">

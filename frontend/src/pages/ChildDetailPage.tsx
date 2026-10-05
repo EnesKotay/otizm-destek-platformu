@@ -28,7 +28,7 @@ import { sleepService } from '@/services/sleepService';
 import { behaviorJournalService } from '@/services/behaviorJournalService';
 import { medicationService } from '@/services/medicationService';
 
-import { formatDate } from '@/utils/date';
+import { formatDate, formatLocalDate } from '@/utils/date';
 import { toast } from '@/store/toastStore';
 import type { ActivityResult, AppointmentRecord, CalendarEvent, Child, DevelopmentNote, Milestone, MoodEntry, SleepEntry, Tag, MedicationLog, ABCEntry } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, AreaChart, Area } from 'recharts';
@@ -236,7 +236,7 @@ function ChildDetailContent() {
 
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [milestoneForm, setMilestoneForm] = useState({
-    title: '', description: '', achievedDate: new Date().toISOString().split('T')[0], category: '',
+    title: '', description: '', achievedDate: formatLocalDate(), category: '',
   });
   const [milestoneLoading, setMilestoneLoading] = useState(false);
 
@@ -454,7 +454,7 @@ function ChildDetailContent() {
       const milestone = await milestoneService.create({ ...milestoneForm, childId: id });
       setMilestones(prev => [milestone, ...prev]);
       setShowMilestoneModal(false);
-      setMilestoneForm({ title: '', description: '', achievedDate: new Date().toISOString().split('T')[0], category: '' });
+      setMilestoneForm({ title: '', description: '', achievedDate: formatLocalDate(), category: '' });
       toast.success('Milestone eklendi.');
     } catch { toast.error('Milestone eklenemedi.'); }
     setMilestoneLoading(false);
@@ -629,7 +629,7 @@ function ChildDetailContent() {
     let week: { date: string; count: number; iso: string }[] = [];
     const cursor = new Date(startDay);
     while (cursor <= today) {
-      const iso = cursor.toISOString().slice(0, 10);
+      const iso = formatLocalDate(cursor);
       week.push({ date: iso, count: dayCounts[iso] || 0, iso });
       if (week.length === 7) { weeks.push(week); week = []; }
       cursor.setDate(cursor.getDate() + 1);
@@ -1741,7 +1741,7 @@ function ChildDetailContent() {
                             {week.map((day, di) => {
                               if (!day.iso) return <div key={di} className="w-2.5 h-2.5 rounded-sm" />;
                               const intensity = day.count === 0 ? 0 : Math.max(0.15, Math.min(1, day.count / activityHeatmap.max));
-                              const isToday = day.iso === new Date().toISOString().slice(0, 10);
+                              const isToday = day.iso === formatLocalDate();
                               return (
                                 <div
                                   key={di}

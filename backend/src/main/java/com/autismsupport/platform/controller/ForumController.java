@@ -1,6 +1,7 @@
 package com.autismsupport.platform.controller;
 
 import com.autismsupport.platform.dto.ApiResponse;
+import com.autismsupport.platform.dto.AnswerFeedbackRequestDto;
 import com.autismsupport.platform.dto.ForumCommentDto;
 import com.autismsupport.platform.dto.ForumPostDto;
 import com.autismsupport.platform.dto.PageResponseDto;
@@ -126,6 +127,16 @@ public class ForumController {
             @PathVariable UUID postId, @PathVariable UUID commentId, @CurrentUser UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.success("Cevap kabul edildi",
                 forumService.acceptAnswer(postId, commentId, requireUserId(principal))));
+    }
+
+    @PutMapping("/posts/{postId}/comments/{commentId}/outcome")
+    public ResponseEntity<ApiResponse<ForumCommentDto>> recordAnswerOutcome(
+            @PathVariable UUID postId,
+            @PathVariable UUID commentId,
+            @Valid @RequestBody AnswerFeedbackRequestDto request,
+            @CurrentUser UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success("Sonuç geri bildirimi kaydedildi",
+                forumService.recordAnswerOutcome(postId, commentId, request.getOutcome(), requireUserId(principal))));
     }
 
     @GetMapping("/posts/{postId}/comments")

@@ -222,4 +222,10 @@ export const adminService = {
 
   generateWeeklyQuestionWithAI: () =>
     api.post<ApiResponse<WeeklyQuestion>>('/admin/weekly-questions/generate-ai').then(r => r.data.data),
+  getWeeklyQuestionDraft: () =>
+    api.get<ApiResponse<WeeklyQuestion | null>>('/admin/weekly-questions/draft').then(r => r.data.data),
+  createWeeklyQuestionDraft: (draft: Pick<WeeklyQuestion, 'question' | 'tag'>) =>
+    api.post<ApiResponse<WeeklyQuestion>>('/admin/weekly-questions/draft', draft).then(r => r.data.data),
+  publishWeeklyQuestion: (id: string, draft: Pick<WeeklyQuestion, 'question' | 'tag'>) =>
+    api.post<ApiResponse<WeeklyQuestion>>(`/admin/weekly-questions/${id}/publish`, draft).then(r => r.data.data),
 };

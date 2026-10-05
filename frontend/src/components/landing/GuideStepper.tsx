@@ -13,13 +13,14 @@ import { guideSteps } from '@/content/landing';
  * planın bütününü görebilir (önceden liste mobilde tamamen gizliydi).
  */
 export function GuideStepper() {
+  const firstSteps = guideSteps.slice(0, 3);
   const [activeIndex, setActiveIndex] = useState(0);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const activeStep = guideSteps[activeIndex];
+  const activeStep = firstSteps[activeIndex];
   const ActiveIcon = activeStep.icon;
-  const progress = ((activeIndex + 1) / guideSteps.length) * 100;
-  const lastIndex = guideSteps.length - 1;
+  const progress = ((activeIndex + 1) / firstSteps.length) * 100;
+  const lastIndex = firstSteps.length - 1;
 
   const focusTab = (index: number) => {
     setActiveIndex(index);
@@ -60,11 +61,10 @@ export function GuideStepper() {
       <div className="min-w-0 lg:sticky lg:top-24">
         <p className="text-xs font-extrabold uppercase tracking-widest text-primary-700">Başlangıç planı</p>
         <h2 className="mt-3 text-3xl font-extrabold leading-tight text-slate-950 sm:text-4xl">
-          İlk gününüzü 6 küçük adıma böldük.
+          İlk gün: profil ve ilk kayıt.
         </h2>
         <p className="mt-4 text-sm font-medium leading-7 text-slate-600">
-          Kayıt olduktan sonra hangi ekrana gideceğinizi düşünmeniz gerekmez. Platform önce temel bilgiyi toplar,
-          sonra günlük akışı sadeleştirir.
+          Hesabınızı açın, çocuğunuzun temel bilgilerini ekleyin ve ilk kısa gözleminizi kaydedin.
         </p>
 
         <div
@@ -72,7 +72,7 @@ export function GuideStepper() {
           aria-label="Başlangıç planı adımları"
           className="mt-6 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2 lg:mt-6 lg:flex-col lg:gap-0 lg:overflow-visible lg:rounded-2xl lg:border lg:border-slate-200 lg:bg-white lg:pb-0 lg:shadow-sm"
         >
-          {guideSteps.map((step, index) => {
+          {firstSteps.map((step, index) => {
             const selected = activeIndex === index;
             return (
               <button
@@ -122,7 +122,7 @@ export function GuideStepper() {
         id="guide-panel"
         aria-labelledby={`guide-tab-${activeIndex}`}
         tabIndex={0}
-        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60"
+        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
       >
         <div className="border-b border-slate-100 p-5">
           <div className="flex items-start justify-between gap-4">
@@ -131,7 +131,7 @@ export function GuideStepper() {
               <h3 className="mt-1 text-2xl font-extrabold leading-tight text-slate-950">{activeStep.title}</h3>
             </div>
             <span className="shrink-0 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-800">
-              {activeIndex + 1}/{guideSteps.length}
+              {activeIndex + 1}/{firstSteps.length}
             </span>
           </div>
           <div
@@ -139,7 +139,7 @@ export function GuideStepper() {
             role="progressbar"
             aria-valuenow={activeIndex + 1}
             aria-valuemin={1}
-            aria-valuemax={guideSteps.length}
+            aria-valuemax={firstSteps.length}
             aria-label="Başlangıç planı ilerlemesi"
           >
             <div className="h-full rounded-full bg-primary-600 transition-all duration-500" style={{ width: `${progress}%` }} />

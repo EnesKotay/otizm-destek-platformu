@@ -8,9 +8,8 @@ import { authService } from '@/services/authService';
 import { toast } from '@/store/toastStore';
 import {
   HeartHandshake, Mail, Lock, Eye, EyeOff,
-  ArrowRight, Loader2, Shield, Sparkles,
+  ArrowRight, Loader2, Sparkles,
   Brain, Users, CalendarCheck, CheckCircle2,
-  BadgeCheck, FileCheck2, PlayCircle,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -53,12 +52,6 @@ const FEATURES = [
   },
 ];
 
-const TRUST_ITEMS = [
-  { icon: Shield, label: 'İzin ve gizlilik akışı' },
-  { icon: BadgeCheck, label: 'Onaylı uzman profilleri' },
-  { icon: FileCheck2, label: 'Çocuk verisi için güvenli kayıt' },
-];
-
 export function LoginPage() {
   const [loading, setLoading]           = useState(false);
   const [errorMsg, setErrorMsg]         = useState('');
@@ -71,11 +64,18 @@ export function LoginPage() {
   const location                        = useLocation();
 
   useEffect(() => {
+    let fadeTimeoutId: ReturnType<typeof setTimeout> | null = null;
     const t = setInterval(() => {
       setQuoteFade(false);
-      setTimeout(() => { setQuoteIdx(i => (i + 1) % QUOTES.length); setQuoteFade(true); }, 400);
+      fadeTimeoutId = setTimeout(() => {
+        setQuoteIdx(i => (i + 1) % QUOTES.length);
+        setQuoteFade(true);
+      }, 400);
     }, 5500);
-    return () => clearInterval(t);
+    return () => {
+      clearInterval(t);
+      if (fadeTimeoutId) clearTimeout(fadeTimeoutId);
+    };
   }, []);
 
   const initialEmail = location.state?.email || '';
@@ -150,7 +150,7 @@ export function LoginPage() {
               style={{ opacity: quoteFade ? 1 : 0, transform: quoteFade ? 'translateY(0)' : 'translateY(6px)' }}
             >
               <h2 className="text-4xl font-extrabold tracking-tight leading-[1.15]">
-                <span className="bg-gradient-to-r from-primary-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-white via-indigo-200 to-primary-300 bg-clip-text text-transparent drop-shadow-sm">
                   "{QUOTES[quoteIdx]}"
                 </span>
               </h2>
@@ -182,13 +182,13 @@ export function LoginPage() {
             {FEATURES.map(f => {
               const FeatureIcon = f.icon;
               return (
-                <div key={f.title} className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300 group">
-                  <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border group-hover:scale-110 transition-transform', f.color)}>
-                    <FeatureIcon className={f.iconColor} size={20} />
+                <div key={f.title} className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 group">
+                  <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border group-hover:scale-110 group-hover:rotate-3 transition-all duration-300', f.color)}>
+                    <FeatureIcon className={f.iconColor} size={24} />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-white">{f.title}</h4>
-                    <p className="text-xs text-slate-400 mt-1">{f.desc}</p>
+                  <div className="pt-0.5">
+                    <h4 className="text-sm font-bold text-white tracking-wide">{f.title}</h4>
+                    <p className="text-sm text-slate-300 mt-1 leading-relaxed">{f.desc}</p>
                   </div>
                 </div>
               );
@@ -207,7 +207,7 @@ export function LoginPage() {
       ══════════════════════════════════════ */}
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-slate-50 p-5 sm:p-8 md:p-12 overflow-y-auto">
         <div className={cn(
-          'w-full max-w-lg my-6',
+          'w-full max-w-md my-6',
           shake && 'animate-[shake_0.45s_ease-in-out]',
         )}>
 
@@ -223,44 +223,35 @@ export function LoginPage() {
           </div>
 
           {/* Başlık */}
-          <div className="mb-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white px-3 py-1.5 shadow-sm">
-              <CheckCircle2 size={14} className="text-primary-600" />
-              <span className="text-xs font-bold text-primary-700">Tekrar hoş geldiniz</span>
+          <div className="mb-8 text-center lg:text-left">
+            <div className="inline-flex items-center justify-center lg:justify-start gap-2 mb-2">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500"></span>
+              <p className="text-sm font-bold tracking-wide text-indigo-600 uppercase">Tekrar Hoş Geldiniz</p>
             </div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
-              Hesabınıza giriş yapın
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              Hesabınıza Giriş Yapın
             </h1>
-            <p className="mt-3 max-w-md text-sm font-medium leading-6 text-slate-600">
-              Bugünün kaydı, randevular ve mesajlar tek düzenli alanda sizi bekliyor.
+            <p className="mt-3 text-base leading-relaxed text-slate-500">
+              Günlük kayıtlarınıza, randevularınıza ve mesajlarınıza kaldığınız yerden devam edin.
             </p>
           </div>
 
           {/* Hata */}
           {errorMsg && (
-            <div role="alert" aria-live="assertive" className="flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-red-700 mb-5 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div role="alert" aria-live="assertive" className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700 mb-6 animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 text-red-600 font-bold">!</div>
               <p className="text-sm font-medium">{errorMsg}</p>
             </div>
           )}
 
           {/* Form Kartı */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70 sm:p-6">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-black text-slate-950">Giriş bilgileri</h2>
-                <p className="mt-1 text-sm font-medium text-slate-500">E-posta ve şifrenizle devam edin.</p>
-              </div>
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-100">
-                Güvenli
-              </span>
-            </div>
-
+          <div className="rounded-[24px] border border-slate-200/60 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-indigo-500"></div>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
               {/* E-posta */}
               <div className="space-y-1.5">
-                <label htmlFor="login-email" className="block text-xs font-black uppercase tracking-wider text-slate-500">E-posta</label>
+                <label htmlFor="login-email" className="block text-sm font-semibold text-slate-700">E-posta</label>
                 <div className="group relative">
                   <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary-600">
                     <Mail size={18} />
@@ -272,10 +263,10 @@ export function LoginPage() {
                     placeholder="ornek@email.com"
                     aria-invalid={Boolean(errors.email)}
                     aria-describedby={errors.email ? 'login-email-error' : undefined}
-                    className={`h-12 w-full rounded-2xl border pl-11 pr-4 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
+                    className={`h-12 w-full rounded-xl border pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
                       errors.email
-                        ? 'border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100'
-                        : 'border-slate-200 bg-slate-50/60 hover:border-slate-300 hover:bg-white focus:border-primary-300 focus:bg-white focus:ring-primary-100'
+                        ? 'border-red-300 bg-red-50/50 focus:border-red-500 focus:ring-red-500/20'
+                        : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-indigo-300 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20'
                     }`}
                     {...register('email')}
                   />
@@ -286,7 +277,7 @@ export function LoginPage() {
               {/* Şifre */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="login-password" className="block text-xs font-black uppercase tracking-wider text-slate-500">Şifre</label>
+                  <label htmlFor="login-password" className="block text-sm font-semibold text-slate-700">Şifre</label>
                   <Link to="/sifremi-unuttum" className="text-xs font-bold text-primary-600 transition-colors hover:text-primary-700">
                     Şifremi Unuttum
                   </Link>
@@ -299,20 +290,21 @@ export function LoginPage() {
                     id="login-password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
-                    placeholder="En az 8 karakter"
+                    placeholder="Şifrenizi girin"
                     aria-invalid={Boolean(errors.password)}
                     aria-describedby={errors.password ? 'login-password-error' : undefined}
-                    className={`h-12 w-full rounded-2xl border pl-11 pr-12 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
+                    className={`h-12 w-full rounded-xl border pl-11 pr-12 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
                       errors.password
-                        ? 'border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100'
-                        : 'border-slate-200 bg-slate-50/60 hover:border-slate-300 hover:bg-white focus:border-primary-300 focus:bg-white focus:ring-primary-100'
+                        ? 'border-red-300 bg-red-50/50 focus:border-red-500 focus:ring-red-500/20'
+                        : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-indigo-300 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20'
                     }`}
                     {...register('password')}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(p => !p)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none cursor-pointer"
+                    className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-indigo-600 cursor-pointer"
+                    aria-pressed={showPassword}
                     aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -325,7 +317,7 @@ export function LoginPage() {
               <label className="flex w-fit cursor-pointer select-none items-center gap-3 group">
                 <div className="relative w-5 h-5 shrink-0">
                   <input type="checkbox" className="peer sr-only" {...register('rememberMe')} />
-                  <div className="h-5 w-5 rounded-lg border-2 border-slate-300 bg-white shadow-sm transition-all duration-200 peer-checked:border-primary-600 peer-checked:bg-primary-600" />
+                  <div className="h-5 w-5 rounded-md border border-slate-400 bg-white transition-colors peer-checked:border-primary-600 peer-checked:bg-primary-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500 peer-focus-visible:ring-offset-2" />
                   <CheckCircle2 size={12} className="absolute inset-0 m-auto text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
                 </div>
                 <span className="text-sm font-semibold text-slate-600 transition-colors group-hover:text-slate-800">Beni hatırla</span>
@@ -335,13 +327,12 @@ export function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 bg-primary-600 hover:bg-primary-700
+                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800
                            disabled:bg-slate-300 disabled:cursor-not-allowed
-                           text-white font-black text-sm rounded-2xl
-                           shadow-lg shadow-primary-200/60 hover:shadow-primary-300/60
+                           text-white font-bold text-sm rounded-xl shadow-sm shadow-indigo-600/20
+                           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600
                            flex items-center justify-center gap-2 group
-                           hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]
-                           transition-all duration-150 cursor-pointer mt-2"
+                           transition-all duration-200 cursor-pointer mt-4 hover:shadow-md hover:shadow-indigo-600/30"
               >
                 {loading ? (
                   <><Loader2 size={16} className="animate-spin" /> Giriş Yapılıyor...</>
@@ -352,84 +343,42 @@ export function LoginPage() {
             </form>
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {TRUST_ITEMS.map((item) => {
-              const ItemIcon = item.icon;
-              return (
-                <div key={item.label} className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-slate-700 shadow-sm">
-                  <ItemIcon size={15} className="shrink-0 text-primary-600" />
-                  <span className="text-xs font-bold leading-snug">{item.label}</span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* ── Kaydol bölümü ── */}
-          <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-base font-black text-slate-950">Hesabınız yok mu?</h2>
-                <p className="mt-1 text-sm font-medium text-slate-500">Size uygun hesap türünü seçin.</p>
+          <section className="mt-8 pt-6" aria-labelledby="signup-title">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                <div className="w-full border-t border-slate-200"></div>
               </div>
-              <Link to="/tanitim" className="hidden text-xs font-black text-primary-600 hover:text-primary-700 sm:inline-flex">
-                Keşfet
-              </Link>
+              <div className="relative flex justify-center">
+                <span className="bg-slate-50 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Hesabınız yok mu?
+                </span>
+              </div>
             </div>
-
-            {/* Kartlar */}
+            
             <div className="grid gap-3 sm:grid-cols-2">
-              <Link to="/kayit"
-                className="group flex flex-col gap-3 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 p-4 text-left shadow-md shadow-primary-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-600/30"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/20">
-                    <Users size={18} />
+              {[
+                { to: '/kayit', icon: Users, title: 'Veli Hesabı', detail: 'Ücretsiz Kaydol', color: 'text-indigo-600', bg: 'bg-indigo-100', border: 'border-indigo-100 hover:border-indigo-300', shadow: 'hover:shadow-indigo-500/10' },
+                { to: '/kayit/uzman', icon: Brain, title: 'Uzman Hesabı', detail: 'Başvuru Yap', color: 'text-emerald-600', bg: 'bg-emerald-100', border: 'border-emerald-100 hover:border-emerald-300', shadow: 'hover:shadow-emerald-500/10' },
+              ].map(({ to, icon: Icon, title, detail, color, bg, border, shadow }) => (
+                <Link key={to} to={to} className={`group flex items-center gap-3.5 rounded-2xl border bg-white p-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${border} ${shadow}`}>
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 ${bg}`}>
+                    <Icon size={20} className={color} aria-hidden="true" />
                   </div>
-                  <ArrowRight size={16} className="shrink-0 text-white transition-transform group-hover:translate-x-0.5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-black text-white">Veli hesabı</p>
-                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Ücretsiz</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-900">{title}</p>
+                    <p className="mt-0.5 text-xs text-slate-500 font-medium">{detail}</p>
                   </div>
-                  <p className="mt-1 text-xs font-bold text-primary-100">Hemen kaydol</p>
-                </div>
-              </Link>
-
-              <Link to="/kayit/uzman"
-                className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-indigo-50/60 hover:shadow-md"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-indigo-700 ring-1 ring-slate-200">
-                    <Brain size={18} className="text-indigo-600" />
-                  </div>
-                  <ArrowRight size={16} className="shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-indigo-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-black text-slate-900">Uzman hesabı</p>
-                  <p className="mt-1 text-xs font-semibold text-slate-500">Başvuru yap</p>
-                </div>
+                  <ArrowRight size={16} className={`shrink-0 opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 ${color}`} aria-hidden="true" />
+                </Link>
+              ))}
+            </div>
+            
+            <div className="mt-8 text-center">
+              <Link to="/tanitim" className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                Platformu keşfedin <ArrowRight size={14} aria-hidden="true" />
               </Link>
             </div>
-
-            {/* Platform keşfet — kompakt */}
-            <Link
-              to="/tanitim"
-              className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 transition-all hover:border-primary-100 hover:bg-white group sm:hidden"
-            >
-              <span className="flex items-center gap-2.5">
-                <PlayCircle size={15} className="text-primary-500 shrink-0" />
-                <span className="text-xs font-bold text-slate-700 group-hover:text-primary-700 transition-colors">Platformu önce keşfedin</span>
-              </span>
-              <ArrowRight size={13} className="text-slate-400 group-hover:text-primary-500 group-hover:translate-x-0.5 transition-all shrink-0" />
-            </Link>
-          </div>
-
-          {/* SSL */}
-          <div className="mt-5 flex items-center justify-center gap-2">
-            <Shield size={13} className="text-slate-600" />
-            <p className="text-center text-xs font-semibold text-slate-600">Verileriniz SSL ile korunur.</p>
-          </div>
+          </section>
         </div>
       </div>
 

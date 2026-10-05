@@ -21,6 +21,7 @@ import { appointmentService } from '@/services/appointmentService';
 import { screeningService } from '@/services/screeningService';
 import { aiInsightsService, type AnalysisType } from '@/services/aiInsightsService';
 import { behaviorJournalService } from '@/services/behaviorJournalService';
+import { formatLocalDate } from '@/utils/date';
 import type { Child } from '@/types';
 
 const MOOD_EMOJI: Record<number, string> = { 1: '😢', 2: '😕', 3: '😐', 4: '🙂', 5: '😄' };
@@ -30,8 +31,8 @@ function dateRangeOf(days: number) {
   const start = new Date();
   start.setDate(start.getDate() - days + 1);
   return {
-    from: start.toISOString().slice(0, 10),
-    to: end.toISOString().slice(0, 10),
+    from: formatLocalDate(start),
+    to: formatLocalDate(end),
   };
 }
 
@@ -75,17 +76,17 @@ function latestDateLabel(values: Array<string | undefined>) {
   return valid.length > 0 ? safeLocaleDateString(valid[0].raw) : 'Henüz yok';
 }
 
-function StatCard({ icon: Icon, label, value, color, tone }: {
-  icon: ElementType; label: string; value: string | number; color: string; tone: string;
+function Stat({ icon: Icon, label, value, iconColorClass, iconBgClass }: {
+  icon: ElementType; label: string; value: string | number; iconColorClass: string; iconBgClass: string;
 }) {
   return (
-    <div className={`bg-white rounded-2xl p-4 border border-gray-100 shadow-sm min-h-[116px] flex items-center gap-3 ${tone}`}>
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-        {Icon ? <Icon size={20} className="text-white" /> : null}
+    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${iconBgClass} ${iconColorClass}`}>
+        {Icon ? <Icon size={18} /> : null}
       </div>
       <div className="min-w-0">
-        <p className="text-2xl font-bold leading-tight text-gray-950 break-words">{value}</p>
-        <p className="text-xs leading-5 text-gray-500 mt-1">{label}</p>
+        <p className="text-lg font-bold text-gray-900 leading-none mb-1">{value}</p>
+        <p className="text-[11px] font-medium text-gray-500 line-clamp-1">{label}</p>
       </div>
     </div>
   );
@@ -110,20 +111,6 @@ function EmptyChart({ children, height = 'h-[220px]' }: { children: ReactNode; h
     <div className={`${height} flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 bg-gray-50/70 text-center px-4`}>
       <AlertCircle size={18} className="text-gray-300" />
       <p className="text-sm text-gray-400">{children}</p>
-    </div>
-  );
-}
-
-function ProgressMetric({ label, value, detail, color }: { label: string; value: number; detail: string; color: string }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between gap-3 text-xs">
-        <span className="font-semibold text-slate-700">{label}</span>
-        <span className="text-slate-400 font-medium">{detail}</span>
-      </div>
-      <div className="mt-2.5 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-        <div className={`h-full rounded-full ${color} transition-all duration-500`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
-      </div>
     </div>
   );
 }
@@ -233,7 +220,6 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
 
   useEffect(() => {
     if (Array.isArray(moodData) && moodData.length > 0 || Array.isArray(sleepData) && sleepData.length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDemoMode(false);
     }
   }, [moodData, sleepData]);
@@ -423,23 +409,18 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
     !effectiveMilestones.length && { to: '/tedavi', icon: Award, label: 'Kilometre taşı ekle', detail: 'Yeni becerileri gelişim akışına bağlayın.' },
     !screeningResults.length && { to: '/cocuklarim?view=screening', icon: ClipboardList, label: 'Tarama başlat', detail: 'Dönemsel değerlendirme verisi oluşturun.' },
   ].filter(Boolean).slice(0, 3) as Array<{ to: string; icon: ElementType; label: string; detail: string }>;
-  const latestMoodDate = latestDateLabel(effectiveMoodData.map(e => e.entryDate));
-  const latestSleepDate = latestDateLabel(effectiveSleepData.map(e => e.sleepDate));
-  const latestNoteDate = latestDateLabel(effectiveNotes.map(n => n.noteDate || n?.createdAt));
 
-  // CSV veri
   const csvRows = [
     ...effectiveMoodData.map(m => ({ tür: 'Ruh Hali', tarih: m.entryDate, değer: m.moodLevel, not: m.notes ?? '' })),
     ...effectiveSleepData.map(s => ({ tür: 'Uyku', tarih: s.sleepDate, değer: s.durationMinutes ? `${Math.floor(s.durationMinutes/60)}s ${s.durationMinutes%60}dk` : '', not: s.notes ?? '' })),
     ...effectiveMilestones.map(ms => ({ tür: 'Milestone', tarih: ms.achievedDate, değer: ms.title, not: ms.category ?? '' })),
   ];
-  // eslint-disable-next-line react-hooks/immutability
   (window as unknown as Record<string, unknown>).__analyticsData = csvRows;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {demoMode && (
-        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 px-5 py-4 flex items-center justify-between gap-4">
+        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 px-5 py-4 flex items-center justify-between gap-4 mb-4">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-xl bg-indigo-100 text-indigo-600 mt-0.5 shrink-0">
               <Zap size={16} />
@@ -451,138 +432,73 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
           </div>
           <button
             onClick={() => setDemoMode(false)}
-            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-white border border-indigo-150 rounded-xl px-4 py-2 hover:shadow-sm transition-all active:scale-95 cursor-pointer"
+            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-white border border-indigo-150 rounded-xl px-4 py-2 hover:shadow-sm transition-all cursor-pointer"
           >
             Demo Modunu Kapat
           </button>
         </div>
       )}
 
+      {/* Hero Summary Card */}
       {!compact && (
-        <div className="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-          {/* Takip Özeti */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm flex flex-col justify-between min-h-[260px]">
-            <div>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Genel Durum</p>
-                  <h2 className="mt-1 text-lg font-bold text-gray-950">Takip Özeti</h2>
-                </div>
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-semibold whitespace-nowrap ${scoreMeta.className}`}>
-                  {scoreMeta.label}
-                </span>
-              </div>
-
-              <div className="mt-4 flex items-center gap-5">
-                <div className="relative w-20 h-20 shrink-0 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="40" stroke="#f1f5f9" strokeWidth="8" fill="transparent" />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="40"
-                      stroke={scoreMeta.color}
-                      strokeWidth="8"
-                      fill="transparent"
-                      strokeDasharray="251.2"
-                      strokeDashoffset={251.2 - (251.2 * wellbeingScore) / 100}
-                      strokeLinecap="round"
-                      className="transition-all duration-500 ease-out"
-                    />
-                  </svg>
-                  <div className="absolute flex flex-col items-center justify-center">
-                    <span className="text-xl font-extrabold text-gray-950 leading-none">{wellbeingScore}</span>
-                    <span className="text-[9px] font-bold text-gray-400 mt-0.5">/100</span>
-                  </div>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-gray-900">Son {rangeDays} gün</p>
-                  <p
-                    className="mt-1 flex items-start gap-1 text-[11px] leading-relaxed text-gray-500"
-                    title="Puan; ruh hali, uyku, aktivite kayıtları ve doldurulan veri alanı sayısına göre hesaplanır."
-                  >
-                    <span>Ruh hali, uyku ve aktivite kayıtlarından hesaplandı.</span>
-                    <Info size={11} className="mt-0.5 shrink-0 text-gray-300" />
-                  </p>
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-500 border border-slate-100">{rangeDays} günlük görünüm</span>
-                  </div>
-                </div>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col lg:flex-row mb-6">
+          <div className="p-6 lg:w-1/3 border-b lg:border-b-0 lg:border-r border-gray-100 flex flex-col items-center justify-center text-center bg-slate-50/50">
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">Takip Özeti</h2>
+            <div className="relative w-24 h-24 shrink-0 flex items-center justify-center mb-4">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" stroke="#f1f5f9" strokeWidth="8" fill="transparent" />
+                <circle
+                  cx="50" cy="50" r="40"
+                  stroke={scoreMeta.color}
+                  strokeWidth="8" fill="transparent"
+                  strokeDasharray="251.2"
+                  strokeDashoffset={251.2 - (251.2 * wellbeingScore) / 100}
+                  strokeLinecap="round"
+                  className="transition-all duration-500 ease-out"
+                />
+              </svg>
+              <div className="absolute flex flex-col items-center justify-center">
+                <span className="text-2xl font-extrabold text-gray-900 leading-none">{wellbeingScore}</span>
               </div>
             </div>
-
-            <div className="mt-5 grid grid-cols-3 gap-2 border-t border-gray-100/70 pt-4">
-              {[
-                { label: 'Ruh Hali', value: latestMoodDate, dotColor: 'bg-yellow-500' },
-                { label: 'Uyku', value: latestSleepDate, dotColor: 'bg-indigo-500' },
-                { label: 'Notlar', value: latestNoteDate, dotColor: 'bg-primary-500' },
-              ].map(item => (
-                <div key={item.label} className="min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${item.dotColor}`} />
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider truncate">{item.label}</p>
-                  </div>
-                  <p className="mt-1.5 text-xs font-bold text-gray-700 truncate">{item.value}</p>
-                </div>
-              ))}
-            </div>
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-semibold ${scoreMeta.className}`}>
+              {scoreMeta.label}
+            </span>
+            <p className="mt-3 text-[11px] text-gray-400 max-w-[200px]">
+              Son {rangeDays} gün içinde ruh hali, uyku ve aktivite kayıtlarından hesaplandı.
+            </p>
           </div>
 
-          {/* Takip Kalitesi */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm flex flex-col justify-between min-h-[260px]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0">
-                <Activity size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-950">Takip kalitesi</p>
-                <p className="text-xs text-gray-400">{dataTypesWithRecords}/6 veri alanı dolu</p>
-              </div>
+          <div className="p-6 lg:w-2/3 flex flex-col">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1">
+              <Stat icon={Smile} label="Ort. Ruh Hali" value={avgMood} iconBgClass="bg-yellow-50" iconColorClass="text-yellow-600" />
+              <Stat icon={Moon} label="Ort. Uyku" value={avgSleepHours} iconBgClass="bg-indigo-50" iconColorClass="text-indigo-600" />
+              <Stat icon={Award} label="Kilometre Taşı" value={effectiveMilestones.length} iconBgClass="bg-emerald-50" iconColorClass="text-emerald-600" />
+              <Stat icon={BookOpen} label="Gelişim Notu" value={effectiveNotes.length} iconBgClass="bg-blue-50" iconColorClass="text-blue-600" />
+              <Stat icon={Calendar} label="Randevu" value={completedAppointments} iconBgClass="bg-teal-50" iconColorClass="text-teal-600" />
+              <Stat icon={ClipboardList} label="Tarama" value={screeningResults.length} iconBgClass="bg-rose-50" iconColorClass="text-rose-600" />
             </div>
-            <div className="space-y-4 my-auto">
-              <ProgressMetric label="Ruh hali" value={moodScore} detail={Number.isFinite(avgMoodNumber) ? `${avgMood}/5` : 'Veri yok'} color="bg-yellow-500" />
-              <ProgressMetric label="Uyku" value={sleepScore} detail={avgSleep ? `${avgSleepHours} (hedef 8-10 sa)` : 'Veri yok'} color="bg-indigo-500" />
-              <ProgressMetric label="Aktivite" value={activityScore} detail={`${notes.length + milestones.length + completedAppointments + screeningResults.length}/8 kayıt`} color="bg-emerald-500" />
-            </div>
-          </div>
 
-          {/* Sıradaki İyi Adım */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm flex flex-col justify-between min-h-[260px]">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
-                <Target size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-950">Sıradaki iyi adım</p>
-                <p className="text-xs text-gray-400">Eksik alanları tamamlayın</p>
-              </div>
-            </div>
-            {actionItems.length > 0 ? (
-              <div className="space-y-2 flex-1 flex flex-col justify-center">
-                {actionItems.map(item => {
-                  const ActionIcon = item.icon;
-                  return (
-                    <Link
-                      key={item.label}
-                      to={item.to}
-                      className="group flex items-center gap-3 rounded-xl bg-gray-50/50 border border-gray-100/50 px-3 py-2 hover:bg-primary-50/50 hover:border-primary-100 transition-all duration-150"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-white text-gray-500 flex items-center justify-center group-hover:text-primary-600 shrink-0 border border-gray-100/60 shadow-sm">
-                        {ActionIcon ? <ActionIcon size={15} /> : null}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-gray-800">{item.label}</p>
-                        <p className="text-[10px] text-gray-400 truncate mt-0.5">{item.detail}</p>
-                      </div>
-                      <ArrowRight size={14} className="ml-auto text-gray-350 group-hover:text-primary-500 shrink-0 transition-transform group-hover:translate-x-0.5" />
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-xl bg-emerald-50/50 border border-emerald-100/50 px-4 py-4 my-auto">
-                <p className="text-xs font-bold text-emerald-800">Veri kapsamı iyi görünüyor.</p>
-                <p className="mt-1 text-[11px] leading-relaxed text-emerald-700">Düzeni koruyarak haftalık karşılaştırmaları takip edebilirsiniz.</p>
+            {actionItems.length > 0 && (
+              <div className="mt-6 pt-5 border-t border-gray-100">
+                <p className="text-xs font-bold text-gray-900 mb-3 flex items-center gap-1.5">
+                  <Target size={14} className="text-rose-500" /> Sıradaki Adımlar
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {actionItems.map(item => {
+                    const ActionIcon = item.icon;
+                    return (
+                      <Link
+                        key={item.label}
+                        to={item.to}
+                        className="flex items-center gap-2 rounded-lg bg-gray-50 border border-gray-200 px-3 py-1.5 hover:bg-primary-50 hover:border-primary-200 hover:text-primary-700 transition-colors group"
+                      >
+                        <ActionIcon size={14} className="text-gray-400 group-hover:text-primary-600" />
+                        <span className="text-xs font-semibold text-gray-700 group-hover:text-primary-700">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -590,32 +506,30 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
       )}
 
       {/* AI Analiz Paneli */}
-      <div className="bg-gradient-to-br from-indigo-50/70 via-white to-sky-50/50 border border-indigo-100/80 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-5">
-          {/* Header */}
-          <div className="flex items-center justify-between flex-wrap gap-3 pb-4 border-b border-indigo-100/50">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center shadow-md shadow-indigo-200">
-                <Brain size={17} />
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-8">
+        <div className="p-6">
+          <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <Brain size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-indigo-900">Yapay Zeka Analisti</h3>
-                <p className="text-xs text-indigo-400">Gemini ile güçlendirilmiş gelişim analizi</p>
+                <h3 className="text-base font-bold text-gray-900">Yapay Zeka Analisti</h3>
+                <p className="text-xs text-gray-500">Gemini ile güçlendirilmiş gelişim analizi</p>
               </div>
             </div>
             {analysisTimestamp && (
-              <span className="text-xs text-indigo-500 bg-white border border-indigo-100/80 rounded-full px-2.5 py-1 font-semibold">
+              <span className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-full px-3 py-1 font-medium">
                 Son analiz: {analysisTimestamp}
               </span>
             )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-4">
-            {/* Left Controls & Insights */}
-            <div className="lg:col-span-5 space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+            <div className="lg:col-span-4 space-y-5">
               <div>
-                <p className="text-xs font-bold text-indigo-900/60 uppercase tracking-wider mb-2">Analiz Türü</p>
-                <div className="grid grid-cols-2 gap-2">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Analiz Türü</p>
+                <div className="grid grid-cols-1 gap-2">
                   {ANALYSIS_TYPES.map(opt => {
                     const Icon = opt.icon;
                     const active = analysisType === opt.type;
@@ -623,15 +537,15 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
                       <button
                         key={opt.type}
                         onClick={() => { setAnalysisType(opt.type); setAiAnalysis(null); }}
-                        className={`flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all duration-150 cursor-pointer ${
+                        className={`flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                           active
-                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100'
-                            : 'bg-white border-gray-100 text-gray-600 hover:border-indigo-200 hover:bg-indigo-50/30'
+                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm'
+                            : 'bg-white border-gray-100 text-gray-600 hover:bg-gray-50 hover:border-gray-200'
                         }`}
                       >
-                        {Icon ? <Icon size={14} className={active ? 'text-white' : 'text-indigo-500'} /> : null}
-                        <span className={`text-xs font-bold ${active ? 'text-white' : 'text-gray-800'}`}>{opt.label}</span>
-                        <span className={`text-[9px] leading-tight ${active ? 'text-indigo-200' : 'text-gray-400'}`}>{opt.desc}</span>
+                        {Icon && <Icon size={16} className={active ? 'text-indigo-600' : 'text-gray-400'} />}
+                        <span className="text-sm font-semibold flex-1">{opt.label}</span>
+                        <span className="text-[10px] text-gray-400">{opt.desc}</span>
                       </button>
                     );
                   })}
@@ -641,31 +555,27 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
               <button
                 onClick={handleAiAnalysis}
                 disabled={aiStreaming || aiLoading}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold transition-all duration-150 shadow-md shadow-indigo-600/10 cursor-pointer active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold transition-colors cursor-pointer"
               >
                 {(aiStreaming || aiLoading) ? (
                   <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Analiz ediliyor…
                   </>
                 ) : (
                   <>
-                    <Lightbulb size={15} />
-                    {ANALYSIS_TYPES.find(t => t.type === analysisType)?.label} Analizini Başlat
+                    <Lightbulb size={16} /> Analizi Başlat
                   </>
                 )}
               </button>
 
-              {/* Hızlı içgörüler */}
               {insights.length > 0 && (
-                <div className="pt-2">
-                  <p className="text-xs font-bold text-indigo-900/60 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Lightbulb size={13} className="text-indigo-500" /> Otomatik Tespitler
-                  </p>
-                  <ul className="space-y-1.5">
+                <div className="pt-4 border-t border-gray-100">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Otomatik Tespitler</p>
+                  <ul className="space-y-2">
                     {insights.map((ins, i) => (
-                      <li key={i} className="flex items-start gap-2 rounded-xl bg-white/60 border border-white/40 p-2.5 text-[11px] leading-normal text-indigo-950 font-medium">
-                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                      <li key={i} className="flex items-start gap-2 text-xs leading-relaxed text-gray-600">
+                        <span className="mt-1.5 w-1 h-1 rounded-full bg-indigo-400 shrink-0" />
                         <span>{ins}</span>
                       </li>
                     ))}
@@ -674,12 +584,11 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
               )}
             </div>
 
-            {/* Right Results Pane */}
-            <div className="lg:col-span-7 flex flex-col">
+            <div className="lg:col-span-8 flex flex-col">
               {aiAnalysis !== null ? (
-                <div className="bg-white rounded-xl border border-indigo-100 shadow-sm flex flex-col flex-1 min-h-[250px]">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-                    <span className="text-xs font-bold text-indigo-600">
+                <div className="bg-gray-50 rounded-xl border border-gray-200 flex flex-col flex-1 min-h-[300px]">
+                  <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white rounded-t-xl">
+                    <span className="text-sm font-bold text-gray-800">
                       {ANALYSIS_TYPES.find(t => t.type === analysisType)?.label} Sonucu
                     </span>
                     {aiAnalysis && !aiStreaming && (
@@ -690,25 +599,25 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
                             setTimeout(() => setCopied(false), 2000);
                           });
                         }}
-                        className="flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 cursor-pointer"
                       >
-                        {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                        {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                         {copied ? 'Kopyalandı' : 'Kopyala'}
                       </button>
                     )}
                   </div>
-                  <div className="p-4 flex-1 overflow-y-auto max-h-[350px] leading-relaxed text-xs text-slate-700">
+                  <div className="p-5 flex-1 overflow-y-auto max-h-[400px] text-sm text-gray-700">
                     {renderMarkdown(aiAnalysis)}
                     {aiStreaming && (
-                      <span className="inline-block w-0.5 h-4 bg-indigo-500 ml-0.5 animate-pulse align-middle" />
+                      <span className="inline-block w-1 h-4 bg-indigo-500 ml-1 animate-pulse align-middle rounded-full" />
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="border border-dashed border-indigo-100 rounded-xl flex flex-col items-center justify-center p-8 text-center flex-1 min-h-[220px] bg-white/20">
-                  <Brain className="text-indigo-300 mb-3 animate-pulse-slow" size={32} />
-                  <p className="text-sm font-semibold text-indigo-900">Analiz Raporu Hazır Değil</p>
-                  <p className="text-xs text-indigo-400 mt-1 max-w-sm">Sol taraftan analiz türünü seçip "Analizi Başlat" butonuna tıklayarak akıllı çıkarımları görebilirsiniz.</p>
+                <div className="border border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center p-8 text-center flex-1 min-h-[300px] bg-gray-50/50">
+                  <Brain className="text-gray-300 mb-4" size={40} />
+                  <p className="text-base font-semibold text-gray-900 mb-1">Analiz Raporu Bekleniyor</p>
+                  <p className="text-sm text-gray-500 max-w-sm">Sol taraftan analiz türünü seçip "Analizi Başlat" butonuna tıklayarak AI çıkarımlarını görebilirsiniz.</p>
                 </div>
               )}
             </div>
@@ -716,49 +625,27 @@ function ChildAnalytics({ child, rangeDays, compact = false }: ChildAnalyticsPro
         </div>
       </div>
 
-      {/* stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard icon={Smile} label={`Ort. Ruh Hali (${rangeDays}g)`} value={avgMood} color="bg-yellow-500" tone="hover:border-yellow-100" />
-        <StatCard icon={Moon} label={`Ort. Uyku (${rangeDays}g)`} value={avgSleepHours} color="bg-indigo-500" tone="hover:border-indigo-100" />
-        <StatCard icon={Award} label="Kilometre Taşı" value={effectiveMilestones.length} color="bg-emerald-500" tone="hover:border-emerald-100" />
-        <StatCard icon={BookOpen} label="Gelişim Notu" value={effectiveNotes.length} color="bg-primary-500" tone="hover:border-primary-100" />
-        <StatCard icon={Calendar} label="Tamamlanan Randevu" value={completedAppointments} color="bg-teal-500" tone="hover:border-teal-100" />
-        <StatCard icon={ClipboardList} label="Tarama Sayısı" value={screeningResults.length} color="bg-rose-500" tone="hover:border-rose-100" />
-      </div>
-
       {/* Grafik Sekmeleri */}
-      <div className="border-b border-gray-200/50 pb-4 pt-2">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="border-b border-gray-200 mb-6 px-1">
+        <div className="flex gap-6 overflow-x-auto">
           {[
-            { id: 'daily', label: 'Günlük Gözlemler', desc: 'Ruh hali, uyku ve davranışlar', icon: Activity, activeBg: 'from-blue-500 to-indigo-650 shadow-blue-105' },
-            { id: 'development', label: 'Gelişim & Başarılar', desc: 'Kilometre taşları ve notlar', icon: Award, activeBg: 'from-emerald-500 to-teal-600 shadow-emerald-105' },
-            { id: 'clinical', label: 'Klinik ve Taramalar', desc: 'Randevular ve test skorları', icon: ClipboardList, activeBg: 'from-rose-500 to-rose-600 shadow-rose-105' },
+            { id: 'daily', label: 'Günlük Gözlemler' },
+            { id: 'development', label: 'Gelişim & Başarılar' },
+            { id: 'clinical', label: 'Klinik ve Taramalar' },
           ].map(tab => {
-            const Icon = tab.icon;
             const active = activeChartTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveChartTab(tab.id as 'daily' | 'development' | 'clinical')}
-                className={`relative flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5 ${
-                  active
-                    ? `bg-gradient-to-r ${tab.activeBg} border-transparent text-white shadow-lg`
-                    : 'bg-white dark:bg-gray-900 border-slate-200/70 hover:border-slate-300 hover:bg-slate-50/50 text-slate-650 dark:text-slate-400'
+                onClick={() => setActiveChartTab(tab.id as any)}
+                className={`pb-3 font-semibold text-sm transition-colors relative whitespace-nowrap cursor-pointer ${
+                  active ? 'text-primary-600' : 'text-gray-500 hover:text-gray-800'
                 }`}
               >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                  active ? 'bg-white/20 text-white' : 'bg-slate-100/70 dark:bg-gray-800 text-slate-500'
-                }`}>
-                  {Icon ? <Icon size={18} strokeWidth={active ? 2.2 : 1.8} /> : null}
-                </div>
-                <div className="min-w-0">
-                  <div className={`text-xs font-bold leading-tight ${active ? 'text-white' : 'text-slate-800 dark:text-slate-200'}`}>
-                    {tab.label}
-                  </div>
-                  <div className={`text-[10px] leading-snug mt-0.5 font-semibold ${active ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
-                    {tab.desc}
-                  </div>
-                </div>
+                {tab.label}
+                {active && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 rounded-t-full" />
+                )}
               </button>
             );
           })}
@@ -1059,7 +946,7 @@ export function AnalyticsPage() {
 
   return (
     <div className="w-full max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
-      <div className="flex items-start justify-between flex-wrap gap-4">
+      <div className="flex items-start justify-between flex-wrap gap-4 mb-2">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-primary-200 shrink-0">
             <TrendingUp size={20} className="text-white" />
@@ -1068,11 +955,11 @@ export function AnalyticsPage() {
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold leading-tight text-gray-950">Nasıl İlerliyoruz?</h1>
               {activeChild && !compareMode && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-400 text-xs font-bold ring-1 ring-primary-100/50 dark:ring-primary-900/30">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-bold border border-primary-100">
                   <Baby size={12} className="text-primary-500" />
                   <span>{activeChild.name}</span>
                   {activeChild.diagnosisInfo && !activeChild.diagnosisInfo.startsWith('enc:v1:') && (
-                    <span className="text-[10px] opacity-75 font-semibold leading-none border-l border-primary-200 dark:border-primary-800 pl-1.5 ml-0.5">
+                    <span className="text-[10px] opacity-75 font-semibold leading-none border-l border-primary-200 pl-1.5 ml-0.5">
                       {activeChild.diagnosisInfo}
                     </span>
                   )}
@@ -1085,7 +972,7 @@ export function AnalyticsPage() {
 
         <div className="flex items-center justify-end gap-2 flex-wrap">
           {/* Date range selector */}
-          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
             {RANGE_OPTIONS.map(opt => (
               <button
                 key={opt.days}

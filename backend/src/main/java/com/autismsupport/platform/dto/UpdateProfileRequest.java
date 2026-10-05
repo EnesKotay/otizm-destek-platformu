@@ -38,6 +38,10 @@ public class UpdateProfileRequest {
     private Boolean allowFamilyMessages;
     private Boolean hideOnlineStatus;
     private Boolean approximateLocationOnly;
+    private Boolean profileVisibleToExperts;
+    private Boolean shareProgressWithExperts;
+    private java.util.List<String> notificationPreferences;
+    private Boolean appointmentReminder24h;
     private java.util.List<String> communicationPreferences;
     private java.util.List<String> supportIntents;
 }

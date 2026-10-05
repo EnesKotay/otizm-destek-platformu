@@ -476,7 +476,7 @@ export function MessagesPage() {
       unsubscribe(typingTopic);
       unsubscribe(reactionTopic);
     };
-  }, [selectedConv?.id, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedConv, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { scrollToBottom(); }, [messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -803,7 +803,7 @@ export function MessagesPage() {
       return !c.archived;
     })
     .filter(c => !convSearch.trim() || normalizeTR(getTitle(c)).includes(normalizeTR(convSearch)))
-    .sort((a, b) => (b.lastMessageAt ?? '') > (a.lastMessageAt ?? '') ? 1 : -1);
+    .sort((a, b) => new Date(b.lastMessageAt ?? 0).getTime() - new Date(a.lastMessageAt ?? 0).getTime());
 
   const unreadCount = conversations.filter(c => c.unreadCount > 0 && !c.archived).length;
   const messageGroups = groupByDate(messages);

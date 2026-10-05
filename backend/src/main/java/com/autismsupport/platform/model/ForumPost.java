@@ -71,6 +71,10 @@ public class ForumPost {
     @Column(name = "privacy_settings", columnDefinition = "jsonb")
     private Map<String, Object> privacySettings;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "question_context", columnDefinition = "jsonb")
+    private Map<String, Object> questionContext;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "post_tags",

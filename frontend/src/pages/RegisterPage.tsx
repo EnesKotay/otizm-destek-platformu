@@ -162,7 +162,7 @@ export function RegisterPage() {
             </div>
             <h2 className="text-4xl font-extrabold tracking-tight leading-[1.15]">
               Çocuğunuzun gelişim sürecini <br />
-              <span className="bg-gradient-to-r from-primary-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-white via-indigo-200 to-primary-300 bg-clip-text text-transparent drop-shadow-sm">
                 daha düzenli takip edin
               </span>
             </h2>
@@ -174,35 +174,35 @@ export function RegisterPage() {
           {/* Value Propositions */}
           <div className="space-y-4">
             {/* Prop 1 */}
-            <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300 group">
-              <div className="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center shrink-0 border border-primary-500/30 group-hover:scale-110 transition-transform">
-                <Brain className="text-primary-400" size={20} />
+            <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 group">
+              <div className="w-12 h-12 rounded-xl bg-primary-500/20 flex items-center justify-center shrink-0 border border-primary-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <Brain className="text-primary-400" size={24} />
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">BEP ve hedef hazırlığı</h4>
-                <p className="text-xs text-slate-400 mt-1">Uzmanın düzenleyip tamamlayabileceği hedef ve rapor taslakları.</p>
+              <div className="pt-0.5">
+                <h4 className="text-sm font-bold text-white tracking-wide">BEP ve hedef hazırlığı</h4>
+                <p className="text-sm text-slate-300 mt-1 leading-relaxed">Uzmanın düzenleyip tamamlayabileceği hedef ve rapor taslakları.</p>
               </div>
             </div>
 
             {/* Prop 2 */}
-            <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300 group">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30 group-hover:scale-110 transition-transform">
-                <Users className="text-emerald-400" size={20} />
+            <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 group">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <Users className="text-emerald-400" size={24} />
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">Uzman ve aile iletişimi</h4>
-                <p className="text-xs text-slate-400 mt-1">Randevu, mesaj ve paylaşım izinlerini aynı yerden takip edin.</p>
+              <div className="pt-0.5">
+                <h4 className="text-sm font-bold text-white tracking-wide">Uzman ve aile iletişimi</h4>
+                <p className="text-sm text-slate-300 mt-1 leading-relaxed">Randevu, mesaj ve paylaşım izinlerini aynı yerden takip edin.</p>
               </div>
             </div>
 
             {/* Prop 3 */}
-            <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300 group">
-              <div className="w-10 h-10 rounded-xl bg-indigo-400/20 flex items-center justify-center shrink-0 border border-indigo-400/30 group-hover:scale-110 transition-transform">
-                <CalendarCheck className="text-indigo-300" size={20} />
+            <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 group">
+              <div className="w-12 h-12 rounded-xl bg-indigo-400/20 flex items-center justify-center shrink-0 border border-indigo-400/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <CalendarCheck className="text-indigo-300" size={24} />
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">Günlük takip akışı</h4>
-                <p className="text-xs text-slate-400 mt-1">Duygu, uyku, ilaç ve kısa gözlemleri yorulmadan kaydedin.</p>
+              <div className="pt-0.5">
+                <h4 className="text-sm font-bold text-white tracking-wide">Günlük takip akışı</h4>
+                <p className="text-sm text-slate-300 mt-1 leading-relaxed">Duygu, uyku, ilaç ve kısa gözlemleri yorulmadan kaydedin.</p>
               </div>
             </div>
           </div>
@@ -214,22 +214,35 @@ export function RegisterPage() {
       </div>
 
       {/* RIGHT SIDE - Form Panel */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 md:p-16 overflow-y-auto">
-        <div className="w-full max-w-md space-y-8 my-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-slate-50 p-5 sm:p-8 md:p-12 overflow-y-auto">
+        <div className="w-full max-w-md my-6">
           
           {/* Header Mobile Only Logo */}
-          <div className="text-center lg:text-left">
-            <div className="lg:hidden inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 shadow-lg shadow-primary-200/50 mb-4">
-              <HeartHandshake size={26} className="text-white" />
+          <div className="mb-8 text-center lg:text-left">
+            <div className="lg:hidden flex items-center justify-center gap-3 mb-7">
+              <div className="w-11 h-11 rounded-2xl bg-primary-600 flex items-center justify-center shadow-lg shadow-primary-200/50">
+                <HeartHandshake size={22} className="text-white" />
+              </div>
+              <div className="text-left">
+                <p className="font-extrabold text-gray-900 leading-none">Otizm Destek</p>
+                <p className="text-xs text-gray-400 mt-0.5">Gelişim Platformu</p>
+              </div>
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Kayıt Ol</h1>
-            <p className="text-gray-500 text-sm mt-2">
+            
+            <div className="hidden lg:inline-flex items-center justify-start gap-2 mb-2">
+              <span className="flex h-2 w-2 rounded-full bg-primary-500"></span>
+              <p className="text-sm font-bold tracking-wide text-indigo-600 uppercase">Aramıza Katılın</p>
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              Kayıt Ol
+            </h1>
+            <p className="mt-3 text-base leading-relaxed text-slate-500">
               Temel bilgileri ekleyip günlük takip akışını kullanmaya başlayın.
             </p>
           </div>
 
           {emailCheckedStatus.exists ? (
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100/80 text-amber-900 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
+            <div className="mb-6 p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100/80 text-amber-900 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0 text-amber-600 font-extrabold text-lg">⚠️</div>
                 <div className="space-y-1">
@@ -257,22 +270,24 @@ export function RegisterPage() {
               </div>
             </div>
           ) : error ? (
-            <div role="alert" aria-live="assertive" className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-700 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div role="alert" aria-live="assertive" className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-700 mb-6 animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 text-red-600 font-bold">!</div>
               <p className="text-sm font-medium">{error}</p>
             </div>
           ) : null}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="rounded-[24px] border border-slate-200/60 bg-white p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-indigo-500"></div>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <p className="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
               Bu form veli hesabı içindir. Uzman başvuruları doğrulama süreci olan ayrı formdan alınır.
             </p>
 
             {/* Ad Soyad */}
             <div className="space-y-1.5">
-              <label htmlFor="register-full-name" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Ad Soyad</label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+              <label htmlFor="register-full-name" className="block text-sm font-semibold text-slate-700">Ad Soyad</label>
+              <div className="group relative">
+                <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary-600">
                   <User size={18} />
                 </div>
                 <input
@@ -282,8 +297,10 @@ export function RegisterPage() {
                   placeholder="Adınız Soyadınız"
                   aria-invalid={Boolean(errors.fullName)}
                   aria-describedby={errors.fullName ? 'register-full-name-error' : undefined}
-                  className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
-                    errors.fullName ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
+                  className={`h-12 w-full rounded-xl border pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
+                    errors.fullName
+                      ? 'border-red-300 bg-red-50/50 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-indigo-300 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20'
                   }`}
                   {...register('fullName')}
                 />
@@ -293,9 +310,9 @@ export function RegisterPage() {
 
             {/* E-posta */}
             <div className="space-y-1.5">
-              <label htmlFor="register-email" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">E-posta</label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+              <label htmlFor="register-email" className="block text-sm font-semibold text-slate-700">E-posta</label>
+              <div className="group relative">
+                <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary-600">
                   <Mail size={18} />
                 </div>
                 <input
@@ -305,8 +322,10 @@ export function RegisterPage() {
                   placeholder="ornek@email.com"
                   aria-invalid={Boolean(errors.email || emailCheckedStatus.exists)}
                   aria-describedby={errors.email ? 'register-email-error' : undefined}
-                  className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
-                    errors.email || emailCheckedStatus.exists ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
+                  className={`h-12 w-full rounded-xl border pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
+                    errors.email || emailCheckedStatus.exists
+                      ? 'border-red-300 bg-red-50/50 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-indigo-300 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20'
                   }`}
                   {...register('email', {
                     onBlur: (e) => handleEmailBlur(e.target.value),
@@ -322,9 +341,9 @@ export function RegisterPage() {
 
             {/* Şifre */}
             <div className="space-y-1.5">
-              <label htmlFor="register-password" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre</label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+              <label htmlFor="register-password" className="block text-sm font-semibold text-slate-700">Şifre</label>
+              <div className="group relative">
+                <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary-600">
                   <Lock size={18} />
                 </div>
                 <input
@@ -334,8 +353,10 @@ export function RegisterPage() {
                   placeholder="En az 8 karakter"
                   aria-invalid={Boolean(errors.password)}
                   aria-describedby={errors.password ? 'register-password-error' : 'register-password-help'}
-                  className={`w-full pl-11 pr-10 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
-                    errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
+                  className={`h-12 w-full rounded-xl border pl-11 pr-12 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
+                    errors.password
+                      ? 'border-red-300 bg-red-50/50 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-indigo-300 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20'
                   }`}
                   {...register('password', {
                     onChange: (e) => setPasswordValue(e.target.value),
@@ -345,7 +366,7 @@ export function RegisterPage() {
                   type="button"
                   aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                  className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-indigo-600 cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -392,9 +413,9 @@ export function RegisterPage() {
 
             {/* Şifre Tekrar */}
             <div className="space-y-1.5">
-              <label htmlFor="register-confirm-password" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Şifre Tekrar</label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+              <label htmlFor="register-confirm-password" className="block text-sm font-semibold text-slate-700">Şifre Tekrar</label>
+              <div className="group relative">
+                <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary-600">
                   <Lock size={18} />
                 </div>
                 <input
@@ -404,8 +425,10 @@ export function RegisterPage() {
                   placeholder="Şifrenizi tekrar girin"
                   aria-invalid={Boolean(errors.confirmPassword)}
                   aria-describedby={errors.confirmPassword ? 'register-confirm-password-error' : undefined}
-                  className={`w-full pl-11 pr-10 py-3 rounded-xl border text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
-                    errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 bg-white/70 hover:bg-white focus:bg-white shadow-sm'
+                  className={`h-12 w-full rounded-xl border pl-11 pr-12 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 ${
+                    errors.confirmPassword
+                      ? 'border-red-300 bg-red-50/50 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-indigo-300 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20'
                   }`}
                   {...register('confirmPassword')}
                 />
@@ -413,7 +436,7 @@ export function RegisterPage() {
                   type="button"
                   aria-label={showPassword ? 'Şifreleri gizle' : 'Şifreleri göster'}
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                  className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-indigo-600 cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -481,44 +504,46 @@ export function RegisterPage() {
               <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
             </Button>
           </form>
+          </div>
 
           {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-100" />
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-slate-200"></div>
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-slate-50 text-xs text-gray-600">veya</span>
+              <span className="bg-slate-50 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                veya
+              </span>
             </div>
           </div>
 
           {/* Footer links */}
-          <div className="space-y-3.5 text-center">
-            <p className="text-sm text-gray-500">
+          <div className="space-y-4 text-center">
+            <p className="text-sm font-medium text-slate-500">
               Zaten hesabınız var mı?{' '}
               <Link to="/giris" className="text-primary-600 font-bold hover:text-primary-700 transition-colors">
                 Giriş Yapın
               </Link>
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm font-medium text-slate-500">
               Uzman mısınız?{' '}
               <Link to="/kayit/uzman" className="text-indigo-600 font-bold hover:text-indigo-700 transition-colors">
-                Uzman Başvurusu Yapın →
+                Uzman Başvurusu Yapın &rarr;
               </Link>
             </p>
-            <p className="text-xs text-gray-600">
-              Platformu tanımak için{' '}
-              <Link to="/tanitim" className="font-bold text-primary-600 hover:text-primary-700">
-                tanıtım sayfasını
+            
+            <div className="mt-8 pt-6 border-t border-slate-200">
+              <Link to="/tanitim" className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                Platformu keşfedin <ArrowRight size={14} aria-hidden="true" />
               </Link>
-              {' '}inceleyin.
-            </p>
+            </div>
           </div>
 
           {/* Bottom badge */}
-          <div className="flex items-center justify-center gap-2 border-t border-gray-100 pt-6">
-            <Shield size={14} className="text-gray-600" />
-            <p className="text-center text-xs text-gray-600">Bilgileriniz güvenli bağlantı üzerinden iletilir.</p>
+          <div className="flex items-center justify-center gap-2 mt-6">
+            <Shield size={14} className="text-slate-400" />
+            <p className="text-center text-xs font-medium text-slate-400">Bilgileriniz güvenli bağlantı üzerinden iletilir.</p>
           </div>
         </div>
       </div>
